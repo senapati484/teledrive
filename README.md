@@ -14,7 +14,7 @@ Zero server costs. Zero subscriptions. Direct MTProto encryption straight to Tel
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-FFC131.svg?style=flat-square&logo=tauri&logoColor=black)](https://tauri.app/)
 [![React 19](https://img.shields.io/badge/React-19-61dafb.svg?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
 
-[**Website**](https://teledrive.space) • [**Download Binaries**](https://sourceforge.net/projects/teledrive/files/) • [**Report a Bug**](https://github.com/senapati484/teledrive/issues/new) • [**Request a Feature**](https://github.com/senapati484/teledrive/issues/new)
+[**Website**](https://teledrive.space) • [**Downloads**](#-downloads) • [**Report a Bug**](https://github.com/senapati484/teledrive/issues/new) • [**Request a Feature**](https://github.com/senapati484/teledrive/issues/new)
 
 </div>
 
@@ -28,6 +28,23 @@ Telegram offers virtually unlimited cloud storage in private channels, but lacks
 - **Virtual Drive**: Nested directories, search, starred files, archive, and trash are indexed in a pinned catalog inside your channel.
 - **Hardware-Encrypted Vault**: Credentials and session keys are locked in Tauri Stronghold using Argon2id-derived keys.
 - **Multi-Account**: Switch between multiple phone numbers with complete session and local vault isolation.
+
+---
+
+## 📥 Downloads
+
+Latest release: **v0.1.1** · Pre-compiled native binaries for all major operating systems:
+
+| OS | Package Format | Direct Download | Size |
+|:---|:---|:---|---:|
+| **Windows** | Setup Installer (`.exe`) | [**teledrive-setup.exe**](https://sourceforge.net/projects/teledrive/files/v0.1.1/teledrive-setup.exe/download) | 5.5 MB |
+| **Windows** | MSI Package (`.msi`) | [**teledrive.msi**](https://sourceforge.net/projects/teledrive/files/v0.1.1/teledrive.msi/download) | 7.2 MB |
+| **macOS** | Universal Disk Image (`.dmg`) | [**teledrive.dmg**](https://sourceforge.net/projects/teledrive/files/v0.1.1/teledrive.dmg/download) | 15.8 MB |
+| **Linux** | Universal AppImage (`.AppImage`) | [**teledrive.AppImage**](https://sourceforge.net/projects/teledrive/files/v0.1.1/teledrive.AppImage/download) | 86.1 MB |
+| **Linux** | Debian / Ubuntu (`.deb`) | [**teledrive.deb**](https://sourceforge.net/projects/teledrive/files/v0.1.1/teledrive.deb/download) | 8.4 MB |
+| **Linux** | Fedora / RHEL (`.rpm`) | [**teledrive.rpm**](https://sourceforge.net/projects/teledrive/files/v0.1.1/teledrive.rpm/download) | 8.0 MB |
+
+> 🌐 Full package catalog, mirror links, and checksums are available on [**SourceForge**](https://sourceforge.net/projects/teledrive/files/) or [**teledrive.space**](https://teledrive.space).
 
 ---
 
