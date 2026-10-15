@@ -1,49 +1,109 @@
-# TeleDrive 🚀
+<div align="center">
 
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Tauri Version](https://img.shields.io/badge/Tauri-v2-orange.svg?style=flat&logo=tauri)](https://tauri.app/)
-[![React](https://img.shields.io/badge/React-v19-blue.svg?style=flat&logo=react)](https://react.dev/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind--CSS-v4-38bdf8.svg?style=flat&logo=tailwind-css)](https://tailwindcss.com/)
-[![Platform Support](https://img.shields.io/badge/Platforms-macOS%20%7C%20Windows%20%7C%20Linux%20%7C%20Android-brightgreen.svg?style=flat)]()
+<img src="src-tauri/icons/icon.png" alt="TeleDrive logo" width="128" height="128" />
 
-TeleDrive is a modern, cross-platform, zero-overhead cloud storage application that transforms a **private Telegram channel** into your own **unlimited personal drive**. Built on top of **Tauri v2**, **React 19**, **Vite**, **Tailwind CSS v4**, and **GramJS**, it delivers a Google Drive-like interface for managing nested folder trees and streaming files directly to/from Telegram servers without intermediate relays or storage subscription costs.
+# TeleDrive
+
+**Unlimited personal cloud storage, powered by your own private Telegram channel.**
+No servers. No subscriptions. Your files go straight from your device to Telegram.
+
+[![Total downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsenapati484%2Fteledrive%2Fmain%2F.github%2Fstats%2Fdownloads.json&style=for-the-badge)](https://sourceforge.net/projects/teledrive/files/)
+[![Latest release](https://img.shields.io/badge/release-v0.1.1-blue?style=for-the-badge)](https://sourceforge.net/projects/teledrive/files/v0.1.1/)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg?style=for-the-badge)](./LICENSE)
+
+[![Tauri v2](https://img.shields.io/badge/Tauri-v2-orange.svg?logo=tauri)](https://tauri.app/)
+[![React 19](https://img.shields.io/badge/React-19-61dafb.svg?logo=react&logoColor=white)](https://react.dev/)
+[![Tailwind CSS v4](https://img.shields.io/badge/Tailwind-v4-38bdf8.svg?logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
+[![GitHub stars](https://img.shields.io/github/stars/senapati484/teledrive?style=flat&logo=github)](https://github.com/senapati484/teledrive/stargazers)
+[![GitHub issues](https://img.shields.io/github/issues/senapati484/teledrive?style=flat)](https://github.com/senapati484/teledrive/issues)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#-contributing)
+
+[**Website**](https://www.teledrive.space) · [**Download**](#-download) · [**Report a bug**](https://github.com/senapati484/teledrive/issues/new) · [**Request a feature**](https://github.com/senapati484/teledrive/issues/new)
+
+</div>
+
+---
+
+## 📥 Download
+
+Latest version: **v0.1.1**. Pick your platform:
+
+<div align="center">
+
+[![Windows (.exe)](https://img.shields.io/badge/Windows-Installer_(.exe)-0078D6?style=for-the-badge&logo=windows&logoColor=white)](https://sourceforge.net/projects/teledrive/files/v0.1.1/teledrive-setup.exe/download)
+[![Windows (.msi)](https://img.shields.io/badge/Windows-MSI-0078D6?style=for-the-badge&logo=windows&logoColor=white)](https://sourceforge.net/projects/teledrive/files/v0.1.1/teledrive.msi/download)
+
+[![macOS (.dmg)](https://img.shields.io/badge/macOS-.dmg-000000?style=for-the-badge&logo=apple&logoColor=white)](https://sourceforge.net/projects/teledrive/files/v0.1.1/teledrive.dmg/download)
+
+[![Linux (.AppImage)](https://img.shields.io/badge/Linux-AppImage-FCC624?style=for-the-badge&logo=linux&logoColor=black)](https://sourceforge.net/projects/teledrive/files/v0.1.1/teledrive.AppImage/download)
+[![Linux (.deb)](https://img.shields.io/badge/Debian%2FUbuntu-.deb-A81D33?style=for-the-badge&logo=debian&logoColor=white)](https://sourceforge.net/projects/teledrive/files/v0.1.1/teledrive.deb/download)
+[![Linux (.rpm)](https://img.shields.io/badge/Fedora%2FRHEL-.rpm-EE0000?style=for-the-badge&logo=redhat&logoColor=white)](https://sourceforge.net/projects/teledrive/files/v0.1.1/teledrive.rpm/download)
+
+[![Download from SourceForge](https://img.shields.io/badge/All_releases-SourceForge-FF6600?style=for-the-badge&logo=sourceforge&logoColor=white)](https://sourceforge.net/projects/teledrive/files/)
+
+</div>
+
+| Platform | File | Size |
+|:---|:---|---:|
+| Windows | `teledrive-setup.exe` (recommended), `teledrive.msi` | 5.5 MB / 7.2 MB |
+| macOS | `teledrive.dmg` | 15.8 MB |
+| Linux | `teledrive.AppImage`, `teledrive.deb`, `teledrive.rpm` | 86.1 MB / 8.4 MB / 8.0 MB |
+| Android | Build from source (see [Getting Started](#-getting-started)) | — |
+
+> **Heads-up:** release binaries may not be code-signed yet. If Windows SmartScreen or macOS Gatekeeper warns you, that is expected for unsigned open-source builds. You can always [build from source](#-getting-started) and inspect every line of code yourself.
+
+---
+
+## 📊 Download Stats
+
+Counts are collected from SourceForge **from 2026-06-21 to today** and refreshed automatically every day by a [GitHub Action](./.github/workflows/update-stats.yml).
+
+<div align="center">
+
+| Since launch (2026-06-21) | This week | This month |
+|:---:|:---:|:---:|
+| ![Total](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsenapati484%2Fteledrive%2Fmain%2F.github%2Fstats%2Fdownloads.json&style=flat-square) | ![Week](https://img.shields.io/sourceforge/dw/teledrive.svg?style=flat-square&label=downloads) | ![Month](https://img.shields.io/sourceforge/dm/teledrive.svg?style=flat-square&label=downloads) |
+
+</div>
 
 ---
 
 ## 🗺️ Table of Contents
 
-- [🌟 Core Features](#-core-features)
-- [⚙️ Technical Architecture](#️-technical-architecture)
-  - [Data Flow & Synchronization Sequence](#data-flow--synchronization-sequence)
-  - [GramJS & MTProto Streaming](#gramjs--mtproto-streaming)
-- [🔒 Security & Key Vault Threat Model](#-security--key-vault-threat-model)
-- [📂 Virtual File Catalog Schema](#-virtual-file-catalog-schema)
-- [🚀 Getting Started](#-getting-started)
-  - [System Prerequisites](#system-prerequisites)
-  - [Acquiring Telegram API Keys](#acquiring-telegram-api-keys)
-  - [Local Development Workspace](#local-development-workspace)
-  - [Compiling & Bundling for Production](#compiling--bundling-for-production)
-  - [Troubleshooting Common Issues](#troubleshooting-common-issues)
-- [⌨️ Keyboard Shortcuts & Gestures](#️-keyboard-shortcuts--gestures)
-- [🤝 Contributing Guidelines](#-contributing-guidelines)
-- [📜 License & Disclaimer](#-license--disclaimer)
+- [Why TeleDrive?](#-why-teledrive)
+- [Features](#-features)
+- [How It Works](#️-how-it-works)
+- [Security Model](#-security-model)
+- [Virtual File Catalog Schema](#-virtual-file-catalog-schema)
+- [Getting Started](#-getting-started)
+- [Keyboard Shortcuts & Gestures](#️-keyboard-shortcuts--gestures)
+- [Roadmap](#-roadmap)
+- [Contributing](#-contributing)
+- [License & Disclaimer](#-license--disclaimer)
 
 ---
 
-## 🌟 Core Features
+## 💡 Why TeleDrive?
 
-- **Unlimited Zero-Cost Storage**: Leverage Telegram's cloud hosting capabilities by utilizing a private, dedicated channel.
-- **Cross-Platform Native Experience**: Lightweight, native binaries compiled for **macOS**, **Windows**, **Linux**, and **Android** using Tauri v2.
-- **True Multi-Account Session Isolation**: Stores independent local vaults and folder catalogs keyed by telephone numbers. Seamlessly log out and switch accounts without clashing or data leakage.
-- **Client-Side MTProto Uploads/Downloads**: Utilizes GramJS direct connections. Your device speaks directly to Telegram API gateways; no third-party proxies, middleware, or servers see your files.
-- **Local Stronghold Credentials Vault**: Secures API credentials (`api_id`, `api_hash`) and active session tokens using Tauri's Software-encrypted vault (Argon2id KDF-derived keys bound to system profiles).
-- **Virtual Folder Structure**: Simulates folders, subfolders, stars, archives, and trash states using a lightweight metadata catalog pinned directly to your storage channel.
+Telegram lets you store large files in channels for free. TeleDrive turns that into a proper drive: nested folders, search, stars, archive, trash, and multi-account support, with a Google Drive-style interface. Everything runs on your device and talks directly to Telegram over MTProto. There is no TeleDrive backend to trust, pay for, or shut down.
 
 ---
 
-## ⚙️ Technical Architecture
+## 🌟 Features
 
-TeleDrive functions as a fully decentralized, offline-first client application. 
+- **Unlimited, zero-cost storage**: uses a private channel of your own as the backing store.
+- **Cross-platform native apps**: lightweight binaries for macOS, Windows, Linux, and Android, built with Tauri v2.
+- **Multi-account session isolation**: separate local vaults and folder catalogs per phone number. Log out and switch accounts without data leakage.
+- **Direct client-side MTProto**: GramJS connects your device straight to Telegram. No proxies, middleware, or third-party servers.
+- **Encrypted local credential vault**: `api_id`, `api_hash`, and session tokens live in Tauri Stronghold (Argon2id-derived keys).
+- **Virtual folders**: folders, subfolders, stars, archive, and trash are simulated with a metadata catalog pinned in your channel.
+- **Keyboard-first on desktop, gesture-friendly on mobile**: see [shortcuts](#️-keyboard-shortcuts--gestures).
+
+---
+
+## ⚙️ How It Works
+
+TeleDrive is a decentralized, offline-first client.
 
 ```
 ┌────────────────────────────────────────────────────────┐
@@ -64,9 +124,7 @@ TeleDrive functions as a fully decentralized, offline-first client application.
 └─────────────────────────┘
 ```
 
-### Data Flow & Synchronization Sequence
-
-When you launch TeleDrive, it synchronizes the virtual index mapping dynamically. The sequence details the initial boot, catalog pull, and credential restoration:
+### Startup & sync sequence
 
 ```mermaid
 sequenceDiagram
@@ -81,43 +139,44 @@ sequenceDiagram
     Frontend->>Core: Request stored session (IPC: load_session)
     Core->>Vault: Fetch Argon2id-encrypted credentials
     Vault-->>Core: Decrypted api_id, api_hash & GramJS Session
-    Core-->>Frontend: Return Credentials & Session Token
-    
+    Core-->>Frontend: Return credentials & session token
+
     rect rgb(30, 41, 59)
-        note right of Frontend: Bootstrapping Direct Connection
-        Frontend->>TG: Connect via MTProto Socket (Port 443)
-        TG-->>Frontend: Auth Connection Validated
+        note right of Frontend: Bootstrapping direct connection
+        Frontend->>TG: Connect via MTProto socket (port 443)
+        TG-->>Frontend: Auth connection validated
     end
 
-    Frontend->>TG: Search channel for pinned catalog message ("teledrive_index")
-    TG-->>Frontend: Return Pinned JSON Catalog (TeleFile[] metadata)
-    Frontend->>Frontend: Parse catalog & mount Virtual Folder tree in Zustand store
-    Frontend-->>User: Render file browser UI with folder hierarchy
+    Frontend->>TG: Search channel for pinned catalog ("teledrive_index")
+    TG-->>Frontend: Return pinned JSON catalog (TeleFile[])
+    Frontend->>Frontend: Parse catalog & mount virtual folder tree
+    Frontend-->>User: Render file browser
 ```
 
-### GramJS & MTProto Streaming
+### Uploads
 
-To upload files larger than Telegram's message limits, TeleDrive performs client-side chunking:
-1. Large files are split into **512 KB** segments.
-2. The GramJS runtime uploads chunks sequentially or concurrently (up to 4 streams) using the `UploadPartRequest` API.
-3. Once all parts are uploaded, the client sends a `SendMediaRequest` to attach the file parts to a message in your private channel.
-4. The client appends a new metadata descriptor (`TeleFile`) containing the `messageId`, `channelId`, `name`, `size`, and virtual `folderPath` to the local catalog.
-5. The updated catalog is serialized, uploaded to the channel, and pinned as the new index message.
+1. Large files are split into **512 KB** parts.
+2. GramJS uploads parts sequentially or concurrently (up to 4 streams) via `UploadPartRequest`.
+3. A `SendMediaRequest` attaches the uploaded parts to a message in your private channel.
+4. A `TeleFile` descriptor (`messageId`, `channelId`, `name`, `size`, `folderPath`) is appended to the catalog.
+5. The updated catalog is serialized, uploaded, and pinned as the new index message.
 
 ---
 
-## 🔒 Security & Key Vault Threat Model
+## 🔒 Security Model
 
-TeleDrive prioritizes local cryptography and private communication:
-- **Zero Intermediary Server Footprint**: No servers are run by the TeleDrive developers. File content and metadata never traverse third-party machines.
-- **Tauri Stronghold Vault**: MTProto authentication keys and credentials are saved using Tauri's **Stronghold** module. This creates a secure-by-default software database protected by Argon2id master keys generated from a combination of operating-system-specific hardware identifiers.
-- **Anti-Leakage Isolation**: When logging out, Tauri completely wipes the corresponding entry inside the Stronghold database and clears the active session from memory.
+- **No TeleDrive servers.** File content and metadata never pass through machines run by the TeleDrive developers.
+- **Stronghold vault.** Credentials and MTProto auth keys are stored in Tauri Stronghold, protected by Argon2id-derived keys bound to your system profile.
+- **Clean logout.** Logging out wipes that account's vault entry and clears the session from memory.
+- **Your channel, your data.** Files are as private as your Telegram channel. Keep it private and keep your Telegram account secured with two-step verification.
+
+Found a vulnerability? Please open a private security advisory on GitHub (**Security → Report a vulnerability**) rather than a public issue.
 
 ---
 
 ## 📂 Virtual File Catalog Schema
 
-The folder and file tree structures are maintained using a standardized array of `TeleFile` metadata descriptors pinned as a JSON block:
+The folder tree is a JSON array of `TeleFile` descriptors pinned in your channel:
 
 ```json
 [
@@ -141,109 +200,107 @@ The folder and file tree structures are maintained using a standardized array of
 
 ## 🚀 Getting Started
 
-### System Prerequisites
+### 1. Get Telegram API keys
 
-Ensure your system is equipped with the following toolchains before building:
-- **Rust & Cargo** (v1.78+): For compiling the Tauri Rust core backend. Install via [rustup.rs](https://rustup.rs/).
-- **Node.js** (v20.19+ or v22.12+): Required for compiling the React/Vite/Tailwind frontend pipeline.
-- **Xcode** (For macOS builds): Necessary command-line tools.
-- **Visual Studio Build Tools C++** (For Windows builds): Required for Tauri compilation.
-- **Android SDK & NDK** (Optional): Only required if packaging for Android devices.
+1. Go to [my.telegram.org](https://my.telegram.org/) and sign in with your phone number.
+2. Open **API development tools** and create an application (e.g. `MyTeleDrive`).
+3. Copy the `api_id` and `api_hash`.
+4. Enter them on TeleDrive's setup screen. They are stored in your local encrypted vault.
 
-### Acquiring Telegram API Keys
+### 2. Run from source
 
-To instantiate a connection, you must register a custom application credentials pair from Telegram:
-1. Navigate to [my.telegram.org](https://my.telegram.org/) and authenticate with your phone number.
-2. Under the developer interface, select **API development tools**.
-3. Create a new application name (e.g., `MyTeleDrive`).
-4. Copy the generated `api_id` and `api_hash`.
-5. Enter these credentials on the TeleDrive setup page. They will be stored directly inside your local secure vault.
+**Prerequisites**
 
-### Local Development Workspace
+- **Rust & Cargo** 1.78+ ([rustup.rs](https://rustup.rs/))
+- **Node.js** 20.19+ or 22.12+
+- **macOS:** Xcode command-line tools
+- **Windows:** Visual Studio Build Tools with the "Desktop development with C++" workload
+- **Android (optional):** Android SDK & NDK
 
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/senapati484/teledrive.git
-   cd teledrive
-   ```
-
-2. **Install node dependencies**:
-   ```bash
-   npm install
-   ```
-
-3. **Start the desktop development server**:
-   ```bash
-   npm run tauri dev
-   ```
-
-4. **Start the Android emulator dev frame** (ensure an emulator is open):
-   ```bash
-   npm run tauri android dev
-   ```
-
-### Compiling & Bundling for Production
-
-To create optimized native production installers for your current platform:
 ```bash
-npm run tauri build
+git clone https://github.com/senapati484/teledrive.git
+cd teledrive
+npm install
+
+npm run tauri dev            # desktop
+npm run tauri android dev    # Android (emulator running)
 ```
 
-This compiles:
-- **macOS**: `.app` and `.dmg` installers in `src-tauri/target/release/bundle/dmg/`.
-- **Windows**: `.msi` and `.exe` packages in `src-tauri/target/release/bundle/msi/`.
-- **Linux**: `.deb` and `.AppImage` files in `src-tauri/target/release/bundle/deb/`.
+### 3. Build for production
 
-To build the Android `.apk` package:
 ```bash
-npm run tauri android build
+npm run tauri build          # installers for your current OS
+npm run tauri android build  # Android .apk
 ```
 
-### Troubleshooting Common Issues
+Output locations: `src-tauri/target/release/bundle/` (`dmg/`, `msi/`, `deb/`, and so on).
 
-- **Node.js version warning**: Vite and Tauri v2 require modern Node versions (20.19+ or 22.12+). Upgrade node using your local manager (e.g., `nvm install 22`).
-- **Stronghold vault compilation failure**: Ensure your C++ compilers are up-to-date and that you have installed standard tools. On Windows, verify that the "Desktop development with C++" workload is selected in the Visual Studio Installer.
-- **Connection timeouts**: Telegram rate limits connections. If you get connection warnings, check your internet connectivity. The client automatically includes exponential backoffs for handling Telegram rate limits.
+### Troubleshooting
+
+- **Node version warning:** Vite and Tauri v2 need Node 20.19+ or 22.12+. Run `nvm install 22`.
+- **Stronghold build failure:** update your C++ toolchain. On Windows, confirm the "Desktop development with C++" workload is installed.
+- **Connection timeouts:** Telegram rate-limits connections. The client retries with exponential backoff, so check your network and wait a moment.
 
 ---
 
 ## ⌨️ Keyboard Shortcuts & Gestures
 
-TeleDrive supports power-user navigation controls:
+### Desktop
 
-### Keyboard Bindings (Desktop)
-| Key combination | Action |
+| Keys | Action |
 |:---|:---|
-| `/` or `⌘ F` | Focus search bar |
-| `Esc` | Clear active file selections or blur search input |
-| `g g` | Scroll browser list to the top |
-| `g l` | Scroll browser list to the bottom |
-| `⌘ A` | Select all folders/files in the current folder view |
-| `F2` | Rename the selected file/folder |
+| `/` or `⌘ F` | Focus search |
+| `Esc` | Clear selection / blur search |
+| `g g` / `g l` | Scroll to top / bottom |
+| `⌘ A` | Select all in current folder |
+| `F2` | Rename selected item |
 | `⌘ D` | Download selected items |
-| `Backspace` or `Del` | Move selected items to Trash (deletes permanently if inside Trash) |
-| `?` | Open keybindings cheat sheet dialog |
+| `Backspace` / `Del` | Move to Trash (permanent delete if already in Trash) |
+| `?` | Show shortcut cheat sheet |
 
-### Touch Controls (Mobile / Android)
-- **Pull-to-Refresh**: Swipe down from the top of the browser view to trigger a full index synchronization.
-- **Long-Press Sheet**: Hold down on any folder or file card to open a custom bottom sheet containing all action operations.
-- **Back Gestures**: Mobile hardware back gestures dynamically close sheets, drawers, or dialog overlays sequentially before terminating the main application.
+### Mobile (Android)
+
+- **Pull to refresh** to resync the index.
+- **Long-press** a file or folder for the action sheet.
+- **Back gesture** closes sheets, drawers, and dialogs one at a time before leaving the app.
 
 ---
 
-## 🤝 Contributing Guidelines
+## 🧭 Roadmap
 
-We welcome community contributions to expand TeleDrive! Here is the workflow:
+- [x] Cross-platform desktop builds (Windows, macOS, Linux)
+- [x] Multi-account isolation
+- [x] Virtual folders, stars, archive, trash
+- [ ] Published Android release
+- [ ] Code-signed Windows and macOS builds
+- [ ] Optional client-side file encryption before upload
+- [ ] File sharing links and previews
 
-1. **Format Check**: Ensure code matches style configurations. Run `npm run lint` or `cargo fmt` before staging.
-2. **Branch Naming**: Use logical naming prefixes (`feature/`, `bugfix/`, `docs/`).
-3. **Commit Messages**: Write semantic, concise commits (e.g., `feat(ui): center three-dot action button`).
-4. **Pull Requests**: Open a pull request targeting the `main` branch, explaining the changes, and attaching screenshots of any modified visual components.
+Have an idea? [Open an issue](https://github.com/senapati484/teledrive/issues/new).
+
+---
+
+## 🤝 Contributing
+
+Contributions of all sizes are welcome: bug reports, docs, translations, and code.
+
+1. **Fork** the repo and create a branch: `feature/…`, `bugfix/…`, or `docs/…`.
+2. **Format and lint** before committing: `npm run lint` and `cargo fmt`.
+3. **Write semantic commits**, e.g. `feat(ui): center three-dot action button`.
+4. **Open a pull request** against `main`, describe the change, and attach screenshots for any UI work.
+
+New here? Look for issues labeled `good first issue`.
 
 ---
 
 ## 📜 License & Disclaimer
 
-TeleDrive is open-source software distributed under the terms of the **GNU GPL-3.0 License**. See the [LICENSE](file:///Users/sayansenapati/Desktop/Dev/Innovation/teledrive/LICENSE) file for details.
+TeleDrive is free software released under the [GNU GPL-3.0](./LICENSE) license.
 
-*Disclaimer: This is a community-driven open-source project and is not affiliated, sponsored, or endorsed by Telegram FZ-LLC. Storing large volumes of files on Telegram might be subject to bandwidth quotas, account restrictions, and Terms of Service rules. Use responsibly.*
+*TeleDrive is a community-driven open-source project and is not affiliated with, sponsored by, or endorsed by Telegram FZ-LLC. Storing large volumes of data on Telegram may be subject to bandwidth limits, account restrictions, and Telegram's Terms of Service. Use responsibly.*
+
+<div align="center">
+
+If TeleDrive is useful to you, consider giving it a ⭐ on [GitHub](https://github.com/senapati484/teledrive).
+
+</div>
