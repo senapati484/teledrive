@@ -7,14 +7,34 @@
 **Unlimited personal cloud storage, powered by your own private Telegram channel.**  
 Zero server costs. Zero subscriptions. Direct MTProto encryption straight to Telegram.
 
+[**English**](README.md) • [**Português (Brasil)**](README-pt-BR.md) • [**Español**](README-es.md) • [**简体中文**](README-zh-CN.md) • [**Русский**](README-ru.md) • [**日本語**](README-ja.md) • [**Deutsch**](README-de.md)
+
 [![Total Downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsenapati484%2Fteledrive%2Fmain%2F.github%2Fstats%2Fdownloads.json&style=flat-square&logo=sourceforge&logoColor=white)](https://sourceforge.net/projects/teledrive/files/)
 [![Latest Release](https://img.shields.io/badge/release-v0.1.1-2082f7.svg?style=flat-square)](https://sourceforge.net/projects/teledrive/files/v0.1.1/)
+[![YouTube Walkthrough](https://img.shields.io/badge/YouTube-Video%20Demo-red.svg?style=flat-square&logo=youtube&logoColor=white)](https://youtu.be/4AiMn7HSlFg)
 [![License: GPL v3](https://img.shields.io/badge/license-GPLv3-gray.svg?style=flat-square)](./LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/senapati484/teledrive?style=flat-square&logo=github)](https://github.com/senapati484/teledrive/stargazers)
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-FFC131.svg?style=flat-square&logo=tauri&logoColor=black)](https://tauri.app/)
 [![React 19](https://img.shields.io/badge/React-19-61dafb.svg?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
 
-[**Website**](https://teledrive.space) • [**Downloads**](#-downloads) • [**Report a Bug**](https://github.com/senapati484/teledrive/issues/new) • [**Request a Feature**](https://github.com/senapati484/teledrive/issues/new)
+[**Website**](https://teledrive.space) • [**Downloads**](#-downloads) • [**Video Demo**](#-video-walkthrough--demo) • [**Report a Bug**](https://github.com/senapati484/teledrive/issues/new) • [**Request a Feature**](https://github.com/senapati484/teledrive/issues/new)
+
+</div>
+
+---
+
+## 🎬 Video Walkthrough & Demo
+
+<div align="center">
+
+<a href="https://youtu.be/4AiMn7HSlFg" target="_blank">
+  <img src="https://img.youtube.com/vi/4AiMn7HSlFg/maxresdefault.jpg" alt="TeleDrive Demo Video" width="800" style="max-width: 100%; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2);" />
+</a>
+
+<br/>
+
+**[▶️ Watch on YouTube: "I Turned Telegram Into Unlimited Cloud Storage"](https://youtu.be/4AiMn7HSlFg)**  
+*Full video walkthrough demonstrating direct MTProto file streaming, multi-page PDF viewing, CSV inspection, CodeMirror 6 code editor, and automated directory backups.*
 
 </div>
 
