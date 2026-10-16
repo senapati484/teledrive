@@ -1,18 +1,18 @@
 <div align="center">
 
-<img src="src-tauri/icons/icon.png" alt="TeleDrive logo" width="100" height="100" />
+<img src="../src-tauri/icons/icon.png" alt="TeleDrive logo" width="100" height="100" />
 
 # TeleDrive
 
 **Безлимитное персональное облачное хранилище на базе вашего приватного Telegram-канала.**  
 Ноль затрат на серверы. Ноль платных подписок. Прямое сквозное шифрование MTProto в Telegram.
 
-[**English**](README.md) • [**Português (Brasil)**](README-pt-BR.md) • [**Español**](README-es.md) • [**简体中文**](README-zh-CN.md) • [**Русский**](README-ru.md) • [**日本語**](README-ja.md) • [**Deutsch**](README-de.md)
+[**English**](../README.md) • [**Português (Brasil)**](README-pt-BR.md) • [**Español**](README-es.md) • [**简体中文**](README-zh-CN.md) • [**Русский**](README-ru.md) • [**日本語**](README-ja.md) • [**Deutsch**](README-de.md)
 
 [![Всего загрузок](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsenapati484%2Fteledrive%2Fmain%2F.github%2Fstats%2Fdownloads.json&style=flat-square&logo=sourceforge&logoColor=white)](https://sourceforge.net/projects/teledrive/files/)
 [![Последняя версия](https://img.shields.io/badge/релиз-v0.1.1-2082f7.svg?style=flat-square)](https://sourceforge.net/projects/teledrive/files/v0.1.1/)
 [![Демо на YouTube](https://img.shields.io/badge/YouTube-Видео%20Демо-red.svg?style=flat-square&logo=youtube&logoColor=white)](https://youtu.be/4AiMn7HSlFg)
-[![Лицензия: GPL v3](https://img.shields.io/badge/лицензия-GPLv3-gray.svg?style=flat-square)](./LICENSE)
+[![Лицензия: GPL v3](https://img.shields.io/badge/лицензия-GPLv3-gray.svg?style=flat-square)](../LICENSE)
 [![Звезды на GitHub](https://img.shields.io/github/stars/senapati484/teledrive?style=flat-square&logo=github)](https://github.com/senapati484/teledrive/stargazers)
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-FFC131.svg?style=flat-square&logo=tauri&logoColor=black)](https://tauri.app/)
 [![React 19](https://img.shields.io/badge/React-19-61dafb.svg?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
@@ -167,7 +167,7 @@ npm run tauri build
 
 ## 📜 Лицензия
 
-TeleDrive распространяется под свободной лицензией [GNU GPL-3.0 License](./LICENSE).
+TeleDrive распространяется под свободной лицензией [GNU GPL-3.0 License](../LICENSE).
 
 *Отказ от ответственности: TeleDrive является независимым проектом с открытым исходным кодом и не связан, не спонсируется и не поддерживается компанией Telegram FZ-LLC. Хранение файлов регулируется Условиями использования и политикой Telegram.*
 

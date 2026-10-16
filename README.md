@@ -7,7 +7,7 @@
 **Unlimited personal cloud storage, powered by your own private Telegram channel.**  
 Zero server costs. Zero subscriptions. Direct MTProto encryption straight to Telegram.
 
-[**English**](README.md) • [**Português (Brasil)**](README-pt-BR.md) • [**Español**](README-es.md) • [**简体中文**](README-zh-CN.md) • [**Русский**](README-ru.md) • [**日本語**](README-ja.md) • [**Deutsch**](README-de.md)
+[**English**](README.md) • [**Português (Brasil)**](locales/README-pt-BR.md) • [**Español**](locales/README-es.md) • [**简体中文**](locales/README-zh-CN.md) • [**Русский**](locales/README-ru.md) • [**日本語**](locales/README-ja.md) • [**Deutsch**](locales/README-de.md)
 
 [![Total Downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsenapati484%2Fteledrive%2Fmain%2F.github%2Fstats%2Fdownloads.json&style=flat-square&logo=sourceforge&logoColor=white)](https://sourceforge.net/projects/teledrive/files/)
 [![Latest Release](https://img.shields.io/badge/release-v0.1.1-2082f7.svg?style=flat-square)](https://sourceforge.net/projects/teledrive/files/v0.1.1/)
