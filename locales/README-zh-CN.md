@@ -1,18 +1,18 @@
 <div align="center">
 
-<img src="src-tauri/icons/icon.png" alt="TeleDrive logo" width="100" height="100" />
+<img src="../src-tauri/icons/icon.png" alt="TeleDrive logo" width="100" height="100" />
 
 # TeleDrive
 
 **基于私人 Telegram 频道打造的无限个人云存储桌面客户端。**  
 零服务器租金 · 零订阅费用 · 直接通过 MTProto 端到端加密直连 Telegram。
 
-[**English**](README.md) • [**Português (Brasil)**](README-pt-BR.md) • [**Español**](README-es.md) • [**简体中文**](README-zh-CN.md) • [**Русский**](README-ru.md) • [**日本語**](README-ja.md) • [**Deutsch**](README-de.md)
+[**English**](../README.md) • [**Português (Brasil)**](README-pt-BR.md) • [**Español**](README-es.md) • [**简体中文**](README-zh-CN.md) • [**Русский**](README-ru.md) • [**日本語**](README-ja.md) • [**Deutsch**](README-de.md)
 
 [![总下载量](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsenapati484%2Fteledrive%2Fmain%2F.github%2Fstats%2Fdownloads.json&style=flat-square&logo=sourceforge&logoColor=white)](https://sourceforge.net/projects/teledrive/files/)
 [![最新版本](https://img.shields.io/badge/版本-v0.1.1-2082f7.svg?style=flat-square)](https://sourceforge.net/projects/teledrive/files/v0.1.1/)
 [![YouTube 演示视频](https://img.shields.io/badge/YouTube-演示视频-red.svg?style=flat-square&logo=youtube&logoColor=white)](https://youtu.be/4AiMn7HSlFg)
-[![开源协议: GPL v3](https://img.shields.io/badge/开源协议-GPLv3-gray.svg?style=flat-square)](./LICENSE)
+[![开源协议: GPL v3](https://img.shields.io/badge/开源协议-GPLv3-gray.svg?style=flat-square)](../LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/senapati484/teledrive?style=flat-square&logo=github)](https://github.com/senapati484/teledrive/stargazers)
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-FFC131.svg?style=flat-square&logo=tauri&logoColor=black)](https://tauri.app/)
 [![React 19](https://img.shields.io/badge/React-19-61dafb.svg?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
@@ -167,7 +167,7 @@ npm run tauri build
 
 ## 📜 开源协议
 
-TeleDrive 遵循 [GNU GPL-3.0 License](./LICENSE) 开源协议。
+TeleDrive 遵循 [GNU GPL-3.0 License](../LICENSE) 开源协议。
 
 *免责声明：TeleDrive 是一个独立的开源项目，未受 Telegram FZ-LLC 赞助、认可或存在附属关系。存储大容量文件需遵守 Telegram 服务条款和 API 公平使用政策。*
 

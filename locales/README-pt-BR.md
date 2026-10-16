@@ -1,18 +1,18 @@
 <div align="center">
 
-<img src="src-tauri/icons/icon.png" alt="TeleDrive logo" width="100" height="100" />
+<img src="../src-tauri/icons/icon.png" alt="TeleDrive logo" width="100" height="100" />
 
 # TeleDrive
 
 **Armazenamento em nuvem pessoal e ilimitado, alimentado pelo seu próprio canal privado do Telegram.**  
 Zero custos com servidores. Zero assinaturas. Criptografia MTProto direta para o Telegram.
 
-[**English**](README.md) • [**Português (Brasil)**](README-pt-BR.md) • [**Español**](README-es.md) • [**简体中文**](README-zh-CN.md) • [**Русский**](README-ru.md) • [**日本語**](README-ja.md) • [**Deutsch**](README-de.md)
+[**English**](../README.md) • [**Português (Brasil)**](README-pt-BR.md) • [**Español**](README-es.md) • [**简体中文**](README-zh-CN.md) • [**Русский**](README-ru.md) • [**日本語**](README-ja.md) • [**Deutsch**](README-de.md)
 
 [![Total de Downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsenapati484%2Fteledrive%2Fmain%2F.github%2Fstats%2Fdownloads.json&style=flat-square&logo=sourceforge&logoColor=white)](https://sourceforge.net/projects/teledrive/files/)
 [![Última Versão](https://img.shields.io/badge/versão-v0.1.1-2082f7.svg?style=flat-square)](https://sourceforge.net/projects/teledrive/files/v0.1.1/)
 [![Demonstração no YouTube](https://img.shields.io/badge/YouTube-Vídeo%20Demo-red.svg?style=flat-square&logo=youtube&logoColor=white)](https://youtu.be/4AiMn7HSlFg)
-[![Licença: GPL v3](https://img.shields.io/badge/licen%C3%A7a-GPLv3-gray.svg?style=flat-square)](./LICENSE)
+[![Licença: GPL v3](https://img.shields.io/badge/licen%C3%A7a-GPLv3-gray.svg?style=flat-square)](../LICENSE)
 [![Estrelas no GitHub](https://img.shields.io/github/stars/senapati484/teledrive?style=flat-square&logo=github)](https://github.com/senapati484/teledrive/stargazers)
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-FFC131.svg?style=flat-square&logo=tauri&logoColor=black)](https://tauri.app/)
 [![React 19](https://img.shields.io/badge/React-19-61dafb.svg?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
@@ -167,7 +167,7 @@ Contribuições, sugestões e correções são muito bem-vindas!
 
 ## 📜 Licença
 
-O TeleDrive é um software de código aberto licenciado sob a [GNU GPL-3.0 License](./LICENSE).
+O TeleDrive é um software de código aberto licenciado sob a [GNU GPL-3.0 License](../LICENSE).
 
 *Aviso Legal: O TeleDrive é um projeto independente de código aberto e não é afiliado, patrocinado ou endossado pela Telegram FZ-LLC. O armazenamento de grandes volumes de arquivos está sujeito aos Termos de Serviço e às políticas de uso justo da API do Telegram.*
 
