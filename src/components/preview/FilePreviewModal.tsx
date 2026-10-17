@@ -66,6 +66,8 @@ import { CodeEditor } from "./CodeEditor";
 import { CsvTableViewer } from "./CsvTableViewer";
 import { PdfViewer } from "./PdfViewer";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
+import i18n from "@/i18n";
 
 // ─── PDF-specific Error Boundary (isolates PDF crashes from the rest of the modal)
 class PdfErrorBoundary extends Component<{ children: ReactNode; onRetry?: () => void }, { hasError: boolean }> {
@@ -79,13 +81,13 @@ class PdfErrorBoundary extends Component<{ children: ReactNode; onRetry?: () => 
           <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 mb-4">
             <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
           </div>
-          <h3 className="text-base font-semibold mb-2">PDF viewer encountered an error</h3>
-          <p className="text-sm text-slate-400 mb-5">The PDF could not be rendered. Try reloading.</p>
+          <h3 className="text-base font-semibold mb-2">{i18n.t("preview:pdfErrorBoundary.title")}</h3>
+          <p className="text-sm text-slate-400 mb-5">{i18n.t("preview:pdfErrorBoundary.description")}</p>
           <button
             onClick={() => { this.setState({ hasError: false }); this.props.onRetry?.(); }}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-sm transition-colors cursor-pointer"
           >
-            Retry
+            {i18n.t("preview:pdfErrorBoundary.retry")}
           </button>
         </div>
       );
@@ -179,6 +181,7 @@ interface Props {
 // ─── Component ────────────────────────────────────────────────────────────
 
 export function FilePreviewModal({ file, initialEditMode = false, onClose }: Props) {
+  const { t } = useTranslation("preview");
   const isDark = useDarkMode();
 
   // ── Download / load state ────────────────────────────────────────────────
@@ -686,7 +689,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
           // Normalize line endings to LF (\n) to ensure consistent line counting and rendering
           text = text.replace(/\r\n|\r/g, "\n");
           if (isTruncated) {
-            text += "\n\n--- [Preview truncated: File exceeds 3MB limit] ---";
+            text += `\n\n${t("truncatedNotice")}`;
           }
           if (!current) return;
           setTextContent(text);
@@ -712,9 +715,9 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
       } catch (err: any) {
         if (current) {
           if (!navigator.onLine && !file.offline) {
-            setError("You are currently offline, and this file has not been marked as 'Available offline'. Connect to the internet to open it.");
+            setError(t("errors.offlineUnavailable"));
           } else {
-            setError(err.message || "Failed to download file.");
+            setError(err.message || t("errors.downloadFailed"));
           }
         }
       } finally {
@@ -770,7 +773,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
           const offlineBuf = await readOfflineCache(file.id);
           await saveBinaryFile(tempFilePath, offlineBuf);
         } else {
-          toast.info("Preparing document for system viewer...");
+          toast.info(t("toast.preparingSystemViewer"));
           const buf = await downloadFileToBuffer(file.channelId, file.messageId);
           await saveBinaryFile(tempFilePath, buf);
         }
@@ -783,13 +786,13 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
         const { invoke } = await import("@tauri-apps/api/core");
         await invoke("open_file_in_system_viewer", { path: tempFilePath });
       }
-      toast.success("Opened document in system viewer.");
+      toast.success(t("toast.openedInSystemViewer"));
     } catch (err: any) {
       console.error("Failed to open document in system app:", err);
-      toast.error("Could not open system viewer. Downloading file instead...");
+      toast.error(t("toast.systemViewerFailed"));
       downloadFileFromTelegram(file.channelId, file.messageId, file.name).catch(() => {});
     }
-  }, [file]);
+  }, [file, t]);
 
   const handleEnterEdit = useCallback(() => {
     setEditContent(textContent ?? "");
@@ -865,7 +868,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
       setIsEditMode(false);
       setEditContent("");
       setSaveStatus("saved");
-      toast.success(`"${file.name}" saved successfully!`);
+      toast.success(t("toast.saved", { name: file.name }));
     } catch (err: any) {
       // Hard error path: roll back the optimistic files array.
       if (pushedSnapshot) {
@@ -880,11 +883,11 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
         }
       }
       setSaveStatus("error");
-      toast.error(`Save failed: ${err.message ?? "Unknown error"}`);
+      toast.error(t("toast.saveFailed", { message: err.message ?? t("toast.unknownError") }));
     } finally {
       setIsSaving(false);
     }
-  }, [file, editContent, isSaving]);
+  }, [file, editContent, isSaving, t]);
 
   // ── O2 Code Editor integration ──────────────────────────────────────────
   const handleOpenInO2 = useCallback(async () => {
@@ -910,8 +913,8 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
     navigator.clipboard.writeText(current);
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
-    toast.success("Copied to clipboard");
-  }, [isEditMode, editContent, textContent]);
+    toast.success(t("toast.copied"));
+  }, [isEditMode, editContent, textContent, t]);
 
   const cycleFontSize = useCallback(() => {
     setCodeFontSize(prev => {
@@ -932,11 +935,11 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
       } else {
         setTextContent(formatted);
       }
-      toast.success("JSON formatted");
+      toast.success(t("toast.jsonFormatted"));
     } catch (e: any) {
-      toast.error(`Invalid JSON: ${e.message}`);
+      toast.error(t("toast.invalidJson", { message: e.message }));
     }
-  }, [isEditMode, editContent, textContent]);
+  }, [isEditMode, editContent, textContent, t]);
 
   // ── Derived state ─────────────────────────────────────────────────────────
   const langInfo        = detectLang(file?.name ?? "");
@@ -967,19 +970,19 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
   if (isMarkdownPreview && textContent) {
     const words = textContent.trim().split(/\s+/).filter(Boolean).length;
     const readingMin = Math.max(1, Math.ceil(words / 200));
-    statusParts.push(`${words.toLocaleString()} words`);
-    statusParts.push(`${readingMin} min read`);
+    statusParts.push(t("status.words", { count: words }));
+    statusParts.push(t("status.readingTime", { count: readingMin }));
   } else if (isTableView && textContent) {
     const lines = textContent.split("\n").filter(l => l.trim().length > 0).length;
-    statusParts.push(`${lines.toLocaleString()} rows`);
+    statusParts.push(t("status.rows", { count: lines }));
   } else if (textContent !== null) {
     const lc = (isEditMode ? editContent : textContent).split("\n").length;
-    statusParts.push(`${lc.toLocaleString()} lines`);
-    statusParts.push(wrapLines ? "Wrap: On" : "Wrap: Off");
+    statusParts.push(t("status.lines", { count: lc }));
+    statusParts.push(wrapLines ? t("status.wrapOn") : t("status.wrapOff"));
     statusParts.push(`${codeFontSize}px`);
   }
   statusParts.push("UTF-8");
-  if (isEditMode) statusParts.push(`Ln ${cursorPos.line}, Col ${cursorPos.col}`);
+  if (isEditMode) statusParts.push(t("status.cursor", { line: cursorPos.line, col: cursorPos.col }));
 
   if (!file) return null;
 
@@ -1030,7 +1033,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                 border: `1px solid ${colors.editBadgeBdr}`,
               }}
             >
-              Editing
+              {t("topbar.editing")}
             </span>
           )}
 
@@ -1039,7 +1042,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
               className="shrink-0 flex items-center gap-1 text-[11px] font-bold text-emerald-500"
             >
               <CheckCircle2 className="h-3 w-3" />
-              Saved
+              {t("topbar.saved")}
             </span>
           )}
         </div>
@@ -1057,7 +1060,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                 onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
               >
                 <XIcon className="h-3.5 w-3.5" />
-                Cancel
+                {t("topbar.cancel")}
               </button>
               <Button
                 size="sm"
@@ -1066,8 +1069,8 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                 className="h-7 px-3 text-[12px] font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-lg cursor-pointer disabled:opacity-50 transition-colors duration-150"
               >
                 {isSaving
-                  ? <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />Saving…</>
-                  : <><Save className="h-3.5 w-3.5 mr-1.5" />Save</>
+                  ? <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />{t("topbar.saving")}</>
+                  : <><Save className="h-3.5 w-3.5 mr-1.5" />{t("topbar.save")}</>
                 }
               </Button>
             </>
@@ -1088,7 +1091,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     }`}
                   >
                     <Eye className="h-3 w-3" />
-                    <span className="hidden sm:inline">Preview</span>
+                    <span className="hidden sm:inline">{t("viewMode.preview")}</span>
                   </button>
                   <button
                     onClick={() => setMdViewMode("source")}
@@ -1099,7 +1102,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     }`}
                   >
                     <Code className="h-3 w-3" />
-                    <span className="hidden sm:inline">Source</span>
+                    <span className="hidden sm:inline">{t("viewMode.source")}</span>
                   </button>
                 </div>
               )}
@@ -1118,7 +1121,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     }`}
                   >
                     <FileSpreadsheet className="h-3 w-3" />
-                    <span className="hidden sm:inline">Table</span>
+                    <span className="hidden sm:inline">{t("viewMode.table")}</span>
                   </button>
                   <button
                     onClick={() => setCsvViewMode("source")}
@@ -1129,7 +1132,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     }`}
                   >
                     <Code className="h-3 w-3" />
-                    <span className="hidden sm:inline">Raw</span>
+                    <span className="hidden sm:inline">{t("viewMode.raw")}</span>
                   </button>
                 </div>
               )}
@@ -1148,7 +1151,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     }`}
                   >
                     <ImageIcon className="h-3 w-3" />
-                    <span className="hidden sm:inline">Vector</span>
+                    <span className="hidden sm:inline">{t("viewMode.vector")}</span>
                   </button>
                   <button
                     onClick={() => setSvgViewMode("code")}
@@ -1159,7 +1162,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     }`}
                   >
                     <Code className="h-3 w-3" />
-                    <span className="hidden sm:inline">Code</span>
+                    <span className="hidden sm:inline">{t("viewMode.code")}</span>
                   </button>
                 </div>
               )}
@@ -1168,14 +1171,14 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
               {isJsonFile && textContent !== null && (
                 <button
                   onClick={handleFormatJson}
-                  title="Format JSON (Prettify)"
+                  title={t("topbar.formatJsonTitle")}
                   className="flex items-center gap-1 h-7 px-2 text-[12px] font-semibold rounded-lg cursor-pointer transition-colors"
                   style={{ color: colors.muted }}
                   onMouseEnter={e => (e.currentTarget.style.background = colors.hover)}
                   onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                 >
                   <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                  <span className="hidden md:inline">Format</span>
+                  <span className="hidden md:inline">{t("topbar.format")}</span>
                 </button>
               )}
 
@@ -1183,7 +1186,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                 <>
                   <button
                     onClick={() => setWrapLines(!wrapLines)}
-                    title={wrapLines ? "Disable word wrap" : "Enable word wrap"}
+                    title={wrapLines ? t("topbar.disableWrap") : t("topbar.enableWrap")}
                     className={`flex items-center justify-center h-7 w-8 rounded-lg cursor-pointer transition-colors ${
                       wrapLines ? "text-blue-600 bg-blue-500/10 dark:text-blue-400 dark:bg-blue-500/20" : ""
                     }`}
@@ -1195,7 +1198,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                   </button>
                   <button
                     onClick={cycleFontSize}
-                    title={`Font size: ${codeFontSize}px (click to toggle)`}
+                    title={t("topbar.fontSizeTitle", { size: codeFontSize })}
                     className="flex items-center gap-0.5 h-7 px-2 rounded-lg cursor-pointer transition-colors text-[11px] font-mono font-medium"
                     style={{ color: colors.muted }}
                     onMouseEnter={e => (e.currentTarget.style.background = colors.hover)}
@@ -1210,7 +1213,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
               {textContent !== null && (
                 <button
                   onClick={handleCopyContent}
-                  title="Copy content to clipboard"
+                  title={t("topbar.copyTitle")}
                   className="flex items-center justify-center h-7 w-8 rounded-lg cursor-pointer transition-colors duration-150"
                   style={{ color: colors.muted }}
                   onMouseEnter={e => (e.currentTarget.style.background = colors.hover)}
@@ -1224,7 +1227,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
               {canRunInO2 && (
                 <button
                   onClick={handleOpenInO2}
-                  title="Run in O2 Code Editor"
+                  title={t("topbar.runTitle")}
                   className="flex items-center gap-1.5 h-7 px-2.5 text-[12px] font-semibold rounded-lg cursor-pointer transition-all duration-150"
                   style={{ color: isDark ? "#34d399" : "#059669" }}
                   onMouseEnter={e => {
@@ -1233,27 +1236,27 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                   onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                 >
                   <ExternalLink className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Run</span>
+                  <span className="hidden sm:inline">{t("topbar.run")}</span>
                 </button>
               )}
 
               {canEdit && (
                 <button
                   onClick={handleEnterEdit}
-                  title="Edit file"
+                  title={t("topbar.editTitle")}
                   className="flex items-center gap-1.5 h-7 px-2.5 text-[12px] font-semibold rounded-lg cursor-pointer transition-colors duration-150"
                   style={{ color: colors.muted }}
                   onMouseEnter={e => (e.currentTarget.style.background = colors.hover)}
                   onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                 >
                   <Pencil className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Edit</span>
+                  <span className="hidden sm:inline">{t("topbar.edit")}</span>
                 </button>
               )}
               {(isImage || isSvgImageView) && (
                 <button
                   onClick={() => setShowDetails(!showDetails)}
-                  title="Toggle details"
+                  title={t("topbar.toggleDetails")}
                   className={`flex items-center justify-center h-7 w-8 rounded-lg cursor-pointer transition-colors duration-150 ${showDetails ? "text-blue-500 bg-blue-500/10 dark:bg-blue-500/20" : ""}`}
                   style={{ color: showDetails ? undefined : colors.muted }}
                   onMouseEnter={e => { if (!showDetails) e.currentTarget.style.background = colors.hover; }}
@@ -1265,7 +1268,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
               {isPdf && (
                 <button
                   onClick={handleOpenInSystemApp}
-                  title="Open in System Default PDF Viewer"
+                  title={t("topbar.openInSystemViewerTitle")}
                   className="flex items-center gap-1.5 h-7 px-2.5 text-[12px] font-semibold rounded-lg cursor-pointer transition-colors duration-150 mr-1"
                   style={{
                     color: colors.text,
@@ -1276,12 +1279,12 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                   onMouseLeave={e => (e.currentTarget.style.background = colors.badgeBg)}
                 >
                   <ExternalLink className="h-3.5 w-3.5 text-blue-500" />
-                  <span className="hidden sm:inline">Open in System Viewer</span>
+                  <span className="hidden sm:inline">{t("topbar.openInSystemViewer")}</span>
                 </button>
               )}
               <button
                 onClick={handleDownload}
-                title="Download"
+                title={t("topbar.download")}
                 className="flex items-center justify-center h-7 w-8 rounded-lg cursor-pointer transition-colors duration-150"
                 style={{ color: colors.muted }}
                 onMouseEnter={e => (e.currentTarget.style.background = colors.hover)}
@@ -1293,7 +1296,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
           )}
           <button
             onClick={onClose}
-            title="Close"
+            title={t("topbar.close")}
             className="flex items-center justify-center h-7 w-8 rounded-lg cursor-pointer transition-colors duration-150 ml-0.5 hover:text-red-500"
             style={{ color: colors.muted }}
             onMouseEnter={e => (e.currentTarget.style.background = colors.hover)}
@@ -1316,7 +1319,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                 className="text-[10px] font-bold font-mono uppercase tracking-widest"
                 style={{ color: colors.muted }}
               >
-                Loading…
+                {t("loading")}
               </span>
               <div
                 className="w-36 h-1 rounded-full overflow-hidden"
@@ -1354,7 +1357,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
               onClick={handleDownload}
               className="px-5 py-2 rounded-xl text-[12px] font-bold bg-blue-600 hover:bg-blue-500 text-white transition-colors duration-150 cursor-pointer"
             >
-              Download Instead
+              {t("downloadInstead")}
             </button>
           </div>
         )}
@@ -1407,7 +1410,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                   <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2.5 px-4 py-2 rounded-full border shadow-xl backdrop-blur-md bg-white/75 dark:bg-slate-900/70 border-slate-200/50 dark:border-slate-800/40 text-slate-700 dark:text-slate-250 z-20">
                     <button
                       onClick={zoomOut}
-                      title="Zoom Out"
+                      title={t("image.zoomOut")}
                       className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                     >
                       <ZoomOut className="h-4 w-4" />
@@ -1417,7 +1420,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     </span>
                     <button
                       onClick={zoomIn}
-                      title="Zoom In"
+                      title={t("image.zoomIn")}
                       className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                     >
                       <ZoomIn className="h-4 w-4" />
@@ -1425,7 +1428,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     <div className="h-4 w-px bg-slate-200 dark:bg-slate-800" />
                     <button
                       onClick={resetZoom}
-                      title="Zoom Fit / Reset"
+                      title={t("image.resetZoom")}
                       className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                     >
                       <RotateCcw className="h-4 w-4" />
@@ -1433,14 +1436,14 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     <div className="h-4 w-px bg-slate-200 dark:bg-slate-800" />
                     <button
                       onClick={rotateCounterClockwise}
-                      title="Rotate Counter-Clockwise"
+                      title={t("image.rotateCounterClockwise")}
                       className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                     >
                       <RotateCw className="h-4 w-4 -scale-x-100" />
                     </button>
                     <button
                       onClick={rotateClockwise}
-                      title="Rotate Clockwise"
+                      title={t("image.rotateClockwise")}
                       className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                     >
                       <RotateCw className="h-4 w-4" />
@@ -1448,7 +1451,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     <div className="h-4 w-px bg-slate-200 dark:bg-slate-800" />
                     <button
                       onClick={() => setShowGrid(!showGrid)}
-                      title="Toggle Grid Background"
+                      title={t("image.toggleGrid")}
                       className={`p-1 rounded-lg transition-colors cursor-pointer ${showGrid ? "text-blue-500" : ""}`}
                     >
                       <Grid3X3 className="h-4 w-4" />
@@ -1466,7 +1469,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     }}
                   >
                     <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: colors.border }}>
-                      <span className="text-[12px] font-bold uppercase tracking-wider text-slate-400">File Details</span>
+                      <span className="text-[12px] font-bold uppercase tracking-wider text-slate-400">{t("details.title")}</span>
                       <button
                         onClick={() => setShowDetails(false)}
                         className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-250 cursor-pointer"
@@ -1476,31 +1479,31 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     </div>
                     <div className="p-4 flex flex-col gap-4 overflow-y-auto text-[12px]">
                       <div>
-                        <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">Name</div>
+                        <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">{t("details.name")}</div>
                         <div className="font-semibold break-all text-slate-700 dark:text-slate-300">{file.name}</div>
                       </div>
                       <div>
-                        <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">Dimensions</div>
+                        <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">{t("details.dimensions")}</div>
                         <div className="font-semibold text-slate-700 dark:text-slate-300">
-                          {dimensions ? `${dimensions.width} × ${dimensions.height} px` : "Loading..."}
+                          {dimensions ? `${dimensions.width} × ${dimensions.height} px` : t("details.loadingDimensions")}
                         </div>
                       </div>
                       <div>
-                        <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">File Size</div>
+                        <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">{t("details.fileSize")}</div>
                         <div className="font-semibold text-slate-700 dark:text-slate-300">{formatSize(file.size)}</div>
                       </div>
                       <div>
-                        <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">Mime Type</div>
+                        <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">{t("details.mimeType")}</div>
                         <div className="font-mono text-slate-750 dark:text-slate-400">{file.mime}</div>
                       </div>
                       <div>
-                        <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">Path</div>
+                        <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">{t("details.path")}</div>
                         <div className="font-semibold text-slate-700 dark:text-slate-300 font-mono text-[11px] bg-slate-100 dark:bg-slate-900 px-1.5 py-0.5 rounded border border-slate-200/50 dark:border-slate-800/50 inline-block">{file.folderPath}</div>
                       </div>
                       <div>
-                        <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">Uploaded At</div>
+                        <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">{t("details.uploadedAt")}</div>
                         <div className="font-semibold text-slate-700 dark:text-slate-300">
-                          {new Date(file.uploadedAt).toLocaleString()}
+                          {new Date(file.uploadedAt).toLocaleString(i18n.language)}
                         </div>
                       </div>
                     </div>
@@ -1583,7 +1586,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
 
                       <button
                         onClick={() => skipVideo(-10)}
-                        title="Skip back 10s"
+                        title={t("media.skipBack")}
                         className="p-1 hover:bg-white/10 rounded-lg transition-colors cursor-pointer text-white/85 hover:text-white"
                       >
                         <SkipBack className="h-4 w-4" />
@@ -1591,7 +1594,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
 
                       <button
                         onClick={() => skipVideo(10)}
-                        title="Skip forward 10s"
+                        title={t("media.skipForward")}
                         className="p-1 hover:bg-white/10 rounded-lg transition-colors cursor-pointer text-white/85 hover:text-white"
                       >
                         <SkipForward className="h-4 w-4" />
@@ -1761,7 +1764,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     </p>
                     <p className="text-[11px] font-semibold mt-1 flex items-center justify-center gap-1.5" style={{ color: colors.muted }}>
                       <span className="h-1.5 w-1.5 rounded-full bg-teal-500 animate-ping" style={{ animationPlayState: isAudioPlaying ? "running" : "paused" }} />
-                      Audio Track
+                      {t("media.audioTrack")}
                     </p>
                   </div>
 
@@ -1786,7 +1789,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                   <div className="flex items-center justify-center gap-5 w-full">
                     <button
                       onClick={() => skipAudio(-10)}
-                      title="Skip back 10s"
+                      title={t("media.skipBack")}
                       className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800/60 rounded-xl transition-colors cursor-pointer"
                       style={{ color: colors.muted }}
                     >
@@ -1806,7 +1809,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
 
                     <button
                       onClick={() => skipAudio(10)}
-                      title="Skip forward 10s"
+                      title={t("media.skipForward")}
                       className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800/60 rounded-xl transition-colors cursor-pointer"
                       style={{ color: colors.muted }}
                     >
@@ -1976,21 +1979,21 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                   </h3>
                   <div className="flex items-center gap-2 mb-4">
                     <span className="text-[11px] font-mono px-2 py-0.5 rounded-md font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                      {ext.toUpperCase()} ARCHIVE
+                      {t("archive.badge", { ext: ext.toUpperCase() })}
                     </span>
                     <span className="text-[11px] font-mono" style={{ color: colors.muted }}>
                       {formatSize(file.size)}
                     </span>
                   </div>
                   <p className="text-xs leading-relaxed mb-6" style={{ color: colors.muted }}>
-                    Compressed archives cannot be previewed directly in-browser. Download this archive to extract and view its contents on your computer.
+                    {t("archive.description")}
                   </p>
                   <button
                     onClick={handleDownload}
                     className="flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-semibold bg-[#0b57d0] hover:bg-[#0842a0] text-white shadow-xs transition-colors cursor-pointer"
                   >
                     <Download className="h-4 w-4" />
-                    Download Archive
+                    {t("archive.download")}
                   </button>
                 </div>
               </div>
@@ -2021,14 +2024,14 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     </span>
                   </div>
                   <p className="text-xs leading-relaxed mb-6" style={{ color: colors.muted }}>
-                    No preview is available for this file type. You can download and open it in a compatible application on your system.
+                    {t("unsupported.description")}
                   </p>
                   <button
                     onClick={handleDownload}
                     className="flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-semibold bg-[#0b57d0] hover:bg-[#0842a0] text-white shadow-xs transition-colors cursor-pointer"
                   >
                     <Download className="h-4 w-4" />
-                    Download File
+                    {t("unsupported.download")}
                   </button>
                 </div>
               </div>
@@ -2056,7 +2059,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
           </div>
           {isEditMode && (
             <span className="text-[11px] font-mono" style={{ color: isDark ? "#374151" : "#94a3b8" }}>
-              Tab: 2 spaces · UTF-8 · LF
+              {t("status.editorInfo")}
             </span>
           )}
         </div>

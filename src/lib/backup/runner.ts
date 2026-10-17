@@ -59,6 +59,7 @@ import { enqueueSave } from "../storage/indexQueue";
 import { isHardError } from "../telegram/rateLimit";
 import { reconstructMissingFolders } from "../storage/metadataStore";
 import type { TeleFile } from "../types";
+import i18n from "@/i18n";
 
 /**
  * Breather between batches. After every BACKUP_BATCH_SIZE successful
@@ -270,7 +271,7 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
   if (!folders.paths || folders.paths.length === 0) {
     return {
       ...baseResult,
-      error: "Pick at least one folder in Settings → Plan & Devices first.",
+      error: i18n.t("messages:backup.errors.noFolders"),
       status: "failed",
       durationMs: Date.now() - startedAt,
       finishedAt: Date.now(),
@@ -293,7 +294,7 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
   if (!channelId) {
     return {
       ...baseResult,
-      error: "Storage channel is not ready. Please complete first login.",
+      error: i18n.t("messages:backup.errors.channelNotReady"),
       status: "failed",
       durationMs: Date.now() - startedAt,
       finishedAt: Date.now(),
@@ -310,7 +311,7 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
     const msg = err instanceof Error ? err.message : String(err);
     return {
       ...baseResult,
-      error: `Telegram client unreachable: ${msg}`,
+      error: i18n.t("messages:backup.errors.clientUnreachable", { message: msg }),
       status: "failed",
       durationMs: Date.now() - startedAt,
       finishedAt: Date.now(),
@@ -325,7 +326,7 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
     const msg = err instanceof Error ? err.message : String(err);
     return {
       ...baseResult,
-      error: `Walker failed: ${msg}`,
+      error: i18n.t("messages:backup.errors.walkerFailed", { message: msg }),
       status: "failed",
       durationMs: Date.now() - startedAt,
       finishedAt: Date.now(),
@@ -355,7 +356,7 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
   if (isManifestCorrupt()) {
     return {
       ...baseResult,
-      error: "Backup manifest is corrupt — refusing to upload until reviewed.",
+      error: i18n.t("messages:backup.errors.manifestCorrupt"),
       status: "failed",
       durationMs: Date.now() - startedAt,
       finishedAt: Date.now(),
@@ -380,7 +381,7 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
   // the backup runner would race the user's regular upload queue.
   for (let i = 0; i < diff.toUpload.length; i++) {
     if (opts.signal?.aborted) {
-      firstError ??= "Cancelled by user.";
+      firstError ??= i18n.t("messages:backup.errors.cancelled");
       break;
     }
 
@@ -634,7 +635,7 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
         // actually happened (and the user knows the magnitude of the loss).
         filesFailed += diff.toUpload.length - i - 1;
         firstError ??=
-          "Telegram session expired. Reconnect your account in Settings → Telegram Account, then run the backup again.";
+          i18n.t("messages:backup.errors.sessionExpired");
         console.warn(
           `[backup.runner] hard Telegram error; aborting run. ${diff.toUpload.length - i - 1} files remaining skipped.`,
         );

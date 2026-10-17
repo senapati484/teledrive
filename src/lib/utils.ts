@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import i18n from "@/i18n"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -16,25 +17,25 @@ export function cn(...inputs: ClassValue[]) {
 export function formatDistanceToNow(timestampMs: number): string {
   const now = Date.now();
   const diffMs = now - timestampMs;
-  if (!Number.isFinite(diffMs)) return "unknown";
-  if (diffMs < 0) return "just now"; // future / clock skew
+  if (!Number.isFinite(diffMs)) return i18n.t("messages:relativeTime.unknown");
+  if (diffMs < 0) return i18n.t("messages:relativeTime.justNow"); // future / clock skew
 
   const seconds = Math.floor(diffMs / 1000);
-  if (seconds < 60) return seconds <= 1 ? "1 second" : `${seconds} seconds`;
+  if (seconds < 60) return i18n.t("messages:relativeTime.second", { count: Math.max(seconds, 1) });
 
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return minutes === 1 ? "1 minute" : `${minutes} minutes`;
+  if (minutes < 60) return i18n.t("messages:relativeTime.minute", { count: minutes });
 
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return hours === 1 ? "1 hour" : `${hours} hours`;
+  if (hours < 24) return i18n.t("messages:relativeTime.hour", { count: hours });
 
   const days = Math.floor(hours / 24);
-  if (days < 30) return days === 1 ? "1 day" : `${days} days`;
+  if (days < 30) return i18n.t("messages:relativeTime.day", { count: days });
 
   const months = Math.floor(days / 30);
-  if (months < 12) return months === 1 ? "1 month" : `${months} months`;
+  if (months < 12) return i18n.t("messages:relativeTime.month", { count: months });
 
   const years = Math.floor(months / 12);
-  return years === 1 ? "1 year" : `${years} years`;
+  return i18n.t("messages:relativeTime.year", { count: years });
 }
 

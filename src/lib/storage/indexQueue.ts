@@ -35,6 +35,7 @@ import {
   parseFloodWaitSeconds,
 } from "../telegram/rateLimit";
 import { invoke } from "@tauri-apps/api/core";
+import i18n from "@/i18n";
 
 import type { TeleFile } from "../types";
 
@@ -190,7 +191,7 @@ class ChannelQueue {
       if (this.lastError) {
         store.setIndexQueueError(
           parseFloodWaitSeconds(this.lastError) != null
-            ? "Telegram rate limit — retrying"
+            ? i18n.t("messages:indexQueue.rateLimitRetrying")
             : this.lastError?.message ?? String(this.lastError)
         );
       }

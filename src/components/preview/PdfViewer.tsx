@@ -24,6 +24,7 @@ import {
   useMemo,
   memo,
 } from "react";
+import { useTranslation } from "react-i18next";
 import {
   ChevronLeft,
   ChevronRight,
@@ -179,6 +180,7 @@ const PageCanvas = memo(function PageCanvas({
 // ─── Main PdfViewer Component ─────────────────────────────────────────────────
 
 export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
+  const { t } = useTranslation("preview");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
 
@@ -187,6 +189,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
   const [totalPages, setTotalPages] = useState(0);
   const [pages, setPages] = useState<PageEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  // Holds a translation key (resolved at render time) rather than the message itself
   const [error, setError] = useState<string | null>(null);
   const pdfDocRef = useRef<any>(null); // for cleanup
 
@@ -218,7 +221,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
     pageRefs.current = [];
 
     if (!data || data.length === 0) {
-      setError("No document data received.");
+      setError("pdf.errors.noData");
       setLoading(false);
       return;
     }
@@ -294,12 +297,12 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
         console.error("[PdfViewer] Failed to load PDF:", err);
         const msg =
           err?.message?.includes("Invalid PDF")
-            ? "This file appears to be corrupted or is not a valid PDF."
+            ? "pdf.errors.invalid"
             : err?.message?.includes("Password")
-            ? "This PDF is password-protected. Password-protected PDFs are not supported."
+            ? "pdf.errors.passwordProtected"
             : err?.message?.includes("engine")
-            ? err.message
-            : "Failed to load the PDF document. The file may be corrupted.";
+            ? "pdf.errors.engineUnavailable"
+            : "pdf.errors.loadFailed";
         setError(msg);
       } finally {
         if (!cancelled) setLoading(false);
@@ -541,9 +544,9 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
           </div>
         </div>
         <div className="text-center">
-          <p className="text-sm font-semibold text-slate-200">Loading PDF document</p>
+          <p className="text-sm font-semibold text-slate-200">{t("pdf.loading")}</p>
           <p className="text-xs text-slate-500 mt-1 max-w-[240px]">
-            {fileName || "Preparing your document..."}
+            {fileName || t("pdf.preparing")}
           </p>
         </div>
       </div>
@@ -557,8 +560,8 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
         <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 mb-5">
           <AlertCircle className="h-8 w-8" />
         </div>
-        <h3 className="text-base font-semibold mb-2 text-white">Cannot preview document</h3>
-        <p className="text-sm text-slate-400 max-w-md mb-6 leading-relaxed">{error}</p>
+        <h3 className="text-base font-semibold mb-2 text-white">{t("pdf.errorTitle")}</h3>
+        <p className="text-sm text-slate-400 max-w-md mb-6 leading-relaxed">{t(error)}</p>
         <div className="flex gap-3">
           {onOpenSystemApp && (
             <button
@@ -566,7 +569,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-semibold text-sm transition-colors shadow-lg shadow-blue-600/20 cursor-pointer"
             >
               <ExternalLink className="h-4 w-4" />
-              Open in System Viewer
+              {t("pdf.openInSystemViewer")}
             </button>
           )}
         </div>
@@ -587,7 +590,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
           <button
             onClick={prevPage}
             disabled={currentPage <= 1}
-            title="Previous Page (↑ / PageUp)"
+            title={t("pdf.toolbar.previousPage")}
             className="p-1.5 rounded-md hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
             <ChevronLeft className="h-3.5 w-3.5" />
@@ -619,7 +622,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
                   setPageInputValue(String(currentPage));
                   setIsEditingPage(true);
                 }}
-                title="Click to jump to page"
+                title={t("pdf.toolbar.jumpToPage")}
                 className="px-1.5 py-0.5 rounded text-[12px] bg-black/30 border border-white/10 hover:border-white/25 hover:bg-black/50 transition-colors cursor-pointer tabular-nums"
               >
                 {currentPage}
@@ -632,7 +635,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
           <button
             onClick={nextPage}
             disabled={currentPage >= totalPages}
-            title="Next Page (↓ / PageDown)"
+            title={t("pdf.toolbar.nextPage")}
             className="p-1.5 rounded-md hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
             <ChevronRight className="h-3.5 w-3.5" />
@@ -655,7 +658,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
           <button
             onClick={zoomOut}
             disabled={scale <= MIN_SCALE}
-            title="Zoom Out (Ctrl+-)"
+            title={t("pdf.toolbar.zoomOut")}
             className="p-1.5 rounded-md hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
             <Minus className="h-3 w-3" />
@@ -663,7 +666,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
 
           <button
             onClick={() => setScale(1.0)}
-            title="Reset to 100% (Ctrl+0)"
+            title={t("pdf.toolbar.resetZoom")}
             className="px-2 py-0.5 font-mono text-[11px] rounded hover:bg-white/10 transition-colors cursor-pointer min-w-[46px] text-center tabular-nums"
           >
             {Math.round(scale * 100)}%
@@ -672,7 +675,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
           <button
             onClick={zoomIn}
             disabled={scale >= MAX_SCALE}
-            title="Zoom In (Ctrl+=)"
+            title={t("pdf.toolbar.zoomIn")}
             className="p-1.5 rounded-md hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
             <Plus className="h-3 w-3" />
@@ -682,7 +685,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
 
           <button
             onClick={fitWidth}
-            title="Fit to Width"
+            title={t("pdf.toolbar.fitWidth")}
             className="p-1.5 rounded-md hover:bg-white/10 transition-colors cursor-pointer"
           >
             <Maximize2 className="h-3 w-3" />
@@ -690,15 +693,15 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
 
           <button
             onClick={fitPage}
-            title="Fit Full Page"
+            title={t("pdf.toolbar.fitPage")}
             className="px-2 py-0.5 rounded text-[10px] font-semibold hover:bg-white/10 transition-colors cursor-pointer text-slate-400 hover:text-slate-200"
           >
-            Fit
+            {t("pdf.toolbar.fit")}
           </button>
 
           <button
             onClick={rotate}
-            title="Rotate Clockwise"
+            title={t("pdf.toolbar.rotate")}
             className="p-1.5 rounded-md hover:bg-white/10 transition-colors cursor-pointer"
           >
             <RotateCw className="h-3 w-3" />
@@ -709,7 +712,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
         <div className="flex items-center gap-1.5">
           <button
             onClick={handlePrint}
-            title="Print Document"
+            title={t("pdf.toolbar.print")}
             className="p-1.5 rounded-md hover:bg-white/10 transition-colors cursor-pointer text-slate-400 hover:text-slate-200"
           >
             <Printer className="h-3.5 w-3.5" />
@@ -718,11 +721,11 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
           {onOpenSystemApp && (
             <button
               onClick={onOpenSystemApp}
-              title="Open in System Default PDF Application"
+              title={t("pdf.toolbar.openInSystemAppTitle")}
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-600/80 hover:bg-blue-600 active:bg-blue-700 text-white font-semibold text-[11px] transition-colors cursor-pointer shadow-sm"
             >
               <ExternalLink className="h-3 w-3" />
-              <span className="hidden sm:inline">System Viewer</span>
+              <span className="hidden sm:inline">{t("pdf.toolbar.systemViewer")}</span>
             </button>
           )}
         </div>
@@ -762,7 +765,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
 
           {/* Empty state (shouldn't happen if no error) */}
           {!pdfDoc && !loading && !error && (
-            <div className="text-slate-500 text-sm py-20">No document loaded.</div>
+            <div className="text-slate-500 text-sm py-20">{t("pdf.noDocument")}</div>
           )}
         </div>
       </div>

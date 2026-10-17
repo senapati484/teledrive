@@ -1,0 +1,153 @@
+{
+  "loading": "Loading…",
+  "downloadInstead": "Download Instead",
+  "truncatedNotice": "--- [Preview truncated: File exceeds 3MB limit] ---",
+  "errors": {
+    "offlineUnavailable": "You are currently offline, and this file has not been marked as 'Available offline'. Connect to the internet to open it.",
+    "downloadFailed": "Failed to download file."
+  },
+  "toast": {
+    "preparingSystemViewer": "Preparing document for system viewer...",
+    "openedInSystemViewer": "Opened document in system viewer.",
+    "systemViewerFailed": "Could not open system viewer. Downloading file instead...",
+    "saved": "\"{{name}}\" saved successfully!",
+    "saveFailed": "Save failed: {{message}}",
+    "unknownError": "Unknown error",
+    "copied": "Copied to clipboard",
+    "jsonFormatted": "JSON formatted",
+    "invalidJson": "Invalid JSON: {{message}}"
+  },
+  "topbar": {
+    "editing": "Editing",
+    "saved": "Saved",
+    "cancel": "Cancel",
+    "saving": "Saving…",
+    "save": "Save",
+    "formatJsonTitle": "Format JSON (Prettify)",
+    "format": "Format",
+    "disableWrap": "Disable word wrap",
+    "enableWrap": "Enable word wrap",
+    "fontSizeTitle": "Font size: {{size}}px (click to toggle)",
+    "copyTitle": "Copy content to clipboard",
+    "runTitle": "Run in O2 Code Editor",
+    "run": "Run",
+    "editTitle": "Edit file",
+    "edit": "Edit",
+    "toggleDetails": "Toggle details",
+    "openInSystemViewerTitle": "Open in System Default PDF Viewer",
+    "openInSystemViewer": "Open in System Viewer",
+    "download": "Download",
+    "close": "Close"
+  },
+  "viewMode": {
+    "preview": "Preview",
+    "source": "Source",
+    "table": "Table",
+    "raw": "Raw",
+    "vector": "Vector",
+    "code": "Code"
+  },
+  "image": {
+    "zoomOut": "Zoom Out",
+    "zoomIn": "Zoom In",
+    "resetZoom": "Zoom Fit / Reset",
+    "rotateCounterClockwise": "Rotate Counter-Clockwise",
+    "rotateClockwise": "Rotate Clockwise",
+    "toggleGrid": "Toggle Grid Background"
+  },
+  "details": {
+    "title": "File Details",
+    "name": "Name",
+    "dimensions": "Dimensions",
+    "loadingDimensions": "Loading...",
+    "fileSize": "File Size",
+    "mimeType": "Mime Type",
+    "path": "Path",
+    "uploadedAt": "Uploaded At"
+  },
+  "media": {
+    "skipBack": "Skip back 10s",
+    "skipForward": "Skip forward 10s",
+    "audioTrack": "Audio Track"
+  },
+  "archive": {
+    "badge": "{{ext}} ARCHIVE",
+    "description": "Compressed archives cannot be previewed directly in-browser. Download this archive to extract and view its contents on your computer.",
+    "download": "Download Archive"
+  },
+  "unsupported": {
+    "description": "No preview is available for this file type. You can download and open it in a compatible application on your system.",
+    "download": "Download File"
+  },
+  "status": {
+    "words_one": "{{count, number}} word",
+    "words_other": "{{count, number}} words",
+    "readingTime_one": "{{count}} min read",
+    "readingTime_other": "{{count}} min read",
+    "rows_one": "{{count, number}} row",
+    "rows_other": "{{count, number}} rows",
+    "lines_one": "{{count, number}} line",
+    "lines_other": "{{count, number}} lines",
+    "wrapOn": "Wrap: On",
+    "wrapOff": "Wrap: Off",
+    "cursor": "Ln {{line}}, Col {{col}}",
+    "editorInfo": "Tab: 2 spaces · UTF-8 · LF"
+  },
+  "pdfErrorBoundary": {
+    "title": "PDF viewer encountered an error",
+    "description": "The PDF could not be rendered. Try reloading.",
+    "retry": "Retry"
+  },
+  "pdf": {
+    "loading": "Loading PDF document",
+    "preparing": "Preparing your document...",
+    "errorTitle": "Cannot preview document",
+    "openInSystemViewer": "Open in System Viewer",
+    "noDocument": "No document loaded.",
+    "errors": {
+      "noData": "No document data received.",
+      "invalid": "This file appears to be corrupted or is not a valid PDF.",
+      "passwordProtected": "This PDF is password-protected. Password-protected PDFs are not supported.",
+      "engineUnavailable": "PDF engine is not available. Please reload the application.",
+      "loadFailed": "Failed to load the PDF document. The file may be corrupted."
+    },
+    "toolbar": {
+      "previousPage": "Previous Page (↑ / PageUp)",
+      "jumpToPage": "Click to jump to page",
+      "nextPage": "Next Page (↓ / PageDown)",
+      "zoomOut": "Zoom Out (Ctrl+-)",
+      "resetZoom": "Reset to 100% (Ctrl+0)",
+      "zoomIn": "Zoom In (Ctrl+=)",
+      "fitWidth": "Fit to Width",
+      "fitPage": "Fit Full Page",
+      "fit": "Fit",
+      "rotate": "Rotate Clockwise",
+      "print": "Print Document",
+      "openInSystemAppTitle": "Open in System Default PDF Application",
+      "systemViewer": "System Viewer"
+    }
+  },
+  "csv": {
+    "toast": {
+      "copied": "Copied cell value to clipboard"
+    },
+    "filterPlaceholder_one": "Filter {{count}} row…",
+    "filterPlaceholder_other": "Filter {{count}} rows…",
+    "clear": "Clear",
+    "rowsShown_one": "{{shown}} of {{count}} row",
+    "rowsShown_other": "{{shown}} of {{count}} rows",
+    "columns_one": "{{count}} column",
+    "columns_other": "{{count}} columns",
+    "empty": "Empty dataset",
+    "columnFallback": "Column {{letter}}",
+    "cellTitle": "{{value}} (Click to copy)"
+  },
+  "codeEditor": {
+    "loading": "Loading editor…"
+  },
+  "syntaxHighlighter": {
+    "ariaLabel": "Code viewer",
+    "largeFile_one": "Large file ({{count, number}} line) — syntax highlighting skipped for performance",
+    "largeFile_other": "Large file ({{count, number}} lines) — syntax highlighting skipped for performance"
+  }
+}

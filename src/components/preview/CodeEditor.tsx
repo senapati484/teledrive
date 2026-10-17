@@ -10,6 +10,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useDarkMode } from "@/hooks/useDarkMode";
 import { detectLang } from "@/lib/files/langDetect";
 
@@ -138,6 +139,7 @@ function buildDarkTheme(EditorView: any, oneDark: any) {
 // ─── Component ─────────────────────────────────────────────────────────────
 
 export function CodeEditor({ value, onChange, fileName, onCursorChange, className = "" }: Props) {
+  const { t } = useTranslation("preview");
   const isDark = useDarkMode();
   const containerRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<any>(null);
@@ -291,7 +293,7 @@ export function CodeEditor({ value, onChange, fileName, onCursorChange, classNam
             className="text-[10px] font-mono font-bold uppercase tracking-widest"
             style={{ color: isDark ? "#475569" : "#94a3b8" }}
           >
-            Loading editor…
+            {t("codeEditor.loading")}
           </span>
         </div>
       )}

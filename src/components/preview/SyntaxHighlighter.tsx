@@ -7,6 +7,7 @@
  * Performance: lazy highlight.js, React.memo, useMemo for line count.
  */
 import { memo, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useDarkMode } from "@/hooks/useDarkMode";
 import { detectLang } from "@/lib/files/langDetect";
 
@@ -62,6 +63,7 @@ export const SyntaxHighlighter = memo(function SyntaxHighlighter({
   wrapLines = false,
   fontSize = 13,
 }: Props) {
+  const { t } = useTranslation("preview");
   const isDark = useDarkMode();
   const [highlighted, setHighlighted] = useState<string>("");
   const [hljsReady, setHljsReady] = useState(false);
@@ -159,7 +161,7 @@ export const SyntaxHighlighter = memo(function SyntaxHighlighter({
         scrollbarColor: isDark ? "#334155 transparent" : "#cbd5e1 transparent",
       }}
       role="region"
-      aria-label="Code viewer"
+      aria-label={t("syntaxHighlighter.ariaLabel")}
     >
       {/* ── Sticky line-number gutter ─────────────────────────────────── */}
       <div
@@ -211,7 +213,7 @@ export const SyntaxHighlighter = memo(function SyntaxHighlighter({
               border: `1px solid ${isDark ? "rgba(245,158,11,0.25)" : "#fde68a"}`,
             }}
           >
-            ⚠ Large file ({lineCount.toLocaleString()} lines) — syntax highlighting skipped for performance
+            ⚠ {t("syntaxHighlighter.largeFile", { count: lineCount })}
           </div>
         )}
         {hljsReady ? (

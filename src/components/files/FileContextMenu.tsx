@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { TeleFile } from "@/lib/types";
 import { isEditableFile } from "@/lib/files/editableTypes";
+import { useTranslation } from "react-i18next";
 
 interface FileContextMenuProps {
   file: TeleFile;
@@ -57,6 +58,7 @@ export const FileContextMenu = React.memo(function FileContextMenu({
   onUnarchive,
   onOfflineToggle,
 }: FileContextMenuProps) {
+  const { t } = useTranslation("files");
   const isDirectory = file.mime === "inode/directory" || file.mime === "application/x-directory";
 
   return (
@@ -69,7 +71,7 @@ export const FileContextMenu = React.memo(function FileContextMenu({
             className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
           >
             <Eye className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
-            <span>Preview</span>
+            <span>{t("menu.preview")}</span>
           </ContextMenuItem>
         )}
         {!isDirectory && !file.trashed && !file.archived && onOpenInSystemApp && (
@@ -78,7 +80,7 @@ export const FileContextMenu = React.memo(function FileContextMenu({
             className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
           >
             <ExternalLink className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
-            <span>Open in System App</span>
+            <span>{t("menu.openInSystemApp")}</span>
           </ContextMenuItem>
         )}
         {!isDirectory && !file.trashed && !file.archived && onEdit && isEditableFile(file) && (
@@ -87,7 +89,7 @@ export const FileContextMenu = React.memo(function FileContextMenu({
             className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
           >
             <Pencil className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
-            <span>Edit</span>
+            <span>{t("menu.edit")}</span>
           </ContextMenuItem>
         )}
         {!isDirectory && !file.trashed && !file.archived && (
@@ -96,7 +98,7 @@ export const FileContextMenu = React.memo(function FileContextMenu({
             className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
           >
             <Download className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
-            <span>Download</span>
+            <span>{t("menu.download")}</span>
           </ContextMenuItem>
         )}
         {!isDirectory && !file.trashed && !file.archived && onOfflineToggle && (
@@ -106,7 +108,7 @@ export const FileContextMenu = React.memo(function FileContextMenu({
           >
             <div className="flex items-center gap-2.5">
               <CheckCircle className={`h-4 w-4 shrink-0 ${file.offline ? "text-emerald-500 fill-emerald-500/20" : "text-[#444746] dark:text-[#c4c7c5]"}`} strokeWidth={1.75} />
-              <span>Available offline</span>
+              <span>{t("menu.availableOffline")}</span>
             </div>
             {file.offline && <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0" />}
           </ContextMenuItem>
@@ -118,7 +120,7 @@ export const FileContextMenu = React.memo(function FileContextMenu({
             className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
           >
             <Edit2 className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
-            <span>Rename</span>
+            <span>{t("menu.rename")}</span>
           </ContextMenuItem>
         )}
 
@@ -128,7 +130,7 @@ export const FileContextMenu = React.memo(function FileContextMenu({
             className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
           >
             <FolderInput className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
-            <span>Move to</span>
+            <span>{t("menu.moveTo")}</span>
           </ContextMenuItem>
         )}
 
@@ -138,7 +140,7 @@ export const FileContextMenu = React.memo(function FileContextMenu({
             className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
           >
             <Star className={`h-4 w-4 shrink-0 ${file.starred ? "fill-amber-400 text-amber-400" : "text-[#444746] dark:text-[#c4c7c5]"}`} strokeWidth={1.75} />
-            <span>{file.starred ? "Remove star" : "Add star"}</span>
+            <span>{file.starred ? t("menu.removeStar") : t("menu.addStar")}</span>
           </ContextMenuItem>
         )}
 
@@ -151,7 +153,7 @@ export const FileContextMenu = React.memo(function FileContextMenu({
               className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
             >
               <Archive className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
-              <span>Archive</span>
+              <span>{t("menu.archive")}</span>
             </ContextMenuItem>
           </>
         )}
@@ -161,7 +163,7 @@ export const FileContextMenu = React.memo(function FileContextMenu({
             className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
           >
             <ArchiveRestore className="h-4 w-4 text-[#0b57d0] dark:text-[#a8c7fa] shrink-0" strokeWidth={1.75} />
-            <span>Unarchive</span>
+            <span>{t("menu.unarchive")}</span>
           </ContextMenuItem>
         )}
 
@@ -174,7 +176,7 @@ export const FileContextMenu = React.memo(function FileContextMenu({
               className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
             >
               <RotateCcw className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
-              <span>Restore</span>
+              <span>{t("menu.restore")}</span>
             </ContextMenuItem>
             {onDeletePermanently && (
               <>
@@ -184,7 +186,7 @@ export const FileContextMenu = React.memo(function FileContextMenu({
                   className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
                 >
                   <Trash2 className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-                  <span>Delete Permanently</span>
+                  <span>{t("menu.deletePermanently")}</span>
                 </ContextMenuItem>
               </>
             )}
@@ -197,7 +199,7 @@ export const FileContextMenu = React.memo(function FileContextMenu({
               className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
             >
               <Trash2 className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-              <span>Move to Trash</span>
+              <span>{t("menu.moveToTrash")}</span>
             </ContextMenuItem>
           </>
         ) : null}

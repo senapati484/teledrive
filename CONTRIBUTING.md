@@ -46,6 +46,7 @@ To maintain a clean and readable codebase, we require:
 - **TypeScript**: Ensure strict type-safety. Do not use `any` unless absolutely necessary (e.g. interfacing with dynamic raw API responses from GramJS).
 - **Styling**: Use Tailwind CSS utility classes. Avoid creating custom inline styles. Respect both **light** and **dark** mode states when editing visual components.
 - **Icons**: Always use `lucide-react` SVG icons. Never use raw emojis as UI icons.
+- **Text & translations**: Never hardcode user-facing text. Add it to `src/i18n/locales/en/<namespace>.json` and read it with `useTranslation("<namespace>")` (or `i18n.t("<namespace>:key")` outside React). Add the same key to every other language folder (e.g. `src/i18n/locales/pt-BR/`). To add a new language, copy the `en` folder, translate the values and register the language in `SUPPORTED_LANGUAGES` in `src/i18n/index.ts`.
 
 ### Backend (Rust Core)
 - **Formatting**: Run `cargo fmt` to auto-format Rust files.

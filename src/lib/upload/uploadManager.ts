@@ -75,6 +75,7 @@ import { enqueueSave } from "../storage/indexQueue";
 import { getClient } from "../telegram/client";
 import { logEvent } from "../events";
 import { isJunkFile } from "../storage/fileSanitizer";
+import i18n from "@/i18n";
 
 /**
  * Wait until `bootstrapComplete=true` on the file store, capped at `timeoutMs`.
@@ -142,7 +143,7 @@ export async function processQueue(): Promise<void> {
     }
 
     if (!channelId) {
-      toast.error("Telegram storage channel is not configured. Please check settings.");
+      toast.error(i18n.t("messages:upload.channelNotConfigured"));
       await invoke("log_vault_state", { state: "PROCESS_QUEUE: channelId is empty/null" }).catch(() => {});
       isProcessing = false;
       return;
@@ -253,7 +254,7 @@ export async function processQueue(): Promise<void> {
           useFileStore.getState().setBootstrapComplete(true);
 
           updateQueueItem(item.id, { status: "done", progress: 100 });
-          toast.success(`"${item.name}" uploaded successfully!`);
+          toast.success(i18n.t("messages:upload.success", { name: item.name }));
 
           try {
             await enqueueSave(channelId, optimisticFiles);
@@ -282,7 +283,7 @@ export async function processQueue(): Promise<void> {
                 state: `UPLOAD_INDEX_HARD_ERR rolled name=${item.name} err=${indexErr?.message ?? indexErr}`,
               }).catch(() => {});
               toast.error(
-                `Index save failed for "${item.name}" — refresh the drive.`
+                i18n.t("messages:upload.indexSaveFailed", { name: item.name })
               );
             } else {
               await invoke("log_vault_state", {
@@ -297,9 +298,9 @@ export async function processQueue(): Promise<void> {
           }).catch(() => {});
           updateQueueItem(item.id, {
             status: "error",
-            error: err.message || "Upload failed",
+            error: err.message || i18n.t("messages:upload.failedFallback"),
           });
-          toast.error(`Failed to upload "${item.name}": ${err.message || "Unknown error"}`);
+          toast.error(i18n.t("messages:upload.failed", { name: item.name, message: err.message || i18n.t("messages:common.unknownError") }));
         } finally {
           // Re-trigger processQueue to pull the next pending items
           processQueue();
@@ -337,7 +338,7 @@ export function addFilesToUploadQueue(
     }
 
     if (file.size === 0) {
-      toast.error(`"${file.name}" is empty. Empty files (0 bytes) are not supported by Telegram.`, {
+      toast.error(i18n.t("messages:upload.emptyFile", { name: file.name }), {
         duration: 4000,
       });
       return;

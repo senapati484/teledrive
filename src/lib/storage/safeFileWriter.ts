@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import i18n from "@/i18n";
 
 // 512KB chunk size ensures fast, reliable serialization across all platforms
 const CHUNK_SIZE = 512 * 1024;
@@ -69,7 +70,7 @@ export async function saveBinaryFile(
     } catch (fallbackErr: any) {
       console.error("[safeFileWriter] Both native writer and fallback failed:", fallbackErr);
       throw new Error(
-        `Unable to save file to ${filePath}. Please check storage permissions.`
+        i18n.t("messages:storage.saveFailed", { path: filePath })
       );
     }
   }

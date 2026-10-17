@@ -59,6 +59,8 @@ import { useFileBrowserDragAndDrop } from "@/hooks/useFileBrowserDragAndDrop";
 import { collapseDuplicateFolders, dedupeByContentKey, dedupeByMessageId, folderIdForPath } from "@/lib/storage/metadataStore";
 import { isBackupItem, BACKUP_ROOT, BACKUP_ROOT_PREFIX } from "@/lib/backup/visibility";
 import { toast } from "sonner";
+import { Trans, useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 // ---------------------------------------------------------------------------
 // Utility: human-readable file size
@@ -75,52 +77,52 @@ function formatFileSize(bytes: unknown): string {
 // ---------------------------------------------------------------------------
 // Utility: human-readable file type
 // ---------------------------------------------------------------------------
-function getFileType(file: TeleFile): string {
+function getFileType(file: TeleFile, t: TFunction<"files">): string {
   const isDir = isDirectory(file);
-  if (isDir) return "Folder";
+  if (isDir) return t("browser.fileType.folder");
   
   const ext = file.name.split(".").pop()?.toLowerCase();
   switch (ext) {
-    case "pdf": return "PDF Document";
+    case "pdf": return t("browser.fileType.pdf");
     case "jpg":
     case "jpeg":
     case "png":
     case "webp":
     case "gif":
     case "svg":
-      return "Image";
+      return t("browser.fileType.image");
     case "mp4":
     case "mkv":
     case "mov":
     case "avi":
     case "webm":
-      return "Video";
+      return t("browser.fileType.video");
     case "mp3":
     case "wav":
     case "m4a":
     case "ogg":
     case "flac":
-      return "Audio";
+      return t("browser.fileType.audio");
     case "txt":
     case "md":
     case "rtf":
-      return "Text Document";
+      return t("browser.fileType.text");
     case "zip":
     case "tar":
     case "gz":
     case "rar":
     case "7z":
-      return "Archive";
+      return t("browser.fileType.archive");
     case "doc":
     case "docx":
-      return "Word Document";
+      return t("browser.fileType.word");
     case "xls":
     case "xlsx":
     case "csv":
-      return "Spreadsheet";
+      return t("browser.fileType.spreadsheet");
     case "ppt":
     case "pptx":
-      return "Presentation";
+      return t("browser.fileType.presentation");
     case "html":
     case "css":
     case "js":
@@ -132,9 +134,9 @@ function getFileType(file: TeleFile): string {
     case "go":
     case "c":
     case "cpp":
-      return "Source Code";
+      return t("browser.fileType.sourceCode");
     default:
-      return ext ? `${ext.toUpperCase()} File` : "File";
+      return ext ? t("browser.fileType.generic", { ext: ext.toUpperCase() }) : t("browser.fileType.file");
   }
 }
 
@@ -157,6 +159,7 @@ interface FileBrowserProps {
 }
 
 export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = "" }: FileBrowserProps) {
+  const { t, i18n } = useTranslation("files");
   const navigate = useNavigate();
   const files = useFileStore((state) => state.files);
   const selectedIds = useFileStore((state) => state.selectedIds);
@@ -253,15 +256,15 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
 
   const sortLabel = useMemo(() => {
     switch (sortBy) {
-      case "name_asc": return "Name (A-Z)";
-      case "name_desc": return "Name (Z-A)";
-      case "date_desc": return "Newest";
-      case "date_asc": return "Oldest";
-      case "size_desc": return "Largest";
-      case "size_asc": return "Smallest";
-      default: return "Name (A-Z)";
+      case "name_asc": return t("browser.sort.short.nameAsc");
+      case "name_desc": return t("browser.sort.short.nameDesc");
+      case "date_desc": return t("browser.sort.short.newest");
+      case "date_asc": return t("browser.sort.short.oldest");
+      case "size_desc": return t("browser.sort.short.largest");
+      case "size_asc": return t("browser.sort.short.smallest");
+      default: return t("browser.sort.short.nameAsc");
     }
-  }, [sortBy]);
+  }, [sortBy, t]);
 
   const activeSortBy = useMemo(
     () => (mode === "recent" && sortBy === "name_asc" ? "date_desc" : sortBy),
@@ -521,29 +524,29 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
   // Header title — only recompute when mode/folderPath/searchQuery change
   const headerTitle = useMemo(() => {
     switch (mode) {
-      case "starred": return "Starred";
-      case "recent": return "Recent";
-      case "trash": return "Trash";
-      case "archived": return "Archived";
+      case "starred": return t("browser.header.starred");
+      case "recent": return t("browser.header.recent");
+      case "trash": return t("browser.header.trash");
+      case "archived": return t("browser.header.archived");
       case "backups":
         // The Backups view is rooted at `/TeleDrive Backups/<device>/...`,
         // so render the device segment as the header. Falls back to the
         // generic "Backups" label when the user is at the top level.
-        if (folderPath === "/TeleDrive Backups") return "Backups";
+        if (folderPath === "/TeleDrive Backups") return t("browser.header.backups");
         if (folderPath && folderPath.startsWith("/TeleDrive Backups/")) {
           const segments = folderPath.split("/").filter(Boolean);
-          return segments[segments.length - 1] || "Backups";
+          return segments[segments.length - 1] || t("browser.header.backups");
         }
-        return "Backups";
-      case "search": return `Search results for "${searchQuery}"`;
+        return t("browser.header.backups");
+      case "search": return t("browser.header.searchResults", { query: searchQuery });
       default:
         if (folderPath !== "/") {
           const segments = folderPath.split("/").filter(Boolean);
-          return segments[segments.length - 1] || "My Drive";
+          return segments[segments.length - 1] || t("browser.header.myDrive");
         }
-        return "My Drive";
+        return t("browser.header.myDrive");
     }
-  }, [mode, folderPath, searchQuery]);
+  }, [mode, folderPath, searchQuery, t]);
 
   // ── Memoized callbacks ──────────────────────────────────────────────────
 
@@ -584,7 +587,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
           const offlineBuf = await readOfflineCache(file.id);
           await saveBinaryFile(tempFilePath, offlineBuf);
         } else {
-          toast.info(`Preparing "${file.name}" for system application...`);
+          toast.info(t("browser.systemApp.preparing", { name: file.name }));
           const buf = await downloadFileToBuffer(file.channelId, file.messageId);
           await saveBinaryFile(tempFilePath, buf);
         }
@@ -597,12 +600,12 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
         const { invoke } = await import("@tauri-apps/api/core");
         await invoke("open_file_in_system_viewer", { path: tempFilePath });
       }
-      toast.success(`Opened "${file.name}" in system viewer.`);
+      toast.success(t("browser.systemApp.opened", { name: file.name }));
     } catch (err: any) {
       console.error("Failed to open file in system app:", err);
-      toast.error(`Could not open in system viewer: ${err.message || "Unknown error"}`);
+      toast.error(t("browser.systemApp.failed", { error: err.message || t("browser.systemApp.unknownError") }));
     }
-  }, []);
+  }, [t]);
 
   const triggerUpload = useCallback(() => {
     window.dispatchEvent(new CustomEvent("teledrive-trigger-upload"));
@@ -753,38 +756,37 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
   // Render helpers (headerTitle is now memoized above)
 
   const renderEmptyState = () => {
-    let title = "Your drive is empty";
-    let subtitle = "Upload files or create folders to get started.";
+    let title = t("browser.emptyState.drive.title");
+    let subtitle = t("browser.emptyState.drive.subtitle");
     let Icon = FolderOpen;
 
     if (mode === "starred") {
-      title = "No starred files";
-      subtitle = "Add stars to files you want to find easily later.";
+      title = t("browser.emptyState.starred.title");
+      subtitle = t("browser.emptyState.starred.subtitle");
       Icon = Star;
     } else if (mode === "recent") {
-      title = "No recent files";
-      subtitle = "Files you've recently viewed or uploaded will appear here.";
+      title = t("browser.emptyState.recent.title");
+      subtitle = t("browser.emptyState.recent.subtitle");
       Icon = FileCheck;
     } else if (mode === "trash") {
-      title = "Trash is empty";
-      subtitle = "Items moved to the trash will show up here.";
+      title = t("browser.emptyState.trash.title");
+      subtitle = t("browser.emptyState.trash.subtitle");
       Icon = Trash2;
     } else if (mode === "archived") {
-      title = "No archived files";
-      subtitle = "Archive files you want to keep but don't need in your main drive.";
+      title = t("browser.emptyState.archived.title");
+      subtitle = t("browser.emptyState.archived.subtitle");
       Icon = Archive;
     } else if (mode === "search") {
-      title = "No search results";
-      subtitle = `We couldn't find any items matching "${searchQuery}".`;
+      title = t("browser.emptyState.search.title");
+      subtitle = t("browser.emptyState.search.subtitle", { query: searchQuery });
       Icon = FolderOpen;
     } else if (mode === "backups") {
-      title = "No backups yet";
-      subtitle =
-        "Pick a folder on this Mac in Settings → Plan & Devices, then run a backup. Mirrored files will appear here.";
+      title = t("browser.emptyState.backups.title");
+      subtitle = t("browser.emptyState.backups.subtitle");
       Icon = Shield;
     } else if (folderPath !== "/") {
-      title = "This folder is empty";
-      subtitle = "Upload files or create folders in this directory.";
+      title = t("browser.emptyState.folder.title");
+      subtitle = t("browser.emptyState.folder.subtitle");
       Icon = Folder;
     }
 
@@ -810,7 +812,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
               className="rounded-xl bg-brand-500 hover:bg-brand-600 font-semibold px-5 text-sm shadow-sm"
             >
               <Upload className="mr-2 h-4 w-4" />
-              Upload Files
+              {t("browser.emptyState.uploadFiles")}
             </Button>
             <Button
               variant="outline"
@@ -818,7 +820,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
               className="rounded-xl font-semibold px-5 text-sm border-slate-200 dark:border-slate-800"
             >
               <FolderPlus className="mr-2 h-4 w-4" />
-              New Folder
+              {t("browser.emptyState.newFolder")}
             </Button>
           </div>
         )}
@@ -850,7 +852,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                   )}
                 >
                   <Home className="h-3.5 w-3.5 shrink-0" />
-                  <span>My Drive</span>
+                  <span>{t("browser.header.myDrive")}</span>
                 </Link>
               ) : (
                 <Link
@@ -862,7 +864,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                   )}
                 >
                   <Shield className="h-3.5 w-3.5 shrink-0" />
-                  <span>Backups</span>
+                  <span>{t("browser.header.backups")}</span>
                 </Link>
               )}
 
@@ -920,7 +922,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
               className="h-8.5 rounded-full text-xs border-red-300 text-red-600 dark:border-red-900/60 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 font-medium cursor-pointer mr-1"
             >
               <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-              Empty Trash
+              {t("browser.emptyTrashButton")}
             </Button>
           )}
 
@@ -929,7 +931,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
             size="icon"
             onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
             className="h-9 w-9 rounded-full hover:bg-[#e9eef6] dark:hover:bg-[#282a2c] text-[#444746] dark:text-[#c4c7c5] cursor-pointer"
-            title={viewMode === "grid" ? "Switch to list view" : "Switch to grid view"}
+            title={viewMode === "grid" ? t("browser.switchToListView") : t("browser.switchToGridView")}
           >
             {viewMode === "grid" ? (
               <List className="h-4.5 w-4.5" />
@@ -945,13 +947,15 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
         <div className="flex items-start gap-2.5 px-4 py-3 rounded-2xl border border-emerald-200/80 dark:border-emerald-800/40 bg-emerald-50/70 dark:bg-emerald-950/20 text-xs text-emerald-900 dark:text-emerald-200 shrink-0">
           <Shield className="h-4 w-4 mt-0.5 shrink-0 text-emerald-600 dark:text-emerald-400" />
           <div className="flex-1 min-w-0 leading-relaxed">
-            <p className="font-bold">Backups are read-only.</p>
+            <p className="font-bold">{t("browser.backupsBanner.title")}</p>
             <p className="mt-0.5 text-emerald-900/80 dark:text-emerald-300/80">
-              To change which folders are backed up, open{" "}
-              <span className="font-mono text-[11px] bg-emerald-100/70 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded">
-                Settings → Plan &amp; Devices
-              </span>
-              .
+              <Trans
+                t={t}
+                i18nKey="browser.backupsBanner.description"
+                components={{
+                  settingsPath: <span className="font-mono text-[11px] bg-emerald-100/70 dark:bg-emerald-900/30 px-1.5 py-0.5 rounded" />,
+                }}
+              />
             </p>
           </div>
         </div>
@@ -961,7 +965,13 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       <div className="flex flex-wrap items-center justify-between gap-3 py-0.5 shrink-0 select-none">
         {/* Category Filter Chips */}
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth py-0.5 max-w-full">
-          {["All", "Documents", "Images", "Videos", "Audio"].map((filter) => {
+          {[
+            { value: "All", labelKey: "browser.filters.all" },
+            { value: "Documents", labelKey: "browser.filters.documents" },
+            { value: "Images", labelKey: "browser.filters.images" },
+            { value: "Videos", labelKey: "browser.filters.videos" },
+            { value: "Audio", labelKey: "browser.filters.audio" },
+          ].map(({ value: filter, labelKey }) => {
             const isActive = filterType === filter;
             return (
               <button
@@ -976,7 +986,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                 )}
               >
                 {isActive && <Check className="h-3.5 w-3.5 text-[#001d35] dark:text-[#c2e7ff]" />}
-                {filter}
+                {t(labelKey)}
               </button>
             );
           })}
@@ -992,7 +1002,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                 className="h-8 rounded-lg text-xs font-medium text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-[#282a2c] border border-slate-300/70 dark:border-slate-700/70 px-3 flex items-center gap-1.5 cursor-pointer"
               >
                 <ArrowUpDown className="h-3.5 w-3.5" />
-                <span>Sort: {sortLabel}</span>
+                <span>{t("browser.sort.label", { sort: sortLabel })}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -1000,12 +1010,12 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
               className="w-48 rounded-xl p-1 bg-white dark:bg-[#282a2c] border border-slate-200 dark:border-slate-800 shadow-xl z-50"
             >
               {[
-                { value: "name_asc", label: "Name (A to Z)" },
-                { value: "name_desc", label: "Name (Z to A)" },
-                { value: "date_desc", label: "Last modified" },
-                { value: "date_asc", label: "Earliest modified" },
-                { value: "size_desc", label: "File size (largest)" },
-                { value: "size_asc", label: "File size (smallest)" },
+                { value: "name_asc", labelKey: "browser.sort.options.nameAsc" },
+                { value: "name_desc", labelKey: "browser.sort.options.nameDesc" },
+                { value: "date_desc", labelKey: "browser.sort.options.dateDesc" },
+                { value: "date_asc", labelKey: "browser.sort.options.dateAsc" },
+                { value: "size_desc", labelKey: "browser.sort.options.sizeDesc" },
+                { value: "size_asc", labelKey: "browser.sort.options.sizeAsc" },
               ].map((opt) => (
                 <DropdownMenuItem
                   key={opt.value}
@@ -1015,7 +1025,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                     sortBy === opt.value && "font-bold text-[#0b57d0] dark:text-[#a8c7fa] bg-[#c2e7ff]/30 dark:bg-[#004a77]/30"
                   )}
                 >
-                  <span>{opt.label}</span>
+                  <span>{t(opt.labelKey)}</span>
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
@@ -1053,7 +1063,9 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
           {folders.length > 0 && (
             <div className="space-y-3">
               <h2 className="text-xs font-semibold text-[#444746] dark:text-[#c4c7c5] tracking-wide block">
-                Folders {folders.length > renderLimit && `(${Math.min(folders.length, renderLimit)} of ${folders.length})`}
+                {folders.length > renderLimit
+                  ? t("browser.sections.foldersPartial", { shown: Math.min(folders.length, renderLimit), total: folders.length })
+                  : t("browser.sections.folders")}
               </h2>
               <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3 px-0.5">
                 {folders.slice(0, renderLimit).map((folder, index) => {
@@ -1138,7 +1150,9 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
           {regularFiles.length > 0 && (
             <div className="space-y-3">
               <h2 className="text-xs font-semibold text-[#444746] dark:text-[#c4c7c5] tracking-wide block">
-                Files {regularFiles.length > renderLimit && `(${Math.min(regularFiles.length, renderLimit)} of ${regularFiles.length})`}
+                {regularFiles.length > renderLimit
+                  ? t("browser.sections.filesPartial", { shown: Math.min(regularFiles.length, renderLimit), total: regularFiles.length })
+                  : t("browser.sections.files")}
               </h2>
               <div className="grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-4 px-0.5">
                 {regularFiles.slice(0, renderLimit).map((file, index) => {
@@ -1236,7 +1250,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                         {/* Bottom details footer */}
                         <div className="px-3.5 py-2 flex items-center justify-between text-[11px] text-[#747775] dark:text-[#8e918f] pointer-events-none shrink-0 font-normal">
                           <span>{formatFileSize(file.size)}</span>
-                          <span>{new Date(file.uploadedAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</span>
+                          <span>{new Date(file.uploadedAt).toLocaleDateString(i18n.language, { month: "short", day: "numeric" })}</span>
                         </div>
                       </div>
                     </FileContextMenu>
@@ -1271,10 +1285,10 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                     className="h-4 w-4 rounded-sm border-slate-300 dark:border-slate-700 text-[#0b57d0] focus:ring-[#0b57d0]/20 dark:bg-slate-900 transition-colors cursor-pointer"
                   />
                 </th>
-                <th className="py-3 px-4 font-semibold">Name</th>
-                <th className="py-3 px-4 hidden sm:table-cell font-semibold">Type</th>
-                <th className="py-3 px-4 hidden md:table-cell font-semibold">File size</th>
-                <th className="py-3 px-4 hidden lg:table-cell font-semibold">Last modified</th>
+                <th className="py-3 px-4 font-semibold">{t("browser.columns.name")}</th>
+                <th className="py-3 px-4 hidden sm:table-cell font-semibold">{t("browser.columns.type")}</th>
+                <th className="py-3 px-4 hidden md:table-cell font-semibold">{t("browser.columns.fileSize")}</th>
+                <th className="py-3 px-4 hidden lg:table-cell font-semibold">{t("browser.columns.lastModified")}</th>
                 <th className="py-3 px-4 w-14"></th>
               </tr>
             </thead>
@@ -1336,13 +1350,13 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                         </div>
                       </td>
                       <td className="py-3 px-4 hidden sm:table-cell text-xs text-[#444746] dark:text-[#8e918f] pointer-events-none">
-                        {getFileType(file)}
+                        {getFileType(file, t)}
                       </td>
                       <td className="py-3 px-4 hidden md:table-cell text-xs text-[#444746] dark:text-[#8e918f] pointer-events-none">
                         {isDir ? "—" : formatFileSize(file.size)}
                       </td>
                       <td className="py-3 px-4 hidden lg:table-cell text-xs text-[#444746] dark:text-[#8e918f] pointer-events-none">
-                        {new Date(file.uploadedAt).toLocaleDateString()}
+                        {new Date(file.uploadedAt).toLocaleDateString(i18n.language)}
                       </td>
                       <td className="py-3 px-4 text-center" data-no-drag onClick={(e) => e.stopPropagation()}>
                         <div className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
@@ -1403,7 +1417,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                   {internalDrag.previewFile.name}
                 </p>
                 <p className="text-[10px] text-muted-foreground truncate">
-                  {internalDrag.ids.length > 1 ? `${internalDrag.ids.length} items` : formatFileSize(internalDrag.previewFile.size)}
+                  {internalDrag.ids.length > 1 ? t("browser.dragPreview.items", { count: internalDrag.ids.length }) : formatFileSize(internalDrag.previewFile.size)}
                 </p>
               </div>
               <MoreHorizontal className="h-4 w-4 text-slate-400 shrink-0" />
@@ -1418,7 +1432,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                   {internalDrag.previewFile.name}
                 </p>
                 <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                  {internalDrag.ids.length > 1 ? `${internalDrag.ids.length} items` : formatFileSize(internalDrag.previewFile.size)}
+                  {internalDrag.ids.length > 1 ? t("browser.dragPreview.items", { count: internalDrag.ids.length }) : formatFileSize(internalDrag.previewFile.size)}
                 </p>
               </div>
             </div>
@@ -1432,7 +1446,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
         <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-4 bg-white/95 dark:bg-[#282a2c]/95 text-[#1f1f1f] dark:text-[#e3e3e3] px-5 py-2.5 rounded-full shadow-2xl border border-slate-300/80 dark:border-slate-700/80 backdrop-blur-md animate-slide-up select-none">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold bg-[#0b57d0] dark:bg-[#a8c7fa] px-2.5 py-0.5 rounded-full text-white dark:text-[#003258]">{selectedIds.length}</span>
-            <span className="text-xs font-medium whitespace-nowrap text-[#1f1f1f] dark:text-[#e3e3e3]">selected</span>
+            <span className="text-xs font-medium whitespace-nowrap text-[#1f1f1f] dark:text-[#e3e3e3]">{t("browser.bulkBar.selected", { count: selectedIds.length })}</span>
           </div>
           <div className="h-4 w-px bg-slate-300/80 dark:bg-slate-700/80" />
           
@@ -1443,7 +1457,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                   type="button"
                   onClick={handleBulkRestore}
                   className="h-8.5 w-8.5 rounded-full flex items-center justify-center text-[#444746] dark:text-[#c4c7c5] hover:text-[#0b57d0] dark:hover:text-[#a8c7fa] hover:bg-[#f0f4f9] dark:hover:bg-[#333537] transition-colors cursor-pointer border-0 bg-transparent outline-none"
-                  title="Restore selected"
+                  title={t("browser.bulkBar.restoreSelected")}
                 >
                   <RotateCcw className="h-4.5 w-4.5" />
                 </button>
@@ -1451,7 +1465,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                   type="button"
                   onClick={handleBulkDelete}
                   className="h-8.5 w-8.5 rounded-full flex items-center justify-center text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors cursor-pointer border-0 bg-transparent outline-none"
-                  title="Delete permanently"
+                  title={t("browser.bulkBar.deletePermanently")}
                 >
                   <Trash2 className="h-4.5 w-4.5" />
                 </button>
@@ -1462,7 +1476,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                   type="button"
                   onClick={handleBulkTrash}
                   className="h-8.5 w-8.5 rounded-full flex items-center justify-center text-[#444746] dark:text-[#c4c7c5] hover:text-red-600 dark:hover:text-red-400 hover:bg-[#f0f4f9] dark:hover:bg-[#333537] transition-colors cursor-pointer border-0 bg-transparent outline-none"
-                  title="Move selected to trash"
+                  title={t("browser.bulkBar.moveSelectedToTrash")}
                 >
                   <Trash2 className="h-4.5 w-4.5" />
                 </button>
@@ -1473,7 +1487,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
               type="button"
               onClick={clearSelection}
               className="h-8.5 w-8.5 rounded-full flex items-center justify-center text-[#747775] dark:text-[#8e918f] hover:text-[#1f1f1f] dark:hover:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537] transition-colors cursor-pointer border-0 bg-transparent outline-none"
-              title="Clear selection"
+              title={t("browser.bulkBar.clearSelection")}
             >
               <X className="h-4.5 w-4.5" />
             </button>
@@ -1485,13 +1499,13 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent className="rounded-3xl max-w-sm p-6 bg-white dark:bg-[#1e1f20] border border-slate-200/80 dark:border-slate-800 shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">New folder</DialogTitle>
+            <DialogTitle className="text-lg font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">{t("browser.dialogs.createFolder.title")}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleCreateFolderSubmit} className="space-y-5 pt-2">
             <Input
               value={newFolderName}
               onChange={(e) => setNewFolderName(e.target.value)}
-              placeholder="Untitled folder"
+              placeholder={t("browser.dialogs.createFolder.placeholder")}
               autoFocus
               className="rounded-xl h-11 px-3.5 border-slate-300 dark:border-slate-700 bg-white dark:bg-[#131314] text-[#1f1f1f] dark:text-[#e3e3e3] focus-visible:ring-2 focus-visible:ring-[#0b57d0]/30"
             />
@@ -1502,14 +1516,14 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                 onClick={() => setCreateDialogOpen(false)}
                 className="rounded-full h-9.5 px-4 text-xs font-medium text-[#0b57d0] dark:text-[#a8c7fa] hover:bg-[#f0f4f9] dark:hover:bg-[#282a2c] cursor-pointer"
               >
-                Cancel
+                {t("browser.dialogs.cancel")}
               </Button>
               <Button
                 type="submit"
                 disabled={!newFolderName.trim()}
                 className="rounded-full h-9.5 px-5 bg-[#0b57d0] hover:bg-[#0842a0] dark:bg-[#a8c7fa] dark:text-[#003258] text-white text-xs font-semibold shadow-xs cursor-pointer border-0"
               >
-                Create
+                {t("browser.dialogs.createFolder.submit")}
               </Button>
             </DialogFooter>
           </form>
@@ -1520,13 +1534,13 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
         <DialogContent className="rounded-3xl max-w-sm p-6 bg-white dark:bg-[#1e1f20] border border-slate-200/80 dark:border-slate-800 shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">Rename</DialogTitle>
+            <DialogTitle className="text-lg font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">{t("browser.dialogs.rename.title")}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleRenameSubmit} className="space-y-5 pt-2">
             <Input
               value={newFileName}
               onChange={(e) => setNewFileName(e.target.value)}
-              placeholder="New name"
+              placeholder={t("browser.dialogs.rename.placeholder")}
               autoFocus
               className="rounded-xl h-11 px-3.5 border-slate-300 dark:border-slate-700 bg-white dark:bg-[#131314] text-[#1f1f1f] dark:text-[#e3e3e3] focus-visible:ring-2 focus-visible:ring-[#0b57d0]/30"
             />
@@ -1537,14 +1551,14 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                 onClick={() => setRenameDialogOpen(false)}
                 className="rounded-full h-9.5 px-4 text-xs font-medium text-[#0b57d0] dark:text-[#a8c7fa] hover:bg-[#f0f4f9] dark:hover:bg-[#282a2c] cursor-pointer"
               >
-                Cancel
+                {t("browser.dialogs.cancel")}
               </Button>
               <Button
                 type="submit"
                 disabled={!newFileName.trim()}
                 className="rounded-full h-9.5 px-5 bg-[#0b57d0] hover:bg-[#0842a0] dark:bg-[#a8c7fa] dark:text-[#003258] text-white text-xs font-semibold shadow-xs cursor-pointer border-0"
               >
-                OK
+                {t("browser.dialogs.rename.submit")}
               </Button>
             </DialogFooter>
           </form>
@@ -1565,7 +1579,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                     </p>
                     <p className="text-[10px] text-muted-foreground">
                       {mobileContextFile.mime === "inode/directory" || mobileContextFile.mime === "application/x-directory"
-                        ? "Folder"
+                        ? t("browser.fileType.folder")
                         : formatFileSize(mobileContextFile.size)}
                     </p>
                   </div>
@@ -1581,7 +1595,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                       className="flex items-center gap-3 px-3 py-3 text-sm rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-left font-semibold text-slate-700 dark:text-slate-200 border-0 cursor-pointer w-full bg-transparent"
                     >
                       <Eye className="h-4 w-4 text-slate-500" />
-                      <span>Preview</span>
+                      <span>{t("menu.preview")}</span>
                     </button>
                   )}
                   {mobileContextFile.mime !== "inode/directory" && mobileContextFile.mime !== "application/x-directory" && !mobileContextFile.trashed && isEditableFile(mobileContextFile) && (
@@ -1594,7 +1608,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                       className="flex items-center gap-3 px-3 py-3 text-sm rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-left font-semibold text-slate-700 dark:text-slate-200 border-0 cursor-pointer w-full bg-transparent"
                     >
                       <Edit2 className="h-4 w-4 text-slate-500" />
-                      <span>Edit</span>
+                      <span>{t("menu.edit")}</span>
                     </button>
                   )}
                   {mobileContextFile.mime !== "inode/directory" && mobileContextFile.mime !== "application/x-directory" && !mobileContextFile.trashed && (
@@ -1606,7 +1620,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                       className="flex items-center gap-3 px-3 py-3 text-sm rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-left font-semibold text-slate-700 dark:text-slate-200 border-0 cursor-pointer w-full bg-transparent"
                     >
                       <Download className="h-4 w-4 text-slate-500" />
-                      <span>Download</span>
+                      <span>{t("menu.download")}</span>
                     </button>
                   )}
                   {mobileContextFile.mime !== "inode/directory" && mobileContextFile.mime !== "application/x-directory" && !mobileContextFile.trashed && (
@@ -1620,7 +1634,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                     >
                       <div className="flex items-center gap-3">
                         <CheckCircle className={`h-4 w-4 ${mobileContextFile.offline ? "text-green-500 fill-green-500/20" : "text-slate-500"}`} />
-                        <span>Available offline</span>
+                        <span>{t("menu.availableOffline")}</span>
                       </div>
                       {mobileContextFile.offline && <Check className="h-4 w-4 text-green-500 shrink-0" />}
                     </button>
@@ -1634,7 +1648,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                       className="flex items-center gap-3 px-3 py-3 text-sm rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-left font-semibold text-slate-700 dark:text-slate-200 border-0 cursor-pointer w-full bg-transparent"
                     >
                       <Edit2 className="h-4 w-4 text-slate-500" />
-                      <span>Rename</span>
+                      <span>{t("menu.rename")}</span>
                     </button>
                   )}
                   {!mobileContextFile.trashed && (
@@ -1646,7 +1660,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                       className="flex items-center gap-3 px-3 py-3 text-sm rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-left font-semibold text-slate-700 dark:text-slate-200 border-0 cursor-pointer w-full bg-transparent"
                     >
                       <Star className={`h-4 w-4 ${mobileContextFile.starred ? "fill-amber-400 text-amber-400" : "text-slate-500"}`} />
-                      <span>{mobileContextFile.starred ? "Remove from Starred" : "Add to Starred"}</span>
+                      <span>{mobileContextFile.starred ? t("browser.mobileMenu.removeFromStarred") : t("browser.mobileMenu.addToStarred")}</span>
                     </button>
                   )}
                   {mobileContextFile.trashed ? (
@@ -1658,7 +1672,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                       className="flex items-center gap-3 px-3 py-3 text-sm rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-left font-semibold text-slate-700 dark:text-slate-200 border-0 cursor-pointer w-full bg-transparent"
                     >
                       <RotateCcw className="h-4 w-4 text-slate-500" />
-                      <span>Restore</span>
+                      <span>{t("menu.restore")}</span>
                     </button>
                   ) : (
                     <button
@@ -1669,7 +1683,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                       className="flex items-center gap-3 px-3 py-3 text-sm rounded-xl hover:bg-red-50 dark:hover:bg-red-950/20 text-left font-semibold text-red-600 dark:text-red-400 border-0 cursor-pointer w-full bg-transparent"
                     >
                       <Trash2 className="h-4 w-4 text-slate-500" />
-                      <span>Move to Trash</span>
+                      <span>{t("menu.moveToTrash")}</span>
                     </button>
                   )}
                   {mobileContextFile.trashed && (
@@ -1682,7 +1696,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                       className="flex items-center gap-3 px-3 py-3 text-sm rounded-xl hover:bg-red-50 dark:hover:bg-red-950/20 text-left font-semibold text-red-600 dark:text-red-400 border-0 cursor-pointer w-full bg-transparent"
                     >
                       <Trash2 className="h-4 w-4" />
-                      <span>Delete Permanently</span>
+                      <span>{t("menu.deletePermanently")}</span>
                     </button>
                   )}
                 </div>
@@ -1700,12 +1714,16 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-[#1f1f1f] dark:text-[#e3e3e3] flex items-center gap-2">
               <Trash2 className="h-4.5 w-4.5 text-red-600" />
-              Empty trash?
+              {t("browser.dialogs.emptyTrash.title")}
             </DialogTitle>
           </DialogHeader>
           <p className="text-xs text-[#444746] dark:text-[#8e918f] leading-relaxed mt-1">
-            This will permanently delete <strong>{displayFiles.length} item{displayFiles.length !== 1 ? "s" : ""}</strong> from
-            your Telegram storage channel. This action cannot be undone.
+            <Trans
+              t={t}
+              i18nKey="browser.dialogs.emptyTrash.description"
+              count={displayFiles.length}
+              components={{ strong: <strong /> }}
+            />
           </p>
           <DialogFooter className="mt-5 flex gap-2 justify-end">
             <Button
@@ -1714,7 +1732,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
               className="rounded-full h-9 px-4 text-xs font-medium text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-[#282a2c] cursor-pointer"
               onClick={() => setEmptyTrashDialogOpen(false)}
             >
-              Cancel
+              {t("browser.dialogs.cancel")}
             </Button>
             <Button
               size="sm"
@@ -1726,7 +1744,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                 clearSelection();
               }}
             >
-              {isOperating ? "Deleting…" : "Empty trash"}
+              {isOperating ? t("browser.dialogs.deleting") : t("browser.dialogs.emptyTrash.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1740,16 +1758,21 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-[#1f1f1f] dark:text-[#e3e3e3] flex items-center gap-2">
               <Trash2 className="h-4.5 w-4.5 text-red-600" />
-              Delete permanently?
+              {t("browser.dialogs.deleteItem.title")}
             </DialogTitle>
           </DialogHeader>
           {deleteTarget && (
             <p className="text-xs text-[#444746] dark:text-[#8e918f] leading-relaxed mt-1">
-              Are you sure you want to permanently delete <strong>{deleteTarget.name}</strong>?
-              {deleteTarget.mime !== "inode/directory" && deleteTarget.mime !== "application/x-directory" && (
-                <> This will delete the actual file from your Telegram storage channel.</>
-              )}
-              This action cannot be undone.
+              <Trans
+                t={t}
+                i18nKey={
+                  deleteTarget.mime !== "inode/directory" && deleteTarget.mime !== "application/x-directory"
+                    ? "browser.dialogs.deleteItem.descriptionFile"
+                    : "browser.dialogs.deleteItem.descriptionFolder"
+                }
+                values={{ name: deleteTarget.name }}
+                components={{ strong: <strong /> }}
+              />
             </p>
           )}
           <DialogFooter className="mt-5 flex gap-2 justify-end">
@@ -1759,7 +1782,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
               className="rounded-full h-9 px-4 text-xs font-medium text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-[#282a2c] cursor-pointer"
               onClick={() => setDeleteTarget(null)}
             >
-              Cancel
+              {t("browser.dialogs.cancel")}
             </Button>
             <Button
               size="sm"
@@ -1773,7 +1796,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                 }
               }}
             >
-              {isOperating ? "Deleting…" : "Delete forever"}
+              {isOperating ? t("browser.dialogs.deleting") : t("browser.dialogs.deleteForever")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1786,12 +1809,16 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-[#1f1f1f] dark:text-[#e3e3e3] flex items-center gap-2">
               <Trash2 className="h-4.5 w-4.5 text-red-600" />
-              Delete forever?
+              {t("browser.dialogs.bulkDelete.title")}
             </DialogTitle>
           </DialogHeader>
           <p className="text-xs text-[#444746] dark:text-[#8e918f] leading-relaxed mt-1">
-            This will permanently delete <strong>{selectedIds.length} selected item{selectedIds.length !== 1 ? "s" : ""}</strong> from
-            your Telegram storage channel. This action cannot be undone.
+            <Trans
+              t={t}
+              i18nKey="browser.dialogs.bulkDelete.description"
+              count={selectedIds.length}
+              components={{ strong: <strong /> }}
+            />
           </p>
           <DialogFooter className="mt-5 flex gap-2 justify-end">
             <Button
@@ -1800,7 +1827,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
               className="rounded-full h-9 px-4 text-xs font-medium text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-[#282a2c] cursor-pointer"
               onClick={() => setBulkDeleteDialogOpen(false)}
             >
-              Cancel
+              {t("browser.dialogs.cancel")}
             </Button>
             <Button
               size="sm"
@@ -1808,7 +1835,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
               className="rounded-full h-9 px-5 text-xs font-semibold bg-red-600 hover:bg-red-700 text-white shadow-xs cursor-pointer border-0"
               onClick={confirmBulkDelete}
             >
-              {isOperating ? "Deleting…" : `Delete forever`}
+              {isOperating ? t("browser.dialogs.deleting") : t("browser.dialogs.deleteForever")}
             </Button>
           </DialogFooter>
         </DialogContent>

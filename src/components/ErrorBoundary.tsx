@@ -1,6 +1,7 @@
 import { Component, ErrorInfo, ReactNode } from "react";
 import { AlertCircle, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import i18n from "@/i18n";
 
 interface Props {
   children?: ReactNode;
@@ -35,16 +36,16 @@ export class ErrorBoundary extends Component<Props, State> {
               <AlertCircle className="h-10 w-10 text-blue-400 stroke-[1.5]" />
             </div>
           </div>
-          <h2 className="text-xl font-semibold text-slate-100 mb-2">Something went wrong</h2>
+          <h2 className="text-xl font-semibold text-slate-100 mb-2">{i18n.t("drive:errorBoundary.title")}</h2>
           <p className="text-sm text-slate-400 max-w-sm mb-6 leading-relaxed">
-            An unexpected issue occurred. Please reload the application to continue.
+            {i18n.t("drive:errorBoundary.description")}
           </p>
           <Button
             onClick={() => window.location.reload()}
             className="rounded-xl bg-blue-600 hover:bg-blue-500 font-semibold px-6 py-2.5 text-sm gap-2 shadow-lg shadow-blue-600/20 text-white transition-all duration-200"
           >
             <RotateCcw className="h-4 w-4" />
-            Reload Application
+            {i18n.t("drive:errorBoundary.reload")}
           </Button>
         </div>
       );
