@@ -1,256 +1,256 @@
 {
   "menu": {
-    "preview": "Preview",
-    "openInSystemApp": "Open in System App",
-    "edit": "Edit",
-    "download": "Download",
-    "availableOffline": "Available offline",
-    "rename": "Rename",
-    "moveTo": "Move to",
-    "addStar": "Add star",
-    "removeStar": "Remove star",
-    "archive": "Archive",
-    "unarchive": "Unarchive",
-    "restore": "Restore",
-    "deletePermanently": "Delete Permanently",
-    "moveToTrash": "Move to Trash"
+    "preview": "預覽",
+    "openInSystemApp": "在系統應用程式中開啟",
+    "edit": "編輯",
+    "download": "下載",
+    "availableOffline": "離線可用",
+    "rename": "重新命名",
+    "moveTo": "移至",
+    "addStar": "新增星星",
+    "removeStar": "移除星號",
+    "archive": "檔案",
+    "unarchive": "取消歸檔",
+    "restore": "恢復",
+    "deletePermanently": "永久刪除",
+    "moveToTrash": "移至垃圾桶"
   },
   "browser": {
     "fileType": {
-      "folder": "Folder",
-      "pdf": "PDF Document",
-      "image": "Image",
-      "video": "Video",
-      "audio": "Audio",
-      "text": "Text Document",
-      "archive": "Archive",
-      "word": "Word Document",
-      "spreadsheet": "Spreadsheet",
-      "presentation": "Presentation",
-      "sourceCode": "Source Code",
-      "generic": "{{ext}} File",
-      "file": "File"
+      "folder": "資料夾",
+      "pdf": "PDF文件",
+      "image": "影像",
+      "video": "影片",
+      "audio": "聲音的",
+      "text": "文本文件",
+      "archive": "檔案",
+      "word": "Word文件",
+      "spreadsheet": "電子表格",
+      "presentation": "推介會",
+      "sourceCode": "原始碼",
+      "generic": "{{ext}} 檔案",
+      "file": "檔案"
     },
     "sort": {
-      "label": "Sort: {{sort}}",
+      "label": "排序：{{排序}}",
       "short": {
-        "nameAsc": "Name (A-Z)",
-        "nameDesc": "Name (Z-A)",
-        "newest": "Newest",
-        "oldest": "Oldest",
-        "largest": "Largest",
-        "smallest": "Smallest"
+        "nameAsc": "姓名（A-Z）",
+        "nameDesc": "姓名（Z-A）",
+        "newest": "最新",
+        "oldest": "最古老的",
+        "largest": "最大",
+        "smallest": "最小"
       },
       "options": {
-        "nameAsc": "Name (A to Z)",
-        "nameDesc": "Name (Z to A)",
-        "dateDesc": "Last modified",
-        "dateAsc": "Earliest modified",
-        "sizeDesc": "File size (largest)",
-        "sizeAsc": "File size (smallest)"
+        "nameAsc": "姓名（A 到 Z）",
+        "nameDesc": "姓名（Z 到 A）",
+        "dateDesc": "最後修改時間",
+        "dateAsc": "最早修改",
+        "sizeDesc": "檔案大小（最大）",
+        "sizeAsc": "檔案大小（最小）"
       }
     },
     "header": {
-      "starred": "Starred",
-      "recent": "Recent",
-      "trash": "Trash",
-      "archived": "Archived",
-      "backups": "Backups",
-      "myDrive": "My Drive",
-      "searchResults": "Search results for \"{{query}}\""
+      "starred": "已加上星號",
+      "recent": "最近的",
+      "trash": "垃圾",
+      "archived": "已存檔",
+      "backups": "備份",
+      "myDrive": "我的駕駛",
+      "searchResults": "“{{query}}”的搜尋結果"
     },
     "systemApp": {
-      "preparing": "Preparing \"{{name}}\" for system application...",
-      "opened": "Opened \"{{name}}\" in system viewer.",
-      "failed": "Could not open in system viewer: {{error}}",
-      "unknownError": "Unknown error"
+      "preparing": "正在為系統應用程式準備“{{name}}”...",
+      "opened": "在系統檢視器中開啟“{{name}}”。",
+      "failed": "無法在系統檢視器中開啟：{{error}}",
+      "unknownError": "未知錯誤"
     },
     "emptyState": {
       "drive": {
-        "title": "Your drive is empty",
-        "subtitle": "Upload files or create folders to get started."
+        "title": "你的驅動器是空的",
+        "subtitle": "上傳檔案或建立資料夾即可開始。"
       },
       "starred": {
-        "title": "No starred files",
-        "subtitle": "Add stars to files you want to find easily later."
+        "title": "沒有加上星號的檔案",
+        "subtitle": "為您以後想要輕鬆查詢的檔案新增星標。"
       },
       "recent": {
-        "title": "No recent files",
-        "subtitle": "Files you've recently viewed or uploaded will appear here."
+        "title": "沒有最近的檔案",
+        "subtitle": "您最近檢視或上傳的檔案將顯示在此處。"
       },
       "trash": {
-        "title": "Trash is empty",
-        "subtitle": "Items moved to the trash will show up here."
+        "title": "垃圾桶已空",
+        "subtitle": "移至垃圾桶的專案將顯示在此處。"
       },
       "archived": {
-        "title": "No archived files",
-        "subtitle": "Archive files you want to keep but don't need in your main drive."
+        "title": "沒有存檔檔案",
+        "subtitle": "將您想要保留但主驅動器中不需要的檔案存檔。"
       },
       "search": {
-        "title": "No search results",
-        "subtitle": "We couldn't find any items matching \"{{query}}\"."
+        "title": "沒有搜尋結果",
+        "subtitle": "我們找不到任何與“{{query}}”匹配的專案。"
       },
       "backups": {
-        "title": "No backups yet",
-        "subtitle": "Pick a folder on this Mac in Settings → Device Backup, then run a backup. Mirrored files will appear here."
+        "title": "還沒有備份",
+        "subtitle": "在“設定”→“裝置備份”中選擇此 Mac 上的一個資料夾，然後執行備份。映象檔案將出現在此處。"
       },
       "folder": {
-        "title": "This folder is empty",
-        "subtitle": "Upload files or create folders in this directory."
+        "title": "該資料夾是空的",
+        "subtitle": "在此目錄中上傳檔案或建立資料夾。"
       },
-      "uploadFiles": "Upload Files",
-      "newFolder": "New Folder"
+      "uploadFiles": "上傳檔案",
+      "newFolder": "新建資料夾"
     },
-    "emptyTrashButton": "Empty Trash",
-    "switchToListView": "Switch to list view",
-    "switchToGridView": "Switch to grid view",
+    "emptyTrashButton": "清空垃圾桶",
+    "switchToListView": "切換到列表檢視",
+    "switchToGridView": "切換到網格檢視",
     "backupsBanner": {
-      "title": "Backups are read-only.",
-      "description": "To change which folders are backed up, open <settingsPath>Settings → Device Backup</settingsPath>."
+      "title": "備份是隻讀的。",
+      "description": "要更改備份的資料夾，請開啟 <settingsPath>設定 → 裝置備份</settingsPath>。"
     },
     "filters": {
-      "all": "All",
-      "documents": "Documents",
-      "images": "Images",
-      "videos": "Videos",
-      "audio": "Audio"
+      "all": "全部",
+      "documents": "檔案",
+      "images": "圖片",
+      "videos": "影片",
+      "audio": "聲音的"
     },
     "sections": {
-      "folders": "Folders",
-      "foldersPartial": "Folders ({{shown}} of {{total}})",
-      "files": "Files",
-      "filesPartial": "Files ({{shown}} of {{total}})"
+      "folders": "資料夾",
+      "foldersPartial": "資料夾（{{shown}} 個，共 {{total}} 個）",
+      "files": "檔案",
+      "filesPartial": "檔案（{{show}} 個，共 {{total}} 個）"
     },
     "columns": {
-      "name": "Name",
-      "type": "Type",
-      "fileSize": "File size",
-      "lastModified": "Last modified"
+      "name": "姓名",
+      "type": "型別",
+      "fileSize": "檔案大小",
+      "lastModified": "最後修改時間"
     },
     "dragPreview": {
-      "items_one": "{{count}} item",
-      "items_other": "{{count}} items"
+      "items_one": "{{count}} 項",
+      "items_other": "{{count}} 件"
     },
     "bulkBar": {
-      "selected_one": "selected",
-      "selected_other": "selected",
-      "restoreSelected": "Restore selected",
-      "deletePermanently": "Delete permanently",
-      "moveSelectedToTrash": "Move selected to trash",
-      "clearSelection": "Clear selection"
+      "selected_one": "已選擇",
+      "selected_other": "已選擇",
+      "restoreSelected": "恢復選擇",
+      "deletePermanently": "永久刪除",
+      "moveSelectedToTrash": "將所選內容移至垃圾桶",
+      "clearSelection": "清除選擇"
     },
     "mobileMenu": {
-      "addToStarred": "Add to Starred",
-      "removeFromStarred": "Remove from Starred"
+      "addToStarred": "新增至已加上星號",
+      "removeFromStarred": "從加上星號中刪除"
     },
     "dialogs": {
-      "cancel": "Cancel",
-      "deleting": "Deleting…",
-      "deleteForever": "Delete forever",
+      "cancel": "取消",
+      "deleting": "正在刪除...",
+      "deleteForever": "永久刪除",
       "createFolder": {
-        "title": "New folder",
-        "placeholder": "Untitled folder",
-        "submit": "Create"
+        "title": "新建資料夾",
+        "placeholder": "無標題資料夾",
+        "submit": "創造"
       },
       "rename": {
-        "title": "Rename",
-        "placeholder": "New name",
-        "submit": "OK"
+        "title": "重新命名",
+        "placeholder": "新名稱",
+        "submit": "好的"
       },
       "emptyTrash": {
-        "title": "Empty trash?",
-        "description_one": "This will permanently delete <strong>{{count}} item</strong> from your Telegram storage channel. This action cannot be undone.",
-        "description_other": "This will permanently delete <strong>{{count}} items</strong> from your Telegram storage channel. This action cannot be undone.",
-        "confirm": "Empty trash"
+        "title": "清空垃圾桶？",
+        "description_one": "這將從您的 Telegram 儲存通道中永久刪除 <strong>{{count}} 項</strong>。此操作無法撤消。",
+        "description_other": "這將從您的 Telegram 儲存通道中永久刪除 <strong>{{count}} 項</strong>。此操作無法撤消。",
+        "confirm": "清空垃圾桶"
       },
       "deleteItem": {
-        "title": "Delete permanently?",
-        "descriptionFile": "Are you sure you want to permanently delete <strong>{{name}}</strong>? This will delete the actual file from your Telegram storage channel. This action cannot be undone.",
-        "descriptionFolder": "Are you sure you want to permanently delete <strong>{{name}}</strong>? This action cannot be undone."
+        "title": "永久刪除？",
+        "descriptionFile": "您確定要永久刪除<strong>{{name}}</strong>嗎？這將從您的 Telegram 儲存通道中刪除實際檔案。此操作無法撤消。",
+        "descriptionFolder": "您確定要永久刪除<strong>{{name}}</strong>嗎？此操作無法撤消。"
       },
       "bulkDelete": {
-        "title": "Delete forever?",
-        "description_one": "This will permanently delete <strong>{{count}} selected item</strong> from your Telegram storage channel. This action cannot be undone.",
-        "description_other": "This will permanently delete <strong>{{count}} selected items</strong> from your Telegram storage channel. This action cannot be undone."
+        "title": "永久刪除？",
+        "description_one": "這將從您的 Telegram 儲存通道中永久刪除<strong>{{count}} 個所選專案</strong>。此操作無法撤消。",
+        "description_other": "這將從您的 Telegram 儲存通道中永久刪除<strong>{{count}} 個選定的專案</strong>。此操作無法撤消。"
       }
     }
   },
   "actions": {
-    "bootstrapPending": "Still loading your drive — please retry in a moment.",
-    "saveFailed": "Save failed and was rolled back: {{error}}",
-    "unknownError": "Unknown error",
-    "channelNotInitialized": "Telegram storage channel is not initialized",
-    "fileNotFound": "File not found",
+    "bootstrapPending": "仍在載入您的驅動器 - 請稍後重試。",
+    "saveFailed": "儲存失敗並回滾：{{error}}",
+    "unknownError": "未知錯誤",
+    "channelNotInitialized": "Telegram 儲存通道未初始化",
+    "fileNotFound": "找不到檔案",
     "folder": {
-      "alreadyExists": "Folder \"{{name}}\" already exists",
-      "created": "Folder \"{{name}}\" created successfully",
-      "createFailed": "Failed to create folder"
+      "alreadyExists": "資料夾“{{name}}”已存在",
+      "created": "資料夾“{{name}}”建立成功",
+      "createFailed": "建立資料夾失敗"
     },
     "rename": {
-      "success": "Renamed successfully",
-      "failed": "Failed to rename"
+      "success": "更名成功",
+      "failed": "重新命名失敗"
     },
     "star": {
-      "added": "Added to Starred",
-      "removed": "Removed from Starred",
-      "failed": "Failed to update star"
+      "added": "已新增至加上星號",
+      "removed": "已從加上星號中刪除",
+      "failed": "更新星星失敗"
     },
     "trash": {
-      "moved": "Moved \"{{name}}\" to Trash",
-      "moveFailed": "Failed to move to trash",
-      "restored": "Restored \"{{name}}\"",
-      "restoreFailed": "Failed to restore"
+      "moved": "已將“{{name}}”移至垃圾桶",
+      "moveFailed": "無法移至垃圾桶",
+      "restored": "已恢復“{{name}}”",
+      "restoreFailed": "恢復失敗"
     },
     "archive": {
-      "archived": "\"{{name}}\" archived",
-      "archiveFailed": "Failed to archive",
-      "unarchived": "\"{{name}}\" moved back to My Drive",
-      "unarchiveFailed": "Failed to unarchive"
+      "archived": "“{{name}}”已存檔",
+      "archiveFailed": "存檔失敗",
+      "unarchived": "“{{name}}”移回“我的雲端硬碟”",
+      "unarchiveFailed": "取消存檔失敗"
     },
     "delete": {
-      "success": "Deleted permanently",
-      "failed": "Failed to delete"
+      "success": "永久刪除",
+      "failed": "刪除失敗"
     },
     "emptyTrash": {
-      "alreadyEmpty": "Trash is already empty",
-      "success_one": "{{count}} item deleted permanently",
-      "success_other": "{{count}} items deleted permanently",
-      "failed": "Failed to empty trash"
+      "alreadyEmpty": "垃圾桶已經空了",
+      "success_one": "永久刪除了 {{count}} 項",
+      "success_other": "永久刪除了 {{count}} 項",
+      "failed": "清空垃圾桶失敗"
     },
     "bulk": {
-      "trashed_one": "Moved {{count}} item to Trash",
-      "trashed_other": "Moved {{count}} items to Trash",
-      "trashFailed": "Failed to move items to trash",
-      "restored_one": "Restored {{count}} item",
-      "restored_other": "Restored {{count}} items",
-      "restoreFailed": "Failed to restore items",
-      "deleted_one": "Deleted {{count}} item permanently",
-      "deleted_other": "Deleted {{count}} items permanently",
-      "deleteFailed": "Failed to delete items",
-      "archived_one": "Archived {{count}} item",
-      "archived_other": "Archived {{count}} items",
-      "archiveFailed": "Failed to archive items",
-      "starred_one": "Starred {{count}} item",
-      "starred_other": "Starred {{count}} items",
-      "starFailed": "Failed to star items",
-      "unarchived_one": "Moved {{count}} item back to My Drive",
-      "unarchived_other": "Moved {{count}} items back to My Drive",
-      "unarchiveFailed": "Failed to unarchive items"
+      "trashed_one": "已將 {{count}} 項移至垃圾桶",
+      "trashed_other": "已將 {{count}} 項移至垃圾桶",
+      "trashFailed": "無法將專案移至垃圾桶",
+      "restored_one": "已恢復 {{count}} 項",
+      "restored_other": "已恢復 {{count}} 項",
+      "restoreFailed": "無法恢復專案",
+      "deleted_one": "已永久刪除 {{count}} 項",
+      "deleted_other": "已永久刪除 {{count}} 項",
+      "deleteFailed": "刪除專案失敗",
+      "archived_one": "已歸檔 {{count}} 項",
+      "archived_other": "已歸檔 {{count}} 項",
+      "archiveFailed": "無法歸檔專案",
+      "starred_one": "已加上星號的 {{count}} 項",
+      "starred_other": "已加上星號的 {{count}} 項",
+      "starFailed": "未能為專案加註星標",
+      "unarchived_one": "已將 {{count}} 項移回“我的雲端硬碟”",
+      "unarchived_other": "已將 {{count}} 項移回“我的雲端硬碟”",
+      "unarchiveFailed": "無法取消歸檔專案"
     },
     "offline": {
-      "downloading": "Downloading \"{{name}}\" for offline access...",
-      "available": "\"{{name}}\" is now available offline",
-      "unavailable": "\"{{name}}\" is no longer available offline",
-      "failed": "Failed to update offline status"
+      "downloading": "正在下載“{{name}}”以供離線訪問...",
+      "available": "“{{name}}”現在可以離線使用",
+      "unavailable": "“{{name}}”無法再離線使用",
+      "failed": "無法更新離線狀態"
     },
     "move": {
-      "nothingToMove": "Nothing to move",
-      "destinationMissing": "Destination folder no longer exists.",
-      "intoItself": "Cannot move folder \"{{name}}\" into itself or its subfolders.",
-      "alreadyInFolder": "Items are already in that folder",
-      "success_one": "Successfully moved {{count}} item",
-      "success_other": "Successfully moved {{count}} items",
-      "failed": "Failed to move items"
+      "nothingToMove": "沒什麼可動的",
+      "destinationMissing": "目標資料夾不再存在。",
+      "intoItself": "無法將資料夾“{{name}}”移動到其自身或其子資料夾中。",
+      "alreadyInFolder": "專案已在該資料夾中",
+      "success_one": "已成功移動 {{count}} 項",
+      "success_other": "已成功移動 {{count}} 件商品",
+      "failed": "無法移動專案"
     }
   }
 }

@@ -1,153 +1,145 @@
 {
-  "loading": "Loading…",
-  "downloadInstead": "Download Instead",
-  "truncatedNotice": "--- [Preview truncated: File exceeds 3MB limit] ---",
+  "loading": "Chargement…",
+  "downloadInstead": "Télécharger à la place",
+  "truncatedNotice": "--- [Aperçu tronqué : le fichier dépasse la limite de 3 Mo] ---",
   "errors": {
-    "offlineUnavailable": "You are currently offline, and this file has not been marked as 'Available offline'. Connect to the internet to open it.",
-    "downloadFailed": "Failed to download file."
+    "offlineUnavailable": "Vous êtes actuellement hors ligne et ce fichier n'est pas marqué comme « Disponible hors ligne ». Connectez-vous à Internet pour l'ouvrir.",
+    "downloadFailed": "Échec du téléchargement du fichier."
   },
   "toast": {
-    "preparingSystemViewer": "Preparing document for system viewer...",
-    "openedInSystemViewer": "Opened document in system viewer.",
-    "systemViewerFailed": "Could not open system viewer. Downloading file instead...",
-    "saved": "\"{{name}}\" saved successfully!",
-    "saveFailed": "Save failed: {{message}}",
-    "unknownError": "Unknown error",
-    "copied": "Copied to clipboard",
-    "jsonFormatted": "JSON formatted",
-    "invalidJson": "Invalid JSON: {{message}}"
+    "preparingSystemViewer": "Préparation du document pour la visionneuse système...",
+    "openedInSystemViewer": "Document ouvert dans la visionneuse système.",
+    "systemViewerFailed": "Impossible d'ouvrir la visionneuse système. Téléchargement du fichier à la place...",
+    "saved": "\"{{name}}\" enregistré avec succès !",
+    "saveFailed": "Échec de l'enregistrement : {{message}}",
+    "unknownError": "Erreur inconnue",
+    "copied": "Copié dans le presse-papiers",
+    "jsonFormatted": "JSON formaté",
+    "invalidJson": "JSON non valide : {{message}}"
   },
   "topbar": {
-    "editing": "Editing",
-    "saved": "Saved",
-    "cancel": "Cancel",
-    "saving": "Saving…",
-    "save": "Save",
-    "formatJsonTitle": "Format JSON (Prettify)",
-    "format": "Format",
-    "disableWrap": "Disable word wrap",
-    "enableWrap": "Enable word wrap",
-    "fontSizeTitle": "Font size: {{size}}px (click to toggle)",
-    "copyTitle": "Copy content to clipboard",
-    "runTitle": "Run in O2 Code Editor",
-    "run": "Run",
-    "editTitle": "Edit file",
-    "edit": "Edit",
-    "toggleDetails": "Toggle details",
-    "openInSystemViewerTitle": "Open in System Default PDF Viewer",
-    "openInSystemViewer": "Open in System Viewer",
-    "download": "Download",
-    "close": "Close"
+    "editing": "Modification",
+    "saved": "Enregistré",
+    "cancel": "Annuler",
+    "saving": "Enregistrement…",
+    "save": "Enregistrer",
+    "formatJsonTitle": "Formater le JSON",
+    "format": "Formater",
+    "disableWrap": "Désactiver le retour à la ligne",
+    "enableWrap": "Activer le retour à la ligne",
+    "fontSizeTitle": "Taille de police : {{size}}px (cliquez pour changer)",
+    "copyTitle": "Copier le contenu dans le presse-papiers",
+    "runTitle": "Exécuter dans l'éditeur O2",
+    "run": "Exécuter",
+    "editTitle": "Modifier le fichier",
+    "edit": "Modifier",
+    "toggleDetails": "Afficher/masquer les détails",
+    "openInSystemViewerTitle": "Ouvrir dans la visionneuse PDF par défaut du système",
+    "openInSystemViewer": "Ouvrir dans l'application système",
+    "download": "Télécharger",
+    "close": "Fermer"
   },
   "viewMode": {
-    "preview": "Preview",
+    "preview": "Aperçu",
     "source": "Source",
-    "table": "Table",
-    "raw": "Raw",
-    "vector": "Vector",
+    "table": "Tableau",
+    "raw": "Brut",
+    "vector": "Vecteur",
     "code": "Code"
   },
   "image": {
-    "zoomOut": "Zoom Out",
-    "zoomIn": "Zoom In",
-    "resetZoom": "Zoom Fit / Reset",
-    "rotateCounterClockwise": "Rotate Counter-Clockwise",
-    "rotateClockwise": "Rotate Clockwise",
-    "toggleGrid": "Toggle Grid Background"
+    "zoomOut": "Zoom arrière",
+    "zoomIn": "Zoom avant",
+    "resetZoom": "Ajuster / Réinitialiser le zoom",
+    "rotateCounterClockwise": "Pivoter vers la gauche",
+    "rotateClockwise": "Pivoter vers la droite",
+    "toggleGrid": "Basculer la grille d'arrière-plan"
   },
   "details": {
-    "title": "File Details",
-    "name": "Name",
+    "title": "Détails du fichier",
+    "name": "Nom",
     "dimensions": "Dimensions",
-    "loadingDimensions": "Loading...",
-    "fileSize": "File Size",
-    "mimeType": "Mime Type",
-    "path": "Path",
-    "uploadedAt": "Uploaded At"
+    "loadingDimensions": "Chargement...",
+    "fileSize": "Taille du fichier",
+    "mimeType": "Type MIME",
+    "path": "Emplacement",
+    "uploadedAt": "Téléversé le"
   },
   "media": {
-    "skipBack": "Skip back 10s",
-    "skipForward": "Skip forward 10s",
-    "audioTrack": "Audio Track"
+    "skipBack": "Reculer de 10s",
+    "skipForward": "Avancer de 10s",
+    "audioTrack": "Piste audio"
   },
   "archive": {
-    "badge": "{{ext}} ARCHIVE",
-    "description": "Compressed archives cannot be previewed directly in-browser. Download this archive to extract and view its contents on your computer.",
-    "download": "Download Archive"
+    "badge": "ARCHIVE {{ext}}",
+    "description": "Les archives compressées ne peuvent pas être prévisualisées directement. Téléchargez cette archive pour extraire et afficher son contenu.",
+    "download": "Télécharger l'archive"
   },
   "unsupported": {
-    "description": "No preview is available for this file type. You can download and open it in a compatible application on your system.",
-    "download": "Download File"
+    "description": "Aucun aperçu n'est disponible pour ce type de fichier. Vous pouvez le télécharger et l'ouvrir dans une application compatible.",
+    "download": "Télécharger le fichier"
   },
   "status": {
-    "words_one": "{{count, number}} word",
-    "words_other": "{{count, number}} words",
-    "readingTime_one": "{{count}} min read",
-    "readingTime_other": "{{count}} min read",
-    "rows_one": "{{count, number}} row",
-    "rows_other": "{{count, number}} rows",
-    "lines_one": "{{count, number}} line",
-    "lines_other": "{{count, number}} lines",
-    "wrapOn": "Wrap: On",
-    "wrapOff": "Wrap: Off",
-    "cursor": "Ln {{line}}, Col {{col}}",
-    "editorInfo": "Tab: 2 spaces · UTF-8 · LF"
+    "words_one": "{{count, number}} mot",
+    "words_other": "{{count, number}} mots",
+    "readingTime_one": "{{count}} min de lecture",
+    "readingTime_other": "{{count}} min de lecture",
+    "rows_one": "{{count, number}} ligne",
+    "rows_other": "{{count, number}} lignes",
+    "lines_one": "{{count, number}} ligne",
+    "lines_other": "{{count, number}} lignes",
+    "wrapOn": "Retour à la ligne : Activé",
+    "wrapOff": "Retour à la ligne : Désactivé",
+    "cursor": "Ligne {{line}}, Col {{col}}",
+    "editorInfo": "Tabulation : 2 espaces · UTF-8 · LF"
   },
   "pdfErrorBoundary": {
-    "title": "PDF viewer encountered an error",
-    "description": "The PDF could not be rendered. Try reloading.",
-    "retry": "Retry"
+    "title": "La visionneuse PDF a rencontré une erreur",
+    "description": "Le document PDF n'a pas pu être affiché. Essayez de recharger.",
+    "retry": "Réessayer"
   },
   "pdf": {
-    "loading": "Loading PDF document",
-    "preparing": "Preparing your document...",
-    "errorTitle": "Cannot preview document",
-    "openInSystemViewer": "Open in System Viewer",
-    "noDocument": "No document loaded.",
+    "loading": "Chargement du document PDF",
+    "preparing": "Préparation de votre document...",
+    "errorTitle": "Impossible d'afficher le document",
+    "openInSystemViewer": "Ouvrir dans l'application système",
+    "noDocument": "Aucun document chargé.",
     "errors": {
-      "noData": "No document data received.",
-      "invalid": "This file appears to be corrupted or is not a valid PDF.",
-      "passwordProtected": "This PDF is password-protected. Password-protected PDFs are not supported.",
-      "engineUnavailable": "PDF engine is not available. Please reload the application.",
-      "loadFailed": "Failed to load the PDF document. The file may be corrupted."
+      "noData": "Aucune donnée de document reçue.",
+      "invalid": "Ce fichier semble corrompu ou n'est pas un fichier PDF valide.",
+      "passwordProtected": "Ce PDF est protégé par mot de passe. Les PDF protégés ne sont pas pris en charge.",
+      "engineUnavailable": "Le moteur PDF n'est pas disponible. Veuillez recharger l'application.",
+      "loadFailed": "Échec du chargement du PDF. Le fichier est peut-être corrompu."
     },
     "toolbar": {
-      "previousPage": "Previous Page (↑ / PageUp)",
-      "jumpToPage": "Click to jump to page",
-      "nextPage": "Next Page (↓ / PageDown)",
-      "zoomOut": "Zoom Out (Ctrl+-)",
-      "resetZoom": "Reset to 100% (Ctrl+0)",
-      "zoomIn": "Zoom In (Ctrl+=)",
-      "fitWidth": "Fit to Width",
-      "fitPage": "Fit Full Page",
-      "fit": "Fit",
-      "rotate": "Rotate Clockwise",
-      "print": "Print Document",
-      "openInSystemAppTitle": "Open in System Default PDF Application",
-      "systemViewer": "System Viewer"
+      "previousPage": "Page précédente (↑ / PageUp)",
+      "jumpToPage": "Cliquer pour aller à la page",
+      "nextPage": "Page suivante (↓ / PageDown)",
+      "zoomOut": "Zoom arrière (Ctrl+-)",
+      "resetZoom": "Réinitialiser à 100% (Ctrl+0)",
+      "zoomIn": "Zoom avant (Ctrl+=)",
+      "fitWidth": "Ajuster à la largeur",
+      "fitPage": "Page entière",
+      "fit": "Ajuster",
+      "rotate": "Pivoter dans le sens horaire",
+      "print": "Imprimer le document",
+      "openInSystemAppTitle": "Ouvrir dans l'application PDF par défaut du système",
+      "systemViewer": "Visionneuse système"
     }
   },
   "csv": {
     "toast": {
-      "copied": "Copied cell value to clipboard"
+      "copied": "Valeur de cellule copiée dans le presse-papiers"
     },
-    "filterPlaceholder_one": "Filter {{count}} row…",
-    "filterPlaceholder_other": "Filter {{count}} rows…",
-    "clear": "Clear",
-    "rowsShown_one": "{{shown}} of {{count}} row",
-    "rowsShown_other": "{{shown}} of {{count}} rows",
-    "columns_one": "{{count}} column",
-    "columns_other": "{{count}} columns",
-    "empty": "Empty dataset",
-    "columnFallback": "Column {{letter}}",
-    "cellTitle": "{{value}} (Click to copy)"
-  },
-  "codeEditor": {
-    "loading": "Loading editor…"
-  },
-  "syntaxHighlighter": {
-    "ariaLabel": "Code viewer",
-    "largeFile_one": "Large file ({{count, number}} line) — syntax highlighting skipped for performance",
-    "largeFile_other": "Large file ({{count, number}} lines) — syntax highlighting skipped for performance"
+    "filterPlaceholder_one": "Filtrer {{count}} ligne…",
+    "filterPlaceholder_other": "Filtrer {{count}} lignes…",
+    "clear": "Effacer",
+    "rowsShown_one": "{{shown}} sur {{count}} ligne",
+    "rowsShown_other": "{{shown}} sur {{count}} lignes",
+    "columns_one": "{{count}} colonne",
+    "columns_other": "{{count}} colonnes",
+    "emptyFiltered": "Aucune ligne ne correspond à votre filtre.",
+    "resetFilter": "Réinitialiser le filtre",
+    "noData": "Aucune donnée trouvée dans ce tableau."
   }
 }

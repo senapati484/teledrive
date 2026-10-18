@@ -1,193 +1,168 @@
 {
   "page": {
-    "title": "Settings",
-    "backToDrive": "Back to Drive"
+    "title": "सेटिंग्स",
+    "backToDrive": "ड्राइव पर वापस जाएं"
   },
   "nav": {
-    "account": "Telegram Account",
-    "backup": "Device Backup",
-    "appearance": "Appearance",
+    "account": "Telegram खाता",
+    "backup": "डिवाइस बैकअप",
+    "appearance": "दिखावट",
     "language": "भाषा",
-    "storage": "Storage",
-    "about": "About"
+    "storage": "स्टोरेज",
+    "about": "परिचय"
   },
   "language": {
     "title": "भाषा",
-    "description": "TeleDrive इंटरफ़ेस में उपयोग की जाने वाली भाषा चुनें।",
+    "description": "TeleDrive इंटरफ़ेस, मेनू और सूचनाओं में उपयोग की जाने वाली भाषा चुनें।",
     "activeLanguage": "सक्रिय भाषा",
     "cardDescription": "अपनी पसंदीदा भाषा चुनें। परिवर्तन तुरंत पूरे एप्लिकेशन में लागू होते हैं।",
-    "callout": "<strong>त्वरित सिंक:</strong> TeleDrive आपकी भाषा पसंद को स्थानीय रूप से सहेजता है और इसे स्वचालित रूप से सभी विंडो में लागू करता है।"
+    "callout": "<strong>त्वरित सिंक:</strong> TeleDrive आपकी भाषा पसंद को स्थानीय रूप से सहेजता है और इसे स्वचालित रूप से सभी विंडो और सत्रों में लागू करता है।"
   },
   "logout": {
-    "button": "Log Out",
-    "title": "Log Out",
-    "description": "You will be signed out of your Telegram account. Your files will remain safe in your storage channel.",
-    "cancel": "Cancel",
-    "confirm": "Log Out",
-    "loggingOut": "Logging out…"
+    "button": "लॉग आउट करें",
+    "title": "लॉग आउट करें",
+    "description": "आप अपने Telegram खाते से साइन आउट हो जाएंगे। आपकी फ़ाइलें आपके स्टोरेज चैनल में सुरक्षित रहेंगी।",
+    "cancel": "रद्द करें",
+    "confirm": "लॉग आउट करें",
+    "loggingOut": "लॉग आउट हो रहा है…"
   },
   "account": {
-    "title": "Telegram Account",
-    "description": "Manage your connected Telegram credentials and cloud storage channel.",
+    "title": "Telegram खाता",
+    "description": "अपने कनेक्टेड Telegram क्रेडेंशियल और क्लाउड स्टोरेज चैनल का प्रबंधन करें।",
     "notConnected": {
-      "title": "Not connected",
-      "description": "Connect your Telegram account to start storing unlimited files in your private storage channel.",
-      "connect": "Connect Telegram Account"
+      "title": "कनेक्ट नहीं है",
+      "description": "अपने निजी स्टोरेज चैनल में असीमित फ़ाइलें सहेजना शुरू करने के लिए अपना Telegram खाता कनेक्ट करें।",
+      "connect": "Telegram खाता कनेक्ट करें"
     },
-    "activeSession": "Active Session",
-    "connectedVia": "Connected via Telegram MTProto client",
-    "disconnect": "Disconnect Account",
+    "activeSession": "सक्रिय सत्र",
+    "connectedVia": "Telegram MTProto क्लाइंट के माध्यम से कनेक्टेड",
+    "disconnect": "खाता डिस्कनेक्ट करें",
     "channel": {
-      "title": "Active Storage Channel",
-      "description": "Your files, folders, and metadata are persisted securely in this private channel.",
-      "name": "Channel Name",
-      "id": "Telegram Channel ID",
-      "loading": "Loading...",
-      "copyId": "Copy Channel ID"
+      "title": "सक्रिय स्टोरेज चैनल",
+      "description": "आपकी फ़ाइलें, फ़ोल्डर और मेटाडेटा इस निजी चैनल में सुरक्षित रूप से रखे जाते हैं।",
+      "name": "चैनल का नाम",
+      "id": "Telegram चैनल आईडी",
+      "loading": "लोड हो रहा है...",
+      "copyId": "चैनल आईडी कॉपी करें"
     },
-    "syncing": "Syncing...",
-    "syncNow": "Sync Now",
-    "switchChannel": "Switch Channel",
-    "architecture": "<strong>Decentralized cloud storage:</strong> Your files are uploaded as message documents directly to your private Telegram channel. TeleDrive maintains an indexed manifest pinned in this channel so your folders and files stay synchronized automatically.",
+    "syncing": "सिंक हो रहा है...",
+    "syncNow": "अभी सिंक करें",
+    "switchChannel": "चैनल बदलें",
+    "architecture": "<strong>विकेंद्रीकृत क्लाउड स्टोरेज:</strong> आपकी फ़ाइलें दस्तावेज़ों के रूप में सीधे आपके निजी Telegram चैनल पर अपलोड की जाती हैं। TeleDrive इस चैनल में पिन किए गए अनुक्रमित मैनिफ़ेस्ट को बनाए रखता है।",
     "switchDialog": {
-      "title": "Switch Storage Channel",
-      "description": "Select a different private Telegram channel to use for TeleDrive files.",
-      "warning": "<strong>Warning:</strong> Switching storage channels resets the local cache. TeleDrive will look for an existing manifest in the selected channel or create a new one.",
-      "cancel": "Cancel",
-      "confirm": "Confirm"
+      "title": "स्टोरेज चैनल बदलें",
+      "description": "TeleDrive फ़ाइलों के लिए उपयोग करने के लिए एक अलग निजी Telegram चैनल चुनें।",
+      "warning": "<strong>चेतावनी:</strong> स्टोरेज चैनल बदलने से स्थानीय कैश रीसेट हो जाता है।",
+      "cancel": "रद्द करें",
+      "confirm": "पुष्टि करें"
     },
     "toasts": {
-      "channelIdCopied": "Channel ID copied to clipboard",
-      "syncSuccess": "Files synchronized successfully!",
-      "alreadyUpToDate": "Your drive is already up to date.",
-      "syncFailed": "Sync failed",
-      "disconnected": "Disconnected Telegram account successfully.",
-      "disconnectFailed": "Failed to disconnect account.",
-      "channelReset": "Storage channel reset. Restart the app to re-map it.",
-      "channelResetFailed": "Failed to reset storage channel."
+      "channelIdCopied": "चैनल आईडी क्लिपबोर्ड पर कॉपी हो गई",
+      "syncSuccess": "फ़ाइलें सफलतापूर्वक सिंक हो गईं!",
+      "alreadyUpToDate": "आपका ड्राइव पहले से ही अप-टू-डेट है।",
+      "syncFailed": "सिंक विफल",
+      "disconnected": "Telegram खाता सफलतापूर्वक डिस्कनेक्ट हो गया।",
+      "disconnectFailed": "खाता डिस्कनेक्ट करने में विफल।",
+      "channelReset": "स्टोरेज चैनल रीसेट हो गया। ऐप पुनः प्रारंभ करें।",
+      "channelResetFailed": "स्टोरेज चैनल रीसेट करने में विफल।"
     }
   },
   "backup": {
-    "title": "Device Backup",
-    "description": "Pick folders on this computer to automatically mirror to your private Telegram storage channel.",
+    "title": "डिवाइस बैकअप",
+    "description": "अपने निजी Telegram स्टोरेज चैनल पर स्वचालित रूप से मिरर करने के लिए इस कंप्यूटर पर फ़ोल्डर चुनें।",
     "folders": {
-      "title": "Source folders",
-      "saving": "saving…",
-      "description": "Folders are mirrored under your device backup root and kept in sync. Saves automatically.",
-      "empty": "No folders added yet. Click “Add folder” below.",
-      "add": "Add folder",
-      "pickerTitle": "Pick a folder to back up"
+      "title": "स्रोत फ़ोल्डर",
+      "saving": "सहेजा जा रहा है…",
+      "description": "फ़ोल्डर आपके डिवाइस बैकअप रूट के तहत मिरर किए जाते हैं और सिंक में रहते हैं।",
+      "empty": "अभी तक कोई फ़ोल्डर नहीं जोड़ा गया। नीचे \"फ़ोल्डर जोड़ें\" पर क्लिक करें।",
+      "add": "फ़ोल्डर जोड़ें",
+      "pickerTitle": "बैकअप के लिए फ़ोल्डर चुनें"
     },
     "excludes": {
-      "title": "Exclude patterns",
-      "description": "Glob patterns relative to a source folder. Supports <code>*</code>, <code>**</code>, and <code>?</code>. Examples: <code>node_modules</code>, <code>*.tmp</code>.",
-      "empty": "No excludes. Everything in your source folders will be backed up.",
-      "placeholder": "e.g. *.tmp or node_modules",
-      "add": "Add"
+      "title": "अपवर्जन पैटर्न",
+      "description": "स्रोत फ़ोल्डर के सापेक्ष ग्लॉब पैटर्न। <code>*</code>, <code>**</code>, और <code>?</code> का समर्थन करता है।",
+      "empty": "कोई अपवर्जन नहीं। आपके स्रोत फ़ोल्डर में सब कुछ बैकअप किया जाएगा।",
+      "placeholder": "उदा. *.tmp या node_modules",
+      "add": "जोड़ें"
     },
-    "remove": "Remove {{item}}",
+    "remove": "{{item}} हटाएं",
     "cadence": {
-      "title": "Backup cadence",
-      "active": "Active",
-      "description": "How often TeleDrive should re-scan your source folders. Only changed files are re-uploaded.",
-      "off": "Off",
-      "every6h": "Every 6 hours",
-      "every12h": "Every 12 hours",
-      "every24h": "Every 24 hours"
+      "title": "बैकअप अंतराल",
+      "active": "सक्रिय",
+      "description": "TeleDrive को आपके स्रोत फ़ोल्डरों को कितनी बार पुनः स्कैन करना चाहिए।",
+      "off": "बंद",
+      "every6h": "प्रत्येक 6 घंटे",
+      "every12h": "प्रत्येक 12 घंटे",
+      "every24h": "प्रत्येक 24 घंटे"
     },
-    "lastBackup": "Last backup:",
-    "lastBackupAgo": "{{time}} ago",
-    "never": "Never",
-    "lastResult": {
-      "uploaded_one": "{{count}} uploaded, ",
-      "uploaded_other": "{{count}} uploaded, ",
-      "unchanged_one": "{{count}} unchanged, ",
-      "unchanged_other": "{{count}} unchanged, ",
-      "failed_one": "{{count}} failed",
-      "failed_other": "{{count}} failed"
-    },
-    "progressHint": "See the progress panel in the bottom-right corner.",
-    "cancel": "Cancel",
-    "running": "Backing up…",
-    "runNow": "Run backup now",
-    "howItWorks": "<strong>How backup works:</strong> TeleDrive walks the folders you pick, diffs against a local manifest, and uploads only new or changed files.",
-    "viewBackups": "View Backups",
+    "lastBackup": "अंतिम बैकअप:",
+    "lastBackupAgo": "{{time}} पहले",
+    "never": "कभी नहीं",
+    "runNow": "अभी बैकअप लें",
+    "running": "बैकअप जारी है…",
     "toasts": {
-      "maxFolders_one": "At most {{count}} source folder.",
-      "maxFolders_other": "At most {{count}} source folders.",
-      "maxExcludes_one": "At most {{count}} exclude pattern.",
-      "maxExcludes_other": "At most {{count}} exclude patterns.",
-      "pickerFailed": "Could not open folder picker",
-      "noFolders": "Pick at least one source folder first"
+      "folderAdded": "स्रोत फ़ोल्डर जोड़ा गया",
+      "folderRemoved": "स्रोत फ़ोल्डर हटाया गया",
+      "patternAdded": "अपवर्जन पैटर्न जोड़ा गया",
+      "patternRemoved": "अपवर्जन पैटर्न हटाया गया",
+      "patternEmpty": "कृपया एक गैर-रिक्त पैटर्न दर्ज करें।",
+      "cadenceUpdated": "बैकअप अंतराल अपडेट किया गया"
     }
   },
   "appearance": {
-    "title": "Appearance",
-    "description": "Customize the layout appearance and color theme of TeleDrive.",
-    "themeMode": {
-      "title": "Theme Mode",
-      "description": "Choose whether TeleDrive uses light, dark, or system-adaptive appearance."
-    },
-    "themes": {
-      "light": {
-        "label": "Light",
-        "description": "Clean, high-contrast light theme with Google Drive canvas"
-      },
-      "dark": {
-        "label": "Dark",
-        "description": "Sleek dark theme optimized for low-light environments"
-      },
-      "system": {
-        "label": "System",
-        "description": "Automatically syncs with your operating system appearance"
-      }
-    },
-    "callout": "<strong>Theme Synchronization:</strong> TeleDrive uses Google Drive's curated HSL color tokens across both light (`#F8FAFD`) and dark (`#131314`) surfaces, ensuring high contrast and reduced eye strain."
+    "title": "दिखावट",
+    "description": "अपने डिवाइस पर TeleDrive के दृश्य स्वरूप को अनुकूलित करें।",
+    "theme": {
+      "title": "इंटरफ़ेस थीम",
+      "description": "लाइट और डार्क मोड के बीच चुनें, या अपने ऑपरेटिंग सिस्टम के साथ सिंक करें।",
+      "light": "लाइट",
+      "lightDesc": "स्वच्छ और उज्ज्वल इंटरफ़ेस",
+      "dark": "डार्क",
+      "darkDesc": "अंधेरे में आंखों के लिए आसान",
+      "system": "सिस्टम",
+      "systemDesc": "आपके सिस्टम की सेटिंग्स का अनुसरण करता है"
+    }
   },
   "storage": {
-    "title": "Storage",
-    "description": "Monitor your Telegram cloud storage space, active files, and trash retention.",
-    "totalUsed": "Total Storage Used",
-    "calculating": "Calculating…",
-    "ofUnlimited": "of Unlimited",
-    "unlimitedBadge": "Unlimited Cloud Storage",
-    "meterLabel": "Telegram Channel Storage (Unlimited)",
-    "stats": {
-      "files": "Files Stored",
-      "folders": "Folders Created",
-      "trash": "Items in Trash"
+    "title": "स्टोरेज और कैश",
+    "description": "स्थानीय डिस्क उपयोग और ऑफ़लाइन डेटा का प्रबंधन करें।",
+    "cloud": {
+      "title": "क्लाउड क्षमता",
+      "unlimited": "असीमित",
+      "description": "बिना किसी कोटा सीमा के आपके निजी Telegram चैनल द्वारा संचालित।",
+      "stored": "Telegram पर संग्रहीत"
     },
-    "recalculating": "Recalculating…",
-    "recalculate": "Recalculate Storage",
-    "info": {
-      "noLimit": "Telegram does not impose any limit on the cumulative volume of data stored in private channels.",
-      "fileLimits": "Individual file limits: up to <strong>2 GB</strong> per single file for standard accounts, and up to <strong>4 GB</strong> for Telegram Premium subscribers."
+    "local": {
+      "title": "स्थानीय स्टोरेज",
+      "description": "इस कंप्यूटर पर स्थानीय कैश और डेटाबेस का स्थान।",
+      "path": "ऐप डेटा पथ",
+      "openFolder": "फ़ोल्डर खोलें",
+      "clearCache": "स्थानीय कैश साफ़ करें",
+      "clearing": "सफाई जारी है…",
+      "confirmClearTitle": "स्थानीय कैश साफ़ करें?",
+      "confirmClearDesc": "सभी स्थानीय पूर्वावलोकन और अस्थायी फ़ाइलें हटा दी जाएंगी। आपकी फ़ाइलें सुरक्षित रहेंगी।",
+      "cancel": "रद्द करें",
+      "confirm": "कैश साफ़ करें"
     },
     "toasts": {
-      "channelNotInitialised": "Storage channel not initialised yet.",
-      "refreshed": "Storage refreshed from Telegram.",
-      "refreshFailed": "Failed to refresh storage data."
+      "cacheCleared": "स्थानीय कैश सफलतापूर्वक साफ़ किया गया।",
+      "cacheClearFailed": "स्थानीय कैश साफ़ करने में विफल।"
     }
   },
   "about": {
-    "title": "About TeleDrive",
-    "description": "Learn more about the application, updates, and open-source project.",
-    "logoAlt": "TeleDrive Logo",
-    "tagline": "Virtual cloud storage client backed by Telegram",
-    "summary": "TeleDrive is an open-source, cross-platform cloud drive client powered by Telegram. It maps your file storage to a private Telegram channel and organizes your files into a virtual hierarchical drive with fast search, preview, and real-time synchronization.",
-    "githubRepository": "GitHub Repository",
-    "reportIssue": "Report an Issue",
-    "architecture": "Channel-based cloud storage architecture",
-    "checkingUpdates": "Checking for updates...",
-    "checkUpdates": "Check for Updates",
-    "disclaimer": {
-      "title": "Disclaimer",
-      "body": "TeleDrive is an independent open-source client application and is not affiliated with, authorized, maintained, sponsored or endorsed by Telegram FZ-LLC or any of its affiliates."
-    },
-    "toasts": {
-      "openLinkFailed": "Failed to open link.",
-      "upToDate": "You're up to date!",
-      "latestVersion": "TeleDrive v{{version}} is the latest version."
-    }
+    "title": "TeleDrive के बारे में",
+    "description": "एप्लिकेशन जानकारी, लाइसेंस और योगदानकर्ता।",
+    "appTitle": "TeleDrive Desktop",
+    "tagline": "आपके अपने निजी Telegram चैनल द्वारा संचालित असीमित व्यक्तिगत क्लाउड स्टोरेज।",
+    "version": "संस्करण {{version}}",
+    "website": "आधिकारिक वेबसाइट",
+    "github": "GitHub रिपॉजिटरी",
+    "license": "GPL-3.0 लाइसेंस",
+    "checkForUpdates": "अपडेट के लिए जांचें",
+    "checking": "जांच जारी है…",
+    "upToDate": "आपके पास नवीनतम संस्करण है।",
+    "newVersionAvailable": "एक नया संस्करण उपलब्ध है: {{version}}",
+    "downloadUpdate": "अपडेट डाउनलोड करें",
+    "disclaimer": "TeleDrive एक स्वतंत्र ओपन-सोर्स प्रोजेक्ट है और यह Telegram FZ-LLC से किसी भी प्रकार से संबद्ध नहीं है।"
   }
 }

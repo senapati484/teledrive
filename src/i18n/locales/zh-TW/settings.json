@@ -1,15 +1,15 @@
 {
   "page": {
-    "title": "Settings",
-    "backToDrive": "Back to Drive"
+    "title": "設定",
+    "backToDrive": "返回駕駛"
   },
   "nav": {
-    "account": "Telegram Account",
-    "backup": "Device Backup",
-    "appearance": "Appearance",
+    "account": "Telegram賬戶",
+    "backup": "裝置備份",
+    "appearance": "外貌",
     "language": "語言",
-    "storage": "Storage",
-    "about": "About"
+    "storage": "貯存",
+    "about": "關於"
   },
   "language": {
     "title": "語言",
@@ -19,175 +19,175 @@
     "callout": "<strong>即時同步：</strong>TeleDrive 會在本地儲存您的語言選擇，並自動套用於所有視窗與工作階段。"
   },
   "logout": {
-    "button": "Log Out",
-    "title": "Log Out",
-    "description": "You will be signed out of your Telegram account. Your files will remain safe in your storage channel.",
-    "cancel": "Cancel",
-    "confirm": "Log Out",
-    "loggingOut": "Logging out…"
+    "button": "退出",
+    "title": "退出",
+    "description": "您將退出 Telegram 帳戶。您的檔案將安全地儲存在您的儲存通道中。",
+    "cancel": "取消",
+    "confirm": "退出",
+    "loggingOut": "正在退出…"
   },
   "account": {
-    "title": "Telegram Account",
-    "description": "Manage your connected Telegram credentials and cloud storage channel.",
+    "title": "Telegram賬戶",
+    "description": "管理您連線的 Telegram 憑證和雲端儲存通道。",
     "notConnected": {
-      "title": "Not connected",
-      "description": "Connect your Telegram account to start storing unlimited files in your private storage channel.",
-      "connect": "Connect Telegram Account"
+      "title": "未連線",
+      "description": "連線您的 Telegram 帳戶，開始在您的私人儲存通道中儲存無限的檔案。",
+      "connect": "連線Telegram帳戶"
     },
-    "activeSession": "Active Session",
-    "connectedVia": "Connected via Telegram MTProto client",
-    "disconnect": "Disconnect Account",
+    "activeSession": "活動會話",
+    "connectedVia": "通過 Telegram MTProto 客戶端連線",
+    "disconnect": "斷開帳戶",
     "channel": {
-      "title": "Active Storage Channel",
-      "description": "Your files, folders, and metadata are persisted securely in this private channel.",
-      "name": "Channel Name",
-      "id": "Telegram Channel ID",
-      "loading": "Loading...",
-      "copyId": "Copy Channel ID"
+      "title": "活動儲存通道",
+      "description": "您的檔案、資料夾和後設資料都安全地儲存在這個私人通道中。",
+      "name": "頻道名稱",
+      "id": "Telegram頻道 ID",
+      "loading": "載入中...",
+      "copyId": "複製頻道 ID"
     },
-    "syncing": "Syncing...",
-    "syncNow": "Sync Now",
-    "switchChannel": "Switch Channel",
-    "architecture": "<strong>Decentralized cloud storage:</strong> Your files are uploaded as message documents directly to your private Telegram channel. TeleDrive maintains an indexed manifest pinned in this channel so your folders and files stay synchronized automatically.",
+    "syncing": "正在同步...",
+    "syncNow": "立即同步",
+    "switchChannel": "切換頻道",
+    "architecture": "<strong>去中心化雲端儲存</strong>：您的檔案將作為訊息文件直接上傳到您的私人 Telegram 頻道。 TeleDrive 維護固定在此通道中的索引清單，以便您的資料夾和檔案自動保持同步。",
     "switchDialog": {
-      "title": "Switch Storage Channel",
-      "description": "Select a different private Telegram channel to use for TeleDrive files.",
-      "warning": "<strong>Warning:</strong> Switching storage channels resets the local cache. TeleDrive will look for an existing manifest in the selected channel or create a new one.",
-      "cancel": "Cancel",
-      "confirm": "Confirm"
+      "title": "切換儲存通道",
+      "description": "選擇用於 TeleDrive 檔案的不同私人 Telegram 頻道。",
+      "warning": "<strong>警告：</strong>切換儲存通道會重置本地快取。 TeleDrive 將在所選渠道中查詢現有清單或建立新清單。",
+      "cancel": "取消",
+      "confirm": "確認"
     },
     "toasts": {
-      "channelIdCopied": "Channel ID copied to clipboard",
-      "syncSuccess": "Files synchronized successfully!",
-      "alreadyUpToDate": "Your drive is already up to date.",
-      "syncFailed": "Sync failed",
-      "disconnected": "Disconnected Telegram account successfully.",
-      "disconnectFailed": "Failed to disconnect account.",
-      "channelReset": "Storage channel reset. Restart the app to re-map it.",
-      "channelResetFailed": "Failed to reset storage channel."
+      "channelIdCopied": "通道 ID 已複製到剪貼簿",
+      "syncSuccess": "檔案同步成功！",
+      "alreadyUpToDate": "您的驅動器已經是最新的。",
+      "syncFailed": "同步失敗",
+      "disconnected": "已成功斷開 Telegram 帳戶。",
+      "disconnectFailed": "無法斷開帳戶。",
+      "channelReset": "儲存通道重置。重新啟動應用程式以重新對映它。",
+      "channelResetFailed": "重置儲存通道失敗。"
     }
   },
   "backup": {
-    "title": "Device Backup",
-    "description": "Pick folders on this computer to automatically mirror to your private Telegram storage channel.",
+    "title": "裝置備份",
+    "description": "選擇此計算機上的資料夾以自動映象到您的私人 Telegram 儲存通道。",
     "folders": {
-      "title": "Source folders",
-      "saving": "saving…",
-      "description": "Folders are mirrored under your device backup root and kept in sync. Saves automatically.",
-      "empty": "No folders added yet. Click “Add folder” below.",
-      "add": "Add folder",
-      "pickerTitle": "Pick a folder to back up"
+      "title": "原始檔夾",
+      "saving": "儲存…",
+      "description": "資料夾映象在您的裝置備份根目錄下並保持同步。自動儲存。",
+      "empty": "尚未新增資料夾。點選下面的“新增資料夾”。",
+      "add": "新增資料夾",
+      "pickerTitle": "選擇要備份的資料夾"
     },
     "excludes": {
-      "title": "Exclude patterns",
-      "description": "Glob patterns relative to a source folder. Supports <code>*</code>, <code>**</code>, and <code>?</code>. Examples: <code>node_modules</code>, <code>*.tmp</code>.",
-      "empty": "No excludes. Everything in your source folders will be backed up.",
-      "placeholder": "e.g. *.tmp or node_modules",
-      "add": "Add"
+      "title": "排除模式",
+      "description": "相對於原始檔夾的全域性模式。支援 <code>*</code>、<code>**</code> 和 <code>?</code>。示例：<code>node_modules</code>、<code>*.tmp</code>。",
+      "empty": "沒有排除。原始檔夾中的所有內容都將被備份。",
+      "placeholder": "例如*.tmp 或 node_modules",
+      "add": "新增"
     },
-    "remove": "Remove {{item}}",
+    "remove": "刪除{{item}}",
     "cadence": {
-      "title": "Backup cadence",
-      "active": "Active",
-      "description": "How often TeleDrive should re-scan your source folders. Only changed files are re-uploaded.",
-      "off": "Off",
-      "every6h": "Every 6 hours",
-      "every12h": "Every 12 hours",
-      "every24h": "Every 24 hours"
+      "title": "備份節奏",
+      "active": "積極的",
+      "description": "TeleDrive 應多久重新掃描一次原始檔夾。僅重新上傳更改的檔案。",
+      "off": "離開",
+      "every6h": "每 6 小時",
+      "every12h": "每12小時一次",
+      "every24h": "每24小時一次"
     },
-    "lastBackup": "Last backup:",
-    "lastBackupAgo": "{{time}} ago",
-    "never": "Never",
+    "lastBackup": "最後備份：",
+    "lastBackupAgo": "{{時間}}前",
+    "never": "絕不",
     "lastResult": {
-      "uploaded_one": "{{count}} uploaded, ",
-      "uploaded_other": "{{count}} uploaded, ",
-      "unchanged_one": "{{count}} unchanged, ",
-      "unchanged_other": "{{count}} unchanged, ",
-      "failed_one": "{{count}} failed",
-      "failed_other": "{{count}} failed"
+      "uploaded_one": "已上傳 {{count}} 個，",
+      "uploaded_other": "已上傳 {{count}} 個，",
+      "unchanged_one": "{{count}} 不變，",
+      "unchanged_other": "{{count}} 不變，",
+      "failed_one": "{{count}} 失敗",
+      "failed_other": "{{count}} 失敗"
     },
-    "progressHint": "See the progress panel in the bottom-right corner.",
-    "cancel": "Cancel",
-    "running": "Backing up…",
-    "runNow": "Run backup now",
-    "howItWorks": "<strong>How backup works:</strong> TeleDrive walks the folders you pick, diffs against a local manifest, and uploads only new or changed files.",
-    "viewBackups": "View Backups",
+    "progressHint": "檢視右下角的進度面板。",
+    "cancel": "取消",
+    "running": "正在備份...",
+    "runNow": "立即執行備份",
+    "howItWorks": "<strong>備份的工作原理</strong>：TeleDrive 會遍歷您選擇的資料夾，與本地清單進行比較，並僅上傳新的或更改的檔案。",
+    "viewBackups": "檢視備份",
     "toasts": {
-      "maxFolders_one": "At most {{count}} source folder.",
-      "maxFolders_other": "At most {{count}} source folders.",
-      "maxExcludes_one": "At most {{count}} exclude pattern.",
-      "maxExcludes_other": "At most {{count}} exclude patterns.",
-      "pickerFailed": "Could not open folder picker",
-      "noFolders": "Pick at least one source folder first"
+      "maxFolders_one": "最多 {{count}} 個原始檔夾。",
+      "maxFolders_other": "最多 {{count}} 個原始檔夾。",
+      "maxExcludes_one": "最多排除 {{count}} 個模式。",
+      "maxExcludes_other": "最多排除 {{count}} 個模式。",
+      "pickerFailed": "無法開啟資料夾選擇器",
+      "noFolders": "首先至少選擇一個原始檔夾"
     }
   },
   "appearance": {
-    "title": "Appearance",
-    "description": "Customize the layout appearance and color theme of TeleDrive.",
+    "title": "外貌",
+    "description": "自定義 TeleDrive 的佈局外觀和顏色主題。",
     "themeMode": {
-      "title": "Theme Mode",
-      "description": "Choose whether TeleDrive uses light, dark, or system-adaptive appearance."
+      "title": "主題模式",
+      "description": "選擇 TeleDrive 是否使用淺色、深色或系統自適應外觀。"
     },
     "themes": {
       "light": {
-        "label": "Light",
-        "description": "Clean, high-contrast light theme with Google Drive canvas"
+        "label": "光",
+        "description": "乾淨、高對比度的淺色主題，帶有 Google 雲端硬碟畫布"
       },
       "dark": {
-        "label": "Dark",
-        "description": "Sleek dark theme optimized for low-light environments"
+        "label": "黑暗的",
+        "description": "時尚的深色主題針對低光環境進行了最佳化"
       },
       "system": {
-        "label": "System",
-        "description": "Automatically syncs with your operating system appearance"
+        "label": "系統",
+        "description": "自動與您的作業系統外觀同步"
       }
     },
-    "callout": "<strong>Theme Synchronization:</strong> TeleDrive uses Google Drive's curated HSL color tokens across both light (`#F8FAFD`) and dark (`#131314`) surfaces, ensuring high contrast and reduced eye strain."
+    "callout": "<strong>主題同步</strong>：TeleDrive 在淺色 (`#F8FAFD`) 和深色 (`#131314`) 表面上使用 Google Drive 精選的 HSL 顏色標記，確保高對比度並減少眼睛疲勞。"
   },
   "storage": {
-    "title": "Storage",
-    "description": "Monitor your Telegram cloud storage space, active files, and trash retention.",
-    "totalUsed": "Total Storage Used",
-    "calculating": "Calculating…",
-    "ofUnlimited": "of Unlimited",
-    "unlimitedBadge": "Unlimited Cloud Storage",
-    "meterLabel": "Telegram Channel Storage (Unlimited)",
+    "title": "貯存",
+    "description": "監控您的 Telegram 雲端儲存空間、活動檔案和垃圾保留情況。",
+    "totalUsed": "使用的總儲存空間",
+    "calculating": "正在計算...",
+    "ofUnlimited": "無限的",
+    "unlimitedBadge": "無限雲端儲存",
+    "meterLabel": "Telegram 頻道儲存（無限）",
     "stats": {
-      "files": "Files Stored",
-      "folders": "Folders Created",
-      "trash": "Items in Trash"
+      "files": "已儲存的檔案",
+      "folders": "已建立資料夾",
+      "trash": "垃圾桶中的專案"
     },
-    "recalculating": "Recalculating…",
-    "recalculate": "Recalculate Storage",
+    "recalculating": "正在重新計算...",
+    "recalculate": "重新計算儲存空間",
     "info": {
-      "noLimit": "Telegram does not impose any limit on the cumulative volume of data stored in private channels.",
-      "fileLimits": "Individual file limits: up to <strong>2 GB</strong> per single file for standard accounts, and up to <strong>4 GB</strong> for Telegram Premium subscribers."
+      "noLimit": "Telegram 對私人頻道中儲存的累計資料量沒有任何限制。",
+      "fileLimits": "單個檔案限制：標準賬戶每個檔案最多<strong>2 GB</strong>，Telegram Premium 訂閱者最多<strong>4 GB</strong>。"
     },
     "toasts": {
-      "channelNotInitialised": "Storage channel not initialised yet.",
-      "refreshed": "Storage refreshed from Telegram.",
-      "refreshFailed": "Failed to refresh storage data."
+      "channelNotInitialised": "儲存通道尚未初始化。",
+      "refreshed": "從 Telegram 重新整理儲存。",
+      "refreshFailed": "重新整理儲存資料失敗。"
     }
   },
   "about": {
-    "title": "About TeleDrive",
-    "description": "Learn more about the application, updates, and open-source project.",
-    "logoAlt": "TeleDrive Logo",
-    "tagline": "Virtual cloud storage client backed by Telegram",
-    "summary": "TeleDrive is an open-source, cross-platform cloud drive client powered by Telegram. It maps your file storage to a private Telegram channel and organizes your files into a virtual hierarchical drive with fast search, preview, and real-time synchronization.",
-    "githubRepository": "GitHub Repository",
-    "reportIssue": "Report an Issue",
-    "architecture": "Channel-based cloud storage architecture",
-    "checkingUpdates": "Checking for updates...",
-    "checkUpdates": "Check for Updates",
+    "title": "關於 TeleDrive",
+    "description": "瞭解有關應用程式、更新和開源專案的更多資訊。",
+    "logoAlt": "電信標誌",
+    "tagline": "由 Telegram 支援的虛擬雲端儲存客戶端",
+    "summary": "TeleDrive 是一款由 Telegram 提供支援的開源跨平臺雲驅動客戶端。它將您的檔案儲存對映到私有 Telegram 頻道，並將您的檔案組織到虛擬分層驅動器中，並具有快速搜尋、預覽和即時同步功能。",
+    "githubRepository": "GitHub 儲存庫",
+    "reportIssue": "報告問題",
+    "architecture": "基於通道的雲端儲存架構",
+    "checkingUpdates": "正在檢查更新...",
+    "checkUpdates": "檢查更新",
     "disclaimer": {
-      "title": "Disclaimer",
-      "body": "TeleDrive is an independent open-source client application and is not affiliated with, authorized, maintained, sponsored or endorsed by Telegram FZ-LLC or any of its affiliates."
+      "title": "免責宣告",
+      "body": "TeleDrive 是一款獨立的開源客戶端應用程式，不隸屬於 Telegram FZ-LLC 或其任何附屬公司，也不受其授權、維護、贊助或認可。"
     },
     "toasts": {
-      "openLinkFailed": "Failed to open link.",
-      "upToDate": "You're up to date!",
-      "latestVersion": "TeleDrive v{{version}} is the latest version."
+      "openLinkFailed": "無法開啟連結。",
+      "upToDate": "你是最新的！",
+      "latestVersion": "TeleDrive v{{version}} 是最新版本。"
     }
   }
 }

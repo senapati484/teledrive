@@ -1,153 +1,153 @@
 {
-  "loading": "Loading…",
-  "downloadInstead": "Download Instead",
-  "truncatedNotice": "--- [Preview truncated: File exceeds 3MB limit] ---",
+  "loading": "載入中…",
+  "downloadInstead": "下載代替",
+  "truncatedNotice": "--- [預覽被截斷：檔案超過 3MB 限制] ---",
   "errors": {
-    "offlineUnavailable": "You are currently offline, and this file has not been marked as 'Available offline'. Connect to the internet to open it.",
-    "downloadFailed": "Failed to download file."
+    "offlineUnavailable": "您當前處於離線狀態，並且該檔案尚未標記為“可離線使用”。連線到網際網路以將其開啟。",
+    "downloadFailed": "下載檔案失敗。"
   },
   "toast": {
-    "preparingSystemViewer": "Preparing document for system viewer...",
-    "openedInSystemViewer": "Opened document in system viewer.",
-    "systemViewerFailed": "Could not open system viewer. Downloading file instead...",
-    "saved": "\"{{name}}\" saved successfully!",
-    "saveFailed": "Save failed: {{message}}",
-    "unknownError": "Unknown error",
-    "copied": "Copied to clipboard",
-    "jsonFormatted": "JSON formatted",
-    "invalidJson": "Invalid JSON: {{message}}"
+    "preparingSystemViewer": "正在為系統檢視器準備文件...",
+    "openedInSystemViewer": "在系統檢視器中開啟文件。",
+    "systemViewerFailed": "無法開啟系統檢視器。正在下載檔案...",
+    "saved": "“{{name}}”儲存成功！",
+    "saveFailed": "儲存失敗：{{message}}",
+    "unknownError": "未知錯誤",
+    "copied": "已複製到剪貼簿",
+    "jsonFormatted": "JSON 格式",
+    "invalidJson": "無效 JSON：{{message}}"
   },
   "topbar": {
-    "editing": "Editing",
-    "saved": "Saved",
-    "cancel": "Cancel",
-    "saving": "Saving…",
-    "save": "Save",
-    "formatJsonTitle": "Format JSON (Prettify)",
-    "format": "Format",
-    "disableWrap": "Disable word wrap",
-    "enableWrap": "Enable word wrap",
-    "fontSizeTitle": "Font size: {{size}}px (click to toggle)",
-    "copyTitle": "Copy content to clipboard",
-    "runTitle": "Run in O2 Code Editor",
-    "run": "Run",
-    "editTitle": "Edit file",
-    "edit": "Edit",
-    "toggleDetails": "Toggle details",
-    "openInSystemViewerTitle": "Open in System Default PDF Viewer",
-    "openInSystemViewer": "Open in System Viewer",
-    "download": "Download",
-    "close": "Close"
+    "editing": "編輯",
+    "saved": "已儲存",
+    "cancel": "取消",
+    "saving": "儲存…",
+    "save": "節省",
+    "formatJsonTitle": "格式化 JSON（美化）",
+    "format": "格式",
+    "disableWrap": "停用自動換行",
+    "enableWrap": "啟用自動換行",
+    "fontSizeTitle": "字型大小：{{size}}px（點選切換）",
+    "copyTitle": "將內容複製到剪貼簿",
+    "runTitle": "在 O2 程式碼編輯器中執行",
+    "run": "跑步",
+    "editTitle": "編輯檔案",
+    "edit": "編輯",
+    "toggleDetails": "切換詳細資訊",
+    "openInSystemViewerTitle": "在系統預設 PDF 檢視器中開啟",
+    "openInSystemViewer": "在系統檢視器中開啟",
+    "download": "下載",
+    "close": "關閉"
   },
   "viewMode": {
-    "preview": "Preview",
-    "source": "Source",
-    "table": "Table",
-    "raw": "Raw",
-    "vector": "Vector",
-    "code": "Code"
+    "preview": "預覽",
+    "source": "來源",
+    "table": "桌子",
+    "raw": "生的",
+    "vector": "向量",
+    "code": "程式碼"
   },
   "image": {
-    "zoomOut": "Zoom Out",
-    "zoomIn": "Zoom In",
-    "resetZoom": "Zoom Fit / Reset",
-    "rotateCounterClockwise": "Rotate Counter-Clockwise",
-    "rotateClockwise": "Rotate Clockwise",
-    "toggleGrid": "Toggle Grid Background"
+    "zoomOut": "縮小",
+    "zoomIn": "放大",
+    "resetZoom": "縮放適合/重置",
+    "rotateCounterClockwise": "逆時針旋轉",
+    "rotateClockwise": "順時針旋轉",
+    "toggleGrid": "切換網格背景"
   },
   "details": {
-    "title": "File Details",
-    "name": "Name",
-    "dimensions": "Dimensions",
-    "loadingDimensions": "Loading...",
-    "fileSize": "File Size",
-    "mimeType": "Mime Type",
-    "path": "Path",
-    "uploadedAt": "Uploaded At"
+    "title": "檔案詳細資訊",
+    "name": "姓名",
+    "dimensions": "方面",
+    "loadingDimensions": "載入中...",
+    "fileSize": "檔案大小",
+    "mimeType": "默劇型別",
+    "path": "小路",
+    "uploadedAt": "上傳於"
   },
   "media": {
-    "skipBack": "Skip back 10s",
-    "skipForward": "Skip forward 10s",
-    "audioTrack": "Audio Track"
+    "skipBack": "向後跳 10 秒",
+    "skipForward": "快進 10 秒",
+    "audioTrack": "音軌"
   },
   "archive": {
-    "badge": "{{ext}} ARCHIVE",
-    "description": "Compressed archives cannot be previewed directly in-browser. Download this archive to extract and view its contents on your computer.",
-    "download": "Download Archive"
+    "badge": "{{ext}} 存檔",
+    "description": "壓縮檔案無法直接在瀏覽器中預覽。下載此存檔以解壓並在您的計算機上檢視其內容。",
+    "download": "下載檔案"
   },
   "unsupported": {
-    "description": "No preview is available for this file type. You can download and open it in a compatible application on your system.",
-    "download": "Download File"
+    "description": "此檔案型別沒有可用的預覽。您可以在系統上的相容應用程式中下載並開啟它。",
+    "download": "下載檔案"
   },
   "status": {
-    "words_one": "{{count, number}} word",
-    "words_other": "{{count, number}} words",
-    "readingTime_one": "{{count}} min read",
-    "readingTime_other": "{{count}} min read",
-    "rows_one": "{{count, number}} row",
-    "rows_other": "{{count, number}} rows",
-    "lines_one": "{{count, number}} line",
-    "lines_other": "{{count, number}} lines",
-    "wrapOn": "Wrap: On",
-    "wrapOff": "Wrap: Off",
-    "cursor": "Ln {{line}}, Col {{col}}",
-    "editorInfo": "Tab: 2 spaces · UTF-8 · LF"
+    "words_one": "{{count, number}} 個字",
+    "words_other": "{{count, number}} 個字",
+    "readingTime_one": "{{count}}分鐘閱讀",
+    "readingTime_other": "{{count}}分鐘閱讀",
+    "rows_one": "{{count, number}} 行",
+    "rows_other": "{{count, number}} 行",
+    "lines_one": "{{count, number}} 行",
+    "lines_other": "{{count, number}} 行",
+    "wrapOn": "環繞：開",
+    "wrapOff": "環繞：關閉",
+    "cursor": "第 {{line}} 巷，第 {{col}} 巷",
+    "editorInfo": "製表符：2 個空格 · UTF-8 · LF"
   },
   "pdfErrorBoundary": {
-    "title": "PDF viewer encountered an error",
-    "description": "The PDF could not be rendered. Try reloading.",
-    "retry": "Retry"
+    "title": "PDF 檢視器遇到錯誤",
+    "description": "無法呈現 PDF。嘗試重新載入。",
+    "retry": "重試"
   },
   "pdf": {
-    "loading": "Loading PDF document",
-    "preparing": "Preparing your document...",
-    "errorTitle": "Cannot preview document",
-    "openInSystemViewer": "Open in System Viewer",
-    "noDocument": "No document loaded.",
+    "loading": "載入 PDF 文件",
+    "preparing": "正在準備您的檔案...",
+    "errorTitle": "無法預覽文件",
+    "openInSystemViewer": "在系統檢視器中開啟",
+    "noDocument": "未載入文件。",
     "errors": {
-      "noData": "No document data received.",
-      "invalid": "This file appears to be corrupted or is not a valid PDF.",
-      "passwordProtected": "This PDF is password-protected. Password-protected PDFs are not supported.",
-      "engineUnavailable": "PDF engine is not available. Please reload the application.",
-      "loadFailed": "Failed to load the PDF document. The file may be corrupted."
+      "noData": "未收到文件資料。",
+      "invalid": "該檔案似乎已損壞或不是有效的 PDF。",
+      "passwordProtected": "此 PDF 受密碼保護。不支援受密碼保護的 PDF。",
+      "engineUnavailable": "PDF 引擎不可用。請重新載入應用程式。",
+      "loadFailed": "無法載入 PDF 文件。檔案可能已損壞。"
     },
     "toolbar": {
-      "previousPage": "Previous Page (↑ / PageUp)",
-      "jumpToPage": "Click to jump to page",
-      "nextPage": "Next Page (↓ / PageDown)",
-      "zoomOut": "Zoom Out (Ctrl+-)",
-      "resetZoom": "Reset to 100% (Ctrl+0)",
-      "zoomIn": "Zoom In (Ctrl+=)",
-      "fitWidth": "Fit to Width",
-      "fitPage": "Fit Full Page",
-      "fit": "Fit",
-      "rotate": "Rotate Clockwise",
-      "print": "Print Document",
-      "openInSystemAppTitle": "Open in System Default PDF Application",
-      "systemViewer": "System Viewer"
+      "previousPage": "上一頁 (↑ / PageUp)",
+      "jumpToPage": "點選跳轉頁面",
+      "nextPage": "下一頁 (↓ / PageDown)",
+      "zoomOut": "縮小 (Ctrl+-)",
+      "resetZoom": "重置為 100% (Ctrl+0)",
+      "zoomIn": "放大（Ctrl+=）",
+      "fitWidth": "適合寬度",
+      "fitPage": "適合整頁",
+      "fit": "合身",
+      "rotate": "順時針旋轉",
+      "print": "列印檔案",
+      "openInSystemAppTitle": "在系統預設 PDF 應用程式中開啟",
+      "systemViewer": "系統檢視器"
     }
   },
   "csv": {
     "toast": {
-      "copied": "Copied cell value to clipboard"
+      "copied": "將單元格值複製到剪貼簿"
     },
-    "filterPlaceholder_one": "Filter {{count}} row…",
-    "filterPlaceholder_other": "Filter {{count}} rows…",
-    "clear": "Clear",
-    "rowsShown_one": "{{shown}} of {{count}} row",
-    "rowsShown_other": "{{shown}} of {{count}} rows",
-    "columns_one": "{{count}} column",
-    "columns_other": "{{count}} columns",
-    "empty": "Empty dataset",
-    "columnFallback": "Column {{letter}}",
-    "cellTitle": "{{value}} (Click to copy)"
+    "filterPlaceholder_one": "過濾 {{count}} 行...",
+    "filterPlaceholder_other": "過濾 {{count}} 行...",
+    "clear": "清除",
+    "rowsShown_one": "{{show}}（共 {{count}} 行）",
+    "rowsShown_other": "{{show}} 行，共 {{count}} 行",
+    "columns_one": "{{count}} 列",
+    "columns_other": "{{count}} 列",
+    "empty": "空資料集",
+    "columnFallback": "第 {{字母}} 列",
+    "cellTitle": "{{value}}（點選複製）"
   },
   "codeEditor": {
-    "loading": "Loading editor…"
+    "loading": "正在載入編輯器..."
   },
   "syntaxHighlighter": {
-    "ariaLabel": "Code viewer",
-    "largeFile_one": "Large file ({{count, number}} line) — syntax highlighting skipped for performance",
-    "largeFile_other": "Large file ({{count, number}} lines) — syntax highlighting skipped for performance"
+    "ariaLabel": "程式碼檢視器",
+    "largeFile_one": "大檔案（{{count, number}} 行）- 為了效能而跳過語法突出顯示",
+    "largeFile_other": "大檔案（{{count, number}} 行）- 為了效能而跳過語法突出顯示"
   }
 }

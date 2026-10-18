@@ -1,65 +1,65 @@
 {
   "common": {
-    "unknownError": "Unknown error"
+    "unknownError": "未知錯誤"
   },
   "bootstrap": {
     "status": {
-      "connecting": "Connecting to Telegram...",
-      "verifyingChannel": "Verifying secure storage channel...",
-      "loadingIndex": "Loading file metadata index...",
-      "recoveryScan": "Verifying your files (recovery scan)...",
-      "initializingView": "Initializing local storage view..."
+      "connecting": "正在連線到Telegram...",
+      "verifyingChannel": "正在驗證安全儲存通道...",
+      "loadingIndex": "正在載入檔案後設資料索引...",
+      "recoveryScan": "正在驗證您的檔案（恢復掃描）...",
+      "initializingView": "正在初始化本地儲存檢視..."
     }
   },
   "backup": {
     "errors": {
-      "noFolders": "Pick at least one folder in Settings → Device Backup first.",
-      "channelNotReady": "Storage channel is not ready. Please complete first login.",
-      "clientUnreachable": "Telegram client unreachable: {{message}}",
-      "walkerFailed": "Walker failed: {{message}}",
-      "manifestCorrupt": "Backup manifest is corrupt — refusing to upload until reviewed.",
-      "cancelled": "Cancelled by user.",
-      "sessionExpired": "Telegram session expired. Reconnect your account in Settings → Telegram Account, then run the backup again."
+      "noFolders": "首先在“設定”→“裝置備份”中至少選擇一個資料夾。",
+      "channelNotReady": "儲存通道未準備好。請完成首次登入。",
+      "clientUnreachable": "Telegram 客戶端無法訪問：{{message}}",
+      "walkerFailed": "Walker失敗：{{message}}",
+      "manifestCorrupt": "備份清單已損毀 - 在經過稽核之前拒絕上傳。",
+      "cancelled": "已被使用者取消。",
+      "sessionExpired": "Telegram會話已過期。在“設定”→“Telegram帳戶”中重新連線您的帳戶，然後再次執行備份。"
     }
   },
   "upload": {
-    "channelNotConfigured": "Telegram storage channel is not configured. Please check settings.",
-    "success": "\"{{name}}\" uploaded successfully!",
-    "indexSaveFailed": "Index save failed for \"{{name}}\" — refresh the drive.",
-    "failedFallback": "Upload failed",
-    "failed": "Failed to upload \"{{name}}\": {{message}}",
-    "emptyFile": "\"{{name}}\" is empty. Empty files (0 bytes) are not supported by Telegram."
+    "channelNotConfigured": "未配置 Telegram 儲存通道。請檢查設定。",
+    "success": "“{{name}}”上傳成功！",
+    "indexSaveFailed": "“{{name}}”的索引儲存失敗 — 重新整理驅動器。",
+    "failedFallback": "上傳失敗",
+    "failed": "無法上傳“{{name}}”：{{message}}",
+    "emptyFile": "“{{name}}”為空。 Telegram 不支援空檔案（0 位元組）。"
   },
   "download": {
-    "cancelled": "Download cancelled.",
-    "progress": "Downloading \"{{name}}\"... {{percent}}%",
-    "success": "\"{{name}}\" downloaded successfully!",
-    "failed": "Failed to download file. Please check permissions and try again.",
+    "cancelled": "下載已取消。",
+    "progress": "正在下載“{{name}}”... {{percent}}%",
+    "success": "“{{name}}”下載成功！",
+    "failed": "下載檔案失敗。請檢查許可權並重試。",
     "errors": {
-      "mediaNotFound": "Target file message or media not found on Telegram.",
-      "mediaFailed": "Failed to download media."
+      "mediaNotFound": "在 Telegram 上找不到目標檔案訊息或媒體。",
+      "mediaFailed": "無法下載媒體。"
     }
   },
   "indexQueue": {
-    "rateLimitRetrying": "Telegram rate limit — retrying"
+    "rateLimitRetrying": "Telegram 速率限制 — 重試"
   },
   "storage": {
-    "saveFailed": "Unable to save file to {{path}}. Please check storage permissions."
+    "saveFailed": "無法將檔案儲存到 {{path}}。請檢查儲存許可權。"
   },
   "relativeTime": {
-    "unknown": "unknown",
-    "justNow": "just now",
-    "second_one": "{{count}} second",
-    "second_other": "{{count}} seconds",
-    "minute_one": "{{count}} minute",
-    "minute_other": "{{count}} minutes",
-    "hour_one": "{{count}} hour",
-    "hour_other": "{{count}} hours",
-    "day_one": "{{count}} day",
-    "day_other": "{{count}} days",
-    "month_one": "{{count}} month",
-    "month_other": "{{count}} months",
-    "year_one": "{{count}} year",
-    "year_other": "{{count}} years"
+    "unknown": "未知",
+    "justNow": "現在",
+    "second_one": "{{count}}秒",
+    "second_other": "{{count}} 秒",
+    "minute_one": "{{count}} 分鐘",
+    "minute_other": "{{count}} 分鐘",
+    "hour_one": "{{count}} 小時",
+    "hour_other": "{{count}} 小時",
+    "day_one": "{{count}}天",
+    "day_other": "{{count}} 天",
+    "month_one": "{{count}} 個月",
+    "month_other": "{{count}} 個月",
+    "year_one": "{{count}} 年",
+    "year_other": "{{count}}年"
   }
 }

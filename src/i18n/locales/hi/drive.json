@@ -1,116 +1,116 @@
 {
-  "logoAlt": "TeleDrive Logo",
+  "logoAlt": "TeleDrive लोगो",
   "actions": {
-    "close": "Close"
+    "close": "बंद करें"
   },
   "splash": {
-    "connecting": "Connecting to Telegram..."
+    "connecting": "Telegram से कनेक्ट हो रहा है..."
   },
   "nav": {
-    "myDrive": "My Drive",
-    "recent": "Recent",
-    "starred": "Starred",
-    "archived": "Archived",
-    "trash": "Trash",
-    "backups": "Backups",
-    "settings": "Settings"
+    "myDrive": "मेरा ड्राइव",
+    "recent": "हाल की फ़ाइलें",
+    "starred": "तारांकित",
+    "archived": "संग्रहीत",
+    "trash": "ट्रैश",
+    "backups": "बैकअप",
+    "settings": "सेटिंग्स"
   },
   "header": {
-    "switchToLight": "Switch to Light Theme",
-    "switchToDark": "Switch to Dark Theme",
-    "settings": "Settings"
+    "switchToLight": "लाइट थीम पर स्विच करें",
+    "switchToDark": "डार्क थीम पर स्विच करें",
+    "settings": "सेटिंग्स"
   },
   "indexQueue": {
-    "saveFailedTitle": "Index save failed — click to retry",
-    "liveSyncTitle": "Live multi-device sync",
-    "backupSnapshotTitle": "Backup snapshot in progress",
-    "saveFailed": "Save failed",
-    "retryingIn": "Retrying in {{seconds}}s",
-    "synced": "Synced",
-    "backupInProgress": "Backup in progress",
-    "syncing": "Syncing",
-    "retry": "Retry"
+    "saveFailedTitle": "इंडेक्स सेव विफल — पुनः प्रयास के लिए क्लिक करें",
+    "liveSyncTitle": "लाइव मल्टी-डिवाइस सिंक",
+    "backupSnapshotTitle": "बैकअप स्नैपशॉट प्रगति पर है",
+    "saveFailed": "सहेजना विफल",
+    "retryingIn": "{{seconds}}s में पुनः प्रयास",
+    "synced": "सिंक हुआ",
+    "backupInProgress": "बैकअप प्रगति पर है",
+    "syncing": "सिंक हो रहा है",
+    "retry": "पुनः प्रयास करें"
   },
   "dropOverlay": {
-    "title": "Drop files to upload to My Drive",
-    "description": "Release to begin uploading immediately"
+    "title": "मेरे ड्राइव में अपलोड करने के लिए फ़ाइलें यहां छोड़ें",
+    "description": "तुरंत अपलोड शुरू करने के लिए छोड़ें"
   },
-  "offlineBanner": "You are currently offline. Some features may be unavailable.",
+  "offlineBanner": "आप वर्तमान में ऑफ़लाइन हैं। कुछ सुविधाएं अनुपलब्ध हो सकती हैं।",
   "shortcuts": {
-    "title": "Keyboard Shortcuts",
-    "navigationGroup": "Navigation & Search",
-    "focusSearch": "Focus Search",
-    "focusSearchKeys": "/ or {{modKey}}F",
-    "clearSelection": "Clear selection / blur",
-    "scrollToTop": "Scroll to top",
-    "scrollToBottom": "Scroll to bottom",
-    "showHelp": "Show shortcuts help",
-    "selectionGroup": "Actions on Selection",
-    "selectAll": "Select all items",
-    "moveToTrash": "Move to Trash",
-    "rename": "Rename item",
-    "download": "Download file"
+    "title": "कीबोर्ड शॉर्टकट",
+    "navigationGroup": "नेविगेशन और खोज",
+    "focusSearch": "खोज पर फ़ोकस करें",
+    "focusSearchKeys": "/ या {{modKey}}F",
+    "clearSelection": "चयन साफ़ करें / खोज हटाएं",
+    "scrollToTop": "शीर्ष पर स्क्रॉल करें",
+    "scrollToBottom": "नीचे तक स्क्रॉल करें",
+    "showHelp": "शॉर्टकट सहायता दिखाएं",
+    "selectionGroup": "चयनित आइटम पर क्रियाएं",
+    "selectAll": "सभी आइटम चुनें",
+    "moveToTrash": "ट्रैश में ले जाएं",
+    "rename": "नाम बदलें",
+    "download": "फ़ाइल डाउनलोड करें"
   },
   "sidebar": {
-    "storage": "Storage",
-    "usedOfUnlimited": "<strong>{{size}}</strong> of Unlimited used",
-    "telegramCloudStorage": "Telegram Cloud Storage"
+    "storage": "स्टोरेज",
+    "usedOfUnlimited": "असीमित में से <strong>{{size}}</strong> प्रयुक्त",
+    "telegramCloudStorage": "Telegram क्लाउड स्टोरेज"
   },
   "newMenu": {
-    "ariaLabel": "New item",
-    "new": "New",
-    "newFolder": "New folder",
-    "fileUpload": "File upload",
-    "folderUpload": "Folder upload"
+    "ariaLabel": "नया आइटम",
+    "new": "नया",
+    "newFolder": "नया फ़ोल्डर",
+    "fileUpload": "फ़ाइल अपलोड",
+    "folderUpload": "फ़ोल्डर अपलोड"
   },
   "search": {
-    "placeholder": "Search in Drive",
-    "matchingHeader": "Matching Files & Folders",
-    "folder": "Folder",
-    "fileIn": "File • {{location}}",
-    "noResults": "No matching files found"
+    "placeholder": "ड्राइव में खोजें",
+    "matchingHeader": "मेल खाने वाली फ़ाइलें और फ़ोल्डर",
+    "folder": "फ़ोल्डर",
+    "fileIn": "फ़ाइल • {{location}}",
+    "noResults": "कोई मेल खाती फ़ाइल नहीं मिली"
   },
   "upload": {
-    "failed_one": "{{count}} upload failed",
-    "failed_other": "{{count}} uploads failed",
-    "complete_one": "{{count}} upload complete",
-    "complete_other": "{{count}} uploads complete",
-    "uploadingItems_one": "Uploading {{count}} item ({{percent}}%)",
-    "uploadingItems_other": "Uploading {{count}} items ({{percent}}%)",
-    "expand": "Expand",
-    "collapse": "Collapse",
-    "close": "Close",
-    "queued": "Queued",
-    "uploading": "Uploading..."
+    "failed_one": "{{count}} अपलोड विफल",
+    "failed_other": "{{count}} अपलोड विफल",
+    "complete_one": "{{count}} अपलोड पूरा हुआ",
+    "complete_other": "{{count}} अपलोड पूरे हुए",
+    "uploadingItems_one": "{{count}} आइटम अपलोड हो रहा है ({{percent}}%)",
+    "uploadingItems_other": "{{count}} आइटम अपलोड हो रहे हैं ({{percent}}%)",
+    "expand": "विस्तार करें",
+    "collapse": "समेटें",
+    "close": "बंद करें",
+    "queued": "कतार में",
+    "uploading": "अपलोड हो रहा है..."
   },
   "backup": {
-    "scanning": "Scanning folders…",
-    "backingUp": "Backing up — {{uploaded}} / {{total}}",
-    "completeUploaded_one": "Backup complete — {{count}} file uploaded",
-    "completeUploaded_other": "Backup complete — {{count}} files uploaded",
-    "completeNothingChanged": "Backup complete — nothing changed",
-    "cancelled": "Backup cancelled",
-    "failed": "Backup failed",
-    "retryRateLimit": "Retrying {{attempt}}/{{maxAttempts}} — Telegram rate limit, waiting {{seconds}}s",
-    "retryNetwork": "Retrying {{attempt}}/{{maxAttempts}} — network blip, waiting {{seconds}}s",
-    "readingFolders": "Reading folder contents from disk",
-    "summaryUploaded_one": "{{count}} uploaded",
-    "summaryUploaded_other": "{{count}} uploaded",
-    "summaryUnchanged_one": "{{count}} unchanged",
-    "summaryUnchanged_other": "{{count}} unchanged",
-    "summaryFailed_one": "{{count}} failed",
-    "summaryFailed_other": "{{count}} failed",
-    "resumeAnytime": "You can resume anytime.",
-    "dismiss": "Dismiss"
+    "scanning": "फ़ोल्डर स्कैन हो रहे हैं…",
+    "backingUp": "बैकअप लिया जा रहा है — {{uploaded}} / {{total}}",
+    "completeUploaded_one": "बैकअप पूरा हुआ — {{count}} फ़ाइल अपलोड हुई",
+    "completeUploaded_other": "बैकअप पूरा हुआ — {{count}} फ़ाइलें अपलोड हुईं",
+    "completeNothingChanged": "बैकअप पूरा हुआ — कोई बदलाव नहीं",
+    "cancelled": "बैकअप रद्द किया गया",
+    "failed": "बैकअप विफल",
+    "retryRateLimit": "पुनः प्रयास {{attempt}}/{{maxAttempts}} — Telegram दर सीमा, {{seconds}}s प्रतीक्षा जारी",
+    "retryNetwork": "पुनः प्रयास {{attempt}}/{{maxAttempts}} — नेटवर्क समस्या, {{seconds}}s प्रतीक्षा जारी",
+    "readingFolders": "डिस्क से फ़ोल्डर सामग्री पढ़ी जा रही है",
+    "summaryUploaded_one": "{{count}} अपलोड हुई",
+    "summaryUploaded_other": "{{count}} अपलोड हुईं",
+    "summaryUnchanged_one": "{{count}} अपरिवर्तित",
+    "summaryUnchanged_other": "{{count}} अपरिवर्तित",
+    "summaryFailed_one": "{{count}} विफल",
+    "summaryFailed_other": "{{count}} विफल",
+    "resumeAnytime": "आप किसी भी समय फिर से शुरू कर सकते हैं।",
+    "dismiss": "खारिज करें"
   },
   "errorBoundary": {
-    "title": "Something went wrong",
-    "description": "An unexpected issue occurred. Please reload the application to continue.",
-    "reload": "Reload Application"
+    "title": "कुछ गलत हो गया",
+    "description": "एक अप्रत्याशित समस्या आई। जारी रखने के लिए कृपया एप्लिकेशन को पुनः लोड करें।",
+    "reload": "एप्लिकेशन पुनः लोड करें"
   },
   "notFound": {
-    "title": "404 - Page Not Found",
-    "description": "The page you are looking for doesn't exist.",
-    "goToMyDrive": "Go to My Drive"
+    "title": "404 - पृष्ठ नहीं मिला",
+    "description": "आप जिस पृष्ठ की तलाश कर रहे हैं वह मौजूद नहीं है।",
+    "goToMyDrive": "मेरे ड्राइव पर जाएं"
   }
 }

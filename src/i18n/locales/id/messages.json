@@ -1,65 +1,65 @@
 {
   "common": {
-    "unknownError": "Unknown error"
+    "unknownError": "Kesalahan tidak diketahui"
   },
   "bootstrap": {
     "status": {
-      "connecting": "Connecting to Telegram...",
-      "verifyingChannel": "Verifying secure storage channel...",
-      "loadingIndex": "Loading file metadata index...",
-      "recoveryScan": "Verifying your files (recovery scan)...",
-      "initializingView": "Initializing local storage view..."
+      "connecting": "Menghubungkan ke Telegram...",
+      "verifyingChannel": "Memverifikasi saluran penyimpanan aman...",
+      "loadingIndex": "Memuat indeks metadata berkas...",
+      "recoveryScan": "Memeriksa berkas Anda (pemindaian pemulihan)...",
+      "initializingView": "Menginisialisasi tampilan penyimpanan lokal..."
     }
   },
   "backup": {
     "errors": {
-      "noFolders": "Pick at least one folder in Settings → Device Backup first.",
-      "channelNotReady": "Storage channel is not ready. Please complete first login.",
-      "clientUnreachable": "Telegram client unreachable: {{message}}",
-      "walkerFailed": "Walker failed: {{message}}",
-      "manifestCorrupt": "Backup manifest is corrupt — refusing to upload until reviewed.",
-      "cancelled": "Cancelled by user.",
-      "sessionExpired": "Telegram session expired. Reconnect your account in Settings → Telegram Account, then run the backup again."
+      "noFolders": "Pilih setidaknya satu folder di Pengaturan → Pencadangan Perangkat terlebih dahulu.",
+      "channelNotReady": "Saluran penyimpanan belum siap. Silakan selesaikan masuk pertama kali.",
+      "clientUnreachable": "Klien Telegram tidak dapat dijangkau: {{message}}",
+      "walkerFailed": "Pemindai gagal: {{message}}",
+      "manifestCorrupt": "Manifest cadangan rusak — menolak mengunggah sampai ditinjau.",
+      "cancelled": "Dibatalkan oleh pengguna.",
+      "sessionExpired": "Sesi Telegram telah kedaluwarsa. Sambungkan kembali akun Anda di Pengaturan → Akun Telegram, lalu jalankan pencadangan lagi."
     }
   },
   "upload": {
-    "channelNotConfigured": "Telegram storage channel is not configured. Please check settings.",
-    "success": "\"{{name}}\" uploaded successfully!",
-    "indexSaveFailed": "Index save failed for \"{{name}}\" — refresh the drive.",
-    "failedFallback": "Upload failed",
-    "failed": "Failed to upload \"{{name}}\": {{message}}",
-    "emptyFile": "\"{{name}}\" is empty. Empty files (0 bytes) are not supported by Telegram."
+    "channelNotConfigured": "Saluran penyimpanan Telegram belum dikonfigurasi. Harap periksa pengaturan.",
+    "success": "\"{{name}}\" berhasil diunggah!",
+    "indexSaveFailed": "Gagal menyimpan indeks untuk \"{{name}}\" — segarkan drive.",
+    "failedFallback": "Unggahan gagal",
+    "failed": "Gagal mengunggah \"{{name}}\": {{message}}",
+    "emptyFile": "\"{{name}}\" kosong. Berkas kosong (0 byte) tidak didukung oleh Telegram."
   },
   "download": {
-    "cancelled": "Download cancelled.",
-    "progress": "Downloading \"{{name}}\"... {{percent}}%",
-    "success": "\"{{name}}\" downloaded successfully!",
-    "failed": "Failed to download file. Please check permissions and try again.",
+    "cancelled": "Pengunduhan dibatalkan.",
+    "progress": "Mengunduh \"{{name}}\"... {{percent}}%",
+    "success": "\"{{name}}\" berhasil diunduh!",
+    "failed": "Gagal mengunduh berkas. Harap periksa izin dan coba lagi.",
     "errors": {
-      "mediaNotFound": "Target file message or media not found on Telegram.",
-      "mediaFailed": "Failed to download media."
+      "mediaNotFound": "Pesan atau media berkas tidak ditemukan di Telegram.",
+      "mediaFailed": "Gagal mengunduh media."
     }
   },
   "indexQueue": {
-    "rateLimitRetrying": "Telegram rate limit — retrying"
+    "rateLimitRetrying": "Batas frekuensi Telegram tercapai — mencoba lagi"
   },
   "storage": {
-    "saveFailed": "Unable to save file to {{path}}. Please check storage permissions."
+    "saveFailed": "Tidak dapat menyimpan berkas ke {{path}}. Harap periksa izin penyimpanan."
   },
   "relativeTime": {
-    "unknown": "unknown",
-    "justNow": "just now",
-    "second_one": "{{count}} second",
-    "second_other": "{{count}} seconds",
-    "minute_one": "{{count}} minute",
-    "minute_other": "{{count}} minutes",
-    "hour_one": "{{count}} hour",
-    "hour_other": "{{count}} hours",
-    "day_one": "{{count}} day",
-    "day_other": "{{count}} days",
-    "month_one": "{{count}} month",
-    "month_other": "{{count}} months",
-    "year_one": "{{count}} year",
-    "year_other": "{{count}} years"
+    "unknown": "tidak diketahui",
+    "justNow": "baru saja",
+    "second_one": "{{count}} detik",
+    "second_other": "{{count}} detik",
+    "minute_one": "{{count}} menit",
+    "minute_other": "{{count}} menit",
+    "hour_one": "{{count}} jam",
+    "hour_other": "{{count}} jam",
+    "day_one": "{{count}} hari",
+    "day_other": "{{count}} hari",
+    "month_one": "{{count}} bulan",
+    "month_other": "{{count}} bulan",
+    "year_one": "{{count}} tahun",
+    "year_other": "{{count}} tahun"
   }
 }
