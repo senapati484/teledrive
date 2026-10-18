@@ -7,8 +7,16 @@
     "account": "Cuenta de Telegram",
     "backup": "Copia de seguridad del dispositivo",
     "appearance": "Apariencia",
+    "language": "Idioma",
     "storage": "Almacenamiento",
     "about": "Acerca de"
+  },
+  "language": {
+    "title": "Idioma",
+    "description": "Elige el idioma utilizado en la interfaz, los menús y las notificaciones de TeleDrive.",
+    "activeLanguage": "Idioma activo",
+    "cardDescription": "Selecciona tu idioma preferido. Los cambios se aplican de inmediato en toda la aplicación.",
+    "callout": "<strong>Sincronización instantánea:</strong> TeleDrive conserva tu elección de idioma localmente y la aplica automáticamente en todas las ventanas y sesiones."
   },
   "logout": {
     "button": "Cerrar sesión",

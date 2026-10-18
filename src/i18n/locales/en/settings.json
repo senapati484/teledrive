@@ -7,8 +7,16 @@
     "account": "Telegram Account",
     "backup": "Device Backup",
     "appearance": "Appearance",
+    "language": "Language",
     "storage": "Storage",
     "about": "About"
+  },
+  "language": {
+    "title": "Language",
+    "description": "Choose the language used across the TeleDrive interface, menus, and notifications.",
+    "activeLanguage": "Active Language",
+    "cardDescription": "Select your preferred language. Changes apply immediately across the application.",
+    "callout": "<strong>Instant Sync:</strong> TeleDrive preserves your language choice locally and automatically applies it across all windows and sessions."
   },
   "logout": {
     "button": "Log Out",

@@ -1,16 +1,17 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Smartphone, Eye, HardDrive, Info, Shield } from "lucide-react";
+import { ArrowLeft, Smartphone, Eye, HardDrive, Info, Shield, Languages } from "lucide-react";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { Button } from "@/components/ui/button";
 import TelegramAccountSection from "@/components/settings/TelegramAccountSection";
 import AppearanceSection from "@/components/settings/AppearanceSection";
+import LanguageSection from "@/components/settings/LanguageSection";
 import StorageSection from "@/components/settings/StorageSection";
 import BackupSection from "@/components/settings/BackupSection";
 import AboutSection from "@/components/settings/AboutSection";
 
-type SectionType = "account" | "appearance" | "storage" | "backup" | "about";
+type SectionType = "account" | "appearance" | "language" | "storage" | "backup" | "about";
 
 export default function SettingsPage() {
   const { t } = useTranslation("settings");
@@ -41,6 +42,12 @@ export default function SettingsPage() {
       label: t("nav.appearance"),
       icon: Eye,
       component: AppearanceSection,
+    },
+    {
+      id: "language" as const,
+      label: t("nav.language"),
+      icon: Languages,
+      component: LanguageSection,
     },
     {
       id: "storage" as const,
