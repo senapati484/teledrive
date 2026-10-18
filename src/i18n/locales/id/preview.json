@@ -140,6 +140,17 @@
     "columns_other": "{{count}} kolom",
     "emptyFiltered": "Tidak ada baris yang cocok dengan filter Anda.",
     "resetFilter": "Atur Ulang Filter",
-    "noData": "Tidak ada data yang ditemukan dalam tabel ini."
+    "noData": "Tidak ada data yang ditemukan dalam tabel ini.",
+    "empty": "Dataset kosong",
+    "columnFallback": "Kolom {{letter}}",
+    "cellTitle": "{{value}} (Klik untuk menyalin)"
+  },
+  "codeEditor": {
+    "loading": "Memuat editor…"
+  },
+  "syntaxHighlighter": {
+    "ariaLabel": "Penampil kode",
+    "largeFile_one": "File besar ({{count, number}} baris) — penyorotan sintaksis dilewati untuk performa",
+    "largeFile_other": "File besar ({{count, number}} baris) — penyorotan sintaksis dilewati untuk performa"
   }
 }

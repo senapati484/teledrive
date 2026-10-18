@@ -140,6 +140,17 @@
     "columns_other": "{{count}} colonnes",
     "emptyFiltered": "Aucune ligne ne correspond à votre filtre.",
     "resetFilter": "Réinitialiser le filtre",
-    "noData": "Aucune donnée trouvée dans ce tableau."
+    "noData": "Aucune donnée trouvée dans ce tableau.",
+    "empty": "Jeu de données vide",
+    "columnFallback": "Colonne {{letter}}",
+    "cellTitle": "{{value}} (Cliquer pour copier)"
+  },
+  "codeEditor": {
+    "loading": "Chargement de l'éditeur…"
+  },
+  "syntaxHighlighter": {
+    "ariaLabel": "Visualiseur de code",
+    "largeFile_one": "Fichier volumineux ({{count, number}} ligne) — coloration syntaxique désactivée pour la performance",
+    "largeFile_other": "Fichier volumineux ({{count, number}} lignes) — coloration syntaxique désactivée pour la performance"
   }
 }

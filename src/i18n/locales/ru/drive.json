@@ -1,116 +1,116 @@
 {
-  "logoAlt": "TeleDrive Logo",
+  "logoAlt": "Логотип TeleDrive",
   "actions": {
-    "close": "Close"
+    "close": "Закрыть"
   },
   "splash": {
-    "connecting": "Connecting to Telegram..."
+    "connecting": "Подключение к Telegram..."
   },
   "nav": {
-    "myDrive": "My Drive",
-    "recent": "Recent",
-    "starred": "Starred",
-    "archived": "Archived",
-    "trash": "Trash",
-    "backups": "Backups",
-    "settings": "Settings"
+    "myDrive": "Мой диск",
+    "recent": "Недавние",
+    "starred": "Избранное",
+    "archived": "Архив",
+    "trash": "Корзина",
+    "backups": "Резервные копии",
+    "settings": "Настройки"
   },
   "header": {
-    "switchToLight": "Switch to Light Theme",
-    "switchToDark": "Switch to Dark Theme",
-    "settings": "Settings"
+    "switchToLight": "Переключить на светлую тему",
+    "switchToDark": "Переключить на тёмную тему",
+    "settings": "Настройки"
   },
   "indexQueue": {
-    "saveFailedTitle": "Index save failed — click to retry",
-    "liveSyncTitle": "Live multi-device sync",
-    "backupSnapshotTitle": "Backup snapshot in progress",
-    "saveFailed": "Save failed",
-    "retryingIn": "Retrying in {{seconds}}s",
-    "synced": "Synced",
-    "backupInProgress": "Backup in progress",
-    "syncing": "Syncing",
-    "retry": "Retry"
+    "saveFailedTitle": "Не удалось сохранить индекс — нажмите для повтора",
+    "liveSyncTitle": "Синхронизация между устройствами в реальном времени",
+    "backupSnapshotTitle": "Создание снимка резервной копии...",
+    "saveFailed": "Сбой сохранения",
+    "retryingIn": "Повтор через {{seconds}}с",
+    "synced": "Синхронизировано",
+    "backupInProgress": "Резервное копирование...",
+    "syncing": "Синхронизация",
+    "retry": "Повторить"
   },
   "dropOverlay": {
-    "title": "Drop files to upload to My Drive",
-    "description": "Release to begin uploading immediately"
+    "title": "Перетащите файлы для загрузки на Мой диск",
+    "description": "Отпустите, чтобы начать загрузку"
   },
-  "offlineBanner": "You are currently offline. Some features may be unavailable.",
+  "offlineBanner": "Вы находитесь в автономном режиме. Некоторые функции могут быть недоступны.",
   "shortcuts": {
-    "title": "Keyboard Shortcuts",
-    "navigationGroup": "Navigation & Search",
-    "focusSearch": "Focus Search",
-    "focusSearchKeys": "/ or {{modKey}}F",
-    "clearSelection": "Clear selection / blur",
-    "scrollToTop": "Scroll to top",
-    "scrollToBottom": "Scroll to bottom",
-    "showHelp": "Show shortcuts help",
-    "selectionGroup": "Actions on Selection",
-    "selectAll": "Select all items",
-    "moveToTrash": "Move to Trash",
-    "rename": "Rename item",
-    "download": "Download file"
+    "title": "Горячие клавиши",
+    "navigationGroup": "Навигация и поиск",
+    "focusSearch": "Перейти к поиску",
+    "focusSearchKeys": "/ или {{modKey}}F",
+    "clearSelection": "Снять выделение",
+    "scrollToTop": "Прокрутить вверх",
+    "scrollToBottom": "Прокрутить вниз",
+    "showHelp": "Показать горячие клавиши",
+    "selectionGroup": "Действия с выбранным",
+    "selectAll": "Выбрать все элементы",
+    "moveToTrash": "Переместить в корзину",
+    "rename": "Переименовать элемент",
+    "download": "Скачать файл"
   },
   "sidebar": {
-    "storage": "Storage",
-    "usedOfUnlimited": "<strong>{{size}}</strong> of Unlimited used",
-    "telegramCloudStorage": "Telegram Cloud Storage"
+    "storage": "Хранилище",
+    "usedOfUnlimited": "Использовано: <strong>{{size}}</strong> из неограниченного",
+    "telegramCloudStorage": "Облачное хранилище Telegram"
   },
   "newMenu": {
-    "ariaLabel": "New item",
-    "new": "New",
-    "newFolder": "New folder",
-    "fileUpload": "File upload",
-    "folderUpload": "Folder upload"
+    "ariaLabel": "Новый элемент",
+    "new": "Создать",
+    "newFolder": "Новая папка",
+    "fileUpload": "Загрузить файлы",
+    "folderUpload": "Загрузить папку"
   },
   "search": {
-    "placeholder": "Search in Drive",
-    "matchingHeader": "Matching Files & Folders",
-    "folder": "Folder",
-    "fileIn": "File • {{location}}",
-    "noResults": "No matching files found"
+    "placeholder": "Поиск на диске",
+    "matchingHeader": "Подходящие файлы и папки",
+    "folder": "Папка",
+    "fileIn": "Файл • {{location}}",
+    "noResults": "Подходящие файлы не найдены"
   },
   "upload": {
-    "failed_one": "{{count}} upload failed",
-    "failed_other": "{{count}} uploads failed",
-    "complete_one": "{{count}} upload complete",
-    "complete_other": "{{count}} uploads complete",
-    "uploadingItems_one": "Uploading {{count}} item ({{percent}}%)",
-    "uploadingItems_other": "Uploading {{count}} items ({{percent}}%)",
-    "expand": "Expand",
-    "collapse": "Collapse",
-    "close": "Close",
-    "queued": "Queued",
-    "uploading": "Uploading..."
+    "failed_one": "Ошибка загрузки {{count}} файла",
+    "failed_other": "Ошибки загрузки {{count}} файлов",
+    "complete_one": "Загружен {{count}} файл",
+    "complete_other": "Загружено {{count}} файлов",
+    "uploadingItems_one": "Загрузка {{count}} файла ({{percent}}%)",
+    "uploadingItems_other": "Загрузка {{count}} файлов ({{percent}}%)",
+    "expand": "Развернуть",
+    "collapse": "Свернуть",
+    "close": "Закрыть",
+    "queued": "В очереди",
+    "uploading": "Загрузка..."
   },
   "backup": {
-    "scanning": "Scanning folders…",
-    "backingUp": "Backing up — {{uploaded}} / {{total}}",
-    "completeUploaded_one": "Backup complete — {{count}} file uploaded",
-    "completeUploaded_other": "Backup complete — {{count}} files uploaded",
-    "completeNothingChanged": "Backup complete — nothing changed",
-    "cancelled": "Backup cancelled",
-    "failed": "Backup failed",
-    "retryRateLimit": "Retrying {{attempt}}/{{maxAttempts}} — Telegram rate limit, waiting {{seconds}}s",
-    "retryNetwork": "Retrying {{attempt}}/{{maxAttempts}} — network blip, waiting {{seconds}}s",
-    "readingFolders": "Reading folder contents from disk",
-    "summaryUploaded_one": "{{count}} uploaded",
-    "summaryUploaded_other": "{{count}} uploaded",
-    "summaryUnchanged_one": "{{count}} unchanged",
-    "summaryUnchanged_other": "{{count}} unchanged",
-    "summaryFailed_one": "{{count}} failed",
-    "summaryFailed_other": "{{count}} failed",
-    "resumeAnytime": "You can resume anytime.",
-    "dismiss": "Dismiss"
+    "scanning": "Сканирование папок…",
+    "backingUp": "Резервное копирование — {{uploaded}} / {{total}}",
+    "completeUploaded_one": "Резервное копирование завершено — загружен {{count}} файл",
+    "completeUploaded_other": "Резервное копирование завершено — загружено {{count}} файлов",
+    "completeNothingChanged": "Резервное копирование завершено — изменений нет",
+    "cancelled": "Резервное копирование отменено",
+    "failed": "Сбой резервного копирования",
+    "retryRateLimit": "Повтор {{attempt}}/{{maxAttempts}} — лимит Telegram, ожидание {{seconds}}с",
+    "retryNetwork": "Повтор {{attempt}}/{{maxAttempts}} — сбой сети, ожидание {{seconds}}с",
+    "readingFolders": "Чтение содержимого папок с диска",
+    "summaryUploaded_one": "{{count}} загружен",
+    "summaryUploaded_other": "{{count}} загружено",
+    "summaryUnchanged_one": "{{count}} без изменений",
+    "summaryUnchanged_other": "{{count}} без изменений",
+    "summaryFailed_one": "{{count}} с ошибкой",
+    "summaryFailed_other": "{{count}} с ошибками",
+    "resumeAnytime": "Вы можете возобновить в любое время.",
+    "dismiss": "Закрыть"
   },
   "errorBoundary": {
-    "title": "Something went wrong",
-    "description": "An unexpected issue occurred. Please reload the application to continue.",
-    "reload": "Reload Application"
+    "title": "Что-то пошло не так",
+    "description": "Произошла непредвиденная ошибка. Перезагрузите приложение, чтобы продолжить.",
+    "reload": "Перезагрузить приложение"
   },
   "notFound": {
-    "title": "404 - Page Not Found",
-    "description": "The page you are looking for doesn't exist.",
-    "goToMyDrive": "Go to My Drive"
+    "title": "404 - Страница не найдена",
+    "description": "Запрашиваемая страница не существует.",
+    "goToMyDrive": "Перейти на Мой диск"
   }
 }

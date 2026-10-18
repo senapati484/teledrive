@@ -1,193 +1,193 @@
 {
   "page": {
-    "title": "Settings",
-    "backToDrive": "Back to Drive"
+    "title": "Настройки",
+    "backToDrive": "Вернуться на диск"
   },
   "nav": {
-    "account": "Telegram Account",
-    "backup": "Device Backup",
-    "appearance": "Appearance",
+    "account": "Аккаунт Telegram",
+    "backup": "Резервное копирование",
+    "appearance": "Внешний вид",
     "language": "Язык",
-    "storage": "Storage",
-    "about": "About"
+    "storage": "Хранилище",
+    "about": "О программе"
   },
   "language": {
     "title": "Язык",
-    "description": "Выберите язык интерфейса TeleDrive.",
+    "description": "Выберите язык интерфейса TeleDrive, меню и уведомлений.",
     "activeLanguage": "Текущий язык",
     "cardDescription": "Выберите предпочитаемый язык. Изменения вступают в силу немедленно.",
-    "callout": "<strong>Мгновенная синхронизация:</strong> TeleDrive сохраняет ваш выбор языка локально и автоматически применяет его во всех окнах."
+    "callout": "<strong>Мгновенная синхронизация:</strong> TeleDrive сохраняет ваш выбор языка локально и автоматически применяет его во всех окнах и сессиях."
   },
   "logout": {
-    "button": "Log Out",
-    "title": "Log Out",
-    "description": "You will be signed out of your Telegram account. Your files will remain safe in your storage channel.",
-    "cancel": "Cancel",
-    "confirm": "Log Out",
-    "loggingOut": "Logging out…"
+    "button": "Выйти",
+    "title": "Выход из аккаунта",
+    "description": "Вы выйдете из своего аккаунта Telegram. Ваши файлы останутся в безопасности в вашем приватном канале хранилища.",
+    "cancel": "Отмена",
+    "confirm": "Выйти",
+    "loggingOut": "Выход…"
   },
   "account": {
-    "title": "Telegram Account",
-    "description": "Manage your connected Telegram credentials and cloud storage channel.",
+    "title": "Аккаунт Telegram",
+    "description": "Управление подключенными учетными данными Telegram и каналом облачного хранилища.",
     "notConnected": {
-      "title": "Not connected",
-      "description": "Connect your Telegram account to start storing unlimited files in your private storage channel.",
-      "connect": "Connect Telegram Account"
+      "title": "Не подключено",
+      "description": "Подключите свой аккаунт Telegram, чтобы начать сохранять неограниченное количество файлов в личном хранилище.",
+      "connect": "Подключить аккаунт Telegram"
     },
-    "activeSession": "Active Session",
-    "connectedVia": "Connected via Telegram MTProto client",
-    "disconnect": "Disconnect Account",
+    "activeSession": "Активная сессия",
+    "connectedVia": "Подключено через клиент Telegram MTProto",
+    "disconnect": "Отключить аккаунт",
     "channel": {
-      "title": "Active Storage Channel",
-      "description": "Your files, folders, and metadata are persisted securely in this private channel.",
-      "name": "Channel Name",
-      "id": "Telegram Channel ID",
-      "loading": "Loading...",
-      "copyId": "Copy Channel ID"
+      "title": "Активный канал хранилища",
+      "description": "Ваши файлы, папки и метаданные надежно хранятся в этом приватном канале.",
+      "name": "Название канала",
+      "id": "ID канала Telegram",
+      "loading": "Загрузка...",
+      "copyId": "Скопировать ID канала"
     },
-    "syncing": "Syncing...",
-    "syncNow": "Sync Now",
-    "switchChannel": "Switch Channel",
-    "architecture": "<strong>Decentralized cloud storage:</strong> Your files are uploaded as message documents directly to your private Telegram channel. TeleDrive maintains an indexed manifest pinned in this channel so your folders and files stay synchronized automatically.",
+    "syncing": "Синхронизация...",
+    "syncNow": "Синхронизировать сейчас",
+    "switchChannel": "Сменить канал",
+    "architecture": "<strong>Децентрализованное облачное хранилище:</strong> Ваши файлы загружаются в виде документов прямо в ваш приватный канал Telegram. TeleDrive хранит индексированный манифест, закрепленный в этом канале, поэтому папки и файлы синхронизируются автоматически.",
     "switchDialog": {
-      "title": "Switch Storage Channel",
-      "description": "Select a different private Telegram channel to use for TeleDrive files.",
-      "warning": "<strong>Warning:</strong> Switching storage channels resets the local cache. TeleDrive will look for an existing manifest in the selected channel or create a new one.",
-      "cancel": "Cancel",
-      "confirm": "Confirm"
+      "title": "Сменить канал хранилища",
+      "description": "Выберите другой приватный канал Telegram для использования с файлами TeleDrive.",
+      "warning": "<strong>Внимание:</strong> Смена канала хранилища сбрасывает локальный кэш. TeleDrive выполнит поиск существующего манифеста в выбранном канале или создаст новый.",
+      "cancel": "Отмена",
+      "confirm": "Подтвердить"
     },
     "toasts": {
-      "channelIdCopied": "Channel ID copied to clipboard",
-      "syncSuccess": "Files synchronized successfully!",
-      "alreadyUpToDate": "Your drive is already up to date.",
-      "syncFailed": "Sync failed",
-      "disconnected": "Disconnected Telegram account successfully.",
-      "disconnectFailed": "Failed to disconnect account.",
-      "channelReset": "Storage channel reset. Restart the app to re-map it.",
-      "channelResetFailed": "Failed to reset storage channel."
+      "channelIdCopied": "ID канала скопирован в буфер обмена",
+      "syncSuccess": "Файлы успешно синхронизированы!",
+      "alreadyUpToDate": "Ваш диск уже синхронизирован.",
+      "syncFailed": "Сбой синхронизации",
+      "disconnected": "Аккаунт Telegram успешно отключен.",
+      "disconnectFailed": "Не удалось отключить аккаунт.",
+      "channelReset": "Канал хранилища сброшен. Перезапустите приложение для повторной привязки.",
+      "channelResetFailed": "Не удалось сбросить канал хранилища."
     }
   },
   "backup": {
-    "title": "Device Backup",
-    "description": "Pick folders on this computer to automatically mirror to your private Telegram storage channel.",
+    "title": "Резервное копирование устройства",
+    "description": "Выберите папки на этом компьютере для автоматического дублирования в приватное облачное хранилище Telegram.",
     "folders": {
-      "title": "Source folders",
-      "saving": "saving…",
-      "description": "Folders are mirrored under your device backup root and kept in sync. Saves automatically.",
-      "empty": "No folders added yet. Click “Add folder” below.",
-      "add": "Add folder",
-      "pickerTitle": "Pick a folder to back up"
+      "title": "Исходные папки",
+      "saving": "сохранение…",
+      "description": "Папки зеркалируются в резервной копии устройства и поддерживаются в синхронизированном состоянии. Сохраняется автоматически.",
+      "empty": "Папки еще не добавлены. Нажмите «Добавить папку» ниже.",
+      "add": "Добавить папку",
+      "pickerTitle": "Выберите папку для резервного копирования"
     },
     "excludes": {
-      "title": "Exclude patterns",
-      "description": "Glob patterns relative to a source folder. Supports <code>*</code>, <code>**</code>, and <code>?</code>. Examples: <code>node_modules</code>, <code>*.tmp</code>.",
-      "empty": "No excludes. Everything in your source folders will be backed up.",
-      "placeholder": "e.g. *.tmp or node_modules",
-      "add": "Add"
+      "title": "Шаблоны исключений",
+      "description": "Шаблоны glob относительно исходной папки. Поддерживаются <code>*</code>, <code>**</code> и <code>?</code>. Примеры: <code>node_modules</code>, <code>*.tmp</code>.",
+      "empty": "Исключения отсутствуют. Все файлы в исходных папках будут скопированы.",
+      "placeholder": "например, *.tmp или node_modules",
+      "add": "Добавить"
     },
-    "remove": "Remove {{item}}",
+    "remove": "Удалить {{item}}",
     "cadence": {
-      "title": "Backup cadence",
-      "active": "Active",
-      "description": "How often TeleDrive should re-scan your source folders. Only changed files are re-uploaded.",
-      "off": "Off",
-      "every6h": "Every 6 hours",
-      "every12h": "Every 12 hours",
-      "every24h": "Every 24 hours"
+      "title": "Частота резервного копирования",
+      "active": "Активно",
+      "description": "Как часто TeleDrive должен повторно сканировать исходные папки. Загружаются только измененные файлы.",
+      "off": "Выключено",
+      "every6h": "Каждые 6 часов",
+      "every12h": "Каждые 12 часов",
+      "every24h": "Каждые 24 часа"
     },
-    "lastBackup": "Last backup:",
-    "lastBackupAgo": "{{time}} ago",
-    "never": "Never",
+    "lastBackup": "Последнее копирование:",
+    "lastBackupAgo": "{{time}} назад",
+    "never": "Никогда",
     "lastResult": {
-      "uploaded_one": "{{count}} uploaded, ",
-      "uploaded_other": "{{count}} uploaded, ",
-      "unchanged_one": "{{count}} unchanged, ",
-      "unchanged_other": "{{count}} unchanged, ",
-      "failed_one": "{{count}} failed",
-      "failed_other": "{{count}} failed"
+      "uploaded_one": "{{count}} загружен, ",
+      "uploaded_other": "{{count}} загружено, ",
+      "unchanged_one": "{{count}} без изменений, ",
+      "unchanged_other": "{{count}} без изменений, ",
+      "failed_one": "{{count}} с ошибкой",
+      "failed_other": "{{count}} с ошибками"
     },
-    "progressHint": "See the progress panel in the bottom-right corner.",
-    "cancel": "Cancel",
-    "running": "Backing up…",
-    "runNow": "Run backup now",
-    "howItWorks": "<strong>How backup works:</strong> TeleDrive walks the folders you pick, diffs against a local manifest, and uploads only new or changed files.",
-    "viewBackups": "View Backups",
+    "progressHint": "Следите за прогрессом в правом нижнем углу.",
+    "cancel": "Отмена",
+    "running": "Резервное копирование…",
+    "runNow": "Запустить резервное копирование сейчас",
+    "howItWorks": "<strong>Как работает резервное копирование:</strong> TeleDrive сканирует выбранные папки, сравнивает их с локальным манифестом и отправляет только новые или измененные файлы.",
+    "viewBackups": "Просмотреть копии",
     "toasts": {
-      "maxFolders_one": "At most {{count}} source folder.",
-      "maxFolders_other": "At most {{count}} source folders.",
-      "maxExcludes_one": "At most {{count}} exclude pattern.",
-      "maxExcludes_other": "At most {{count}} exclude patterns.",
-      "pickerFailed": "Could not open folder picker",
-      "noFolders": "Pick at least one source folder first"
+      "maxFolders_one": "Максимум {{count}} исходная папка.",
+      "maxFolders_other": "Максимум {{count}} исходных папок.",
+      "maxExcludes_one": "Максимум {{count}} шаблон исключения.",
+      "maxExcludes_other": "Максимум {{count}} шаблонов исключений.",
+      "pickerFailed": "Не удалось открыть выбор папки",
+      "noFolders": "Сначала выберите хотя бы одну папку"
     }
   },
   "appearance": {
-    "title": "Appearance",
-    "description": "Customize the layout appearance and color theme of TeleDrive.",
+    "title": "Внешний вид",
+    "description": "Настройте внешний вид интерфейса и цветовую тему TeleDrive.",
     "themeMode": {
-      "title": "Theme Mode",
-      "description": "Choose whether TeleDrive uses light, dark, or system-adaptive appearance."
+      "title": "Режим темы",
+      "description": "Выберите светлую, тёмную или системную тему оформления TeleDrive."
     },
     "themes": {
       "light": {
-        "label": "Light",
-        "description": "Clean, high-contrast light theme with Google Drive canvas"
+        "label": "Светлая",
+        "description": "Чистая высококонтрастная светлая тема в стиле Google Drive"
       },
       "dark": {
-        "label": "Dark",
-        "description": "Sleek dark theme optimized for low-light environments"
+        "label": "Тёмная",
+        "description": "Стильная тёмная тема, оптимизированная для условий слабого освещения"
       },
       "system": {
-        "label": "System",
-        "description": "Automatically syncs with your operating system appearance"
+        "label": "Системная",
+        "description": "Автоматически повторяет тему вашей операционной системы"
       }
     },
-    "callout": "<strong>Theme Synchronization:</strong> TeleDrive uses Google Drive's curated HSL color tokens across both light (`#F8FAFD`) and dark (`#131314`) surfaces, ensuring high contrast and reduced eye strain."
+    "callout": "<strong>Синхронизация темы:</strong> TeleDrive использует тщательно подобранную палитру цветов HSL в светлом (`#F8FAFD`) и тёмном (`#131314`) режимах, обеспечивая высокую контрастность и снижая нагрузку на глаза."
   },
   "storage": {
-    "title": "Storage",
-    "description": "Monitor your Telegram cloud storage space, active files, and trash retention.",
-    "totalUsed": "Total Storage Used",
-    "calculating": "Calculating…",
-    "ofUnlimited": "of Unlimited",
-    "unlimitedBadge": "Unlimited Cloud Storage",
-    "meterLabel": "Telegram Channel Storage (Unlimited)",
+    "title": "Хранилище",
+    "description": "Отслеживайте занятое пространство в Telegram, активные файлы и корзину.",
+    "totalUsed": "Всего занято в хранилище",
+    "calculating": "Вычисление…",
+    "ofUnlimited": "из неограниченного",
+    "unlimitedBadge": "Неограниченное облачное хранилище",
+    "meterLabel": "Хранилище канала Telegram (неограниченно)",
     "stats": {
-      "files": "Files Stored",
-      "folders": "Folders Created",
-      "trash": "Items in Trash"
+      "files": "Файлов сохранено",
+      "folders": "Папок создано",
+      "trash": "Объектов в корзине"
     },
-    "recalculating": "Recalculating…",
-    "recalculate": "Recalculate Storage",
+    "recalculating": "Пересчет…",
+    "recalculate": "Пересчитать размер",
     "info": {
-      "noLimit": "Telegram does not impose any limit on the cumulative volume of data stored in private channels.",
-      "fileLimits": "Individual file limits: up to <strong>2 GB</strong> per single file for standard accounts, and up to <strong>4 GB</strong> for Telegram Premium subscribers."
+      "noLimit": "Telegram не устанавливает ограничений на общий объем данных, хранящихся в приватных каналах.",
+      "fileLimits": "Ограничения на один файл: до <strong>2 ГБ</strong> для обычных аккаунтов и до <strong>4 ГБ</strong> для подписчиков Telegram Premium."
     },
     "toasts": {
-      "channelNotInitialised": "Storage channel not initialised yet.",
-      "refreshed": "Storage refreshed from Telegram.",
-      "refreshFailed": "Failed to refresh storage data."
+      "channelNotInitialised": "Канал хранилища еще не инициализирован.",
+      "refreshed": "Данные хранилища обновлены из Telegram.",
+      "refreshFailed": "Не удалось обновить данные хранилища."
     }
   },
   "about": {
-    "title": "About TeleDrive",
-    "description": "Learn more about the application, updates, and open-source project.",
-    "logoAlt": "TeleDrive Logo",
-    "tagline": "Virtual cloud storage client backed by Telegram",
-    "summary": "TeleDrive is an open-source, cross-platform cloud drive client powered by Telegram. It maps your file storage to a private Telegram channel and organizes your files into a virtual hierarchical drive with fast search, preview, and real-time synchronization.",
-    "githubRepository": "GitHub Repository",
-    "reportIssue": "Report an Issue",
-    "architecture": "Channel-based cloud storage architecture",
-    "checkingUpdates": "Checking for updates...",
-    "checkUpdates": "Check for Updates",
+    "title": "О программе TeleDrive",
+    "description": "Узнайте больше о приложении, обновлениях и проекте с открытым исходным кодом.",
+    "logoAlt": "Логотип TeleDrive",
+    "tagline": "Клиент виртуального облачного хранилища на базе Telegram",
+    "summary": "TeleDrive — это кроссплатформенный клиент облачного хранилища с открытым исходным кодом на базе Telegram. Он связывает ваше хранилище с приватным каналом Telegram и организует файлы в удобный иерархический диск с быстрым поиском, встроенным предпросмотром и синхронизацией в реальном времени.",
+    "githubRepository": "Репозиторий на GitHub",
+    "reportIssue": "Сообщить об ошибке",
+    "architecture": "Архитектура облачного хранилища на основе каналов",
+    "checkingUpdates": "Проверка обновлений...",
+    "checkUpdates": "Проверить обновления",
     "disclaimer": {
-      "title": "Disclaimer",
-      "body": "TeleDrive is an independent open-source client application and is not affiliated with, authorized, maintained, sponsored or endorsed by Telegram FZ-LLC or any of its affiliates."
+      "title": "Отказ от ответственности",
+      "body": "TeleDrive является независимым приложением с открытым исходным кодом и не связан, не авторизован, не поддерживается и не одобряется Telegram FZ-LLC или ее дочерними компаниями."
     },
     "toasts": {
-      "openLinkFailed": "Failed to open link.",
-      "upToDate": "You're up to date!",
-      "latestVersion": "TeleDrive v{{version}} is the latest version."
+      "openLinkFailed": "Не удалось открыть ссылку.",
+      "upToDate": "У вас установлена последняя версия!",
+      "latestVersion": "TeleDrive v{{version}} — самая актуальная версия."
     }
   }
 }

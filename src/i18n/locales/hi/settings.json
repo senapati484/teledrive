@@ -106,8 +106,26 @@
       "patternAdded": "अपवर्जन पैटर्न जोड़ा गया",
       "patternRemoved": "अपवर्जन पैटर्न हटाया गया",
       "patternEmpty": "कृपया एक गैर-रिक्त पैटर्न दर्ज करें।",
-      "cadenceUpdated": "बैकअप अंतराल अपडेट किया गया"
-    }
+      "cadenceUpdated": "बैकअप अंतराल अपडेट किया गया",
+      "maxFolders_one": "अधिकतम {{count}} स्रोत फ़ोल्डर।",
+      "maxFolders_other": "अधिकतम {{count}} स्रोत फ़ोल्डर।",
+      "maxExcludes_one": "अधिकतम {{count}} अपवर्जन पैटर्न।",
+      "maxExcludes_other": "अधिकतम {{count}} अपवर्जन पैटर्न।",
+      "pickerFailed": "फ़ोल्डर चयनकर्ता नहीं खोला जा सका",
+      "noFolders": "पहले कम से कम एक स्रोत फ़ोल्डर चुनें"
+    },
+    "lastResult": {
+      "uploaded_one": "{{count}} अपलोड किया गया, ",
+      "uploaded_other": "{{count}} अपलोड किए गए, ",
+      "unchanged_one": "{{count}} अपरिवर्तित, ",
+      "unchanged_other": "{{count}} अपरिवर्तित, ",
+      "failed_one": "{{count}} विफल",
+      "failed_other": "{{count}} विफल"
+    },
+    "progressHint": "नीचे दाएं कोने में प्रगति पैनल देखें।",
+    "cancel": "रद्द करें",
+    "howItWorks": "<strong>बैकअप कैसे काम करता है:</strong> TeleDrive आपके द्वारा चुने गए फ़ोल्डरों को स्कैन करता है, स्थानीय मैनिफ़ेस्ट से तुलना करता है, और केवल नई या बदली गई फ़ाइलों को अपलोड करता है।",
+    "viewBackups": "बैकअप देखें"
   },
   "appearance": {
     "title": "दिखावट",
@@ -121,7 +139,26 @@
       "darkDesc": "अंधेरे में आंखों के लिए आसान",
       "system": "सिस्टम",
       "systemDesc": "आपके सिस्टम की सेटिंग्स का अनुसरण करता है"
-    }
+    },
+    "themeMode": {
+      "title": "थीम मोड",
+      "description": "चुनें कि क्या TeleDrive हल्का, गहरा या सिस्टम-अनुकूलित रूप उपयोग करता है।"
+    },
+    "themes": {
+      "light": {
+        "label": "लाइट",
+        "description": "साफ़, उच्च-कंट्रास्ट लाइट थीम Google Drive कैनवास के साथ"
+      },
+      "dark": {
+        "label": "डार्क",
+        "description": "कम रोशनी वाले वातावरण के लिए अनुकूलित आकर्षक डार्क थीम"
+      },
+      "system": {
+        "label": "सिस्टम",
+        "description": "स्वचालित रूप से आपके ऑपरेटिंग सिस्टम के रूप के साथ समन्वयित होता है"
+      }
+    },
+    "callout": "<strong>थीम सिंक्रनाइज़ेशन:</strong> TeleDrive Google Drive के चुनिंदा HSL रंग टोकन का उपयोग करता है, जो उच्च कंट्रास्ट सुनिश्चित करता है और आंखों का तनाव कम करता है।"
   },
   "storage": {
     "title": "स्टोरेज और कैश",
@@ -146,7 +183,26 @@
     },
     "toasts": {
       "cacheCleared": "स्थानीय कैश सफलतापूर्वक साफ़ किया गया।",
-      "cacheClearFailed": "स्थानीय कैश साफ़ करने में विफल।"
+      "cacheClearFailed": "स्थानीय कैश साफ़ करने में विफल।",
+      "channelNotInitialised": "संग्रहण चैनल अभी प्रारंभ नहीं हुआ है।",
+      "refreshed": "Telegram से स्टोरेज रीफ़्रेश किया गया।",
+      "refreshFailed": "संग्रहण डेटा रीफ़्रेश करने में विफल।"
+    },
+    "totalUsed": "कुल उपयोग किया गया संग्रहण",
+    "calculating": "गणना की जा रही है…",
+    "ofUnlimited": "असीमित में से",
+    "unlimitedBadge": "असीमित क्लाउड स्टोरेज",
+    "meterLabel": "Telegram चैनल स्टोरेज (असीमित)",
+    "stats": {
+      "files": "फ़ाइलें संग्रहीत",
+      "folders": "फ़ोल्डर बनाए गए",
+      "trash": "कचरे में आइटम"
+    },
+    "recalculating": "पुनर्गणना…",
+    "recalculate": "स्टोरेज की पुनर्गणना करें",
+    "info": {
+      "noLimit": "Telegram निजी चैनलों में संग्रहीत डेटा की कुल मात्रा पर कोई सीमा नहीं लगाता है।",
+      "fileLimits": "व्यक्तिगत फ़ाइल सीमा: मानक खातों के लिए प्रति फ़ाइल <strong>2 GB</strong> तक, और Telegram Premium ग्राहकों के लिए <strong>4 GB</strong> तक।"
     }
   },
   "about": {
@@ -163,6 +219,21 @@
     "upToDate": "आपके पास नवीनतम संस्करण है।",
     "newVersionAvailable": "एक नया संस्करण उपलब्ध है: {{version}}",
     "downloadUpdate": "अपडेट डाउनलोड करें",
-    "disclaimer": "TeleDrive एक स्वतंत्र ओपन-सोर्स प्रोजेक्ट है और यह Telegram FZ-LLC से किसी भी प्रकार से संबद्ध नहीं है।"
+    "disclaimer": {
+      "title": "अस्वीकरण",
+      "body": "TeleDrive एक स्वतंत्र ओपन-सोर्स क्लाइंट एप्लिकेशन है और यह Telegram FZ-LLC या इसके किसी सहयोगी द्वारा संबद्ध, अधिकृत, अनुरक्षित, प्रायोजित या समर्थित नहीं है।"
+    },
+    "logoAlt": "TeleDrive लोगो",
+    "summary": "TeleDrive एक ओपन-सोर्स, क्रॉस-प्लेटफ़ॉर्म क्लाउड ड्राइव क्लाइंट है जो Telegram द्वारा संचालित है। यह आपके फ़ाइल संग्रहण को एक निजी Telegram चैनल में मैप करता है और आपकी फ़ाइलों को तेज़ खोज, पूर्वावलोकन और रीयल-टाइम सिंक्रनाइज़ेशन के साथ व्यवस्थित करता है।",
+    "githubRepository": "GitHub रिपॉजिटरी",
+    "reportIssue": "समस्या की रिपोर्ट करें",
+    "architecture": "चैनल-आधारित क्लाउड स्टोरेज आर्किटेक्चर",
+    "checkingUpdates": "अपडेट की जांच की जा रही है...",
+    "checkUpdates": "अपडेट के लिए जांचें",
+    "toasts": {
+      "openLinkFailed": "लिंक खोलने में विफल।",
+      "upToDate": "आप अप टू डेट हैं!",
+      "latestVersion": "TeleDrive v{{version}} नवीनतम संस्करण है।"
+    }
   }
 }

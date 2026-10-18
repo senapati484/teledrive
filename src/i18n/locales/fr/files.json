@@ -97,7 +97,9 @@
       "folder": {
         "title": "Ce dossier est vide",
         "subtitle": "Téléversez des fichiers ou créez des dossiers dans ce répertoire."
-      }
+      },
+      "uploadFiles": "Téléverser des fichiers",
+      "newFolder": "Nouveau dossier"
     },
     "trashBanner": {
       "title": "Les éléments de la corbeille seront conservés jusqu'à ce que vous les supprimiez définitivement.",
@@ -173,7 +175,155 @@
       "name": "Nom",
       "modified": "Dernière modification",
       "size": "Taille du fichier",
-      "actions": "Actions"
+      "actions": "Actions",
+      "type": "Type",
+      "fileSize": "Taille du fichier",
+      "lastModified": "Dernière modification"
+    },
+    "emptyTrashButton": "Vider la corbeille",
+    "switchToListView": "Passer à la vue liste",
+    "switchToGridView": "Passer à la vue grille",
+    "backupsBanner": {
+      "title": "Les sauvegardes sont en lecture seule.",
+      "description": "Pour modifier les dossiers sauvegardés, ouvrez <settingsPath>Paramètres → Sauvegarde de l'appareil</settingsPath>."
+    },
+    "filters": {
+      "all": "Tous",
+      "documents": "Documents",
+      "images": "Images",
+      "videos": "Vidéos",
+      "audio": "Audio"
+    },
+    "sections": {
+      "folders": "Dossiers",
+      "foldersPartial": "Dossiers ({{shown}} sur {{total}})",
+      "files": "Fichiers",
+      "filesPartial": "Fichiers ({{shown}} sur {{total}})"
+    },
+    "dragPreview": {
+      "items_one": "{{count}} élément",
+      "items_other": "{{count}} éléments"
+    },
+    "bulkBar": {
+      "selected_one": "sélectionné",
+      "selected_other": "sélectionnés",
+      "restoreSelected": "Restaurer la sélection",
+      "deletePermanently": "Supprimer définitivement",
+      "moveSelectedToTrash": "Déplacer la sélection dans la corbeille",
+      "clearSelection": "Effacer la sélection"
+    },
+    "mobileMenu": {
+      "addToStarred": "Ajouter aux favoris",
+      "removeFromStarred": "Retirer des favoris"
+    },
+    "dialogs": {
+      "cancel": "Annuler",
+      "deleting": "Suppression…",
+      "deleteForever": "Supprimer définitivement",
+      "createFolder": {
+        "title": "Nouveau dossier",
+        "placeholder": "Dossier sans titre",
+        "submit": "Créer"
+      },
+      "rename": {
+        "title": "Renommer",
+        "placeholder": "Nouveau nom",
+        "submit": "OK"
+      },
+      "emptyTrash": {
+        "title": "Vider la corbeille ?",
+        "description_one": "Cela supprimera définitivement <strong>{{count}} élément</strong> de votre canal Telegram. Cette action est irréversible.",
+        "description_other": "Cela supprimera définitivement <strong>{{count}} éléments</strong> de votre canal Telegram. Cette action est irréversible.",
+        "confirm": "Vider la corbeille"
+      },
+      "deleteItem": {
+        "title": "Supprimer définitivement ?",
+        "descriptionFile": "Êtes-vous sûr de vouloir supprimer définitivement <strong>{{name}}</strong> ? Le fichier sera supprimé de votre canal Telegram. Cette action est irréversible.",
+        "descriptionFolder": "Êtes-vous sûr de vouloir supprimer définitivement <strong>{{name}}</strong> ? Cette action est irréversible."
+      },
+      "bulkDelete": {
+        "title": "Supprimer définitivement ?",
+        "description_one": "Cela supprimera définitivement <strong>{{count}} élément sélectionné</strong> de votre canal Telegram. Cette action est irréversible.",
+        "description_other": "Cela supprimera définitivement <strong>{{count}} éléments sélectionnés</strong> de votre canal Telegram. Cette action est irréversible."
+      }
+    }
+  },
+  "actions": {
+    "bootstrapPending": "Chargement de votre disque en cours — veuillez réessayer dans un instant.",
+    "saveFailed": "L'enregistrement a échoué et a été annulé : {{error}}",
+    "unknownError": "Erreur inconnue",
+    "channelNotInitialized": "Le canal de stockage Telegram n'est pas initialisé",
+    "fileNotFound": "Fichier introuvable",
+    "folder": {
+      "alreadyExists": "Le dossier « {{name}} » existe déjà",
+      "created": "Dossier « {{name}} » créé avec succès",
+      "createFailed": "Échec de la création du dossier"
+    },
+    "rename": {
+      "success": "Renommé avec succès",
+      "failed": "Échec du renommage"
+    },
+    "star": {
+      "added": "Ajouté aux favoris",
+      "removed": "Retiré des favoris",
+      "failed": "Échec de la mise à jour des favoris"
+    },
+    "trash": {
+      "moved": "« {{name}} » déplacé dans la corbeille",
+      "moveFailed": "Échec du déplacement dans la corbeille",
+      "restored": "« {{name}} » restauré",
+      "restoreFailed": "Échec de la restauration"
+    },
+    "archive": {
+      "archived": "« {{name}} » archivé",
+      "archiveFailed": "Échec de l'archivage",
+      "unarchived": "« {{name}} » replacé dans Mon disque",
+      "unarchiveFailed": "Échec du désarchivage"
+    },
+    "delete": {
+      "success": "Supprimé définitivement",
+      "failed": "Échec de la suppression"
+    },
+    "emptyTrash": {
+      "alreadyEmpty": "La corbeille est déjà vide",
+      "success_one": "{{count}} élément supprimé définitivement",
+      "success_other": "{{count}} éléments supprimés définitivement",
+      "failed": "Échec du vidage de la corbeille"
+    },
+    "bulk": {
+      "trashed_one": "{{count}} élément déplacé dans la corbeille",
+      "trashed_other": "{{count}} éléments déplacés dans la corbeille",
+      "trashFailed": "Échec du déplacement des éléments dans la corbeille",
+      "restored_one": "{{count}} élément restauré",
+      "restored_other": "{{count}} éléments restaurés",
+      "restoreFailed": "Échec de la restauration des éléments",
+      "deleted_one": "{{count}} élément supprimé définitivement",
+      "deleted_other": "{{count}} éléments supprimés définitivement",
+      "deleteFailed": "Échec de la suppression des éléments",
+      "archived_one": "{{count}} élément archivé",
+      "archived_other": "{{count}} éléments archivés",
+      "archiveFailed": "Échec de l'archivage des éléments",
+      "starred_one": "{{count}} élément ajouté aux favoris",
+      "starred_other": "{{count}} éléments ajoutés aux favoris",
+      "starFailed": "Échec de l'ajout des éléments aux favoris",
+      "unarchived_one": "{{count}} élément replacé dans Mon disque",
+      "unarchived_other": "{{count}} éléments replacés dans Mon disque",
+      "unarchiveFailed": "Échec du désarchivage des éléments"
+    },
+    "offline": {
+      "downloading": "Téléchargement de « {{name}} » pour accès hors ligne...",
+      "available": "« {{name}} » est désormais disponible hors ligne",
+      "unavailable": "« {{name}} » n'est plus disponible hors ligne",
+      "failed": "Échec de la mise à jour du statut hors ligne"
+    },
+    "move": {
+      "nothingToMove": "Rien à déplacer",
+      "destinationMissing": "Le dossier de destination n'existe plus.",
+      "intoItself": "Impossible de déplacer le dossier « {{name}} » dans lui-même ou dans l'un de ses sous-dossiers.",
+      "alreadyInFolder": "Les éléments sont déjà dans ce dossier",
+      "success_one": "{{count}} élément déplacé avec succès",
+      "success_other": "{{count}} éléments déplacés avec succès",
+      "failed": "Échec du déplacement des éléments"
     }
   }
 }

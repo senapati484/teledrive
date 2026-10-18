@@ -106,8 +106,26 @@
       "patternAdded": "Pola pengecualian ditambahkan",
       "patternRemoved": "Pola pengecualian dihapus",
       "patternEmpty": "Harap masukkan pola yang tidak kosong.",
-      "cadenceUpdated": "Frekuensi pencadangan diperbarui"
-    }
+      "cadenceUpdated": "Frekuensi pencadangan diperbarui",
+      "maxFolders_one": "Maksimal {{count}} folder sumber.",
+      "maxFolders_other": "Maksimal {{count}} folder sumber.",
+      "maxExcludes_one": "Maksimal {{count}} pola pengecualian.",
+      "maxExcludes_other": "Maksimal {{count}} pola pengecualian.",
+      "pickerFailed": "Tidak dapat membuka pemilih folder",
+      "noFolders": "Pilih setidaknya satu folder sumber terlebih dahulu"
+    },
+    "lastResult": {
+      "uploaded_one": "{{count}} terunggah, ",
+      "uploaded_other": "{{count}} terunggah, ",
+      "unchanged_one": "{{count}} tidak berubah, ",
+      "unchanged_other": "{{count}} tidak berubah, ",
+      "failed_one": "{{count}} gagal",
+      "failed_other": "{{count}} gagal"
+    },
+    "progressHint": "Lihat panel progres di sudut kanan bawah.",
+    "cancel": "Batal",
+    "howItWorks": "<strong>Cara kerja pencadangan:</strong> TeleDrive memindai folder yang Anda pilih, membandingkannya dengan manifes lokal, dan hanya mengunggah file baru atau yang diubah.",
+    "viewBackups": "Lihat Cadangan"
   },
   "appearance": {
     "title": "Tampilan",
@@ -121,7 +139,26 @@
       "darkDesc": "Nyaman di mata saat gelap",
       "system": "Sistem",
       "systemDesc": "Mengikuti pengaturan sistem Anda"
-    }
+    },
+    "themeMode": {
+      "title": "Mode Tema",
+      "description": "Pilih apakah TeleDrive menggunakan tampilan terang, gelap, atau adaptif sistem."
+    },
+    "themes": {
+      "light": {
+        "label": "Terang",
+        "description": "Tema terang bersih dengan kanvas Google Drive"
+      },
+      "dark": {
+        "label": "Gelap",
+        "description": "Tema gelap ramping yang dioptimalkan untuk lingkungan minim cahaya"
+      },
+      "system": {
+        "label": "Sistem",
+        "description": "Secara otomatis disinkronkan dengan tampilan sistem operasi Anda"
+      }
+    },
+    "callout": "<strong>Sinkronisasi Tema:</strong> TeleDrive menggunakan token warna HSL Google Drive di permukaan terang (`#F8FAFD`) dan gelap (`#131314`), memastikan kontras tinggi dan mengurangi ketegangan mata."
   },
   "storage": {
     "title": "Penyimpanan & Cache",
@@ -146,7 +183,26 @@
     },
     "toasts": {
       "cacheCleared": "Cache lokal berhasil dibersihkan.",
-      "cacheClearFailed": "Gagal membersihkan cache lokal."
+      "cacheClearFailed": "Gagal membersihkan cache lokal.",
+      "channelNotInitialised": "Saluran penyimpanan belum diinisialisasi.",
+      "refreshed": "Penyimpanan diperbarui dari Telegram.",
+      "refreshFailed": "Gagal memperbarui data penyimpanan."
+    },
+    "totalUsed": "Total Penyimpanan Digunakan",
+    "calculating": "Menghitung…",
+    "ofUnlimited": "dari Tak Terbatas",
+    "unlimitedBadge": "Penyimpanan Cloud Tak Terbatas",
+    "meterLabel": "Penyimpanan Saluran Telegram (Tak Terbatas)",
+    "stats": {
+      "files": "File Disimpan",
+      "folders": "Folder Dibuat",
+      "trash": "Item di Sampah"
+    },
+    "recalculating": "Menghitung ulang…",
+    "recalculate": "Hitung Ulang Penyimpanan",
+    "info": {
+      "noLimit": "Telegram tidak membatasi volume kumulatif data yang disimpan di saluran pribadi.",
+      "fileLimits": "Batas file individu: hingga <strong>2 GB</strong> per file untuk akun standar, dan hingga <strong>4 GB</strong> untuk pelanggan Telegram Premium."
     }
   },
   "about": {
@@ -163,6 +219,21 @@
     "upToDate": "Anda menggunakan versi terbaru.",
     "newVersionAvailable": "Versi baru tersedia: {{version}}",
     "downloadUpdate": "Unduh Pembaruan",
-    "disclaimer": "TeleDrive adalah proyek open-source independen dan tidak berafiliasi dengan Telegram FZ-LLC dengan cara apa pun."
+    "disclaimer": {
+      "title": "Penafian",
+      "body": "TeleDrive adalah aplikasi klien sumber terbuka independen dan tidak berafiliasi, diotorisasi, dikelola, disponsori, atau didukung oleh Telegram FZ-LLC atau afiliasinya."
+    },
+    "logoAlt": "Logo TeleDrive",
+    "summary": "TeleDrive adalah klien drive cloud lintas platform sumber terbuka yang didukung oleh Telegram. Ini memetakan penyimpanan file Anda ke saluran Telegram pribadi dan mengatur file Anda ke dalam drive virtual dengan pencarian cepat, pratinjau, dan sinkronisasi waktu nyata.",
+    "githubRepository": "Repositori GitHub",
+    "reportIssue": "Laporkan Masalah",
+    "architecture": "Arsitektur penyimpanan cloud berbasis saluran",
+    "checkingUpdates": "Memeriksa pembaruan...",
+    "checkUpdates": "Periksa Pembaruan",
+    "toasts": {
+      "openLinkFailed": "Gagal membuka tautan.",
+      "upToDate": "Aplikasi sudah versi terbaru!",
+      "latestVersion": "TeleDrive v{{version}} adalah versi terbaru."
+    }
   }
 }

@@ -97,7 +97,9 @@
       "folder": {
         "title": "यह फ़ोल्डर खाली है",
         "subtitle": "इस निर्देशिका में फ़ाइलें अपलोड करें या फ़ोल्डर बनाएं।"
-      }
+      },
+      "uploadFiles": "फ़ाइलें अपलोड करें",
+      "newFolder": "नया फ़ोल्डर"
     },
     "trashBanner": {
       "title": "ट्रैश में मौजूद आइटम तब तक रहेंगे जब तक आप उन्हें स्थायी रूप से हटा नहीं देते।",
@@ -173,7 +175,155 @@
       "name": "नाम",
       "modified": "अंतिम संशोधन",
       "size": "फ़ाइल का आकार",
-      "actions": "क्रियाएं"
+      "actions": "क्रियाएं",
+      "type": "प्रकार",
+      "fileSize": "फ़ाइल का आकार",
+      "lastModified": "अंतिम संशोधन"
+    },
+    "emptyTrashButton": "कचरा खाली करें",
+    "switchToListView": "सूची दृश्य पर स्विच करें",
+    "switchToGridView": "ग्रिड दृश्य पर स्विच करें",
+    "backupsBanner": {
+      "title": "बैकअप केवल पढ़ने के लिए हैं।",
+      "description": "किन फ़ोल्डरों का बैकअप लिया जाए यह बदलने के लिए, <settingsPath>सेटिंग्स → डिवाइस बैकअप</settingsPath> खोलें।"
+    },
+    "filters": {
+      "all": "सभी",
+      "documents": "दस्तावेज़",
+      "images": "छवियां",
+      "videos": "वीडियो",
+      "audio": "ऑडियो"
+    },
+    "sections": {
+      "folders": "फ़ोल्डर",
+      "foldersPartial": "फ़ोल्डर ({{total}} में से {{shown}})",
+      "files": "फ़ाइलें",
+      "filesPartial": "फ़ाइलें ({{total}} में से {{shown}})"
+    },
+    "dragPreview": {
+      "items_one": "{{count}} आइटम",
+      "items_other": "{{count}} आइटम"
+    },
+    "bulkBar": {
+      "selected_one": "चयनित",
+      "selected_other": "चयनित",
+      "restoreSelected": "चयनित को पुनर्स्थापित करें",
+      "deletePermanently": "स्थायी रूप से हटाएं",
+      "moveSelectedToTrash": "चयनित को कचरे में ले जाएं",
+      "clearSelection": "चयन साफ़ करें"
+    },
+    "mobileMenu": {
+      "addToStarred": "पसंदीदा में जोड़ें",
+      "removeFromStarred": "पसंदीदा से हटाएं"
+    },
+    "dialogs": {
+      "cancel": "रद्द करें",
+      "deleting": "हटाया जा रहा है…",
+      "deleteForever": "हमेशा के लिए हटाएं",
+      "createFolder": {
+        "title": "नया फ़ोल्डर",
+        "placeholder": "शीर्षकहीन फ़ोल्डर",
+        "submit": "बनाएं"
+      },
+      "rename": {
+        "title": "नाम बदलें",
+        "placeholder": "नया नाम",
+        "submit": "ठीक है"
+      },
+      "emptyTrash": {
+        "title": "कचरा खाली करें?",
+        "description_one": "यह आपके Telegram स्टोरेज चैनल से <strong>{{count}} आइटम</strong> स्थायी रूप से हटा देगा। इसे पूर्ववत नहीं किया जा सकता।",
+        "description_other": "यह आपके Telegram स्टोरेज चैनल से <strong>{{count}} आइटम</strong> स्थायी रूप से हटा देगा। इसे पूर्ववत नहीं किया जा सकता।",
+        "confirm": "कचरा खाली करें"
+      },
+      "deleteItem": {
+        "title": "स्थायी रूप से हटाएं?",
+        "descriptionFile": "क्या आप वाकई <strong>{{name}}</strong> को स्थायी रूप से हटाना चाहते हैं? यह वास्तविक फ़ाइल को आपके Telegram चैनल से हटा देगा। इसे पूर्ववत नहीं किया जा सकता।",
+        "descriptionFolder": "क्या आप वाकई <strong>{{name}}</strong> को स्थायी रूप से हटाना चाहते हैं? इसे पूर्ववत नहीं किया जा सकता।"
+      },
+      "bulkDelete": {
+        "title": "हमेशा के लिए हटाएं?",
+        "description_one": "यह आपके Telegram चैनल से <strong>{{count}} चयनित आइटम</strong> को स्थायी रूप से हटा देगा। इसे पूर्ववत नहीं किया जा सकता।",
+        "description_other": "यह आपके Telegram चैनल से <strong>{{count}} चयनित आइटम</strong> को स्थायी रूप से हटा देगा। इसे पूर्ववत नहीं किया जा सकता।"
+      }
+    }
+  },
+  "actions": {
+    "bootstrapPending": "अभी भी आपकी ड्राइव लोड हो रही है — कृपया थोड़ी देर में पुनः प्रयास करें।",
+    "saveFailed": "सहेजना विफल रहा और वापस ले लिया गया: {{error}}",
+    "unknownError": "अज्ञात त्रुटि",
+    "channelNotInitialized": "Telegram स्टोरेज चैनल प्रारंभ नहीं हुआ है",
+    "fileNotFound": "फ़ाइल नहीं मिली",
+    "folder": {
+      "alreadyExists": "फ़ोल्डर \"{{name}}\" पहले से मौजूद है",
+      "created": "फ़ोल्डर \"{{name}}\" सफलतापूर्वक बनाया गया",
+      "createFailed": "फ़ोल्डर बनाने में विफल"
+    },
+    "rename": {
+      "success": "सफलतापूर्वक नाम बदला गया",
+      "failed": "नाम बदलने में विफल"
+    },
+    "star": {
+      "added": "पसंदीदा में जोड़ा गया",
+      "removed": "पसंदीदा से हटाया गया",
+      "failed": "स्टार अपडेट करने में विफल"
+    },
+    "trash": {
+      "moved": "\"{{name}}\" को कचरे में ले जाया गया",
+      "moveFailed": "कचरे में ले जाने में विफल",
+      "restored": "\"{{name}}\" पुनर्स्थापित किया गया",
+      "restoreFailed": "पुनर्स्थापित करने में विफल"
+    },
+    "archive": {
+      "archived": "\"{{name}}\" संग्रहीत किया गया",
+      "archiveFailed": "संग्रह करने में विफल",
+      "unarchived": "\"{{name}}\" को माई ड्राइव में वापस ले जाया गया",
+      "unarchiveFailed": "अनआर्काइव करने में विफल"
+    },
+    "delete": {
+      "success": "स्थायी रूप से हटाया गया",
+      "failed": "हटाने में विफल"
+    },
+    "emptyTrash": {
+      "alreadyEmpty": "कचरा पहले से ही खाली है",
+      "success_one": "{{count}} आइटम स्थायी रूप से हटा दिया गया",
+      "success_other": "{{count}} आइटम स्थायी रूप से हटा दिए गए",
+      "failed": "कचरा खाली करने में विफल"
+    },
+    "bulk": {
+      "trashed_one": "{{count}} आइटम कचरे में भेजा गया",
+      "trashed_other": "{{count}} आइटम कचरे में भेजे गए",
+      "trashFailed": "आइटम को कचरे में ले जाने में विफल",
+      "restored_one": "{{count}} आइटम पुनर्स्थापित किया गया",
+      "restored_other": "{{count}} आइटम पुनर्स्थापित किए गए",
+      "restoreFailed": "आइटम पुनर्स्थापित करने में विफल",
+      "deleted_one": "{{count}} आइटम स्थायी रूप से हटा दिया गया",
+      "deleted_other": "{{count}} आइटम स्थायी रूप से हटा दिए गए",
+      "deleteFailed": "आइटम हटाने में विफल",
+      "archived_one": "{{count}} आइटम संग्रहीत किया गया",
+      "archived_other": "{{count}} आइटम संग्रहीत किए गए",
+      "archiveFailed": "आइटम संग्रहीत करने में विफल",
+      "starred_one": "{{count}} आइटम पसंदीदा में जोड़ा गया",
+      "starred_other": "{{count}} आइटम पसंदीदा में जोड़े गए",
+      "starFailed": "आइटम को स्टार करने में विफल",
+      "unarchived_one": "{{count}} आइटम को माई ड्राइव में वापस ले जाया गया",
+      "unarchived_other": "{{count}} आइटम को माई ड्राइव में वापस ले जाया गया",
+      "unarchiveFailed": "आइटम को अनआर्काइव करने में विफल"
+    },
+    "offline": {
+      "downloading": "ऑफ़लाइन पहुंच के लिए \"{{name}}\" डाउनलोड हो रहा है...",
+      "available": "\"{{name}}\" अब ऑफ़लाइन उपलब्ध है",
+      "unavailable": "\"{{name}}\" अब ऑफ़लाइन उपलब्ध नहीं है",
+      "failed": "ऑफ़लाइन स्थिति अपडेट करने में विफल"
+    },
+    "move": {
+      "nothingToMove": "स्थानांतरित करने के लिए कुछ नहीं",
+      "destinationMissing": "गंतव्य फ़ोल्डर अब मौजूद नहीं है।",
+      "intoItself": "फ़ोल्डर \"{{name}}\" को अपने आप में या उसके सबफ़ोल्डर्स में नहीं ले जाया जा सकता।",
+      "alreadyInFolder": "आइटम पहले से ही उस फ़ोल्डर में हैं",
+      "success_one": "{{count}} आइटम सफलतापूर्वक स्थानांतरित किया गया",
+      "success_other": "{{count}} आइटम सफलतापूर्वक स्थानांतरित किए गए",
+      "failed": "आइटम स्थानांतरित करने में विफल"
     }
   }
 }

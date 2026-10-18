@@ -140,6 +140,17 @@
     "columns_other": "{{count}} कॉलम",
     "emptyFiltered": "आपके फ़िल्टर से कोई पंक्ति मेल नहीं खाती।",
     "resetFilter": "फ़िल्टर रीसेट करें",
-    "noData": "इस तालिका में कोई डेटा नहीं मिला।"
+    "noData": "इस तालिका में कोई डेटा नहीं मिला।",
+    "empty": "खाली डेटासेट",
+    "columnFallback": "कॉलम {{letter}}",
+    "cellTitle": "{{value}} (कॉपी करने के लिए क्लिक करें)"
+  },
+  "codeEditor": {
+    "loading": "संपादक लोड हो रहा है…"
+  },
+  "syntaxHighlighter": {
+    "ariaLabel": "कोड दर्शक",
+    "largeFile_one": "बड़ी फ़ाइल ({{count, number}} पंक्ति) — प्रदर्शन के लिए सिंटैक्स हाइलाइटिंग छोड़ी गई",
+    "largeFile_other": "बड़ी फ़ाइल ({{count, number}} पंक्तियाँ) — प्रदर्शन के लिए सिंटैक्स हाइलाइटिंग छोड़ी गई"
   }
 }

@@ -106,8 +106,26 @@
       "patternAdded": "Modèle d'exclusion ajouté",
       "patternRemoved": "Modèle d'exclusion retiré",
       "patternEmpty": "Veuillez saisir un modèle non vide.",
-      "cadenceUpdated": "Fréquence de sauvegarde mise à jour"
-    }
+      "cadenceUpdated": "Fréquence de sauvegarde mise à jour",
+      "maxFolders_one": "Au maximum {{count}} dossier source.",
+      "maxFolders_other": "Au maximum {{count}} dossiers sources.",
+      "maxExcludes_one": "Au maximum {{count}} motif d'exclusion.",
+      "maxExcludes_other": "Au maximum {{count}} motifs d'exclusion.",
+      "pickerFailed": "Impossible d'ouvrir le sélecteur de dossier",
+      "noFolders": "Sélectionnez d'abord au moins un dossier source"
+    },
+    "lastResult": {
+      "uploaded_one": "{{count}} téléversé, ",
+      "uploaded_other": "{{count}} téléversés, ",
+      "unchanged_one": "{{count}} inchangé, ",
+      "unchanged_other": "{{count}} inchangés, ",
+      "failed_one": "{{count}} a échoué",
+      "failed_other": "{{count}} ont échoué"
+    },
+    "progressHint": "Consultez le panneau de progression dans le coin inférieur droit.",
+    "cancel": "Annuler",
+    "howItWorks": "<strong>Fonctionnement de la sauvegarde :</strong> TeleDrive analyse les dossiers sélectionnés, compare avec le manifeste local et ne téléverse que les fichiers nouveaux ou modifiés.",
+    "viewBackups": "Voir les sauvegardes"
   },
   "appearance": {
     "title": "Apparence",
@@ -121,7 +139,26 @@
       "darkDesc": "Repose les yeux dans l'obscurité",
       "system": "Système",
       "systemDesc": "Suit les réglages de votre système"
-    }
+    },
+    "themeMode": {
+      "title": "Mode de thème",
+      "description": "Choisissez si TeleDrive utilise une apparence claire, sombre ou adaptée au système."
+    },
+    "themes": {
+      "light": {
+        "label": "Clair",
+        "description": "Thème clair épuré avec l'esthétique Google Drive"
+      },
+      "dark": {
+        "label": "Sombre",
+        "description": "Thème sombre élégant optimisé pour les environnements peu éclairés"
+      },
+      "system": {
+        "label": "Système",
+        "description": "Synchronisation automatique avec l'apparence de votre système d'exploitation"
+      }
+    },
+    "callout": "<strong>Synchronisation des thèmes :</strong> TeleDrive utilise la palette de couleurs HSL de Google Drive en modes clair (`#F8FAFD`) et sombre (`#131314`), garantissant un contraste élevé et réduisant la fatigue oculaire."
   },
   "storage": {
     "title": "Stockage et Cache",
@@ -146,7 +183,26 @@
     },
     "toasts": {
       "cacheCleared": "Cache local vidé avec succès.",
-      "cacheClearFailed": "Échec du vidage du cache local."
+      "cacheClearFailed": "Échec du vidage du cache local.",
+      "channelNotInitialised": "Canal de stockage pas encore initialisé.",
+      "refreshed": "Stockage actualisé depuis Telegram.",
+      "refreshFailed": "Échec de l'actualisation des données de stockage."
+    },
+    "totalUsed": "Espace total utilisé",
+    "calculating": "Calcul en cours…",
+    "ofUnlimited": "sur illimité",
+    "unlimitedBadge": "Stockage Cloud Illimité",
+    "meterLabel": "Stockage du canal Telegram (Illimité)",
+    "stats": {
+      "files": "Fichiers stockés",
+      "folders": "Dossiers créés",
+      "trash": "Éléments dans la corbeille"
+    },
+    "recalculating": "Recalcul…",
+    "recalculate": "Recalculer le stockage",
+    "info": {
+      "noLimit": "Telegram n'impose aucune limite sur le volume cumulé de données stockées dans les canaux privés.",
+      "fileLimits": "Limites par fichier : jusqu'à <strong>2 Go</strong> par fichier pour les comptes standard, et jusqu'à <strong>4 Go</strong> pour les abonnés Telegram Premium."
     }
   },
   "about": {
@@ -163,6 +219,21 @@
     "upToDate": "Vous disposez de la version la plus récente.",
     "newVersionAvailable": "Une nouvelle version est disponible : {{version}}",
     "downloadUpdate": "Télécharger la mise à jour",
-    "disclaimer": "TeleDrive est un projet open-source indépendant et n'est affilié à Telegram FZ-LLC d'aucune manière."
+    "disclaimer": {
+      "title": "Avertissement",
+      "body": "TeleDrive est une application cliente open-source indépendante et n'est pas affiliée, autorisée, maintenue, sponsorisée ou approuvée par Telegram FZ-LLC ou l'une de ses filiales."
+    },
+    "logoAlt": "Logo TeleDrive",
+    "summary": "TeleDrive est un client de disque cloud multiplateforme et open-source alimenté par Telegram. Il associe votre stockage à un canal Telegram privé et organise vos fichiers dans un disque hiérarchique virtuel avec recherche rapide, prévisualisation et synchronisation en temps réel.",
+    "githubRepository": "Dépôt GitHub",
+    "reportIssue": "Signaler un problème",
+    "architecture": "Architecture de stockage cloud basée sur les canaux",
+    "checkingUpdates": "Vérification des mises à jour...",
+    "checkUpdates": "Rechercher des mises à jour",
+    "toasts": {
+      "openLinkFailed": "Échec de l'ouverture du lien.",
+      "upToDate": "Vous êtes à jour !",
+      "latestVersion": "TeleDrive v{{version}} est la dernière version."
+    }
   }
 }
