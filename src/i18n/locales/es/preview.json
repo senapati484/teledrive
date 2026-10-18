@@ -1,0 +1,153 @@
+{
+  "loading": "Cargando…",
+  "downloadInstead": "Descargar en su lugar",
+  "truncatedNotice": "--- [Vista previa truncada: el archivo supera el límite de 3 MB] ---",
+  "errors": {
+    "offlineUnavailable": "Actualmente estás desconectado y este archivo no se ha marcado como 'Disponible sin conexión'. Conéctate a Internet para abrirlo.",
+    "downloadFailed": "Error al descargar el archivo."
+  },
+  "toast": {
+    "preparingSystemViewer": "Preparando documento para el visor del sistema...",
+    "openedInSystemViewer": "Documento abierto en el visor del sistema.",
+    "systemViewerFailed": "No se pudo abrir el visor del sistema. Descargando archivo en su lugar...",
+    "saved": "¡\"{{name}}\" guardado correctamente!",
+    "saveFailed": "Error al guardar: {{message}}",
+    "unknownError": "Error desconocido",
+    "copied": "Copiado al portapapeles",
+    "jsonFormatted": "JSON formateado",
+    "invalidJson": "JSON no válido: {{message}}"
+  },
+  "topbar": {
+    "editing": "Editando",
+    "saved": "Guardado",
+    "cancel": "Cancelar",
+    "saving": "Guardando…",
+    "save": "Guardar",
+    "formatJsonTitle": "Formatear JSON (embellecer)",
+    "format": "Formatear",
+    "disableWrap": "Desactivar ajuste de línea",
+    "enableWrap": "Activar ajuste de línea",
+    "fontSizeTitle": "Tamaño de fuente: {{size}}px (haz clic para cambiar)",
+    "copyTitle": "Copiar contenido al portapapeles",
+    "runTitle": "Ejecutar en O2 Code Editor",
+    "run": "Ejecutar",
+    "editTitle": "Editar archivo",
+    "edit": "Editar",
+    "toggleDetails": "Alternar detalles",
+    "openInSystemViewerTitle": "Abrir en el visor de PDF predeterminado del sistema",
+    "openInSystemViewer": "Abrir en el visor del sistema",
+    "download": "Descargar",
+    "close": "Cerrar"
+  },
+  "viewMode": {
+    "preview": "Vista previa",
+    "source": "Código fuente",
+    "table": "Tabla",
+    "raw": "Sin procesar",
+    "vector": "Vectorial",
+    "code": "Código"
+  },
+  "image": {
+    "zoomOut": "Alejar",
+    "zoomIn": "Acercar",
+    "resetZoom": "Ajustar / Restablecer zoom",
+    "rotateCounterClockwise": "Girar en sentido antihorario",
+    "rotateClockwise": "Girar en sentido horario",
+    "toggleGrid": "Alternar cuadrícula de fondo"
+  },
+  "details": {
+    "title": "Detalles del archivo",
+    "name": "Nombre",
+    "dimensions": "Dimensiones",
+    "loadingDimensions": "Cargando...",
+    "fileSize": "Tamaño del archivo",
+    "mimeType": "Tipo MIME",
+    "path": "Ruta",
+    "uploadedAt": "Subido el"
+  },
+  "media": {
+    "skipBack": "Retroceder 10s",
+    "skipForward": "Avanzar 10s",
+    "audioTrack": "Pista de audio"
+  },
+  "archive": {
+    "badge": "ARCHIVO {{ext}}",
+    "description": "Los archivos comprimidos no se pueden previsualizar directamente en el navegador. Descarga este archivo para extraerlo y ver su contenido en tu ordenador.",
+    "download": "Descargar archivo"
+  },
+  "unsupported": {
+    "description": "No hay vista previa disponible para este tipo de archivo. Puedes descargarlo y abrirlo en una aplicación compatible de tu sistema.",
+    "download": "Descargar archivo"
+  },
+  "status": {
+    "words_one": "{{count, number}} palabra",
+    "words_other": "{{count, number}} palabras",
+    "readingTime_one": "{{count}} min de lectura",
+    "readingTime_other": "{{count}} min de lectura",
+    "rows_one": "{{count, number}} fila",
+    "rows_other": "{{count, number}} filas",
+    "lines_one": "{{count, number}} línea",
+    "lines_other": "{{count, number}} líneas",
+    "wrapOn": "Ajuste: Activado",
+    "wrapOff": "Ajuste: Desactivado",
+    "cursor": "Lín {{line}}, Col {{col}}",
+    "editorInfo": "Tab: 2 espacios · UTF-8 · LF"
+  },
+  "pdfErrorBoundary": {
+    "title": "El visor de PDF encontró un error",
+    "description": "No se pudo procesar el PDF. Intenta recargar.",
+    "retry": "Reintentar"
+  },
+  "pdf": {
+    "loading": "Cargando documento PDF",
+    "preparing": "Preparando tu documento...",
+    "errorTitle": "No se puede previsualizar el documento",
+    "openInSystemViewer": "Abrir en el visor del sistema",
+    "noDocument": "Ningún documento cargado.",
+    "errors": {
+      "noData": "No se recibieron datos del documento.",
+      "invalid": "Este archivo parece estar dañado o no es un PDF válido.",
+      "passwordProtected": "Este PDF está protegido con contraseña. No se admiten PDFs protegidos con contraseña.",
+      "engineUnavailable": "El motor de PDF no está disponible. Por favor, recarga la aplicación.",
+      "loadFailed": "Error al cargar el documento PDF. El archivo puede estar dañado."
+    },
+    "toolbar": {
+      "previousPage": "Página anterior (↑ / RePág)",
+      "jumpToPage": "Haz clic para ir a la página",
+      "nextPage": "Página siguiente (↓ / AvPág)",
+      "zoomOut": "Alejar (Ctrl+-)",
+      "resetZoom": "Restablecer a 100% (Ctrl+0)",
+      "zoomIn": "Acercar (Ctrl+=)",
+      "fitWidth": "Ajustar al ancho",
+      "fitPage": "Página completa",
+      "fit": "Ajustar",
+      "rotate": "Girar en sentido horario",
+      "print": "Imprimir documento",
+      "openInSystemAppTitle": "Abrir en la aplicación PDF predeterminada del sistema",
+      "systemViewer": "Visor del sistema"
+    }
+  },
+  "csv": {
+    "toast": {
+      "copied": "Valor de la celda copiado al portapapeles"
+    },
+    "filterPlaceholder_one": "Filtrar {{count}} fila…",
+    "filterPlaceholder_other": "Filtrar {{count}} filas…",
+    "clear": "Borrar",
+    "rowsShown_one": "{{shown}} de {{count}} fila",
+    "rowsShown_other": "{{shown}} de {{count}} filas",
+    "columns_one": "{{count}} columna",
+    "columns_other": "{{count}} columnas",
+    "empty": "Conjunto de datos vacío",
+    "columnFallback": "Columna {{letter}}",
+    "cellTitle": "{{value}} (Haz clic para copiar)"
+  },
+  "codeEditor": {
+    "loading": "Cargando editor…"
+  },
+  "syntaxHighlighter": {
+    "ariaLabel": "Visor de código",
+    "largeFile_one": "Archivo grande ({{count, number}} línea): se omitió el resaltado de sintaxis para mejorar el rendimiento",
+    "largeFile_other": "Archivo grande ({{count, number}} líneas): se omitió el resaltado de sintaxis para mejorar el rendimiento"
+  }
+}

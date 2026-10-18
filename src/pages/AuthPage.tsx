@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
-import { AlertTriangle, Eye, EyeOff, Loader2, ArrowLeft, MessageSquare, Lock } from "lucide-react";
+import { AlertTriangle, Eye, EyeOff, Loader2, ArrowLeft, MessageSquare, Lock, Languages, Check } from "lucide-react";
 import { Api } from "telegram";
 import { useAuthStore } from "@/stores/authStore";
 import { initClient, getClient } from "@/lib/telegram/client";
@@ -11,6 +11,14 @@ import { DEFAULT_API_ID, DEFAULT_API_HASH } from "@/lib/telegram/config";
 import { safeComputeCheck } from "@/lib/telegram/srp-helper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { SUPPORTED_LANGUAGES } from "@/i18n";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { invoke } from "@tauri-apps/api/core";
 
@@ -237,7 +245,7 @@ function BackButton({ onClick, disabled, label }: { onClick: () => void; disable
 
 // ─── Main AuthPage ────────────────────────────────────────────────────────────
 export default function AuthPage() {
-  const { t } = useTranslation("auth");
+  const { t, i18n } = useTranslation(["auth", "common"]);
   const navigate = useNavigate();
   const setSession = useAuthStore((state) => state.setSession);
 
@@ -483,6 +491,43 @@ export default function AuthPage() {
   // ── Main render ──────────────────────────────────────────────────────────
   return (
     <div className="flex items-center justify-center min-h-screen bg-background relative select-none overflow-hidden">
+      {/* Language Switcher */}
+      <div className="absolute top-5 right-5 z-20">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-9 px-3.5 rounded-full text-xs font-medium text-[#444746] dark:text-[#C4C7C5] bg-white/80 dark:bg-[#1E1F20]/80 backdrop-blur-md border border-slate-200/90 dark:border-slate-800 shadow-xs hover:bg-slate-100 dark:hover:bg-[#282A2C] transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <Languages className="h-4 w-4 text-[#0B57D0] dark:text-[#A8C7FA]" />
+              <span>{SUPPORTED_LANGUAGES.find((l) => l.code === (i18n.resolvedLanguage || i18n.language))?.label ?? "Language"}</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48 p-1.5 rounded-2xl bg-white dark:bg-[#1E1F20] border border-slate-200 dark:border-slate-800 shadow-xl">
+            {SUPPORTED_LANGUAGES.map((lang) => {
+              const currentLng = i18n.resolvedLanguage || i18n.language;
+              const isSelected = currentLng === lang.code;
+              return (
+                <DropdownMenuItem
+                  key={lang.code}
+                  onClick={() => i18n.changeLanguage(lang.code)}
+                  className={cn(
+                    "flex items-center justify-between px-3 py-2 text-xs rounded-xl cursor-pointer transition-colors",
+                    isSelected
+                      ? "bg-[#C2E7FF]/40 dark:bg-[#004A77]/50 text-[#0B57D0] dark:text-[#A8C7FA] font-semibold"
+                      : "text-[#1F1F1F] dark:text-[#E3E3E3] hover:bg-slate-100 dark:hover:bg-[#282A2C]"
+                  )}
+                >
+                  <span>{lang.label}</span>
+                  {isSelected && <Check className="h-3.5 w-3.5 text-[#0B57D0] dark:text-[#A8C7FA]" />}
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
       {/* Decorative background blobs */}
       <div
         className="absolute inset-0 pointer-events-none"

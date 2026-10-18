@@ -1,0 +1,190 @@
+{
+  "page": {
+    "title": "Configuración",
+    "backToDrive": "Volver a Drive"
+  },
+  "nav": {
+    "account": "Cuenta de Telegram",
+    "backup": "Copia de seguridad del dispositivo",
+    "appearance": "Apariencia",
+    "storage": "Almacenamiento",
+    "about": "Acerca de"
+  },
+  "logout": {
+    "button": "Cerrar sesión",
+    "title": "Cerrar sesión",
+    "description": "Se cerrará la sesión de tu cuenta de Telegram. Tus archivos permanecerán seguros en tu canal de almacenamiento.",
+    "cancel": "Cancelar",
+    "confirm": "Cerrar sesión",
+    "loggingOut": "Cerrando sesión…"
+  },
+  "account": {
+    "title": "Cuenta de Telegram",
+    "description": "Gestiona tus credenciales de Telegram conectadas y el canal de almacenamiento en la nube.",
+    "notConnected": {
+      "title": "No conectado",
+      "description": "Conecta tu cuenta de Telegram para comenzar a almacenar archivos ilimitados en tu canal de almacenamiento privado.",
+      "connect": "Conectar cuenta de Telegram"
+    },
+    "activeSession": "Sesión activa",
+    "connectedVia": "Conectado a través del cliente Telegram MTProto",
+    "disconnect": "Desconectar cuenta",
+    "channel": {
+      "title": "Canal de almacenamiento activo",
+      "description": "Tus archivos, carpetas y metadatos se guardan de forma segura en este canal privado.",
+      "name": "Nombre del canal",
+      "id": "ID del canal de Telegram",
+      "loading": "Cargando...",
+      "copyId": "Copiar ID del canal"
+    },
+    "syncing": "Sincronizando...",
+    "syncNow": "Sincronizar ahora",
+    "switchChannel": "Cambiar canal",
+    "architecture": "<strong>Almacenamiento en la nube descentralizado:</strong> tus archivos se cargan como documentos de mensajes directamente a tu canal privado de Telegram. TeleDrive mantiene un manifiesto indexado fijado en este canal para que tus carpetas y archivos permanezcan sincronizados automáticamente.",
+    "switchDialog": {
+      "title": "Cambiar canal de almacenamiento",
+      "description": "Selecciona un canal privado de Telegram diferente para usar para los archivos de TeleDrive.",
+      "warning": "<strong>Advertencia:</strong> cambiar el canal de almacenamiento restablece la caché local. TeleDrive buscará un manifiesto existente en el canal seleccionado o creará uno nuevo.",
+      "cancel": "Cancelar",
+      "confirm": "Confirmar"
+    },
+    "toasts": {
+      "channelIdCopied": "ID del canal copiado al portapapeles",
+      "syncSuccess": "¡Archivos sincronizados correctamente!",
+      "alreadyUpToDate": "Tu unidad ya está actualizada.",
+      "syncFailed": "Error de sincronización",
+      "disconnected": "Cuenta de Telegram desconectada con éxito.",
+      "disconnectFailed": "Error al desconectar la cuenta.",
+      "channelReset": "Canal de almacenamiento restablecido. Reinicia la aplicación para volver a asignarlo.",
+      "channelResetFailed": "Error al restablecer el canal de almacenamiento."
+    }
+  },
+  "backup": {
+    "title": "Copia de seguridad del dispositivo",
+    "description": "Elige carpetas en este ordenador para reflejarlas automáticamente en tu canal privado de almacenamiento de Telegram.",
+    "folders": {
+      "title": "Carpetas de origen",
+      "saving": "guardando…",
+      "description": "Las carpetas se reflejan en la raíz de copia de seguridad del dispositivo y se mantienen sincronizadas. Se guarda automáticamente.",
+      "empty": "Aún no se han añadido carpetas. Haz clic en “Añadir carpeta” a continuación.",
+      "add": "Añadir carpeta",
+      "pickerTitle": "Elige una carpeta para respaldar"
+    },
+    "excludes": {
+      "title": "Patrones de exclusión",
+      "description": "Patrones glob relativos a una carpeta de origen. Admite <code>*</code>, <code>**</code> y <code>?</code>. Ejemplos: <code>node_modules</code>, <code>*.tmp</code>.",
+      "empty": "Sin exclusiones. Se realizará una copia de seguridad de todo lo que esté en tus carpetas de origen.",
+      "placeholder": "ej. *.tmp o node_modules",
+      "add": "Añadir"
+    },
+    "remove": "Eliminar {{item}}",
+    "cadence": {
+      "title": "Frecuencia de copia de seguridad",
+      "active": "Activo",
+      "description": "Con qué frecuencia TeleDrive debe volver a examinar tus carpetas de origen. Solo se vuelven a cargar los archivos modificados.",
+      "off": "Desactivado",
+      "every6h": "Cada 6 horas",
+      "every12h": "Cada 12 horas",
+      "every24h": "Cada 24 horas"
+    },
+    "lastBackup": "Última copia de seguridad:",
+    "lastBackupAgo": "hace {{time}}",
+    "never": "Nunca",
+    "lastResult": {
+      "uploaded_one": "{{count}} subido, ",
+      "uploaded_other": "{{count}} subidos, ",
+      "unchanged_one": "{{count}} sin cambios, ",
+      "unchanged_other": "{{count}} sin cambios, ",
+      "failed_one": "{{count}} fallido",
+      "failed_other": "{{count}} fallidos",
+      "uploaded_zero": "{{count}} subidos, ",
+      "unchanged_zero": "{{count}} sin cambios, ",
+      "failed_zero": "{{count}} fallidos"
+    },
+    "progressHint": "Sigue el progreso en el panel flotante de la esquina inferior derecha.",
+    "cancel": "Cancelar",
+    "running": "Respaldando…",
+    "runNow": "Respaldar ahora",
+    "howItWorks": "<strong>Cómo funciona la copia de seguridad:</strong> TeleDrive recorre las carpetas de origen seleccionadas, compara los cambios con un manifiesto local y solo carga los archivos que son nuevos o modificados.",
+    "viewBackups": "Ver copias de seguridad",
+    "toasts": {
+      "maxFolders_one": "Máximo {{count}} carpeta de origen.",
+      "maxFolders_other": "Máximo {{count}} carpetas de origen.",
+      "maxExcludes_one": "Máximo {{count}} patrón de exclusión.",
+      "maxExcludes_other": "Máximo {{count}} patrones de exclusión.",
+      "pickerFailed": "No se pudo abrir el selector de carpetas",
+      "noFolders": "Selecciona al menos una carpeta de origen primero",
+      "maxFolders_zero": "Máximo {{count}} carpetas de origen.",
+      "maxExcludes_zero": "Máximo {{count}} patrones de exclusión."
+    }
+  },
+  "appearance": {
+    "title": "Apariencia",
+    "description": "Personaliza el aspecto del diseño y el tema de color de TeleDrive.",
+    "themeMode": {
+      "title": "Modo de tema",
+      "description": "Elige si TeleDrive usa una apariencia clara, oscura o sigue el tema del sistema."
+    },
+    "themes": {
+      "light": {
+        "label": "Claro",
+        "description": "Tema claro limpio y de alto contraste con la superficie de Google Drive"
+      },
+      "dark": {
+        "label": "Oscuro",
+        "description": "Tema oscuro elegante optimizado para entornos de poca luz"
+      },
+      "system": {
+        "label": "Sistema",
+        "description": "Coincide automáticamente con la apariencia del tema de tu sistema operativo"
+      }
+    },
+    "callout": "<strong>Sincronización del tema:</strong> TeleDrive utiliza tokens de color HSL de Google Drive en superficies claras (`#F8FAFD`) y oscuras (`#131314`), lo que garantiza un contraste superior y una fatiga visual reducida."
+  },
+  "storage": {
+    "title": "Almacenamiento",
+    "description": "Supervisa tu espacio de almacenamiento en la nube de Telegram, los archivos activos y la papelera.",
+    "totalUsed": "Almacenamiento total utilizado",
+    "calculating": "Calculando…",
+    "ofUnlimited": "de Ilimitado",
+    "unlimitedBadge": "Almacenamiento ilimitado en la nube",
+    "meterLabel": "Almacenamiento del canal de Telegram (ilimitado)",
+    "stats": {
+      "files": "Archivos almacenados",
+      "folders": "Carpetas creadas",
+      "trash": "Elementos en la papelera"
+    },
+    "recalculating": "Recalculando…",
+    "recalculate": "Recalcular almacenamiento",
+    "info": {
+      "noLimit": "Telegram no impone límites al volumen total de datos almacenados en canales privados.",
+      "fileLimits": "Límites por archivo: hasta <strong>2 GB</strong> por archivo para cuentas gratuitas de Telegram y hasta <strong>4 GB</strong> para suscriptores de Telegram Premium."
+    },
+    "toasts": {
+      "channelNotInitialised": "El canal de almacenamiento aún no está inicializado.",
+      "refreshed": "Almacenamiento actualizado desde Telegram.",
+      "refreshFailed": "No se pudieron actualizar los datos de almacenamiento."
+    }
+  },
+  "about": {
+    "title": "Acerca de TeleDrive",
+    "description": "Obtén más información sobre la aplicación, las actualizaciones y el proyecto de código abierto.",
+    "logoAlt": "Logotipo de TeleDrive",
+    "tagline": "Cliente de almacenamiento en la nube virtual impulsado por Telegram",
+    "summary": "TeleDrive es un cliente de unidad en la nube multiplataforma y de código abierto impulsado por Telegram. Mapea tu almacenamiento de archivos a un canal privado de Telegram y organiza tus archivos en una unidad virtual jerárquica con búsqueda rápida, vista previa y sincronización en tiempo real.",
+    "githubRepository": "Repositorio de GitHub",
+    "reportIssue": "Informar de un problema",
+    "architecture": "Arquitectura de almacenamiento en la nube basada en canales",
+    "checkingUpdates": "Buscando actualizaciones...",
+    "checkUpdates": "Buscar actualizaciones",
+    "disclaimer": {
+      "title": "Descargo de responsabilidad",
+      "body": "TeleDrive es una aplicación cliente de código abierto independiente y no está afiliada, autorizada, mantenida, patrocinada ni respaldada por Telegram FZ-LLC ni ninguna de sus filiales."
+    },
+    "toasts": {
+      "openLinkFailed": "No se pudo abrir el enlace.",
+      "upToDate": "¡Estás actualizado!",
+      "latestVersion": "TeleDrive v{{version}} es la última versión disponible."
+    }
+  }
+}

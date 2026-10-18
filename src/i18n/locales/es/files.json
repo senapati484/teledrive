@@ -1,0 +1,256 @@
+{
+  "menu": {
+    "preview": "Vista previa",
+    "openInSystemApp": "Abrir en aplicación del sistema",
+    "edit": "Editar",
+    "download": "Descargar",
+    "availableOffline": "Disponible sin conexión",
+    "rename": "Renombrar",
+    "moveTo": "Mover a",
+    "addStar": "Destacar",
+    "removeStar": "Quitar de destacados",
+    "archive": "Archivar",
+    "unarchive": "Desarchivar",
+    "restore": "Restaurar",
+    "deletePermanently": "Eliminar permanentemente",
+    "moveToTrash": "Mover a la papelera"
+  },
+  "browser": {
+    "fileType": {
+      "folder": "Carpeta",
+      "pdf": "Documento PDF",
+      "image": "Imagen",
+      "video": "Video",
+      "audio": "Audio",
+      "text": "Documento de texto",
+      "archive": "Archivo comprimido",
+      "word": "Documento Word",
+      "spreadsheet": "Hoja de cálculo",
+      "presentation": "Presentación",
+      "sourceCode": "Código fuente",
+      "generic": "Archivo {{ext}}",
+      "file": "Archivo"
+    },
+    "sort": {
+      "label": "Ordenar: {{sort}}",
+      "short": {
+        "nameAsc": "Nombre (A-Z)",
+        "nameDesc": "Nombre (Z-A)",
+        "newest": "Más reciente",
+        "oldest": "Más antiguo",
+        "largest": "Más grande",
+        "smallest": "Más pequeño"
+      },
+      "options": {
+        "nameAsc": "Nombre (A a Z)",
+        "nameDesc": "Nombre (Z a A)",
+        "dateDesc": "Última modificación",
+        "dateAsc": "Primera modificación",
+        "sizeDesc": "Tamaño (mayor)",
+        "sizeAsc": "Tamaño (menor)"
+      }
+    },
+    "header": {
+      "starred": "Destacados",
+      "recent": "Recientes",
+      "trash": "Papelera",
+      "archived": "Archivados",
+      "backups": "Copias de seguridad",
+      "myDrive": "Mi Unidad",
+      "searchResults": "Resultados de búsqueda para \"{{query}}\""
+    },
+    "systemApp": {
+      "preparing": "Preparando \"{{name}}\" para la aplicación del sistema...",
+      "opened": "Abierto \"{{name}}\" en el visor del sistema.",
+      "failed": "No se pudo abrir en el visor del sistema: {{error}}",
+      "unknownError": "Error desconocido"
+    },
+    "emptyState": {
+      "drive": {
+        "title": "Tu unidad está vacía",
+        "subtitle": "Sube archivos o crea carpetas para comenzar."
+      },
+      "starred": {
+        "title": "Sin archivos destacados",
+        "subtitle": "Destaca archivos para encontrarlos fácilmente más tarde."
+      },
+      "recent": {
+        "title": "Sin archivos recientes",
+        "subtitle": "Los archivos vistos o subidos recientemente aparecerán aquí."
+      },
+      "trash": {
+        "title": "La papelera está vacía",
+        "subtitle": "Los elementos movidos a la papelera aparecerán aquí."
+      },
+      "archived": {
+        "title": "Sin archivos archivados",
+        "subtitle": "Archiva archivos que quieras conservar fuera de tu unidad principal."
+      },
+      "search": {
+        "title": "Sin resultados de búsqueda",
+        "subtitle": "No encontramos elementos que coincidan con \"{{query}}\"."
+      },
+      "backups": {
+        "title": "Aún no hay copias de seguridad",
+        "subtitle": "Elige una carpeta en Ajustes → Copia de seguridad del dispositivo. Los archivos aparecerán aquí."
+      },
+      "folder": {
+        "title": "Esta carpeta está vacía",
+        "subtitle": "Sube archivos o crea carpetas en este directorio."
+      },
+      "uploadFiles": "Subir archivos",
+      "newFolder": "Nueva carpeta"
+    },
+    "emptyTrashButton": "Vaciar papelera",
+    "switchToListView": "Cambiar a vista de lista",
+    "switchToGridView": "Cambiar a vista de cuadrícula",
+    "backupsBanner": {
+      "title": "Las copias de seguridad son de solo lectura.",
+      "description": "Para cambiar las carpetas respaldadas, abre <settingsPath>Ajustes → Copia de seguridad del dispositivo</settingsPath>."
+    },
+    "filters": {
+      "all": "Todo",
+      "documents": "Documentos",
+      "images": "Imágenes",
+      "videos": "Videos",
+      "audio": "Audio"
+    },
+    "sections": {
+      "folders": "Carpetas",
+      "foldersPartial": "Carpetas ({{shown}} de {{total}})",
+      "files": "Archivos",
+      "filesPartial": "Archivos ({{shown}} de {{total}})"
+    },
+    "columns": {
+      "name": "Nombre",
+      "type": "Tipo",
+      "fileSize": "Tamaño",
+      "lastModified": "Modificado"
+    },
+    "dragPreview": {
+      "items_one": "{{count}} elemento",
+      "items_other": "{{count}} elementos"
+    },
+    "bulkBar": {
+      "selected_one": "seleccionado",
+      "selected_other": "seleccionados",
+      "restoreSelected": "Restaurar seleccionados",
+      "deletePermanently": "Eliminar permanentemente",
+      "moveSelectedToTrash": "Mover seleccionados a la papelera",
+      "clearSelection": "Limpiar selección"
+    },
+    "mobileMenu": {
+      "addToStarred": "Destacar",
+      "removeFromStarred": "Quitar de destacados"
+    },
+    "dialogs": {
+      "cancel": "Cancelar",
+      "deleting": "Eliminando…",
+      "deleteForever": "Eliminar para siempre",
+      "createFolder": {
+        "title": "Nueva carpeta",
+        "placeholder": "Carpeta sin título",
+        "submit": "Crear"
+      },
+      "rename": {
+        "title": "Renombrar",
+        "placeholder": "Nuevo nombre",
+        "submit": "Aceptar"
+      },
+      "emptyTrash": {
+        "title": "¿Vaciar papelera?",
+        "description_one": "Esto eliminará permanentemente <strong>{{count}} elemento</strong> de tu canal de Telegram. Esta acción no se puede deshacer.",
+        "description_other": "Esto eliminará permanentemente <strong>{{count}} elementos</strong> de tu canal de Telegram. Esta acción no se puede deshacer.",
+        "confirm": "Vaciar papelera"
+      },
+      "deleteItem": {
+        "title": "¿Eliminar permanentemente?",
+        "descriptionFile": "¿Seguro que deseas eliminar permanentemente <strong>{{name}}</strong>? Se eliminará el archivo real de Telegram. Esta acción no se puede deshacer.",
+        "descriptionFolder": "¿Seguro que deseas eliminar permanentemente <strong>{{name}}</strong>? Esta acción no se puede deshacer."
+      },
+      "bulkDelete": {
+        "title": "¿Eliminar para siempre?",
+        "description_one": "Esto eliminará permanentemente <strong>{{count}} elemento seleccionado</strong> de Telegram. Esta acción no se puede deshacer.",
+        "description_other": "Esto eliminará permanentemente <strong>{{count}} elementos seleccionados</strong> de Telegram. Esta acción no se puede deshacer."
+      }
+    }
+  },
+  "actions": {
+    "bootstrapPending": "Cargando tu unidad — por favor reintenta en un momento.",
+    "saveFailed": "Error al guardar y se revirtieron los cambios: {{error}}",
+    "unknownError": "Error desconocido",
+    "channelNotInitialized": "El canal de almacenamiento de Telegram no está inicializado",
+    "fileNotFound": "Archivo no encontrado",
+    "folder": {
+      "alreadyExists": "La carpeta \"{{name}}\" ya existe",
+      "created": "Carpeta \"{{name}}\" creada con éxito",
+      "createFailed": "Error al crear la carpeta"
+    },
+    "rename": {
+      "success": "Renombrado con éxito",
+      "failed": "Error al renombrar"
+    },
+    "star": {
+      "added": "Añadido a Destacados",
+      "removed": "Eliminado de Destacados",
+      "failed": "Error al actualizar destacados"
+    },
+    "trash": {
+      "moved": "Movido \"{{name}}\" a la papelera",
+      "moveFailed": "Error al mover a la papelera",
+      "restored": "Restaurado \"{{name}}\"",
+      "restoreFailed": "Error al restaurar"
+    },
+    "archive": {
+      "archived": "\"{{name}}\" archivado",
+      "archiveFailed": "Error al archivar",
+      "unarchived": "\"{{name}}\" devuelto a Mi Unidad",
+      "unarchiveFailed": "Error al desarchivar"
+    },
+    "delete": {
+      "success": "Eliminado permanentemente",
+      "failed": "Error al eliminar"
+    },
+    "emptyTrash": {
+      "alreadyEmpty": "La papelera ya está vacía",
+      "success_one": "{{count}} elemento eliminado permanentemente",
+      "success_other": "{{count}} elementos eliminados permanentemente",
+      "failed": "Error al vaciar la papelera"
+    },
+    "bulk": {
+      "trashed_one": "Movido {{count}} elemento a la papelera",
+      "trashed_other": "Movidos {{count}} elementos a la papelera",
+      "trashFailed": "Error al mover elementos a la papelera",
+      "restored_one": "Restaurado {{count}} elemento",
+      "restored_other": "Restaurados {{count}} elementos",
+      "restoreFailed": "Error al restaurar elementos",
+      "deleted_one": "Eliminado {{count}} elemento permanentemente",
+      "deleted_other": "Eliminados {{count}} elementos permanentemente",
+      "deleteFailed": "Error al eliminar elementos",
+      "archived_one": "Archivado {{count}} elemento",
+      "archived_other": "Archivados {{count}} elementos",
+      "archiveFailed": "Error al archivar elementos",
+      "starred_one": "Destacado {{count}} elemento",
+      "starred_other": "Destacados {{count}} elementos",
+      "starFailed": "Error al destacar elementos",
+      "unarchived_one": "Devuelto {{count}} elemento a Mi Unidad",
+      "unarchived_other": "Devueltos {{count}} elementos a Mi Unidad",
+      "unarchiveFailed": "Error al desarchivar elementos"
+    },
+    "offline": {
+      "downloading": "Descargando \"{{name}}\" para acceso sin conexión...",
+      "available": "\"{{name}}\" ahora está disponible sin conexión",
+      "unavailable": "\"{{name}}\" ya no está disponible sin conexión",
+      "failed": "Error al actualizar estado sin conexión"
+    },
+    "move": {
+      "nothingToMove": "Nada que mover",
+      "destinationMissing": "La carpeta de destino ya no existe.",
+      "intoItself": "No se puede mover la carpeta \"{{name}}\" dentro de sí misma.",
+      "alreadyInFolder": "Los elementos ya están en esa carpeta",
+      "success_one": "Movido {{count}} elemento con éxito",
+      "success_other": "Movidos {{count}} elementos con éxito",
+      "failed": "Error al mover elementos"
+    }
+  }
+}

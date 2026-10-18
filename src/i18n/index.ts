@@ -22,6 +22,7 @@ for (const [path, mod] of Object.entries(modules)) {
 export const SUPPORTED_LANGUAGES = [
   { code: "en", label: "English" },
   { code: "pt-BR", label: "Português (Brasil)" },
+  { code: "es", label: "Español" },
 ] as const;
 
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]["code"];
@@ -45,7 +46,12 @@ void i18n
       order: ["localStorage", "navigator"],
       lookupLocalStorage: LANGUAGE_STORAGE_KEY,
       caches: ["localStorage"],
-      convertDetectedLanguage: (lng: string) => (lng.toLowerCase().startsWith("pt") ? "pt-BR" : lng),
+      convertDetectedLanguage: (lng: string) => {
+        const lower = lng.toLowerCase();
+        if (lower.startsWith("pt")) return "pt-BR";
+        if (lower.startsWith("es")) return "es";
+        return lng;
+      },
     },
     returnNull: false,
   });
