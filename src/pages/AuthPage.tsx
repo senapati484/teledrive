@@ -119,13 +119,14 @@ interface OtpBoxProps {
   onChange: (val: string) => void;
   onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   onPaste: (e: React.ClipboardEvent<HTMLInputElement>) => void;
-  inputRef: React.RefObject<HTMLInputElement | null>;
+  inputRef: (el: HTMLInputElement | null) => void;
   disabled: boolean;
   index: number;
   isFilled: boolean;
+  totalDigits: number;
 }
 
-function OtpBox({ value, onChange, onKeyDown, onPaste, inputRef, disabled, index, isFilled }: OtpBoxProps) {
+function OtpBox({ value, onChange, onKeyDown, onPaste, inputRef, disabled, index, isFilled, totalDigits }: OtpBoxProps) {
   const { t } = useTranslation("auth");
   const [focused, setFocused] = useState(false);
 
@@ -135,7 +136,7 @@ function OtpBox({ value, onChange, onKeyDown, onPaste, inputRef, disabled, index
       style={{ transform: isFilled ? "scale(1.05)" : "scale(1)" }}
     >
       <input
-        ref={inputRef as any}
+        ref={inputRef}
         type="text"
         inputMode="numeric"
         pattern="[0-9]*"
@@ -149,7 +150,8 @@ function OtpBox({ value, onChange, onKeyDown, onPaste, inputRef, disabled, index
         disabled={disabled}
         aria-label={t("otp.digit", { number: index + 1 })}
         className={`
-          w-12 h-14 text-center font-bold text-xl rounded-2xl
+          ${totalDigits >= 6 ? "w-10 sm:w-12 h-13 sm:h-14 text-lg sm:text-xl" : "w-12 h-14 text-xl"}
+          text-center font-bold rounded-2xl
           border-2 outline-none transition-all duration-200
           bg-white dark:bg-[#282A2C]
           text-[#1f1f1f] dark:text-[#E3E3E3]
@@ -258,6 +260,7 @@ export default function AuthPage() {
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
   const [phoneCodeHash, setPhoneCodeHash] = useState("");
+  const [codeLength, setCodeLength] = useState<number>(5);
   const [otp, setOtp] = useState<string[]>(["", "", "", "", ""]);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -266,14 +269,8 @@ export default function AuthPage() {
   const [bootstrapStatus, setBootstrapStatus] = useState(() => t("bootstrap.connecting"));
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
 
-  // OTP box refs
-  const otpRefs = [
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-  ];
+  // Dynamic OTP box refs
+  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Load API credentials from vault on mount
   useEffect(() => {
@@ -296,7 +293,7 @@ export default function AuthPage() {
   // Auto-focus first OTP box when entering that step
   useEffect(() => {
     if (step === "otp") {
-      setTimeout(() => otpRefs[0].current?.focus(), 100);
+      setTimeout(() => otpRefs.current[0]?.focus(), 100);
     }
   }, [step]);
 
@@ -322,6 +319,13 @@ export default function AuthPage() {
         })
       );
 
+      const returnedLength = (result as any)?.type?.length;
+      const detectedLength =
+        typeof returnedLength === "number" && returnedLength >= 4 && returnedLength <= 8
+          ? returnedLength
+          : 5;
+      setCodeLength(detectedLength);
+      setOtp(new Array(detectedLength).fill(""));
       setPhoneCodeHash((result as any).phoneCodeHash);
       setStep("otp");
       toast.success(t("toasts.codeSent"));
@@ -339,31 +343,58 @@ export default function AuthPage() {
     const newOtp = [...otp];
     newOtp[index] = cleanVal;
     setOtp(newOtp);
-    if (cleanVal && index < 4) otpRefs[index + 1].current?.focus();
+    if (cleanVal && index < codeLength - 1) {
+      otpRefs.current[index + 1]?.focus();
+    }
   };
 
   const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
-      otpRefs[index - 1].current?.focus();
+    if (e.key === "Backspace") {
+      if (!otp[index] && index > 0) {
+        otpRefs.current[index - 1]?.focus();
+      }
+    } else if (e.key === "ArrowLeft" && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    } else if (e.key === "ArrowRight" && index < codeLength - 1) {
+      otpRefs.current[index + 1]?.focus();
     }
   };
 
   const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
-    const data = e.clipboardData.getData("text").replace(/[^0-9]/g, "").slice(0, 5);
-    if (data.length > 0) {
-      const newOtp = [...otp];
-      data.split("").forEach((d, i) => { if (i < 5) newOtp[i] = d; });
-      setOtp(newOtp);
-      const focusIndex = Math.min(data.length, 4);
-      otpRefs[focusIndex].current?.focus();
+    const rawDigits = e.clipboardData.getData("text").replace(/[^0-9]/g, "");
+    if (!rawDigits) return;
+
+    // Dynamically adjust code length if pasted length matches 5 or 6 digits
+    const targetLength =
+      rawDigits.length >= 5 && rawDigits.length <= 8
+        ? rawDigits.length
+        : codeLength;
+
+    if (targetLength !== codeLength) {
+      setCodeLength(targetLength);
     }
+
+    const digits = rawDigits.slice(0, targetLength).split("");
+    const newOtp = new Array(targetLength).fill("");
+    digits.forEach((d, i) => {
+      newOtp[i] = d;
+    });
+    setOtp(newOtp);
+
+    const focusIndex = Math.min(digits.length, targetLength - 1);
+    setTimeout(() => {
+      otpRefs.current[focusIndex]?.focus();
+    }, 0);
   };
 
   const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = otp.join("");
-    if (code.length !== 5) { setError(t("errors.incompleteCode")); return; }
+    if (code.length !== codeLength) {
+      setError(t("errors.incompleteCode", { count: codeLength }));
+      return;
+    }
     if (!configApiId || !configApiHash) return;
 
     setLoading(true);
@@ -391,11 +422,27 @@ export default function AuthPage() {
     } catch (err: any) {
       console.error("OTP verification failed:", err);
       setError(err.message || t("errors.invalidCode"));
-      setOtp(["", "", "", "", ""]);
-      otpRefs[0].current?.focus();
+      setOtp(new Array(codeLength).fill(""));
+      otpRefs.current[0]?.focus();
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleCodeLength = () => {
+    const newLen = codeLength === 5 ? 6 : 5;
+    setCodeLength(newLen);
+    setOtp((prev) => {
+      const updated = new Array(newLen).fill("");
+      for (let i = 0; i < Math.min(prev.length, newLen); i++) {
+        updated[i] = prev[i];
+      }
+      return updated;
+    });
+    setError(null);
+    setTimeout(() => {
+      otpRefs.current[0]?.focus();
+    }, 50);
   };
 
   // ── Step 3: 2FA password ─────────────────────────────────────────────────
@@ -643,18 +690,21 @@ export default function AuthPage() {
               </div>
 
               {/* OTP boxes */}
-              <div className="flex justify-between gap-2 my-2">
+              <div className={`flex justify-center ${codeLength >= 6 ? "gap-1.5 sm:gap-2" : "gap-2"} my-2`}>
                 {otp.map((digit, idx) => (
                   <OtpBox
                     key={idx}
                     index={idx}
                     value={digit}
                     isFilled={digit.length > 0}
-                    inputRef={otpRefs[idx]}
+                    inputRef={(el) => {
+                      otpRefs.current[idx] = el;
+                    }}
                     disabled={loading}
                     onChange={(val) => handleOtpChange(idx, val)}
                     onKeyDown={(e) => handleOtpKeyDown(idx, e)}
                     onPaste={handleOtpPaste}
+                    totalDigits={codeLength}
                   />
                 ))}
               </div>
@@ -670,16 +720,33 @@ export default function AuthPage() {
                 ))}
               </div>
 
+              {/* Code length helper / switch */}
+              <div className="flex justify-center items-center pt-1 pb-1">
+                <button
+                  type="button"
+                  onClick={toggleCodeLength}
+                  disabled={loading}
+                  className="text-xs text-[#0B57D0] dark:text-[#A8C7FA] hover:underline cursor-pointer transition-colors"
+                >
+                  {codeLength === 5 ? t("otp.switchToSix") : t("otp.switchToFive")}
+                </button>
+              </div>
+
               <div className="space-y-2.5">
                 <PrimaryButton
                   loading={loading}
                   loadingLabel={t("otp.verifying")}
                   label={t("otp.verify")}
-                  disabled={loading || otp.join("").length !== 5}
+                  disabled={loading || otp.join("").length !== codeLength}
                 />
                 <BackButton
                   disabled={loading}
-                  onClick={() => { setStep("phone"); setOtp(["", "", "", "", ""]); setError(null); }}
+                  onClick={() => {
+                    setStep("phone");
+                    setCodeLength(5);
+                    setOtp(["", "", "", "", ""]);
+                    setError(null);
+                  }}
                   label={t("otp.differentNumber")}
                 />
               </div>
