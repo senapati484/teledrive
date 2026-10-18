@@ -1,0 +1,193 @@
+{
+  "page": {
+    "title": "设置",
+    "backToDrive": "返回驾驶"
+  },
+  "nav": {
+    "account": "电报账户",
+    "backup": "设备备份",
+    "appearance": "外貌",
+    "language": "语言",
+    "storage": "贮存",
+    "about": "关于"
+  },
+  "language": {
+    "title": "语言",
+    "description": "选择在 TeleDrive 界面中使用的语言。",
+    "activeLanguage": "当前语言",
+    "cardDescription": "选择您偏好的语言。更改将立即在所有视图中生效。",
+    "callout": "<strong>即时同步:</strong> TeleDrive 会在本地保存您的语言选择，并自动应用于所有窗口与会话。"
+  },
+  "logout": {
+    "button": "退出",
+    "title": "退出",
+    "description": "您将退出 Telegram 帐户。您的文件将安全地保存在您的存储通道中。",
+    "cancel": "取消",
+    "confirm": "退出",
+    "loggingOut": "正在退出…"
+  },
+  "account": {
+    "title": "电报账户",
+    "description": "管理您连接的 Telegram 凭证和云存储通道。",
+    "notConnected": {
+      "title": "未连接",
+      "description": "连接您的 Telegram 帐户，开始在您的私人存储通道中存储无限的文件。",
+      "connect": "连接电报帐户"
+    },
+    "activeSession": "活动会话",
+    "connectedVia": "通过 Telegram MTProto 客户端连接",
+    "disconnect": "断开帐户",
+    "channel": {
+      "title": "活动存储通道",
+      "description": "您的文件、文件夹和元数据都安全地保存在这个私人通道中。",
+      "name": "频道名称",
+      "id": "电报频道 ID",
+      "loading": "加载中...",
+      "copyId": "复制频道 ID"
+    },
+    "syncing": "正在同步...",
+    "syncNow": "立即同步",
+    "switchChannel": "切换频道",
+    "architecture": "<strong>去中心化云存储</strong>：您的文件将作为消息文档直接上传到您的私人 Telegram 频道。 TeleDrive 维护固定在此通道中的索引清单，以便您的文件夹和文件自动保持同步。",
+    "switchDialog": {
+      "title": "切换存储通道",
+      "description": "选择用于 TeleDrive 文件的不同私人 Telegram 频道。",
+      "warning": "<strong>警告：</strong>切换存储通道会重置本地缓存。 TeleDrive 将在所选渠道中查找现有清单或创建新清单。",
+      "cancel": "取消",
+      "confirm": "确认"
+    },
+    "toasts": {
+      "channelIdCopied": "通道 ID 已复制到剪贴板",
+      "syncSuccess": "文件同步成功！",
+      "alreadyUpToDate": "您的驱动器已经是最新的。",
+      "syncFailed": "同步失败",
+      "disconnected": "已成功断开 Telegram 帐户。",
+      "disconnectFailed": "无法断开帐户。",
+      "channelReset": "存储通道重置。重新启动应用程序以重新映射它。",
+      "channelResetFailed": "重置存储通道失败。"
+    }
+  },
+  "backup": {
+    "title": "设备备份",
+    "description": "选择此计算机上的文件夹以自动镜像到您的私人 Telegram 存储通道。",
+    "folders": {
+      "title": "源文件夹",
+      "saving": "保存…",
+      "description": "文件夹镜像在您的设备备份根目录下并保持同步。自动保存。",
+      "empty": "尚未添加文件夹。点击下面的“添加文件夹”。",
+      "add": "添加文件夹",
+      "pickerTitle": "选择要备份的文件夹"
+    },
+    "excludes": {
+      "title": "排除模式",
+      "description": "相对于源文件夹的全局模式。支持 <code>*</code>、<code>**</code> 和 <code>?</code>。示例：<code>node_modules</code>、<code>*.tmp</code>。",
+      "empty": "没有排除。源文件夹中的所有内容都将被备份。",
+      "placeholder": "例如*.tmp 或 node_modules",
+      "add": "添加"
+    },
+    "remove": "删除{{item}}",
+    "cadence": {
+      "title": "备份节奏",
+      "active": "积极的",
+      "description": "TeleDrive 应多久重新扫描一次源文件夹。仅重新上传更改的文件。",
+      "off": "离开",
+      "every6h": "每 6 小时",
+      "every12h": "每12小时一次",
+      "every24h": "每24小时一次"
+    },
+    "lastBackup": "最后备份：",
+    "lastBackupAgo": "{{时间}}前",
+    "never": "绝不",
+    "lastResult": {
+      "uploaded_one": "已上传 {{count}} 个，",
+      "uploaded_other": "已上传 {{count}} 个，",
+      "unchanged_one": "{{count}} 不变，",
+      "unchanged_other": "{{count}} 不变，",
+      "failed_one": "{{count}} 失败",
+      "failed_other": "{{count}} 失败"
+    },
+    "progressHint": "查看右下角的进度面板。",
+    "cancel": "取消",
+    "running": "正在备份...",
+    "runNow": "立即运行备份",
+    "howItWorks": "<strong>备份的工作原理</strong>：TeleDrive 会遍历您选择的文件夹，与本地清单进行比较，并仅上传新的或更改的文件。",
+    "viewBackups": "查看备份",
+    "toasts": {
+      "maxFolders_one": "最多 {{count}} 个源文件夹。",
+      "maxFolders_other": "最多 {{count}} 个源文件夹。",
+      "maxExcludes_one": "最多排除 {{count}} 个模式。",
+      "maxExcludes_other": "最多排除 {{count}} 个模式。",
+      "pickerFailed": "无法打开文件夹选择器",
+      "noFolders": "首先至少选择一个源文件夹"
+    }
+  },
+  "appearance": {
+    "title": "外貌",
+    "description": "自定义 TeleDrive 的布局外观和颜色主题。",
+    "themeMode": {
+      "title": "主题模式",
+      "description": "选择 TeleDrive 是否使用浅色、深色或系统自适应外观。"
+    },
+    "themes": {
+      "light": {
+        "label": "光",
+        "description": "干净、高对比度的浅色主题，带有 Google 云端硬盘画布"
+      },
+      "dark": {
+        "label": "黑暗的",
+        "description": "时尚的深色主题针对低光环境进行了优化"
+      },
+      "system": {
+        "label": "系统",
+        "description": "自动与您的操作系统外观同步"
+      }
+    },
+    "callout": "<strong>主题同步</strong>：TeleDrive 在浅色 (`#F8FAFD`) 和深色 (`#131314`) 表面上使用 Google Drive 精选的 HSL 颜色标记，确保高对比度并减少眼睛疲劳。"
+  },
+  "storage": {
+    "title": "贮存",
+    "description": "监控您的 Telegram 云存储空间、活动文件和垃圾保留情况。",
+    "totalUsed": "使用的总存储空间",
+    "calculating": "正在计算...",
+    "ofUnlimited": "无限的",
+    "unlimitedBadge": "无限云存储",
+    "meterLabel": "Telegram 频道存储（无限）",
+    "stats": {
+      "files": "已存储的文件",
+      "folders": "已创建文件夹",
+      "trash": "垃圾箱中的项目"
+    },
+    "recalculating": "正在重新计算...",
+    "recalculate": "重新计算存储空间",
+    "info": {
+      "noLimit": "Telegram 对私人频道中存储的累计数据量没有任何限制。",
+      "fileLimits": "单个文件限制：标准账户每个文件最多<strong>2 GB</strong>，Telegram Premium 订阅者最多<strong>4 GB</strong>。"
+    },
+    "toasts": {
+      "channelNotInitialised": "存储通道尚未初始化。",
+      "refreshed": "从 Telegram 刷新存储。",
+      "refreshFailed": "刷新存储数据失败。"
+    }
+  },
+  "about": {
+    "title": "关于 TeleDrive",
+    "description": "了解有关应用程序、更新和开源项目的更多信息。",
+    "logoAlt": "电信标志",
+    "tagline": "由 Telegram 支持的虚拟云存储客户端",
+    "summary": "TeleDrive 是一款由 Telegram 提供支持的开源跨平台云驱动客户端。它将您的文件存储映射到私有 Telegram 频道，并将您的文件组织到虚拟分层驱动器中，并具有快速搜索、预览和实时同步功能。",
+    "githubRepository": "GitHub 存储库",
+    "reportIssue": "报告问题",
+    "architecture": "基于通道的云存储架构",
+    "checkingUpdates": "正在检查更新...",
+    "checkUpdates": "检查更新",
+    "disclaimer": {
+      "title": "免责声明",
+      "body": "TeleDrive 是一款独立的开源客户端应用程序，不隶属于 Telegram FZ-LLC 或其任何附属公司，也不受其授权、维护、赞助或认可。"
+    },
+    "toasts": {
+      "openLinkFailed": "无法打开链接。",
+      "upToDate": "你是最新的！",
+      "latestVersion": "TeleDrive v{{version}} 是最新版本。"
+    }
+  }
+}

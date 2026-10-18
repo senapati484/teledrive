@@ -1,0 +1,153 @@
+{
+  "loading": "加载中…",
+  "downloadInstead": "下载代替",
+  "truncatedNotice": "--- [预览被截断：文件超过 3MB 限制] ---",
+  "errors": {
+    "offlineUnavailable": "您当前处于离线状态，并且该文件尚未标记为“可离线使用”。连接到互联网以将其打开。",
+    "downloadFailed": "下载文件失败。"
+  },
+  "toast": {
+    "preparingSystemViewer": "正在为系统查看器准备文档...",
+    "openedInSystemViewer": "在系统查看器中打开文档。",
+    "systemViewerFailed": "无法打开系统查看器。正在下载文件...",
+    "saved": "“{{name}}”保存成功！",
+    "saveFailed": "保存失败：{{message}}",
+    "unknownError": "未知错误",
+    "copied": "已复制到剪贴板",
+    "jsonFormatted": "JSON 格式",
+    "invalidJson": "无效 JSON：{{message}}"
+  },
+  "topbar": {
+    "editing": "编辑",
+    "saved": "已保存",
+    "cancel": "取消",
+    "saving": "保存…",
+    "save": "节省",
+    "formatJsonTitle": "格式化 JSON（美化）",
+    "format": "格式",
+    "disableWrap": "禁用自动换行",
+    "enableWrap": "启用自动换行",
+    "fontSizeTitle": "字体大小：{{size}}px（点击切换）",
+    "copyTitle": "将内容复制到剪贴板",
+    "runTitle": "在 O2 代码编辑器中运行",
+    "run": "跑步",
+    "editTitle": "编辑文件",
+    "edit": "编辑",
+    "toggleDetails": "切换详细信息",
+    "openInSystemViewerTitle": "在系统默认 PDF 查看器中打开",
+    "openInSystemViewer": "在系统查看器中打开",
+    "download": "下载",
+    "close": "关闭"
+  },
+  "viewMode": {
+    "preview": "预览",
+    "source": "来源",
+    "table": "桌子",
+    "raw": "生的",
+    "vector": "向量",
+    "code": "代码"
+  },
+  "image": {
+    "zoomOut": "缩小",
+    "zoomIn": "放大",
+    "resetZoom": "缩放适合/重置",
+    "rotateCounterClockwise": "逆时针旋转",
+    "rotateClockwise": "顺时针旋转",
+    "toggleGrid": "切换网格背景"
+  },
+  "details": {
+    "title": "文件详细信息",
+    "name": "姓名",
+    "dimensions": "方面",
+    "loadingDimensions": "加载中...",
+    "fileSize": "文件大小",
+    "mimeType": "默剧类型",
+    "path": "小路",
+    "uploadedAt": "上传于"
+  },
+  "media": {
+    "skipBack": "向后跳 10 秒",
+    "skipForward": "快进 10 秒",
+    "audioTrack": "音轨"
+  },
+  "archive": {
+    "badge": "{{ext}} 存档",
+    "description": "压缩档案无法直接在浏览器中预览。下载此存档以解压并在您的计算机上查看其内容。",
+    "download": "下载档案"
+  },
+  "unsupported": {
+    "description": "此文件类型没有可用的预览。您可以在系统上的兼容应用程序中下载并打开它。",
+    "download": "下载文件"
+  },
+  "status": {
+    "words_one": "{{count, number}} 个字",
+    "words_other": "{{count, number}} 个字",
+    "readingTime_one": "{{count}}分钟阅读",
+    "readingTime_other": "{{count}}分钟阅读",
+    "rows_one": "{{count, number}} 行",
+    "rows_other": "{{count, number}} 行",
+    "lines_one": "{{count, number}} 行",
+    "lines_other": "{{count, number}} 行",
+    "wrapOn": "环绕：开",
+    "wrapOff": "环绕：关闭",
+    "cursor": "第 {{line}} 巷，第 {{col}} 巷",
+    "editorInfo": "制表符：2 个空格 · UTF-8 · LF"
+  },
+  "pdfErrorBoundary": {
+    "title": "PDF 查看器遇到错误",
+    "description": "无法呈现 PDF。尝试重新加载。",
+    "retry": "重试"
+  },
+  "pdf": {
+    "loading": "加载 PDF 文档",
+    "preparing": "正在准备您的文件...",
+    "errorTitle": "无法预览文档",
+    "openInSystemViewer": "在系统查看器中打开",
+    "noDocument": "未加载文档。",
+    "errors": {
+      "noData": "未收到文档数据。",
+      "invalid": "该文件似乎已损坏或不是有效的 PDF。",
+      "passwordProtected": "此 PDF 受密码保护。不支持受密码保护的 PDF。",
+      "engineUnavailable": "PDF 引擎不可用。请重新加载应用程序。",
+      "loadFailed": "无法加载 PDF 文档。文件可能已损坏。"
+    },
+    "toolbar": {
+      "previousPage": "上一页 (↑ / PageUp)",
+      "jumpToPage": "点击跳转页面",
+      "nextPage": "下一页 (↓ / PageDown)",
+      "zoomOut": "缩小 (Ctrl+-)",
+      "resetZoom": "重置为 100% (Ctrl+0)",
+      "zoomIn": "放大（Ctrl+=）",
+      "fitWidth": "适合宽度",
+      "fitPage": "适合整页",
+      "fit": "合身",
+      "rotate": "顺时针旋转",
+      "print": "打印文件",
+      "openInSystemAppTitle": "在系统默认 PDF 应用程序中打开",
+      "systemViewer": "系统查看器"
+    }
+  },
+  "csv": {
+    "toast": {
+      "copied": "将单元格值复制到剪贴板"
+    },
+    "filterPlaceholder_one": "过滤 {{count}} 行...",
+    "filterPlaceholder_other": "过滤 {{count}} 行...",
+    "clear": "清除",
+    "rowsShown_one": "{{show}}（共 {{count}} 行）",
+    "rowsShown_other": "{{show}} 行，共 {{count}} 行",
+    "columns_one": "{{count}} 列",
+    "columns_other": "{{count}} 列",
+    "empty": "空数据集",
+    "columnFallback": "第 {{字母}} 列",
+    "cellTitle": "{{value}}（点击复制）"
+  },
+  "codeEditor": {
+    "loading": "正在加载编辑器..."
+  },
+  "syntaxHighlighter": {
+    "ariaLabel": "代码查看器",
+    "largeFile_one": "大文件（{{count, number}} 行）- 为了性能而跳过语法突出显示",
+    "largeFile_other": "大文件（{{count, number}} 行）- 为了性能而跳过语法突出显示"
+  }
+}

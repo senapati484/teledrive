@@ -1,0 +1,65 @@
+{
+  "common": {
+    "unknownError": "不明なエラー"
+  },
+  "bootstrap": {
+    "status": {
+      "connecting": "テレグラムに接続しています...",
+      "verifyingChannel": "安全なストレージ チャネルを確認しています...",
+      "loadingIndex": "ファイルメタデータインデックスをロード中...",
+      "recoveryScan": "ファイルを検証しています (リカバリ スキャン)...",
+      "initializingView": "ローカル ストレージ ビューを初期化しています..."
+    }
+  },
+  "backup": {
+    "errors": {
+      "noFolders": "まず、「設定」→「デバイスバックアップ」で少なくとも 1 つのフォルダーを選択します。",
+      "channelNotReady": "ストレージ チャネルの準備ができていません。最初のログインを完了してください。",
+      "clientUnreachable": "Telegram クライアントに到達できません: {{message}}",
+      "walkerFailed": "ウォーカーが失敗しました: {{メッセージ}}",
+      "manifestCorrupt": "バックアップ マニフェストが壊れています - 確認されるまでアップロードを拒否します。",
+      "cancelled": "ユーザーによりキャンセルされました。",
+      "sessionExpired": "テレグラムセッションが期限切れになりました。 「設定」→「Telegram アカウント」でアカウントを再接続し、バックアップを再度実行します。"
+    }
+  },
+  "upload": {
+    "channelNotConfigured": "テレグラムストレージチャネルが設定されていません。設定を確認してください。",
+    "success": "「{{name}}」は正常にアップロードされました。",
+    "indexSaveFailed": "「{{name}}」のインデックス保存に失敗しました — ドライブを更新してください。",
+    "failedFallback": "アップロードに失敗しました",
+    "failed": "「{{name}}」をアップロードできませんでした: {{message}}",
+    "emptyFile": "「{{名前}}」は空です。空のファイル (0 バイト) は Telegram ではサポートされていません。"
+  },
+  "download": {
+    "cancelled": "ダウンロードがキャンセルされました。",
+    "progress": "「{{name}}」をダウンロード中... {{percent}}%",
+    "success": "「{{name}}」は正常にダウンロードされました。",
+    "failed": "ファイルのダウンロードに失敗しました。権限を確認して再試行してください。",
+    "errors": {
+      "mediaNotFound": "ターゲット ファイル メッセージまたはメディアが Telegram 上に見つかりません。",
+      "mediaFailed": "メディアのダウンロードに失敗しました。"
+    }
+  },
+  "indexQueue": {
+    "rateLimitRetrying": "テレグラムのレート制限 - 再試行中"
+  },
+  "storage": {
+    "saveFailed": "ファイルを {{path}} に保存できません。ストレージの権限を確認してください。"
+  },
+  "relativeTime": {
+    "unknown": "未知",
+    "justNow": "ちょうど今",
+    "second_one": "{{count}} 秒",
+    "second_other": "{{count}} 秒",
+    "minute_one": "{{count}}分",
+    "minute_other": "{{count}}分",
+    "hour_one": "{{count}}時間",
+    "hour_other": "{{count}} 時間",
+    "day_one": "{{count}} 日",
+    "day_other": "{{count}} 日",
+    "month_one": "{{count}} か月",
+    "month_other": "{{count}} か月",
+    "year_one": "{{count}}年",
+    "year_other": "{{count}}年"
+  }
+}

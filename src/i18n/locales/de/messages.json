@@ -1,0 +1,65 @@
+{
+  "common": {
+    "unknownError": "Unbekannter Fehler"
+  },
+  "bootstrap": {
+    "status": {
+      "connecting": "Mit Telegram verbinden...",
+      "verifyingChannel": "Sicherer Speicherkanal wird überprüft...",
+      "loadingIndex": "Dateimetadatenindex wird geladen...",
+      "recoveryScan": "Überprüfen Ihrer Dateien (Wiederherstellungsscan)...",
+      "initializingView": "Lokale Speicheransicht wird initialisiert..."
+    }
+  },
+  "backup": {
+    "errors": {
+      "noFolders": "Wählen Sie zunächst mindestens einen Ordner unter Einstellungen → Gerätesicherung aus.",
+      "channelNotReady": "Der Speicherkanal ist nicht bereit. Bitte führen Sie die erste Anmeldung durch.",
+      "clientUnreachable": "Telegram-Client nicht erreichbar: {{message}}",
+      "walkerFailed": "Walker ist fehlgeschlagen: {{message}}",
+      "manifestCorrupt": "Das Backup-Manifest ist beschädigt – der Upload wird bis zur Überprüfung verweigert.",
+      "cancelled": "Vom Benutzer abgebrochen.",
+      "sessionExpired": "Telegrammsitzung abgelaufen. Verbinden Sie Ihr Konto erneut unter Einstellungen → Telegram-Konto und führen Sie dann die Sicherung erneut durch."
+    }
+  },
+  "upload": {
+    "channelNotConfigured": "Telegrammspeicherkanal ist nicht konfiguriert. Bitte überprüfen Sie die Einstellungen.",
+    "success": "„{{name}}“ erfolgreich hochgeladen!",
+    "indexSaveFailed": "Indexspeicherung für „{{name}}“ fehlgeschlagen – aktualisieren Sie das Laufwerk.",
+    "failedFallback": "Der Upload ist fehlgeschlagen",
+    "failed": "Fehler beim Hochladen von „{{name}}“: {{message}}",
+    "emptyFile": "„{{name}}“ ist leer. Leere Dateien (0 Bytes) werden von Telegram nicht unterstützt."
+  },
+  "download": {
+    "cancelled": "Download abgebrochen.",
+    "progress": "„{{name}}“ wird heruntergeladen... {{percent}} %",
+    "success": "„{{name}}“ erfolgreich heruntergeladen!",
+    "failed": "Datei konnte nicht heruntergeladen werden. Bitte überprüfen Sie die Berechtigungen und versuchen Sie es erneut.",
+    "errors": {
+      "mediaNotFound": "Zieldateinachricht oder Zielmedium wurde im Telegram nicht gefunden.",
+      "mediaFailed": "Das Herunterladen der Medien ist fehlgeschlagen."
+    }
+  },
+  "indexQueue": {
+    "rateLimitRetrying": "Begrenzung der Telegrammrate – erneuter Versuch"
+  },
+  "storage": {
+    "saveFailed": "Datei kann nicht unter {{path}} gespeichert werden. Bitte überprüfen Sie die Speicherberechtigungen."
+  },
+  "relativeTime": {
+    "unknown": "unbekannt",
+    "justNow": "soeben",
+    "second_one": "{{count}} Sekunde",
+    "second_other": "{{count}} Sekunden",
+    "minute_one": "{{count}} Minute",
+    "minute_other": "{{count}} Minuten",
+    "hour_one": "{{count}} Stunde",
+    "hour_other": "{{count}} Stunden",
+    "day_one": "{{count}} Tag",
+    "day_other": "{{count}} Tage",
+    "month_one": "{{count}} Monat",
+    "month_other": "{{count}} Monate",
+    "year_one": "{{count}} Jahr",
+    "year_other": "{{count}} Jahre"
+  }
+}

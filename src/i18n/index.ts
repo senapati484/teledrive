@@ -23,6 +23,10 @@ export const SUPPORTED_LANGUAGES = [
   { code: "en", label: "English" },
   { code: "pt-BR", label: "Português (Brasil)" },
   { code: "es", label: "Español" },
+  { code: "ja", label: "日本語" },
+  { code: "zh-CN", label: "简体中文" },
+  { code: "de", label: "Deutsch" },
+  { code: "ru", label: "Русский" },
 ] as const;
 
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]["code"];
@@ -50,6 +54,10 @@ void i18n
         const lower = lng.toLowerCase();
         if (lower.startsWith("pt")) return "pt-BR";
         if (lower.startsWith("es")) return "es";
+        if (lower.startsWith("ja")) return "ja";
+        if (lower.startsWith("zh")) return "zh-CN";
+        if (lower.startsWith("de")) return "de";
+        if (lower.startsWith("ru")) return "ru";
         return lng;
       },
     },

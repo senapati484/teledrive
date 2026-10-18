@@ -1,0 +1,193 @@
+{
+  "page": {
+    "title": "設定",
+    "backToDrive": "ドライブに戻る"
+  },
+  "nav": {
+    "account": "電報アカウント",
+    "backup": "デバイスのバックアップ",
+    "appearance": "外観",
+    "language": "言語",
+    "storage": "ストレージ",
+    "about": "について"
+  },
+  "language": {
+    "title": "言語",
+    "description": "TeleDrive インターフェース全体で使用する言語を選択します。",
+    "activeLanguage": "現在の言語",
+    "cardDescription": "好みの言語を選択してください。変更はすぐに適用されます。",
+    "callout": "<strong>即時同期:</strong> TeleDrive は言語設定をローカルに保存し、すべてのウィンドウに自動的に適用します。"
+  },
+  "logout": {
+    "button": "ログアウト",
+    "title": "ログアウト",
+    "description": "Telegram アカウントからサインアウトされます。ファイルはストレージ チャネルに安全に保管されます。",
+    "cancel": "キャンセル",
+    "confirm": "ログアウト",
+    "loggingOut": "ログアウト中…"
+  },
+  "account": {
+    "title": "電報アカウント",
+    "description": "接続された Telegram 認証情報とクラウド ストレージ チャネルを管理します。",
+    "notConnected": {
+      "title": "接続されていません",
+      "description": "Telegram アカウントに接続すると、プライベート ストレージ チャネルに無制限のファイルを保存できます。",
+      "connect": "テレグラムアカウントを接続する"
+    },
+    "activeSession": "アクティブなセッション",
+    "connectedVia": "Telegram MTProto クライアント経由で接続",
+    "disconnect": "アカウントの切断",
+    "channel": {
+      "title": "アクティブなストレージ チャネル",
+      "description": "ファイル、フォルダー、メタデータは、このプライベート チャネルに安全に保存されます。",
+      "name": "チャンネル名",
+      "id": "電報チャンネルID",
+      "loading": "読み込み中...",
+      "copyId": "チャンネルIDをコピー"
+    },
+    "syncing": "同期中...",
+    "syncNow": "今すぐ同期",
+    "switchChannel": "チャンネルを切り替える",
+    "architecture": "<strong>分散型クラウド ストレージ:</strong> ファイルはメッセージ ドキュメントとしてプライベート Telegram チャネルに直接アップロードされます。 TeleDrive は、このチャネルに固定されたインデックス付きマニフェストを維持するため、フォルダーとファイルは自動的に同期されます。",
+    "switchDialog": {
+      "title": "スイッチストレージチャネル",
+      "description": "TeleDrive ファイルに使用する別のプライベート Telegram チャネルを選択します。",
+      "warning": "<strong>警告:</strong> ストレージ チャネルを切り替えると、ローカル キャッシュがリセットされます。 TeleDrive は、選択したチャネルで既存のマニフェストを検索するか、新しいマニフェストを作成します。",
+      "cancel": "キャンセル",
+      "confirm": "確認する"
+    },
+    "toasts": {
+      "channelIdCopied": "チャンネル ID がクリップボードにコピーされました",
+      "syncSuccess": "ファイルは正常に同期されました。",
+      "alreadyUpToDate": "ドライブはすでに最新の状態になっています。",
+      "syncFailed": "同期に失敗しました",
+      "disconnected": "Telegram アカウントが正常に切断されました。",
+      "disconnectFailed": "アカウントの切断に失敗しました。",
+      "channelReset": "ストレージチャンネルがリセットされました。アプリを再起動して再マッピングします。",
+      "channelResetFailed": "ストレージチャネルのリセットに失敗しました。"
+    }
+  },
+  "backup": {
+    "title": "デバイスのバックアップ",
+    "description": "このコンピューター上のフォルダーを選択して、プライベート Telegram ストレージ チャネルに自動的にミラーリングします。",
+    "folders": {
+      "title": "ソースフォルダー",
+      "saving": "保存中…",
+      "description": "フォルダーはデバイスのバックアップ ルートの下にミラーリングされ、同期が保たれます。自動的に保存されます。",
+      "empty": "まだフォルダーは追加されていません。下の「フォルダーを追加」をクリックします。",
+      "add": "フォルダーの追加",
+      "pickerTitle": "バックアップするフォルダーを選択してください"
+    },
+    "excludes": {
+      "title": "パターンを除外する",
+      "description": "ソースフォルダーに相対的なグロブパターン。 <code>*</code>、<code>**</code>、および <code>?</code> をサポートします。例: <code>node_modules</code>、<code>*.tmp</code>。",
+      "empty": "除外はありません。ソースフォルダー内のすべてがバックアップされます。",
+      "placeholder": "例えば*.tmp または node_modules",
+      "add": "追加"
+    },
+    "remove": "{{item}}を削除",
+    "cadence": {
+      "title": "バックアップの頻度",
+      "active": "アクティブ",
+      "description": "TeleDrive がソース フォルダーを再スキャンする頻度。変更されたファイルのみが再アップロードされます。",
+      "off": "オフ",
+      "every6h": "6時間ごと",
+      "every12h": "12時間ごと",
+      "every24h": "24時間ごと"
+    },
+    "lastBackup": "最後のバックアップ:",
+    "lastBackupAgo": "{{時間}}前",
+    "never": "一度もない",
+    "lastResult": {
+      "uploaded_one": "{{count}} 個アップロードされました、",
+      "uploaded_other": "{{count}} 個アップロードされました、",
+      "unchanged_one": "{{count}} は変更なし、",
+      "unchanged_other": "{{count}} は変更なし、",
+      "failed_one": "{{count}} 回失敗しました",
+      "failed_other": "{{count}} 回失敗しました"
+    },
+    "progressHint": "右下隅にある進行状況パネルを確認してください。",
+    "cancel": "キャンセル",
+    "running": "バックアップ中…",
+    "runNow": "今すぐバックアップを実行",
+    "howItWorks": "<strong>バックアップの仕組み:</strong> TeleDrive は選択したフォルダーを調べ、ローカル マニフェストと比較して、新しいファイルまたは変更されたファイルのみをアップロードします。",
+    "viewBackups": "バックアップの表示",
+    "toasts": {
+      "maxFolders_one": "最大で {{count}} 個のソース フォルダー。",
+      "maxFolders_other": "最大で {{count}} 個のソース フォルダー。",
+      "maxExcludes_one": "最大で {{count}} 個のパターンを除外します。",
+      "maxExcludes_other": "最大で {{count}} 個のパターンが除外されます。",
+      "pickerFailed": "フォルダーピッカーを開けませんでした",
+      "noFolders": "最初に少なくとも 1 つのソース フォルダーを選択します"
+    }
+  },
+  "appearance": {
+    "title": "外観",
+    "description": "TeleDrive のレイアウトの外観とカラーテーマをカスタマイズします。",
+    "themeMode": {
+      "title": "テーマモード",
+      "description": "TeleDrive が明るい外観、暗い外観、またはシステムに適応した外観を使用するかどうかを選択します。"
+    },
+    "themes": {
+      "light": {
+        "label": "ライト",
+        "description": "Google ドライブ キャンバスを備えたクリーンでハイコントラストのライト テーマ"
+      },
+      "dark": {
+        "label": "暗い",
+        "description": "低照度環境向けに最適化された洗練されたダークテーマ"
+      },
+      "system": {
+        "label": "システム",
+        "description": "オペレーティング システムの外観と自動的に同期します"
+      }
+    },
+    "callout": "<strong>テーマの同期:</strong> TeleDrive は、明るい表面 (`#F8FAFD`) と暗い表面 (`#131314`) の両方で Google ドライブの厳選された HSL カラー トークンを使用し、高いコントラストを確保し、目の疲れを軽減します。"
+  },
+  "storage": {
+    "title": "ストレージ",
+    "description": "Telegram のクラウド ストレージ スペース、アクティブなファイル、ゴミ箱の保持を監視します。",
+    "totalUsed": "使用された合計ストレージ",
+    "calculating": "計算中…",
+    "ofUnlimited": "無制限の",
+    "unlimitedBadge": "無制限のクラウドストレージ",
+    "meterLabel": "電報チャネルストレージ (無制限)",
+    "stats": {
+      "files": "保存されるファイル",
+      "folders": "作成されたフォルダー",
+      "trash": "ゴミ箱内のアイテム"
+    },
+    "recalculating": "再計算中…",
+    "recalculate": "ストレージの再計算",
+    "info": {
+      "noLimit": "Telegram は、プライベート チャネルに保存されるデータの累積量に制限を課しません。",
+      "fileLimits": "個々のファイルの制限: 標準アカウントの場合は 1 ファイルあたり最大 <strong>2 GB</strong>、Telegram プレミアム加入者の場合は最大 <strong>4 GB</strong> です。"
+    },
+    "toasts": {
+      "channelNotInitialised": "ストレージ チャネルがまだ初期化されていません。",
+      "refreshed": "Telegram からストレージが更新されました。",
+      "refreshFailed": "ストレージデータの更新に失敗しました。"
+    }
+  },
+  "about": {
+    "title": "テレドライブについて",
+    "description": "アプリケーション、アップデート、オープンソース プロジェクトの詳細をご覧ください。",
+    "logoAlt": "テレドライブのロゴ",
+    "tagline": "Telegram が支援する仮想クラウド ストレージ クライアント",
+    "summary": "TeleDrive は、Telegram を利用したオープンソースのクロスプラットフォームのクラウド ドライブ クライアントです。ファイル ストレージをプライベート Telegram チャネルにマッピングし、高速な検索、プレビュー、リアルタイム同期を備えた仮想階層ドライブにファイルを整理します。",
+    "githubRepository": "GitHub リポジトリ",
+    "reportIssue": "問題を報告する",
+    "architecture": "チャネルベースのクラウドストレージアーキテクチャ",
+    "checkingUpdates": "アップデートをチェックしています...",
+    "checkUpdates": "アップデートをチェックする",
+    "disclaimer": {
+      "title": "免責事項",
+      "body": "TeleDrive は独立したオープンソース クライアント アプリケーションであり、Telegram FZ-LLC またはその関連会社と提携、認可、維持、スポンサー、または承認されていません。"
+    },
+    "toasts": {
+      "openLinkFailed": "リンクを開けませんでした。",
+      "upToDate": "最新情報を入手しました!",
+      "latestVersion": "TeleDrive v{{version}} が最新バージョンです。"
+    }
+  }
+}

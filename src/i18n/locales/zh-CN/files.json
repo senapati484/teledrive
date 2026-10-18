@@ -1,0 +1,256 @@
+{
+  "menu": {
+    "preview": "预览",
+    "openInSystemApp": "在系统应用程序中打开",
+    "edit": "编辑",
+    "download": "下载",
+    "availableOffline": "离线可用",
+    "rename": "重命名",
+    "moveTo": "移至",
+    "addStar": "添加星星",
+    "removeStar": "删除星星",
+    "archive": "档案",
+    "unarchive": "取消归档",
+    "restore": "恢复",
+    "deletePermanently": "永久删除",
+    "moveToTrash": "移至垃圾箱"
+  },
+  "browser": {
+    "fileType": {
+      "folder": "文件夹",
+      "pdf": "PDF文档",
+      "image": "图像",
+      "video": "视频",
+      "audio": "声音的",
+      "text": "文本文档",
+      "archive": "档案",
+      "word": "Word文档",
+      "spreadsheet": "电子表格",
+      "presentation": "推介会",
+      "sourceCode": "源代码",
+      "generic": "{{ext}} 文件",
+      "file": "文件"
+    },
+    "sort": {
+      "label": "排序：{{排序}}",
+      "short": {
+        "nameAsc": "姓名（A-Z）",
+        "nameDesc": "姓名（Z-A）",
+        "newest": "最新",
+        "oldest": "最古老的",
+        "largest": "最大",
+        "smallest": "最小"
+      },
+      "options": {
+        "nameAsc": "姓名（A 到 Z）",
+        "nameDesc": "姓名（Z 到 A）",
+        "dateDesc": "最后修改时间",
+        "dateAsc": "最早修改",
+        "sizeDesc": "文件大小（最大）",
+        "sizeAsc": "文件大小（最小）"
+      }
+    },
+    "header": {
+      "starred": "已加星标",
+      "recent": "最近的",
+      "trash": "垃圾",
+      "archived": "已存档",
+      "backups": "备份",
+      "myDrive": "我的驾驶",
+      "searchResults": "“{{query}}”的搜索结果"
+    },
+    "systemApp": {
+      "preparing": "正在为系统应用程序准备“{{name}}”...",
+      "opened": "在系统查看器中打开“{{name}}”。",
+      "failed": "无法在系统查看器中打开：{{error}}",
+      "unknownError": "未知错误"
+    },
+    "emptyState": {
+      "drive": {
+        "title": "你的驱动器是空的",
+        "subtitle": "上传文件或创建文件夹即可开始。"
+      },
+      "starred": {
+        "title": "没有加星标的文件",
+        "subtitle": "为您以后想要轻松查找的文件添加星标。"
+      },
+      "recent": {
+        "title": "没有最近的文件",
+        "subtitle": "您最近查看或上传的文件将显示在此处。"
+      },
+      "trash": {
+        "title": "垃圾箱已空",
+        "subtitle": "移至垃圾箱的项目将显示在此处。"
+      },
+      "archived": {
+        "title": "没有存档文件",
+        "subtitle": "将您想要保留但主驱动器中不需要的文件存档。"
+      },
+      "search": {
+        "title": "没有搜索结果",
+        "subtitle": "我们找不到任何与“{{query}}”匹配的项目。"
+      },
+      "backups": {
+        "title": "还没有备份",
+        "subtitle": "在“设置”→“设备备份”中选择此 Mac 上的一个文件夹，然后运行备份。镜像文件将出现在此处。"
+      },
+      "folder": {
+        "title": "该文件夹是空的",
+        "subtitle": "在此目录中上传文件或创建文件夹。"
+      },
+      "uploadFiles": "上传文件",
+      "newFolder": "新建文件夹"
+    },
+    "emptyTrashButton": "清空垃圾箱",
+    "switchToListView": "切换到列表视图",
+    "switchToGridView": "切换到网格视图",
+    "backupsBanner": {
+      "title": "备份是只读的。",
+      "description": "要更改备份的文件夹，请打开 <settingsPath>设置 → 设备备份</settingsPath>。"
+    },
+    "filters": {
+      "all": "全部",
+      "documents": "文件",
+      "images": "图片",
+      "videos": "视频",
+      "audio": "声音的"
+    },
+    "sections": {
+      "folders": "文件夹",
+      "foldersPartial": "文件夹（{{shown}} 个，共 {{total}} 个）",
+      "files": "文件",
+      "filesPartial": "文件（{{show}} 个，共 {{total}} 个）"
+    },
+    "columns": {
+      "name": "姓名",
+      "type": "类型",
+      "fileSize": "文件大小",
+      "lastModified": "最后修改时间"
+    },
+    "dragPreview": {
+      "items_one": "{{count}} 项",
+      "items_other": "{{count}} 件"
+    },
+    "bulkBar": {
+      "selected_one": "已选择",
+      "selected_other": "已选择",
+      "restoreSelected": "恢复选择",
+      "deletePermanently": "永久删除",
+      "moveSelectedToTrash": "将所选内容移至垃圾箱",
+      "clearSelection": "清除选择"
+    },
+    "mobileMenu": {
+      "addToStarred": "添加至已加星标",
+      "removeFromStarred": "从加星标中删除"
+    },
+    "dialogs": {
+      "cancel": "取消",
+      "deleting": "正在删除...",
+      "deleteForever": "永久删除",
+      "createFolder": {
+        "title": "新建文件夹",
+        "placeholder": "无标题文件夹",
+        "submit": "创造"
+      },
+      "rename": {
+        "title": "重命名",
+        "placeholder": "新名称",
+        "submit": "好的"
+      },
+      "emptyTrash": {
+        "title": "清空垃圾箱？",
+        "description_one": "这将从您的 Telegram 存储通道中永久删除 <strong>{{count}} 项</strong>。此操作无法撤消。",
+        "description_other": "这将从您的 Telegram 存储通道中永久删除 <strong>{{count}} 项</strong>。此操作无法撤消。",
+        "confirm": "清空垃圾箱"
+      },
+      "deleteItem": {
+        "title": "永久删除？",
+        "descriptionFile": "您确定要永久删除<strong>{{name}}</strong>吗？这将从您的 Telegram 存储通道中删除实际文件。此操作无法撤消。",
+        "descriptionFolder": "您确定要永久删除<strong>{{name}}</strong>吗？此操作无法撤消。"
+      },
+      "bulkDelete": {
+        "title": "永久删除？",
+        "description_one": "这将从您的 Telegram 存储通道中永久删除<strong>{{count}} 个所选项目</strong>。此操作无法撤消。",
+        "description_other": "这将从您的 Telegram 存储通道中永久删除<strong>{{count}} 个选定的项目</strong>。此操作无法撤消。"
+      }
+    }
+  },
+  "actions": {
+    "bootstrapPending": "仍在加载您的驱动器 - 请稍后重试。",
+    "saveFailed": "保存失败并回滚：{{error}}",
+    "unknownError": "未知错误",
+    "channelNotInitialized": "Telegram 存储通道未初始化",
+    "fileNotFound": "找不到文件",
+    "folder": {
+      "alreadyExists": "文件夹“{{name}}”已存在",
+      "created": "文件夹“{{name}}”创建成功",
+      "createFailed": "创建文件夹失败"
+    },
+    "rename": {
+      "success": "更名成功",
+      "failed": "重命名失败"
+    },
+    "star": {
+      "added": "已添加至加星标",
+      "removed": "已从加星标中删除",
+      "failed": "更新星星失败"
+    },
+    "trash": {
+      "moved": "已将“{{name}}”移至垃圾箱",
+      "moveFailed": "无法移至垃圾箱",
+      "restored": "已恢复“{{name}}”",
+      "restoreFailed": "恢复失败"
+    },
+    "archive": {
+      "archived": "“{{name}}”已存档",
+      "archiveFailed": "存档失败",
+      "unarchived": "“{{name}}”移回“我的云端硬盘”",
+      "unarchiveFailed": "取消存档失败"
+    },
+    "delete": {
+      "success": "永久删除",
+      "failed": "删除失败"
+    },
+    "emptyTrash": {
+      "alreadyEmpty": "垃圾箱已经空了",
+      "success_one": "永久删除了 {{count}} 项",
+      "success_other": "永久删除了 {{count}} 项",
+      "failed": "清空垃圾箱失败"
+    },
+    "bulk": {
+      "trashed_one": "已将 {{count}} 项移至回收站",
+      "trashed_other": "已将 {{count}} 项移至垃圾箱",
+      "trashFailed": "无法将项目移至垃圾箱",
+      "restored_one": "已恢复 {{count}} 项",
+      "restored_other": "已恢复 {{count}} 项",
+      "restoreFailed": "无法恢复项目",
+      "deleted_one": "已永久删除 {{count}} 项",
+      "deleted_other": "已永久删除 {{count}} 项",
+      "deleteFailed": "删除项目失败",
+      "archived_one": "已归档 {{count}} 项",
+      "archived_other": "已归档 {{count}} 项",
+      "archiveFailed": "无法归档项目",
+      "starred_one": "已加星标的 {{count}} 项",
+      "starred_other": "已加星标的 {{count}} 项",
+      "starFailed": "未能为项目加注星标",
+      "unarchived_one": "已将 {{count}} 项移回“我的云端硬盘”",
+      "unarchived_other": "已将 {{count}} 项移回“我的云端硬盘”",
+      "unarchiveFailed": "无法取消归档项目"
+    },
+    "offline": {
+      "downloading": "正在下载“{{name}}”以供离线访问...",
+      "available": "“{{name}}”现在可以离线使用",
+      "unavailable": "“{{name}}”无法再离线使用",
+      "failed": "无法更新离线状态"
+    },
+    "move": {
+      "nothingToMove": "没什么可动的",
+      "destinationMissing": "目标文件夹不再存在。",
+      "intoItself": "无法将文件夹“{{name}}”移动到其自身或其子文件夹中。",
+      "alreadyInFolder": "项目已在该文件夹中",
+      "success_one": "已成功移动 {{count}} 项",
+      "success_other": "已成功移动 {{count}} 件商品",
+      "failed": "无法移动项目"
+    }
+  }
+}

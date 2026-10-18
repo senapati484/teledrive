@@ -1,0 +1,65 @@
+{
+  "common": {
+    "unknownError": "未知错误"
+  },
+  "bootstrap": {
+    "status": {
+      "connecting": "正在连接到电报...",
+      "verifyingChannel": "正在验证安全存储通道...",
+      "loadingIndex": "正在加载文件元数据索引...",
+      "recoveryScan": "正在验证您的文件（恢复扫描）...",
+      "initializingView": "正在初始化本地存储视图..."
+    }
+  },
+  "backup": {
+    "errors": {
+      "noFolders": "首先在“设置”→“设备备份”中至少选择一个文件夹。",
+      "channelNotReady": "存储通道未准备好。请完成首次登录。",
+      "clientUnreachable": "Telegram 客户端无法访问：{{message}}",
+      "walkerFailed": "沃克失败：{{message}}",
+      "manifestCorrupt": "备份清单已损坏 - 在经过审核之前拒绝上传。",
+      "cancelled": "已被用户取消。",
+      "sessionExpired": "电报会话已过期。在“设置”→“电报帐户”中重新连接您的帐户，然后再次运行备份。"
+    }
+  },
+  "upload": {
+    "channelNotConfigured": "未配置 Telegram 存储通道。请检查设置。",
+    "success": "“{{name}}”上传成功！",
+    "indexSaveFailed": "“{{name}}”的索引保存失败 — 刷新驱动器。",
+    "failedFallback": "上传失败",
+    "failed": "无法上传“{{name}}”：{{message}}",
+    "emptyFile": "“{{name}}”为空。 Telegram 不支持空文件（0 字节）。"
+  },
+  "download": {
+    "cancelled": "下载已取消。",
+    "progress": "正在下载“{{name}}”... {{percent}}%",
+    "success": "“{{name}}”下载成功！",
+    "failed": "下载文件失败。请检查权限并重试。",
+    "errors": {
+      "mediaNotFound": "在 Telegram 上找不到目标文件消息或媒体。",
+      "mediaFailed": "无法下载媒体。"
+    }
+  },
+  "indexQueue": {
+    "rateLimitRetrying": "Telegram 速率限制 — 重试"
+  },
+  "storage": {
+    "saveFailed": "无法将文件保存到 {{path}}。请检查存储权限。"
+  },
+  "relativeTime": {
+    "unknown": "未知",
+    "justNow": "现在",
+    "second_one": "{{count}}秒",
+    "second_other": "{{count}} 秒",
+    "minute_one": "{{count}} 分钟",
+    "minute_other": "{{count}} 分钟",
+    "hour_one": "{{count}} 小时",
+    "hour_other": "{{count}} 小时",
+    "day_one": "{{count}}天",
+    "day_other": "{{count}} 天",
+    "month_one": "{{count}} 个月",
+    "month_other": "{{count}} 个月",
+    "year_one": "{{count}} 年",
+    "year_other": "{{count}}年"
+  }
+}

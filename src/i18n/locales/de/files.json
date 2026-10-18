@@ -1,0 +1,256 @@
+{
+  "menu": {
+    "preview": "Vorschau",
+    "openInSystemApp": "In der System-App öffnen",
+    "edit": "Bearbeiten",
+    "download": "Herunterladen",
+    "availableOffline": "Offline verfügbar",
+    "rename": "Umbenennen",
+    "moveTo": "Bewegen Sie sich nach",
+    "addStar": "Stern hinzufügen",
+    "removeStar": "Stern entfernen",
+    "archive": "Archiv",
+    "unarchive": "Dearchivieren",
+    "restore": "Wiederherstellen",
+    "deletePermanently": "Dauerhaft löschen",
+    "moveToTrash": "In den Papierkorb verschieben"
+  },
+  "browser": {
+    "fileType": {
+      "folder": "Ordner",
+      "pdf": "PDF-Dokument",
+      "image": "Bild",
+      "video": "Video",
+      "audio": "Audio",
+      "text": "Textdokument",
+      "archive": "Archiv",
+      "word": "Word-Dokument",
+      "spreadsheet": "Kalkulationstabelle",
+      "presentation": "Präsentation",
+      "sourceCode": "Quellcode",
+      "generic": "{{ext}} Datei",
+      "file": "Datei"
+    },
+    "sort": {
+      "label": "Sortieren: {{sort}}",
+      "short": {
+        "nameAsc": "Name (A-Z)",
+        "nameDesc": "Name (Z-A)",
+        "newest": "Neueste",
+        "oldest": "Älteste",
+        "largest": "Größte",
+        "smallest": "Kleinste"
+      },
+      "options": {
+        "nameAsc": "Name (A bis Z)",
+        "nameDesc": "Name (Z bis A)",
+        "dateDesc": "Zuletzt geändert",
+        "dateAsc": "Früheste Änderung",
+        "sizeDesc": "Dateigröße (am größten)",
+        "sizeAsc": "Dateigröße (am kleinsten)"
+      }
+    },
+    "header": {
+      "starred": "Mit einem Stern versehen",
+      "recent": "Jüngste",
+      "trash": "Müll",
+      "archived": "Archiviert",
+      "backups": "Backups",
+      "myDrive": "Mein Laufwerk",
+      "searchResults": "Suchergebnisse für „{{query}}“"
+    },
+    "systemApp": {
+      "preparing": "„{{name}}“ wird für die Systemanwendung vorbereitet …",
+      "opened": "„{{name}}“ im System Viewer geöffnet.",
+      "failed": "Konnte im System Viewer nicht geöffnet werden: {{error}}",
+      "unknownError": "Unbekannter Fehler"
+    },
+    "emptyState": {
+      "drive": {
+        "title": "Ihr Laufwerk ist leer",
+        "subtitle": "Laden Sie Dateien hoch oder erstellen Sie Ordner, um loszulegen."
+      },
+      "starred": {
+        "title": "Keine markierten Dateien",
+        "subtitle": "Fügen Sie den Dateien, die Sie später leicht finden möchten, Sterne hinzu."
+      },
+      "recent": {
+        "title": "Keine aktuellen Dateien",
+        "subtitle": "Hier werden Dateien angezeigt, die Sie kürzlich angezeigt oder hochgeladen haben."
+      },
+      "trash": {
+        "title": "Der Papierkorb ist leer",
+        "subtitle": "In den Papierkorb verschobene Elemente werden hier angezeigt."
+      },
+      "archived": {
+        "title": "Keine archivierten Dateien",
+        "subtitle": "Archivieren Sie Dateien, die Sie behalten möchten, aber nicht auf Ihrem Hauptlaufwerk benötigen."
+      },
+      "search": {
+        "title": "Keine Suchergebnisse",
+        "subtitle": "Wir konnten keine Elemente finden, die mit „{{query}}“ übereinstimmen."
+      },
+      "backups": {
+        "title": "Noch keine Backups",
+        "subtitle": "Wählen Sie unter Einstellungen → Gerätesicherung einen Ordner auf diesem Mac aus und führen Sie dann eine Sicherung durch. Hier werden gespiegelte Dateien angezeigt."
+      },
+      "folder": {
+        "title": "Dieser Ordner ist leer",
+        "subtitle": "Laden Sie Dateien hoch oder erstellen Sie Ordner in diesem Verzeichnis."
+      },
+      "uploadFiles": "Dateien hochladen",
+      "newFolder": "Neuer Ordner"
+    },
+    "emptyTrashButton": "Leeren Sie den Papierkorb",
+    "switchToListView": "Wechseln Sie zur Listenansicht",
+    "switchToGridView": "Wechseln Sie zur Rasteransicht",
+    "backupsBanner": {
+      "title": "Backups sind schreibgeschützt.",
+      "description": "Um zu ändern, welche Ordner gesichert werden, öffnen Sie <settingsPath>Einstellungen → Gerätesicherung</settingsPath>."
+    },
+    "filters": {
+      "all": "Alle",
+      "documents": "Unterlagen",
+      "images": "Bilder",
+      "videos": "Videos",
+      "audio": "Audio"
+    },
+    "sections": {
+      "folders": "Ordner",
+      "foldersPartial": "Ordner ({{shown}} von {{total}})",
+      "files": "Dateien",
+      "filesPartial": "Dateien ({{shown}} von {{total}})"
+    },
+    "columns": {
+      "name": "Name",
+      "type": "Typ",
+      "fileSize": "Dateigröße",
+      "lastModified": "Zuletzt geändert"
+    },
+    "dragPreview": {
+      "items_one": "{{count}} Artikel",
+      "items_other": "{{count}} Artikel"
+    },
+    "bulkBar": {
+      "selected_one": "ausgewählt",
+      "selected_other": "ausgewählt",
+      "restoreSelected": "Ausgewählte wiederherstellen",
+      "deletePermanently": "Dauerhaft löschen",
+      "moveSelectedToTrash": "Ausgewählte Datei in den Papierkorb verschieben",
+      "clearSelection": "Klare Auswahl"
+    },
+    "mobileMenu": {
+      "addToStarred": "Zu den Favoriten hinzufügen",
+      "removeFromStarred": "Aus Markieren entfernen"
+    },
+    "dialogs": {
+      "cancel": "Stornieren",
+      "deleting": "Löschen…",
+      "deleteForever": "Für immer löschen",
+      "createFolder": {
+        "title": "Neuer Ordner",
+        "placeholder": "Unbenannter Ordner",
+        "submit": "Erstellen"
+      },
+      "rename": {
+        "title": "Umbenennen",
+        "placeholder": "Neuer Name",
+        "submit": "OK"
+      },
+      "emptyTrash": {
+        "title": "Müll leeren?",
+        "description_one": "Dadurch werden <strong>{{count}} Element</strong> dauerhaft aus Ihrem Telegram-Speicherkanal gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+        "description_other": "Dadurch werden <strong>{{count}} Elemente</strong> dauerhaft aus Ihrem Telegram-Speicherkanal gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+        "confirm": "Leeren Sie den Müll"
+      },
+      "deleteItem": {
+        "title": "Endgültig löschen?",
+        "descriptionFile": "Sind Sie sicher, dass Sie <strong>{{name}}</strong> dauerhaft löschen möchten? Dadurch wird die eigentliche Datei aus Ihrem Telegram-Speicherkanal gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+        "descriptionFolder": "Sind Sie sicher, dass Sie <strong>{{name}}</strong> dauerhaft löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden."
+      },
+      "bulkDelete": {
+        "title": "Für immer löschen?",
+        "description_one": "Dadurch werden <strong>{{count}} ausgewähltes Element</strong> dauerhaft aus Ihrem Telegram-Speicherkanal gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+        "description_other": "Dadurch werden <strong>{{count}} ausgewählte Elemente</strong> dauerhaft aus Ihrem Telegram-Speicherkanal gelöscht. Diese Aktion kann nicht rückgängig gemacht werden."
+      }
+    }
+  },
+  "actions": {
+    "bootstrapPending": "Ihr Laufwerk wird immer noch geladen. Bitte versuchen Sie es in einem Moment noch einmal.",
+    "saveFailed": "Das Speichern ist fehlgeschlagen und wurde zurückgesetzt: {{error}}",
+    "unknownError": "Unbekannter Fehler",
+    "channelNotInitialized": "Telegrammspeicherkanal ist nicht initialisiert",
+    "fileNotFound": "Datei nicht gefunden",
+    "folder": {
+      "alreadyExists": "Der Ordner „{{name}}“ existiert bereits",
+      "created": "Ordner „{{name}}“ erfolgreich erstellt",
+      "createFailed": "Ordner konnte nicht erstellt werden"
+    },
+    "rename": {
+      "success": "Erfolgreich umbenannt",
+      "failed": "Umbenennen fehlgeschlagen"
+    },
+    "star": {
+      "added": "Zu „Markiert“ hinzugefügt",
+      "removed": "Aus „Markiert“ entfernt",
+      "failed": "Stern konnte nicht aktualisiert werden"
+    },
+    "trash": {
+      "moved": "„{{name}}“ in den Papierkorb verschoben",
+      "moveFailed": "Fehler beim Verschieben in den Papierkorb",
+      "restored": "„{{name}}“ wiederhergestellt",
+      "restoreFailed": "Wiederherstellung fehlgeschlagen"
+    },
+    "archive": {
+      "archived": "„{{name}}“ archiviert",
+      "archiveFailed": "Archivierung fehlgeschlagen",
+      "unarchived": "„{{name}}“ wurde zurück zu „Meine Ablage“ verschoben",
+      "unarchiveFailed": "Die Archivierung konnte nicht aufgehoben werden"
+    },
+    "delete": {
+      "success": "Endgültig gelöscht",
+      "failed": "Fehler beim Löschen"
+    },
+    "emptyTrash": {
+      "alreadyEmpty": "Der Papierkorb ist bereits leer",
+      "success_one": "{{count}} Element dauerhaft gelöscht",
+      "success_other": "{{count}} Elemente dauerhaft gelöscht",
+      "failed": "Der Papierkorb konnte nicht geleert werden"
+    },
+    "bulk": {
+      "trashed_one": "{{count}} Element in den Papierkorb verschoben",
+      "trashed_other": "{{count}} Elemente in den Papierkorb verschoben",
+      "trashFailed": "Elemente konnten nicht in den Papierkorb verschoben werden",
+      "restored_one": "{{count}} Artikel wiederhergestellt",
+      "restored_other": "{{count}} Artikel wiederhergestellt",
+      "restoreFailed": "Elemente konnten nicht wiederhergestellt werden",
+      "deleted_one": "{{count}} Element dauerhaft gelöscht",
+      "deleted_other": "{{count}} Elemente dauerhaft gelöscht",
+      "deleteFailed": "Elemente konnten nicht gelöscht werden",
+      "archived_one": "Archivierter {{count}} Artikel",
+      "archived_other": "Archivierte {{count}} Elemente",
+      "archiveFailed": "Elemente konnten nicht archiviert werden",
+      "starred_one": "Markierte {{count}} Element",
+      "starred_other": "Markierte {{count}} Artikel",
+      "starFailed": "Artikel konnten nicht markiert werden",
+      "unarchived_one": "{{count}} Element zurück zu „Meine Ablage“ verschoben",
+      "unarchived_other": "{{count}} Elemente wurden zurück in „Meine Ablage“ verschoben",
+      "unarchiveFailed": "Die Archivierung der Elemente ist fehlgeschlagen"
+    },
+    "offline": {
+      "downloading": "„{{name}}“ wird für den Offlinezugriff heruntergeladen …",
+      "available": "„{{name}}“ ist jetzt offline verfügbar",
+      "unavailable": "„{{name}}“ ist nicht mehr offline verfügbar",
+      "failed": "Der Offlinestatus konnte nicht aktualisiert werden"
+    },
+    "move": {
+      "nothingToMove": "Nichts zu bewegen",
+      "destinationMissing": "Der Zielordner existiert nicht mehr.",
+      "intoItself": "Der Ordner „{{name}}“ kann nicht in sich selbst oder seine Unterordner verschoben werden.",
+      "alreadyInFolder": "Die Elemente befinden sich bereits in diesem Ordner",
+      "success_one": "{{count}} Element erfolgreich verschoben",
+      "success_other": "{{count}} Elemente erfolgreich verschoben",
+      "failed": "Elemente konnten nicht verschoben werden"
+    }
+  }
+}
