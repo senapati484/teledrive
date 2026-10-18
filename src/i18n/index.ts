@@ -23,8 +23,12 @@ export const SUPPORTED_LANGUAGES = [
   { code: "en", label: "English" },
   { code: "pt-BR", label: "Português (Brasil)" },
   { code: "es", label: "Español" },
-  { code: "ja", label: "日本語" },
+  { code: "zh-TW", label: "繁體中文" },
   { code: "zh-CN", label: "简体中文" },
+  { code: "hi", label: "हिन्दी" },
+  { code: "fr", label: "Français" },
+  { code: "id", label: "Bahasa Indonesia" },
+  { code: "ja", label: "日本語" },
   { code: "de", label: "Deutsch" },
   { code: "ru", label: "Русский" },
 ] as const;
@@ -54,8 +58,12 @@ void i18n
         const lower = lng.toLowerCase();
         if (lower.startsWith("pt")) return "pt-BR";
         if (lower.startsWith("es")) return "es";
-        if (lower.startsWith("ja")) return "ja";
+        if (lower === "zh-tw" || lower === "zh-hk" || lower === "zh-mo" || lower.includes("hant")) return "zh-TW";
         if (lower.startsWith("zh")) return "zh-CN";
+        if (lower.startsWith("hi")) return "hi";
+        if (lower.startsWith("fr")) return "fr";
+        if (lower.startsWith("id") || lower.startsWith("in")) return "id";
+        if (lower.startsWith("ja")) return "ja";
         if (lower.startsWith("de")) return "de";
         if (lower.startsWith("ru")) return "ru";
         return lng;

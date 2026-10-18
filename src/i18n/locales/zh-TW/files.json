@@ -1,0 +1,256 @@
+{
+  "menu": {
+    "preview": "Preview",
+    "openInSystemApp": "Open in System App",
+    "edit": "Edit",
+    "download": "Download",
+    "availableOffline": "Available offline",
+    "rename": "Rename",
+    "moveTo": "Move to",
+    "addStar": "Add star",
+    "removeStar": "Remove star",
+    "archive": "Archive",
+    "unarchive": "Unarchive",
+    "restore": "Restore",
+    "deletePermanently": "Delete Permanently",
+    "moveToTrash": "Move to Trash"
+  },
+  "browser": {
+    "fileType": {
+      "folder": "Folder",
+      "pdf": "PDF Document",
+      "image": "Image",
+      "video": "Video",
+      "audio": "Audio",
+      "text": "Text Document",
+      "archive": "Archive",
+      "word": "Word Document",
+      "spreadsheet": "Spreadsheet",
+      "presentation": "Presentation",
+      "sourceCode": "Source Code",
+      "generic": "{{ext}} File",
+      "file": "File"
+    },
+    "sort": {
+      "label": "Sort: {{sort}}",
+      "short": {
+        "nameAsc": "Name (A-Z)",
+        "nameDesc": "Name (Z-A)",
+        "newest": "Newest",
+        "oldest": "Oldest",
+        "largest": "Largest",
+        "smallest": "Smallest"
+      },
+      "options": {
+        "nameAsc": "Name (A to Z)",
+        "nameDesc": "Name (Z to A)",
+        "dateDesc": "Last modified",
+        "dateAsc": "Earliest modified",
+        "sizeDesc": "File size (largest)",
+        "sizeAsc": "File size (smallest)"
+      }
+    },
+    "header": {
+      "starred": "Starred",
+      "recent": "Recent",
+      "trash": "Trash",
+      "archived": "Archived",
+      "backups": "Backups",
+      "myDrive": "My Drive",
+      "searchResults": "Search results for \"{{query}}\""
+    },
+    "systemApp": {
+      "preparing": "Preparing \"{{name}}\" for system application...",
+      "opened": "Opened \"{{name}}\" in system viewer.",
+      "failed": "Could not open in system viewer: {{error}}",
+      "unknownError": "Unknown error"
+    },
+    "emptyState": {
+      "drive": {
+        "title": "Your drive is empty",
+        "subtitle": "Upload files or create folders to get started."
+      },
+      "starred": {
+        "title": "No starred files",
+        "subtitle": "Add stars to files you want to find easily later."
+      },
+      "recent": {
+        "title": "No recent files",
+        "subtitle": "Files you've recently viewed or uploaded will appear here."
+      },
+      "trash": {
+        "title": "Trash is empty",
+        "subtitle": "Items moved to the trash will show up here."
+      },
+      "archived": {
+        "title": "No archived files",
+        "subtitle": "Archive files you want to keep but don't need in your main drive."
+      },
+      "search": {
+        "title": "No search results",
+        "subtitle": "We couldn't find any items matching \"{{query}}\"."
+      },
+      "backups": {
+        "title": "No backups yet",
+        "subtitle": "Pick a folder on this Mac in Settings → Device Backup, then run a backup. Mirrored files will appear here."
+      },
+      "folder": {
+        "title": "This folder is empty",
+        "subtitle": "Upload files or create folders in this directory."
+      },
+      "uploadFiles": "Upload Files",
+      "newFolder": "New Folder"
+    },
+    "emptyTrashButton": "Empty Trash",
+    "switchToListView": "Switch to list view",
+    "switchToGridView": "Switch to grid view",
+    "backupsBanner": {
+      "title": "Backups are read-only.",
+      "description": "To change which folders are backed up, open <settingsPath>Settings → Device Backup</settingsPath>."
+    },
+    "filters": {
+      "all": "All",
+      "documents": "Documents",
+      "images": "Images",
+      "videos": "Videos",
+      "audio": "Audio"
+    },
+    "sections": {
+      "folders": "Folders",
+      "foldersPartial": "Folders ({{shown}} of {{total}})",
+      "files": "Files",
+      "filesPartial": "Files ({{shown}} of {{total}})"
+    },
+    "columns": {
+      "name": "Name",
+      "type": "Type",
+      "fileSize": "File size",
+      "lastModified": "Last modified"
+    },
+    "dragPreview": {
+      "items_one": "{{count}} item",
+      "items_other": "{{count}} items"
+    },
+    "bulkBar": {
+      "selected_one": "selected",
+      "selected_other": "selected",
+      "restoreSelected": "Restore selected",
+      "deletePermanently": "Delete permanently",
+      "moveSelectedToTrash": "Move selected to trash",
+      "clearSelection": "Clear selection"
+    },
+    "mobileMenu": {
+      "addToStarred": "Add to Starred",
+      "removeFromStarred": "Remove from Starred"
+    },
+    "dialogs": {
+      "cancel": "Cancel",
+      "deleting": "Deleting…",
+      "deleteForever": "Delete forever",
+      "createFolder": {
+        "title": "New folder",
+        "placeholder": "Untitled folder",
+        "submit": "Create"
+      },
+      "rename": {
+        "title": "Rename",
+        "placeholder": "New name",
+        "submit": "OK"
+      },
+      "emptyTrash": {
+        "title": "Empty trash?",
+        "description_one": "This will permanently delete <strong>{{count}} item</strong> from your Telegram storage channel. This action cannot be undone.",
+        "description_other": "This will permanently delete <strong>{{count}} items</strong> from your Telegram storage channel. This action cannot be undone.",
+        "confirm": "Empty trash"
+      },
+      "deleteItem": {
+        "title": "Delete permanently?",
+        "descriptionFile": "Are you sure you want to permanently delete <strong>{{name}}</strong>? This will delete the actual file from your Telegram storage channel. This action cannot be undone.",
+        "descriptionFolder": "Are you sure you want to permanently delete <strong>{{name}}</strong>? This action cannot be undone."
+      },
+      "bulkDelete": {
+        "title": "Delete forever?",
+        "description_one": "This will permanently delete <strong>{{count}} selected item</strong> from your Telegram storage channel. This action cannot be undone.",
+        "description_other": "This will permanently delete <strong>{{count}} selected items</strong> from your Telegram storage channel. This action cannot be undone."
+      }
+    }
+  },
+  "actions": {
+    "bootstrapPending": "Still loading your drive — please retry in a moment.",
+    "saveFailed": "Save failed and was rolled back: {{error}}",
+    "unknownError": "Unknown error",
+    "channelNotInitialized": "Telegram storage channel is not initialized",
+    "fileNotFound": "File not found",
+    "folder": {
+      "alreadyExists": "Folder \"{{name}}\" already exists",
+      "created": "Folder \"{{name}}\" created successfully",
+      "createFailed": "Failed to create folder"
+    },
+    "rename": {
+      "success": "Renamed successfully",
+      "failed": "Failed to rename"
+    },
+    "star": {
+      "added": "Added to Starred",
+      "removed": "Removed from Starred",
+      "failed": "Failed to update star"
+    },
+    "trash": {
+      "moved": "Moved \"{{name}}\" to Trash",
+      "moveFailed": "Failed to move to trash",
+      "restored": "Restored \"{{name}}\"",
+      "restoreFailed": "Failed to restore"
+    },
+    "archive": {
+      "archived": "\"{{name}}\" archived",
+      "archiveFailed": "Failed to archive",
+      "unarchived": "\"{{name}}\" moved back to My Drive",
+      "unarchiveFailed": "Failed to unarchive"
+    },
+    "delete": {
+      "success": "Deleted permanently",
+      "failed": "Failed to delete"
+    },
+    "emptyTrash": {
+      "alreadyEmpty": "Trash is already empty",
+      "success_one": "{{count}} item deleted permanently",
+      "success_other": "{{count}} items deleted permanently",
+      "failed": "Failed to empty trash"
+    },
+    "bulk": {
+      "trashed_one": "Moved {{count}} item to Trash",
+      "trashed_other": "Moved {{count}} items to Trash",
+      "trashFailed": "Failed to move items to trash",
+      "restored_one": "Restored {{count}} item",
+      "restored_other": "Restored {{count}} items",
+      "restoreFailed": "Failed to restore items",
+      "deleted_one": "Deleted {{count}} item permanently",
+      "deleted_other": "Deleted {{count}} items permanently",
+      "deleteFailed": "Failed to delete items",
+      "archived_one": "Archived {{count}} item",
+      "archived_other": "Archived {{count}} items",
+      "archiveFailed": "Failed to archive items",
+      "starred_one": "Starred {{count}} item",
+      "starred_other": "Starred {{count}} items",
+      "starFailed": "Failed to star items",
+      "unarchived_one": "Moved {{count}} item back to My Drive",
+      "unarchived_other": "Moved {{count}} items back to My Drive",
+      "unarchiveFailed": "Failed to unarchive items"
+    },
+    "offline": {
+      "downloading": "Downloading \"{{name}}\" for offline access...",
+      "available": "\"{{name}}\" is now available offline",
+      "unavailable": "\"{{name}}\" is no longer available offline",
+      "failed": "Failed to update offline status"
+    },
+    "move": {
+      "nothingToMove": "Nothing to move",
+      "destinationMissing": "Destination folder no longer exists.",
+      "intoItself": "Cannot move folder \"{{name}}\" into itself or its subfolders.",
+      "alreadyInFolder": "Items are already in that folder",
+      "success_one": "Successfully moved {{count}} item",
+      "success_other": "Successfully moved {{count}} items",
+      "failed": "Failed to move items"
+    }
+  }
+}

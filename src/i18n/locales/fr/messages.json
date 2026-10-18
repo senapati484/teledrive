@@ -1,0 +1,65 @@
+{
+  "common": {
+    "unknownError": "Unknown error"
+  },
+  "bootstrap": {
+    "status": {
+      "connecting": "Connecting to Telegram...",
+      "verifyingChannel": "Verifying secure storage channel...",
+      "loadingIndex": "Loading file metadata index...",
+      "recoveryScan": "Verifying your files (recovery scan)...",
+      "initializingView": "Initializing local storage view..."
+    }
+  },
+  "backup": {
+    "errors": {
+      "noFolders": "Pick at least one folder in Settings → Device Backup first.",
+      "channelNotReady": "Storage channel is not ready. Please complete first login.",
+      "clientUnreachable": "Telegram client unreachable: {{message}}",
+      "walkerFailed": "Walker failed: {{message}}",
+      "manifestCorrupt": "Backup manifest is corrupt — refusing to upload until reviewed.",
+      "cancelled": "Cancelled by user.",
+      "sessionExpired": "Telegram session expired. Reconnect your account in Settings → Telegram Account, then run the backup again."
+    }
+  },
+  "upload": {
+    "channelNotConfigured": "Telegram storage channel is not configured. Please check settings.",
+    "success": "\"{{name}}\" uploaded successfully!",
+    "indexSaveFailed": "Index save failed for \"{{name}}\" — refresh the drive.",
+    "failedFallback": "Upload failed",
+    "failed": "Failed to upload \"{{name}}\": {{message}}",
+    "emptyFile": "\"{{name}}\" is empty. Empty files (0 bytes) are not supported by Telegram."
+  },
+  "download": {
+    "cancelled": "Download cancelled.",
+    "progress": "Downloading \"{{name}}\"... {{percent}}%",
+    "success": "\"{{name}}\" downloaded successfully!",
+    "failed": "Failed to download file. Please check permissions and try again.",
+    "errors": {
+      "mediaNotFound": "Target file message or media not found on Telegram.",
+      "mediaFailed": "Failed to download media."
+    }
+  },
+  "indexQueue": {
+    "rateLimitRetrying": "Telegram rate limit — retrying"
+  },
+  "storage": {
+    "saveFailed": "Unable to save file to {{path}}. Please check storage permissions."
+  },
+  "relativeTime": {
+    "unknown": "unknown",
+    "justNow": "just now",
+    "second_one": "{{count}} second",
+    "second_other": "{{count}} seconds",
+    "minute_one": "{{count}} minute",
+    "minute_other": "{{count}} minutes",
+    "hour_one": "{{count}} hour",
+    "hour_other": "{{count}} hours",
+    "day_one": "{{count}} day",
+    "day_other": "{{count}} days",
+    "month_one": "{{count}} month",
+    "month_other": "{{count}} months",
+    "year_one": "{{count}} year",
+    "year_other": "{{count}} years"
+  }
+}
