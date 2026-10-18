@@ -1,17 +1,20 @@
-import { Sun, Moon, Laptop, Check } from "lucide-react";
+import { Sun, Moon, Laptop, Check, Languages } from "lucide-react";
+import { Trans, useTranslation } from "react-i18next";
 import { useUIStore } from "@/stores/uiStore";
 import { cn } from "@/lib/utils";
+import { SUPPORTED_LANGUAGES } from "@/i18n";
 
 export default function AppearanceSection() {
+  const { t, i18n } = useTranslation("settings");
   const theme = useUIStore((state) => state.theme);
   const setTheme = useUIStore((state) => state.setTheme);
 
   const themeOptions = [
     {
-      label: "Light",
+      label: t("appearance.themes.light.label"),
       value: "light" as const,
       icon: Sun,
-      description: "Clean, high-contrast light theme with Google Drive canvas",
+      description: t("appearance.themes.light.description"),
       preview: {
         bg: "bg-[#F8FAFD]",
         surface: "bg-white border-slate-200",
@@ -20,10 +23,10 @@ export default function AppearanceSection() {
       },
     },
     {
-      label: "Dark",
+      label: t("appearance.themes.dark.label"),
       value: "dark" as const,
       icon: Moon,
-      description: "Sleek dark theme optimized for low-light environments",
+      description: t("appearance.themes.dark.description"),
       preview: {
         bg: "bg-[#131314]",
         surface: "bg-[#1E1F20] border-slate-800",
@@ -32,10 +35,10 @@ export default function AppearanceSection() {
       },
     },
     {
-      label: "System",
+      label: t("appearance.themes.system.label"),
       value: "system" as const,
       icon: Laptop,
-      description: "Automatically syncs with your operating system appearance",
+      description: t("appearance.themes.system.description"),
       preview: {
         bg: "bg-gradient-to-r from-[#F8FAFD] to-[#131314]",
         surface: "bg-gradient-to-r from-white to-[#1E1F20] border-slate-300 dark:border-slate-700",
@@ -49,20 +52,20 @@ export default function AppearanceSection() {
     <div className="space-y-6 select-none">
       <div className="space-y-1">
         <h2 className="text-xl font-semibold tracking-tight text-[#1F1F1F] dark:text-[#E3E3E3]">
-          Appearance
+          {t("appearance.title")}
         </h2>
         <p className="text-sm text-[#444746] dark:text-[#C4C7C5]">
-          Customize the layout appearance and color theme of TeleDrive.
+          {t("appearance.description")}
         </p>
       </div>
 
       <div className="p-6 border border-slate-200/90 dark:border-slate-800 rounded-2xl bg-white dark:bg-[#1E1F20] shadow-xs space-y-5">
         <div>
           <h3 className="text-sm font-semibold text-[#1F1F1F] dark:text-[#E3E3E3]">
-            Theme Mode
+            {t("appearance.themeMode.title")}
           </h3>
           <p className="text-xs text-[#747775] dark:text-[#8E918F] mt-0.5">
-            Choose whether TeleDrive uses light, dark, or system-adaptive appearance.
+            {t("appearance.themeMode.description")}
           </p>
         </div>
 
@@ -127,9 +130,54 @@ export default function AppearanceSection() {
         </div>
       </div>
 
+      <div className="p-6 border border-slate-200/90 dark:border-slate-800 rounded-2xl bg-white dark:bg-[#1E1F20] shadow-xs space-y-5">
+        <div>
+          <h3 className="text-sm font-semibold text-[#1F1F1F] dark:text-[#E3E3E3]">
+            {t("common:language.title")}
+          </h3>
+          <p className="text-xs text-[#747775] dark:text-[#8E918F] mt-0.5">
+            {t("common:language.description")}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          {SUPPORTED_LANGUAGES.map((lang) => {
+            const isSelected = i18n.resolvedLanguage === lang.code;
+            return (
+              <button
+                key={lang.code}
+                type="button"
+                lang={lang.code}
+                className={cn(
+                  "p-4 rounded-xl flex items-center justify-between gap-3 border text-left transition-all duration-200 cursor-pointer",
+                  isSelected
+                    ? "bg-[#C2E7FF]/25 dark:bg-[#004A77]/30 border-[#0B57D0] dark:border-[#A8C7FA] shadow-xs"
+                    : "bg-[#F0F4F9]/60 dark:bg-[#282A2C]/60 border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-[#F0F4F9] dark:hover:bg-[#282A2C]"
+                )}
+                onClick={() => i18n.changeLanguage(lang.code)}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <Languages className={cn("h-4 w-4 shrink-0", isSelected ? "text-[#0B57D0] dark:text-[#A8C7FA]" : "text-[#444746] dark:text-[#C4C7C5]")} />
+                  <span className={cn("text-xs font-semibold truncate", isSelected ? "text-[#001D35] dark:text-[#C2E7FF]" : "text-[#1F1F1F] dark:text-[#E3E3E3]")}>
+                    {lang.label}
+                  </span>
+                </div>
+
+                <div className={cn(
+                  "h-4 w-4 shrink-0 rounded-full flex items-center justify-center transition-all",
+                  isSelected ? "bg-[#0B57D0] text-white dark:bg-[#A8C7FA] dark:text-[#003258]" : "border border-slate-300 dark:border-slate-600"
+                )}>
+                  {isSelected && <Check className="h-2.5 w-2.5 stroke-[3]" />}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Info Callout */}
       <div className="p-4 rounded-2xl bg-[#F0F4F9] dark:bg-[#282A2C] border border-slate-200/60 dark:border-slate-700/60 text-xs text-[#444746] dark:text-[#C4C7C5] leading-relaxed">
-        💡 <strong>Theme Synchronization:</strong> TeleDrive uses Google Drive's curated HSL color tokens across both light (`#F8FAFD`) and dark (`#131314`) surfaces, ensuring high contrast and reduced eye strain.
+        💡 <Trans t={t} i18nKey="appearance.callout" components={{ strong: <strong /> }} />
       </div>
     </div>
   );

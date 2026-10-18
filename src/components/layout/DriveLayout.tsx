@@ -1,5 +1,6 @@
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import {
   HardDrive,
   Clock,
@@ -56,6 +57,7 @@ const IndexQueuePill = React.memo(function IndexQueuePill() {
   const indexQueueState = useFileStore((state) => state.indexQueueState);
   const indexQueueRetryInSec = useFileStore((state) => state.indexQueueRetryInSec);
   const indexQueueError = useFileStore((state) => state.indexQueueError);
+  const { t } = useTranslation("drive");
 
   if (
     indexQueueState !== "failed" &&
@@ -71,13 +73,13 @@ const IndexQueuePill = React.memo(function IndexQueuePill() {
     <div
       title={
         indexQueueState === "failed"
-          ? indexQueueError ?? "Index save failed — click to retry"
+          ? indexQueueError ?? t("indexQueue.saveFailedTitle")
           : indexQueueState === "retrying" && indexQueueError
           ? indexQueueError
           : indexQueueState === "syncing-remote"
-          ? "Live multi-device sync"
+          ? t("indexQueue.liveSyncTitle")
           : indexQueueState === "backup-running"
-          ? "Backup snapshot in progress"
+          ? t("indexQueue.backupSnapshotTitle")
           : undefined
       }
       className={cn(
@@ -100,14 +102,14 @@ const IndexQueuePill = React.memo(function IndexQueuePill() {
       )}
       <span className="text-[11px] font-semibold">
         {indexQueueState === "failed"
-          ? "Save failed"
+          ? t("indexQueue.saveFailed")
           : indexQueueState === "retrying" && indexQueueRetryInSec > 0
-          ? `Retrying in ${indexQueueRetryInSec}s`
+          ? t("indexQueue.retryingIn", { seconds: indexQueueRetryInSec })
           : indexQueueState === "syncing-remote"
-          ? "Synced"
+          ? t("indexQueue.synced")
           : indexQueueState === "backup-running"
-          ? "Backup in progress"
-          : "Syncing"}
+          ? t("indexQueue.backupInProgress")
+          : t("indexQueue.syncing")}
       </span>
       {indexQueueState === "failed" && (
         <button
@@ -127,7 +129,7 @@ const IndexQueuePill = React.memo(function IndexQueuePill() {
           className="ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-200/80 dark:bg-amber-900/40 text-amber-900 dark:text-amber-100 text-[10px] font-semibold uppercase tracking-wide cursor-pointer"
         >
           <RefreshCw className="h-3 w-3" />
-          Retry
+          {t("indexQueue.retry")}
         </button>
       )}
     </div>
@@ -138,6 +140,7 @@ export default function DriveLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const isMobile = useIsMobile();
+  const { t } = useTranslation("drive");
   const phoneNumber = useAuthStore((state) => state.phoneNumber);
   const modKey = useMemo(() => getModKey(), []);
   
@@ -539,11 +542,11 @@ export default function DriveLayout() {
       badge: number | null;
       dropTarget: string | null;
     }> = [
-      { label: "My Drive",  icon: HardDrive, path: "/drive/my-drive",  badge: totalCount, dropTarget: "nav:/drive/my-drive" },
-      { label: "Recent",   icon: Clock,      path: "/drive/recent", dropTarget: null, badge: null },
-      { label: "Starred",  icon: Star,       path: "/drive/starred",   badge: starredCount, dropTarget: "nav:/drive/starred" },
-      { label: "Archived", icon: Archive,    path: "/drive/archived",  badge: archivedCount, dropTarget: "nav:/drive/archived" },
-      { label: "Trash",    icon: Trash2,     path: "/drive/trash",     badge: trashCount, dropTarget: "nav:/drive/trash" },
+      { label: t("nav.myDrive"),  icon: HardDrive, path: "/drive/my-drive",  badge: totalCount, dropTarget: "nav:/drive/my-drive" },
+      { label: t("nav.recent"),   icon: Clock,      path: "/drive/recent", dropTarget: null, badge: null },
+      { label: t("nav.starred"),  icon: Star,       path: "/drive/starred",   badge: starredCount, dropTarget: "nav:/drive/starred" },
+      { label: t("nav.archived"), icon: Archive,    path: "/drive/archived",  badge: archivedCount, dropTarget: "nav:/drive/archived" },
+      { label: t("nav.trash"),    icon: Trash2,     path: "/drive/trash",     badge: trashCount, dropTarget: "nav:/drive/trash" },
     ];
     // Device-backup entry is Pro-only — fully hidden for FREE users
     // (per the project decision: Pro features are not visible in the
@@ -555,10 +558,10 @@ export default function DriveLayout() {
     // backups are read-only, so internal drag-to-sidebar moves don't
     // apply. The mobile bottom nav (lines below) reuses this array.
     if (isPro) {
-      items.push({ label: "Backups", icon: Shield, path: "/drive/backups", badge: backupCount, dropTarget: null });
+      items.push({ label: t("nav.backups"), icon: Shield, path: "/drive/backups", badge: backupCount, dropTarget: null });
     }
     return items;
-  }, [archivedCount, starredCount, totalCount, trashCount, backupCount, isPro]);
+  }, [archivedCount, starredCount, totalCount, trashCount, backupCount, isPro, t]);
 
   const theme = useUIStore((state) => state.theme);
   const setTheme = useUIStore((state) => state.setTheme);
@@ -578,8 +581,8 @@ export default function DriveLayout() {
             <div className="p-5 rounded-full bg-white dark:bg-[#282a2c] shadow-lg border border-slate-200/80 dark:border-slate-700 transition-transform duration-300 scale-105">
               <Upload className="h-10 w-10 text-[#0b57d0] dark:text-[#a8c7fa]" />
             </div>
-            <h2 className="text-2xl font-bold tracking-tight text-[#1f1f1f] dark:text-[#e3e3e3]">Drop files to upload to My Drive</h2>
-            <p className="text-sm font-medium text-[#444746] dark:text-[#c4c7c5]">Release to begin uploading immediately</p>
+            <h2 className="text-2xl font-bold tracking-tight text-[#1f1f1f] dark:text-[#e3e3e3]">{t("dropOverlay.title")}</h2>
+            <p className="text-sm font-medium text-[#444746] dark:text-[#c4c7c5]">{t("dropOverlay.description")}</p>
           </div>
         </div>
       )}
@@ -598,7 +601,7 @@ export default function DriveLayout() {
                 <div className="px-5 py-2 flex items-center gap-2.5 mb-2">
                   <img
                     src="/teledrive.png"
-                    alt="TeleDrive Logo"
+                    alt={t("logoAlt")}
                     className="h-7 w-7 object-contain rounded-lg shadow-sm"
                   />
                   <span className="text-xl font-bold tracking-tight text-[#1f1f1f] dark:text-[#e3e3e3]">
@@ -627,7 +630,7 @@ export default function DriveLayout() {
           <Link to="/drive/my-drive" className="flex items-center gap-2.5 group">
             <img
               src="/teledrive.png"
-              alt="TeleDrive Logo"
+              alt={t("logoAlt")}
               className="h-8 w-8 object-contain rounded-lg shadow-xs shrink-0 transition-transform duration-200 group-hover:scale-105"
             />
             <span className="hidden sm:inline-block text-xl font-semibold tracking-tight text-[#1f1f1f] dark:text-[#e3e3e3]">
@@ -652,7 +655,7 @@ export default function DriveLayout() {
             size="icon"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="h-10 w-10 rounded-full hover:bg-[#e9eef6] dark:hover:bg-[#282a2c] text-[#444746] dark:text-[#c4c7c5] cursor-pointer"
-            title={theme === "dark" ? "Switch to Light Theme" : "Switch to Dark Theme"}
+            title={theme === "dark" ? t("header.switchToLight") : t("header.switchToDark")}
           >
             {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
@@ -663,7 +666,7 @@ export default function DriveLayout() {
             size="icon"
             onClick={() => navigate("/settings")}
             className="h-10 w-10 rounded-full hover:bg-[#e9eef6] dark:hover:bg-[#282a2c] text-[#444746] dark:text-[#c4c7c5] hidden md:flex cursor-pointer"
-            title="Settings"
+            title={t("header.settings")}
           >
             <Settings className="h-5 w-5" />
           </Button>
@@ -683,7 +686,7 @@ export default function DriveLayout() {
           <svg className="h-4 w-4 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
             <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-3.536 4.978 4.978 0 011.414-3.536m0 0L8.464 8.464" />
           </svg>
-          <span>You are currently offline. Some features may be unavailable.</span>
+          <span>{t("offlineBanner")}</span>
         </div>
       )}
 
@@ -786,7 +789,7 @@ export default function DriveLayout() {
             )}>
               <Settings className="h-5 w-5" />
             </div>
-            <span className="text-[10px] tracking-tight">Settings</span>
+            <span className="text-[10px] tracking-tight">{t("nav.settings")}</span>
           </Link>
         </nav>
       )}
@@ -814,53 +817,53 @@ export default function DriveLayout() {
         <DialogContent className="rounded-3xl max-w-lg p-6 bg-white dark:bg-[#1e1f20] border border-slate-200/80 dark:border-slate-800 shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">
-              Keyboard Shortcuts
+              {t("shortcuts.title")}
             </DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2 select-none">
             <div>
-              <h4 className="text-xs font-semibold text-[#444746] dark:text-[#c4c7c5] tracking-wide mb-3">Navigation & Search</h4>
+              <h4 className="text-xs font-semibold text-[#444746] dark:text-[#c4c7c5] tracking-wide mb-3">{t("shortcuts.navigationGroup")}</h4>
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-[#444746] dark:text-[#c4c7c5]">Focus Search</span>
-                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#282a2c] border border-slate-300/70 dark:border-slate-700 rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">/ or {modKey}F</kbd>
+                  <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.focusSearch")}</span>
+                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#282a2c] border border-slate-300/70 dark:border-slate-700 rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">{t("shortcuts.focusSearchKeys", { modKey })}</kbd>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-[#444746] dark:text-[#c4c7c5]">Clear selection / blur</span>
+                  <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.clearSelection")}</span>
                   <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#282a2c] border border-slate-300/70 dark:border-slate-700 rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">Esc</kbd>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-[#444746] dark:text-[#c4c7c5]">Scroll to top</span>
+                  <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.scrollToTop")}</span>
                   <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#282a2c] border border-slate-300/70 dark:border-slate-700 rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">g g</kbd>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-[#444746] dark:text-[#c4c7c5]">Scroll to bottom</span>
+                  <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.scrollToBottom")}</span>
                   <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#282a2c] border border-slate-300/70 dark:border-slate-700 rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">g l</kbd>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-[#444746] dark:text-[#c4c7c5]">Show shortcuts help</span>
+                  <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.showHelp")}</span>
                   <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#282a2c] border border-slate-300/70 dark:border-slate-700 rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">?</kbd>
                 </div>
               </div>
             </div>
 
             <div>
-              <h4 className="text-xs font-semibold text-[#444746] dark:text-[#c4c7c5] tracking-wide mb-3">Actions on Selection</h4>
+              <h4 className="text-xs font-semibold text-[#444746] dark:text-[#c4c7c5] tracking-wide mb-3">{t("shortcuts.selectionGroup")}</h4>
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-[#444746] dark:text-[#c4c7c5]">Select all items</span>
+                  <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.selectAll")}</span>
                   <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#282a2c] border border-slate-300/70 dark:border-slate-700 rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">{modKey}A</kbd>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-[#444746] dark:text-[#c4c7c5]">Move to Trash</span>
+                  <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.moveToTrash")}</span>
                   <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#282a2c] border border-slate-300/70 dark:border-slate-700 rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">Del / Backspace</kbd>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-[#444746] dark:text-[#c4c7c5]">Rename item</span>
+                  <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.rename")}</span>
                   <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#282a2c] border border-slate-300/70 dark:border-slate-700 rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">F2</kbd>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-[#444746] dark:text-[#c4c7c5]">Download file</span>
+                  <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.download")}</span>
                   <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#282a2c] border border-slate-300/70 dark:border-slate-700 rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">{modKey}D</kbd>
                 </div>
               </div>

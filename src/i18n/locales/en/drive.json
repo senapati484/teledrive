@@ -1,0 +1,116 @@
+{
+  "logoAlt": "TeleDrive Logo",
+  "actions": {
+    "close": "Close"
+  },
+  "splash": {
+    "connecting": "Connecting to Telegram..."
+  },
+  "nav": {
+    "myDrive": "My Drive",
+    "recent": "Recent",
+    "starred": "Starred",
+    "archived": "Archived",
+    "trash": "Trash",
+    "backups": "Backups",
+    "settings": "Settings"
+  },
+  "header": {
+    "switchToLight": "Switch to Light Theme",
+    "switchToDark": "Switch to Dark Theme",
+    "settings": "Settings"
+  },
+  "indexQueue": {
+    "saveFailedTitle": "Index save failed — click to retry",
+    "liveSyncTitle": "Live multi-device sync",
+    "backupSnapshotTitle": "Backup snapshot in progress",
+    "saveFailed": "Save failed",
+    "retryingIn": "Retrying in {{seconds}}s",
+    "synced": "Synced",
+    "backupInProgress": "Backup in progress",
+    "syncing": "Syncing",
+    "retry": "Retry"
+  },
+  "dropOverlay": {
+    "title": "Drop files to upload to My Drive",
+    "description": "Release to begin uploading immediately"
+  },
+  "offlineBanner": "You are currently offline. Some features may be unavailable.",
+  "shortcuts": {
+    "title": "Keyboard Shortcuts",
+    "navigationGroup": "Navigation & Search",
+    "focusSearch": "Focus Search",
+    "focusSearchKeys": "/ or {{modKey}}F",
+    "clearSelection": "Clear selection / blur",
+    "scrollToTop": "Scroll to top",
+    "scrollToBottom": "Scroll to bottom",
+    "showHelp": "Show shortcuts help",
+    "selectionGroup": "Actions on Selection",
+    "selectAll": "Select all items",
+    "moveToTrash": "Move to Trash",
+    "rename": "Rename item",
+    "download": "Download file"
+  },
+  "sidebar": {
+    "storage": "Storage",
+    "usedOfUnlimited": "<strong>{{size}}</strong> of Unlimited used",
+    "telegramCloudStorage": "Telegram Cloud Storage"
+  },
+  "newMenu": {
+    "ariaLabel": "New item",
+    "new": "New",
+    "newFolder": "New folder",
+    "fileUpload": "File upload",
+    "folderUpload": "Folder upload"
+  },
+  "search": {
+    "placeholder": "Search in Drive",
+    "matchingHeader": "Matching Files & Folders",
+    "folder": "Folder",
+    "fileIn": "File • {{location}}",
+    "noResults": "No matching files found"
+  },
+  "upload": {
+    "failed_one": "{{count}} upload failed",
+    "failed_other": "{{count}} uploads failed",
+    "complete_one": "{{count}} upload complete",
+    "complete_other": "{{count}} uploads complete",
+    "uploadingItems_one": "Uploading {{count}} item ({{percent}}%)",
+    "uploadingItems_other": "Uploading {{count}} items ({{percent}}%)",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "close": "Close",
+    "queued": "Queued",
+    "uploading": "Uploading..."
+  },
+  "backup": {
+    "scanning": "Scanning folders…",
+    "backingUp": "Backing up — {{uploaded}} / {{total}}",
+    "completeUploaded_one": "Backup complete — {{count}} file uploaded",
+    "completeUploaded_other": "Backup complete — {{count}} files uploaded",
+    "completeNothingChanged": "Backup complete — nothing changed",
+    "cancelled": "Backup cancelled",
+    "failed": "Backup failed",
+    "retryRateLimit": "Retrying {{attempt}}/{{maxAttempts}} — Telegram rate limit, waiting {{seconds}}s",
+    "retryNetwork": "Retrying {{attempt}}/{{maxAttempts}} — network blip, waiting {{seconds}}s",
+    "readingFolders": "Reading folder contents from disk",
+    "summaryUploaded_one": "{{count}} uploaded",
+    "summaryUploaded_other": "{{count}} uploaded",
+    "summaryUnchanged_one": "{{count}} unchanged",
+    "summaryUnchanged_other": "{{count}} unchanged",
+    "summaryFailed_one": "{{count}} failed",
+    "summaryFailed_other": "{{count}} failed",
+    "resumeAnytime": "You can resume anytime.",
+    "dismiss": "Dismiss"
+  },
+  "errorBoundary": {
+    "title": "Something went wrong",
+    "description": "An unexpected issue occurred. Please reload the application to continue.",
+    "reload": "Reload Application"
+  },
+  "notFound": {
+    "title": "404 - Page Not Found",
+    "description": "The page you are looking for doesn't exist.",
+    "goToMyDrive": "Go to My Drive"
+  }
+}

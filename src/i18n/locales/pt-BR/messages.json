@@ -1,0 +1,71 @@
+{
+  "common": {
+    "unknownError": "Erro desconhecido"
+  },
+  "bootstrap": {
+    "status": {
+      "connecting": "Conectando ao Telegram...",
+      "verifyingChannel": "Verificando o canal de armazenamento seguro...",
+      "loadingIndex": "Carregando o índice de metadados dos arquivos...",
+      "recoveryScan": "Verificando seus arquivos (verificação de recuperação)...",
+      "initializingView": "Inicializando a visualização do armazenamento local..."
+    }
+  },
+  "backup": {
+    "errors": {
+      "noFolders": "Escolha pelo menos uma pasta em Configurações → Backup do dispositivo primeiro.",
+      "channelNotReady": "O canal de armazenamento não está pronto. Conclua o primeiro login.",
+      "clientUnreachable": "Não foi possível acessar o cliente do Telegram: {{message}}",
+      "walkerFailed": "Falha ao percorrer as pastas: {{message}}",
+      "manifestCorrupt": "O manifesto do backup está corrompido. O envio foi bloqueado até que ele seja revisado.",
+      "cancelled": "Cancelado pelo usuário.",
+      "sessionExpired": "A sessão do Telegram expirou. Reconecte sua conta em Configurações → Conta do Telegram e execute o backup novamente."
+    }
+  },
+  "upload": {
+    "channelNotConfigured": "O canal de armazenamento do Telegram não está configurado. Verifique as configurações.",
+    "success": "\"{{name}}\" foi enviado.",
+    "indexSaveFailed": "Falha ao salvar o índice de \"{{name}}\". Atualize o Drive.",
+    "failedFallback": "Falha no envio",
+    "failed": "Falha ao enviar \"{{name}}\": {{message}}",
+    "emptyFile": "\"{{name}}\" está vazio. O Telegram não aceita arquivos vazios (0 bytes)."
+  },
+  "download": {
+    "cancelled": "Download cancelado.",
+    "progress": "Baixando \"{{name}}\"... {{percent}}%",
+    "success": "\"{{name}}\" foi baixado.",
+    "failed": "Falha ao baixar o arquivo. Verifique as permissões e tente novamente.",
+    "errors": {
+      "mediaNotFound": "A mensagem ou a mídia do arquivo não foi encontrada no Telegram.",
+      "mediaFailed": "Falha ao baixar a mídia."
+    }
+  },
+  "indexQueue": {
+    "rateLimitRetrying": "Limite de requisições do Telegram. Tentando novamente"
+  },
+  "storage": {
+    "saveFailed": "Não foi possível salvar o arquivo em {{path}}. Verifique as permissões de armazenamento."
+  },
+  "relativeTime": {
+    "unknown": "desconhecido",
+    "justNow": "agora mesmo",
+    "second_one": "{{count}} segundo",
+    "second_other": "{{count}} segundos",
+    "minute_one": "{{count}} minuto",
+    "minute_other": "{{count}} minutos",
+    "hour_one": "{{count}} hora",
+    "hour_other": "{{count}} horas",
+    "day_one": "{{count}} dia",
+    "day_other": "{{count}} dias",
+    "month_one": "{{count}} mês",
+    "month_other": "{{count}} meses",
+    "year_one": "{{count}} ano",
+    "year_other": "{{count}} anos",
+    "second_zero": "{{count}} segundos",
+    "minute_zero": "{{count}} minutos",
+    "hour_zero": "{{count}} horas",
+    "day_zero": "{{count}} dias",
+    "month_zero": "{{count}} meses",
+    "year_zero": "{{count}} anos"
+  }
+}

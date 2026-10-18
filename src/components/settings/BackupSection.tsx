@@ -18,6 +18,7 @@
  *   from Settings and still see the backup progress.
  */
 import { useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import {
   Clock,
   RefreshCw,
@@ -51,19 +52,20 @@ import { useNavigate } from "react-router-dom";
 
 const INTERVAL_PRESETS: Array<{
   value: string;
-  label: string;
+  labelKey: string;
   minutes: number | null;
 }> = [
-  { value: "off", label: "Off", minutes: null },
-  { value: "6h", label: "Every 6 hours", minutes: 360 },
-  { value: "12h", label: "Every 12 hours", minutes: 720 },
-  { value: "24h", label: "Every 24 hours", minutes: 1440 },
+  { value: "off", labelKey: "backup.cadence.off", minutes: null },
+  { value: "6h", labelKey: "backup.cadence.every6h", minutes: 360 },
+  { value: "12h", labelKey: "backup.cadence.every12h", minutes: 720 },
+  { value: "24h", labelKey: "backup.cadence.every24h", minutes: 1440 },
 ];
 
 const MAX_FOLDERS = 5;
 const MAX_EXCLUDES = 20;
 
 export default function BackupSection() {
+  const { t } = useTranslation("settings");
   const navigate = useNavigate();
   const {
     intervalMinutes,
@@ -113,21 +115,21 @@ export default function BackupSection() {
 
   async function handleAddFolder() {
     if (paths.length >= MAX_FOLDERS) {
-      toast.warning(`At most ${MAX_FOLDERS} source folders.`);
+      toast.warning(t("backup.toasts.maxFolders", { count: MAX_FOLDERS }));
       return;
     }
     try {
       const selected = await tauriOpenDialog({
         directory: true,
         multiple: false,
-        title: "Pick a folder to back up",
+        title: t("backup.folders.pickerTitle"),
       });
       if (!selected || typeof selected !== "string") return;
       // Auto-save — folder appears in the list immediately.
       addFolder(selected);
     } catch (err) {
       console.warn("[BackupSection] folder picker failed:", err);
-      toast.error("Could not open folder picker", {
+      toast.error(t("backup.toasts.pickerFailed"), {
         description: err instanceof Error ? err.message : String(err),
       });
     }
@@ -135,7 +137,7 @@ export default function BackupSection() {
 
   function handleAddExclude() {
     if (excludes.length >= MAX_EXCLUDES) {
-      toast.warning(`At most ${MAX_EXCLUDES} exclude patterns.`);
+      toast.warning(t("backup.toasts.maxExcludes", { count: MAX_EXCLUDES }));
       return;
     }
     addExclude(excludeDraft);
@@ -144,7 +146,7 @@ export default function BackupSection() {
 
   async function handleRunNow() {
     if (paths.length === 0) {
-      toast.warning("Pick at least one source folder first");
+      toast.warning(t("backup.toasts.noFolders"));
       return;
     }
     try {
@@ -155,20 +157,20 @@ export default function BackupSection() {
   }
 
   const lastBackupLabel = lastBackupAt
-    ? `${formatDistanceToNow(lastBackupAt)} ago`
-    : "Never";
+    ? t("backup.lastBackupAgo", { time: formatDistanceToNow(lastBackupAt) })
+    : t("backup.never");
 
-  const currentLabel =
-    INTERVAL_PRESETS.find((p) => p.value === currentPreset)?.label ?? "Off";
+  const currentLabelKey =
+    INTERVAL_PRESETS.find((p) => p.value === currentPreset)?.labelKey ?? "backup.cadence.off";
 
   return (
     <div className="space-y-6 select-none">
       <div>
         <h3 className="text-base font-semibold text-[#1F1F1F] dark:text-[#E3E3E3]">
-          Device Backup
+          {t("backup.title")}
         </h3>
         <p className="text-sm text-[#444746] dark:text-[#C4C7C5] mt-1">
-          Pick folders on this computer to automatically mirror to your private Telegram storage channel.
+          {t("backup.description")}
         </p>
       </div>
 
@@ -181,23 +183,23 @@ export default function BackupSection() {
           <div className="flex-1 min-w-0 space-y-3">
             <div className="flex items-center gap-2 flex-wrap">
               <h4 className="text-sm font-semibold text-[#1F1F1F] dark:text-[#E3E3E3]">
-                Source folders
+                {t("backup.folders.title")}
               </h4>
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[#444746] dark:text-[#C4C7C5]">
                 {paths.length}/{MAX_FOLDERS}
               </span>
               {isSaving && (
                 <span className="text-[11px] text-[#747775] italic">
-                  saving…
+                  {t("backup.folders.saving")}
                 </span>
               )}
             </div>
             <p className="text-xs text-[#444746] dark:text-[#C4C7C5] leading-relaxed">
-              Folders are mirrored under your device backup root and kept in sync. Saves automatically.
+              {t("backup.folders.description")}
             </p>
             {paths.length === 0 ? (
               <p className="text-xs text-[#747775] italic py-1">
-                No folders added yet. Click &ldquo;Add folder&rdquo; below.
+                {t("backup.folders.empty")}
               </p>
             ) : (
               <ul className="space-y-2">
@@ -217,7 +219,7 @@ export default function BackupSection() {
                       type="button"
                       onClick={() => removeFolder(p)}
                       className="h-6 w-6 rounded-full hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center text-[#747775] hover:text-rose-600 transition-colors"
-                      aria-label={`Remove ${p}`}
+                      aria-label={t("backup.remove", { item: p })}
                     >
                       <X className="h-3.5 w-3.5" />
                     </button>
@@ -233,7 +235,7 @@ export default function BackupSection() {
               className="rounded-full text-xs font-medium border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 h-9 px-4"
             >
               <FolderPlus className="h-3.5 w-3.5 mr-1.5 text-[#0B57D0] dark:text-[#A8C7FA]" />
-              Add folder
+              {t("backup.folders.add")}
             </Button>
           </div>
         </div>
@@ -248,18 +250,24 @@ export default function BackupSection() {
           <div className="flex-1 min-w-0 space-y-3">
             <div className="flex items-center gap-2 flex-wrap">
               <h4 className="text-sm font-semibold text-[#1F1F1F] dark:text-[#E3E3E3]">
-                Exclude patterns
+                {t("backup.excludes.title")}
               </h4>
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[#444746] dark:text-[#C4C7C5]">
                 {excludes.length}/{MAX_EXCLUDES}
               </span>
             </div>
             <p className="text-xs text-[#444746] dark:text-[#C4C7C5] leading-relaxed">
-              Glob patterns relative to a source folder. Supports <code className="text-[11px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200/60 dark:border-slate-700/60">*</code>, <code className="text-[11px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200/60 dark:border-slate-700/60">**</code>, and <code className="text-[11px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200/60 dark:border-slate-700/60">?</code>. Examples: <code className="text-[11px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200/60 dark:border-slate-700/60">node_modules</code>, <code className="text-[11px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200/60 dark:border-slate-700/60">*.tmp</code>.
+              <Trans
+                t={t}
+                i18nKey="backup.excludes.description"
+                components={{
+                  code: <code className="text-[11px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200/60 dark:border-slate-700/60" />,
+                }}
+              />
             </p>
             {excludes.length === 0 ? (
               <p className="text-xs text-[#747775] italic py-1">
-                No excludes. Everything in your source folders will be backed up.
+                {t("backup.excludes.empty")}
               </p>
             ) : (
               <ul className="space-y-1.5">
@@ -278,7 +286,7 @@ export default function BackupSection() {
                       type="button"
                       onClick={() => removeExclude(p)}
                       className="h-6 w-6 rounded-full hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center justify-center text-[#747775] hover:text-rose-600 transition-colors"
-                      aria-label={`Remove ${p}`}
+                      aria-label={t("backup.remove", { item: p })}
                     >
                       <X className="h-3.5 w-3.5" />
                     </button>
@@ -296,7 +304,7 @@ export default function BackupSection() {
                     handleAddExclude();
                   }
                 }}
-                placeholder="e.g. *.tmp or node_modules"
+                placeholder={t("backup.excludes.placeholder")}
                 disabled={excludes.length >= MAX_EXCLUDES}
                 className="h-9 text-xs font-mono rounded-xl flex-1 bg-slate-50 dark:bg-[#282A2C]/50 border-slate-300 dark:border-slate-700 focus:bg-white dark:focus:bg-[#1E1F20]"
               />
@@ -311,7 +319,7 @@ export default function BackupSection() {
                 className="rounded-full text-xs font-medium border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 h-9 px-3.5"
               >
                 <Plus className="h-3.5 w-3.5 mr-1" />
-                Add
+                {t("backup.excludes.add")}
               </Button>
             </div>
           </div>
@@ -327,16 +335,16 @@ export default function BackupSection() {
           <div className="flex-1 min-w-0 space-y-2">
             <div className="flex items-center gap-2 flex-wrap">
               <h4 className="text-sm font-semibold text-[#1F1F1F] dark:text-[#E3E3E3]">
-                Backup cadence
+                {t("backup.cadence.title")}
               </h4>
               {intervalMinutes !== null && (
                 <span className="bg-blue-50 dark:bg-blue-950/40 text-[#0B57D0] dark:text-[#A8C7FA] border border-blue-200/60 dark:border-blue-800/60 font-medium text-[11px] px-2.5 py-0.5 rounded-full">
-                  Active
+                  {t("backup.cadence.active")}
                 </span>
               )}
             </div>
             <p className="text-xs text-[#444746] dark:text-[#C4C7C5] leading-relaxed">
-              How often TeleDrive should re-scan your source folders. Only changed files are re-uploaded.
+              {t("backup.cadence.description")}
             </p>
             <div className="pt-1">
               <DropdownMenu>
@@ -348,7 +356,7 @@ export default function BackupSection() {
                   >
                     <span className="flex items-center gap-2">
                       <Clock className="h-4 w-4 text-[#747775]" />
-                      {currentLabel}
+                      {t(currentLabelKey)}
                     </span>
                     <ChevronDown className="h-4 w-4 text-[#747775]" />
                   </Button>
@@ -365,7 +373,7 @@ export default function BackupSection() {
                         onSelect={() => handleChange(p.value)}
                         className="rounded-xl text-xs font-medium cursor-pointer"
                       >
-                        <span className="flex-1">{p.label}</span>
+                        <span className="flex-1">{t(p.labelKey)}</span>
                         {isCurrent && (
                           <Check className="h-4 w-4 text-[#0B57D0] dark:text-[#A8C7FA]" />
                         )}
@@ -385,7 +393,7 @@ export default function BackupSection() {
               <History className="h-3.5 w-3.5 shrink-0" />
               <span>
                 <span className="font-medium text-[#1F1F1F] dark:text-[#E3E3E3]">
-                  Last backup:
+                  {t("backup.lastBackup")}
                 </span>{" "}
                 {lastBackupLabel}
               </span>
@@ -393,21 +401,21 @@ export default function BackupSection() {
             {lastResult && (
               <div className="pl-5 text-[11px]">
                 {lastResult.filesUploaded > 0 && (
-                  <span>{lastResult.filesUploaded} uploaded, </span>
+                  <span>{t("backup.lastResult.uploaded", { count: lastResult.filesUploaded })}</span>
                 )}
                 {lastResult.filesSkipped > 0 && (
-                  <span>{lastResult.filesSkipped} unchanged, </span>
+                  <span>{t("backup.lastResult.unchanged", { count: lastResult.filesSkipped })}</span>
                 )}
                 {lastResult.filesFailed > 0 && (
                   <span className="text-amber-600 dark:text-amber-400">
-                    {lastResult.filesFailed} failed
+                    {t("backup.lastResult.failed", { count: lastResult.filesFailed })}
                   </span>
                 )}
               </div>
             )}
             {isRunning && (
               <div className="pl-5 text-[11px] text-[#0B57D0] dark:text-[#A8C7FA] font-medium">
-                See the progress panel in the bottom-right corner.
+                {t("backup.progressHint")}
               </div>
             )}
           </div>
@@ -419,7 +427,7 @@ export default function BackupSection() {
                 onClick={cancel}
                 className="rounded-full text-xs font-medium h-9 px-4 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30"
               >
-                Cancel
+                {t("backup.cancel")}
               </Button>
             )}
             <Button
@@ -432,12 +440,12 @@ export default function BackupSection() {
               {isRunning ? (
                 <>
                   <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin text-[#0B57D0] dark:text-[#A8C7FA]" />
-                  Backing up…
+                  {t("backup.running")}
                 </>
               ) : (
                 <>
                   <RefreshCw className="h-3.5 w-3.5 mr-1.5 text-[#0B57D0] dark:text-[#A8C7FA]" />
-                  Run backup now
+                  {t("backup.runNow")}
                 </>
               )}
             </Button>
@@ -450,7 +458,7 @@ export default function BackupSection() {
         <div className="flex items-start gap-2.5 flex-1 min-w-[220px]">
           <span className="text-base select-none mt-0.5">💡</span>
           <span>
-            <strong>How backup works:</strong> TeleDrive walks the folders you pick, diffs against a local manifest, and uploads only new or changed files.
+            <Trans t={t} i18nKey="backup.howItWorks" components={{ strong: <strong /> }} />
           </span>
         </div>
         <Button
@@ -460,7 +468,7 @@ export default function BackupSection() {
           className="rounded-full text-xs font-medium border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 h-9 px-4 shrink-0"
         >
           <Shield className="h-3.5 w-3.5 mr-1.5 text-[#0B57D0] dark:text-[#A8C7FA]" />
-          View Backups
+          {t("backup.viewBackups")}
           <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
         </Button>
       </div>

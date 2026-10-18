@@ -1,0 +1,123 @@
+{
+  "logoAlt": "Logo do TeleDrive",
+  "actions": {
+    "close": "Fechar"
+  },
+  "splash": {
+    "connecting": "Conectando ao Telegram..."
+  },
+  "nav": {
+    "myDrive": "Meu Drive",
+    "recent": "Recentes",
+    "starred": "Com estrela",
+    "archived": "Arquivados",
+    "trash": "Lixeira",
+    "backups": "Backups",
+    "settings": "Configurações"
+  },
+  "header": {
+    "switchToLight": "Mudar para o tema claro",
+    "switchToDark": "Mudar para o tema escuro",
+    "settings": "Configurações"
+  },
+  "indexQueue": {
+    "saveFailedTitle": "Falha ao salvar o índice — clique para tentar novamente",
+    "liveSyncTitle": "Sincronização em tempo real entre dispositivos",
+    "backupSnapshotTitle": "Snapshot de backup em andamento",
+    "saveFailed": "Falha ao salvar",
+    "retryingIn": "Tentando novamente em {{seconds}}s",
+    "synced": "Sincronizado",
+    "backupInProgress": "Backup em andamento",
+    "syncing": "Sincronizando",
+    "retry": "Tentar novamente"
+  },
+  "dropOverlay": {
+    "title": "Solte os arquivos para enviá-los ao Meu Drive",
+    "description": "Solte para começar o envio imediatamente"
+  },
+  "offlineBanner": "Você está off-line. Alguns recursos podem estar indisponíveis.",
+  "shortcuts": {
+    "title": "Atalhos de teclado",
+    "navigationGroup": "Navegação e pesquisa",
+    "focusSearch": "Ir para a pesquisa",
+    "focusSearchKeys": "/ ou {{modKey}}F",
+    "clearSelection": "Limpar seleção / sair do foco",
+    "scrollToTop": "Rolar para o topo",
+    "scrollToBottom": "Rolar para o final",
+    "showHelp": "Mostrar ajuda de atalhos",
+    "selectionGroup": "Ações na seleção",
+    "selectAll": "Selecionar todos os itens",
+    "moveToTrash": "Mover para a lixeira",
+    "rename": "Renomear item",
+    "download": "Baixar arquivo"
+  },
+  "sidebar": {
+    "storage": "Armazenamento",
+    "usedOfUnlimited": "<strong>{{size}}</strong> usados de ilimitado",
+    "telegramCloudStorage": "Armazenamento em nuvem do Telegram"
+  },
+  "newMenu": {
+    "ariaLabel": "Novo item",
+    "new": "Novo",
+    "newFolder": "Nova pasta",
+    "fileUpload": "Enviar arquivo",
+    "folderUpload": "Enviar pasta"
+  },
+  "search": {
+    "placeholder": "Pesquisar no Drive",
+    "matchingHeader": "Arquivos e pastas correspondentes",
+    "folder": "Pasta",
+    "fileIn": "Arquivo • {{location}}",
+    "noResults": "Nenhum arquivo correspondente encontrado"
+  },
+  "upload": {
+    "failed_one": "Falha em {{count}} envio",
+    "failed_other": "Falha em {{count}} envios",
+    "complete_one": "{{count}} envio concluído",
+    "complete_other": "{{count}} envios concluídos",
+    "uploadingItems_one": "Enviando {{count}} item ({{percent}}%)",
+    "uploadingItems_other": "Enviando {{count}} itens ({{percent}}%)",
+    "expand": "Expandir",
+    "collapse": "Recolher",
+    "close": "Fechar",
+    "queued": "Na fila",
+    "uploading": "Enviando...",
+    "failed_zero": "Falha em {{count}} envios",
+    "complete_zero": "{{count}} envios concluídos",
+    "uploadingItems_zero": "Enviando {{count}} itens ({{percent}}%)"
+  },
+  "backup": {
+    "scanning": "Verificando pastas…",
+    "backingUp": "Fazendo backup — {{uploaded}} / {{total}}",
+    "completeUploaded_one": "Backup concluído — {{count}} arquivo enviado",
+    "completeUploaded_other": "Backup concluído — {{count}} arquivos enviados",
+    "completeNothingChanged": "Backup concluído — nada mudou",
+    "cancelled": "Backup cancelado",
+    "failed": "Falha no backup",
+    "retryRateLimit": "Tentativa {{attempt}}/{{maxAttempts}} — limite de requisições do Telegram, aguardando {{seconds}}s",
+    "retryNetwork": "Tentativa {{attempt}}/{{maxAttempts}} — instabilidade na rede, aguardando {{seconds}}s",
+    "readingFolders": "Lendo o conteúdo das pastas no disco",
+    "summaryUploaded_one": "{{count}} enviado",
+    "summaryUploaded_other": "{{count}} enviados",
+    "summaryUnchanged_one": "{{count}} sem alteração",
+    "summaryUnchanged_other": "{{count}} sem alteração",
+    "summaryFailed_one": "{{count}} com falha",
+    "summaryFailed_other": "{{count}} com falha",
+    "resumeAnytime": "Você pode retomar quando quiser.",
+    "dismiss": "Dispensar",
+    "completeUploaded_zero": "Backup concluído — {{count}} arquivos enviados",
+    "summaryUploaded_zero": "{{count}} enviados",
+    "summaryUnchanged_zero": "{{count}} sem alteração",
+    "summaryFailed_zero": "{{count}} com falha"
+  },
+  "errorBoundary": {
+    "title": "Algo deu errado",
+    "description": "Ocorreu um problema inesperado. Recarregue o aplicativo para continuar.",
+    "reload": "Recarregar aplicativo"
+  },
+  "notFound": {
+    "title": "404 - Página não encontrada",
+    "description": "A página que você está procurando não existe.",
+    "goToMyDrive": "Ir para o Meu Drive"
+  }
+}

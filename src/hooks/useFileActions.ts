@@ -14,6 +14,8 @@ import { invoke } from "@tauri-apps/api/core";
 import { enqueueSave, flushAllQueues, retryQueue } from "../lib/storage/indexQueue";
 import { useCallback, useMemo } from "react";
 import { logEvent } from "../lib/events";
+import i18n from "../i18n";
+import { useTranslation } from "react-i18next";
 
 
 /**
@@ -137,7 +139,7 @@ async function applyOptimistic(
     if (!options.skipRollbackOnHardError) {
       rollbackToLastSnapshot();
     }
-    toast.error("Still loading your drive — please retry in a moment.");
+    toast.error(i18n.t("files:actions.bootstrapPending"));
     throw new Error("Bootstrap not complete");
   }
 
@@ -176,7 +178,7 @@ async function applyOptimistic(
       state: `ACTION_HARD_ERR rolled=${rolled}: ${err?.message ?? err}`,
     }).catch(() => {});
     toast.error(
-      `Save failed and was rolled back: ${err?.message ?? "Unknown error"}`
+      i18n.t("files:actions.saveFailed", { error: err?.message ?? i18n.t("files:actions.unknownError") })
     );
     throw err;
   } finally {
@@ -213,6 +215,7 @@ export function useFileActions() {
   const isOperating = useFileStore((state) => state.isOperating);
   const currentFolder = useFileStore((state) => state.currentFolder);
   const phoneNumber = useAuthStore((state) => state.phoneNumber);
+  const { t } = useTranslation("files");
 
   const getChannelId = useCallback(async () => {
     let cid: string | null = null;
@@ -223,11 +226,11 @@ export function useFileActions() {
       cid = await getSecret(VAULT_KEY_CHANNEL_ID);
     }
     if (!cid) {
-      toast.error("Telegram storage channel is not initialized");
+      toast.error(t("actions.channelNotInitialized"));
       throw new Error("Channel ID missing");
     }
     return cid;
-  }, [phoneNumber]);
+  }, [phoneNumber, t]);
 
   const createFolder = useCallback(async (name: string) => {
     if (!name.trim()) return;
@@ -245,7 +248,7 @@ export function useFileActions() {
       const newFullPath =
         targetParent === "/" ? `/${trimmed}` : `${targetParent}/${trimmed}`;
       if (findFoldersByPath(files, newFullPath).length > 0) {
-        toast.info(`Folder "${trimmed}" already exists`);
+        toast.info(t("actions.folder.alreadyExists", { name: trimmed }));
         return;
       }
 
@@ -268,13 +271,13 @@ export function useFileActions() {
         trashed: false,
       };
 
-      toast.success(`Folder "${trimmed}" created successfully`);
+      toast.success(t("actions.folder.created", { name: trimmed }));
       await applyOptimistic(channelId, [...files, newFolder], { eventType: "folder.created", eventPayload: { name: trimmed } });
     } catch (err: any) {
       console.error("Failed to create folder:", err);
-      toast.error(err.message || "Failed to create folder");
+      toast.error(err.message || t("actions.folder.createFailed"));
     }
-  }, [currentFolder, getChannelId]);
+  }, [currentFolder, getChannelId, t]);
 
   const renameFile = useCallback(async (fileId: string, newName: string) => {
     if (!newName.trim()) return;
@@ -282,7 +285,7 @@ export function useFileActions() {
       const channelId = await getChannelId();
       const allFiles = useFileStore.getState().files;
       const fileToRename = allFiles.find((f) => f.id === fileId);
-      if (!fileToRename) throw new Error("File not found");
+      if (!fileToRename) throw new Error(t("actions.fileNotFound"));
 
       const isFolderRename = fileToRename.mime === "inode/directory" || fileToRename.mime === "application/x-directory";
 
@@ -325,13 +328,13 @@ export function useFileActions() {
         return f;
       });
 
-      toast.success("Renamed successfully");
+      toast.success(t("actions.rename.success"));
       await applyOptimistic(channelId, updatedFiles, { eventType: "file.renamed", eventPayload: { name: fileToRename.name } });
     } catch (err: any) {
       console.error("Failed to rename:", err);
-      toast.error(err.message || "Failed to rename");
+      toast.error(err.message || t("actions.rename.failed"));
     }
-  }, [getChannelId]);
+  }, [getChannelId, t]);
 
   const toggleStar = useCallback(async (file: TeleFile) => {
     try {
@@ -344,13 +347,13 @@ export function useFileActions() {
         f.id === file.id ? { ...f, starred: nextStarred } : f
       );
 
-      toast.success(nextStarred ? "Added to Starred" : "Removed from Starred");
+      toast.success(nextStarred ? t("actions.star.added") : t("actions.star.removed"));
       await applyOptimistic(channelId, updatedFiles, { eventType: nextStarred ? "file.starred" : "file.unstarred", eventPayload: { name: file.name } });
     } catch (err: any) {
       console.error("Failed to toggle star:", err);
-      toast.error(err.message || "Failed to update star");
+      toast.error(err.message || t("actions.star.failed"));
     }
-  }, [getChannelId]);
+  }, [getChannelId, t]);
 
   const moveToTrash = useCallback(async (file: TeleFile) => {
     try {
@@ -369,13 +372,13 @@ export function useFileActions() {
         return f;
       });
 
-      toast.success(`Moved "${file.name}" to Trash`);
+      toast.success(t("actions.trash.moved", { name: file.name }));
       await applyOptimistic(channelId, updatedFiles, { eventType: "file.trashed", eventPayload: { name: file.name } });
     } catch (err: any) {
       console.error("Failed to move to trash:", err);
-      toast.error(err.message || "Failed to move to trash");
+      toast.error(err.message || t("actions.trash.moveFailed"));
     }
-  }, [getChannelId]);
+  }, [getChannelId, t]);
 
   const restoreFromTrash = useCallback(async (file: TeleFile) => {
     try {
@@ -394,13 +397,13 @@ export function useFileActions() {
         return f;
       });
 
-      toast.success(`Restored "${file.name}"`);
+      toast.success(t("actions.trash.restored", { name: file.name }));
       await applyOptimistic(channelId, updatedFiles, { eventType: "file.restored", eventPayload: { name: file.name } });
     } catch (err: any) {
       console.error("Failed to restore from trash:", err);
-      toast.error(err.message || "Failed to restore");
+      toast.error(err.message || t("actions.trash.restoreFailed"));
     }
-  }, [getChannelId]);
+  }, [getChannelId, t]);
 
   const archiveFile = useCallback(async (file: TeleFile) => {
     try {
@@ -419,13 +422,13 @@ export function useFileActions() {
         return f;
       });
 
-      toast.success(`"${file.name}" archived`);
+      toast.success(t("actions.archive.archived", { name: file.name }));
       await applyOptimistic(channelId, updatedFiles, { eventType: "file.archived", eventPayload: { name: file.name } });
     } catch (err: any) {
       console.error("Failed to archive:", err);
-      toast.error(err.message || "Failed to archive");
+      toast.error(err.message || t("actions.archive.archiveFailed"));
     }
-  }, [getChannelId]);
+  }, [getChannelId, t]);
 
   const unarchiveFile = useCallback(async (file: TeleFile) => {
     try {
@@ -444,20 +447,20 @@ export function useFileActions() {
         return f;
       });
 
-      toast.success(`"${file.name}" moved back to My Drive`);
+      toast.success(t("actions.archive.unarchived", { name: file.name }));
       await applyOptimistic(channelId, updatedFiles, { eventType: "file.unarchived", eventPayload: { name: file.name } });
     } catch (err: any) {
       console.error("Failed to unarchive:", err);
-      toast.error(err.message || "Failed to unarchive");
+      toast.error(err.message || t("actions.archive.unarchiveFailed"));
     }
-  }, [getChannelId]);
+  }, [getChannelId, t]);
 
   const deletePermanently = useCallback(async (fileId: string) => {
     try {
       const channelId = await getChannelId();
       const allFiles = useFileStore.getState().files;
       const fileToDelete = allFiles.find((f) => f.id === fileId);
-      if (!fileToDelete) throw new Error("File not found");
+      if (!fileToDelete) throw new Error(t("actions.fileNotFound"));
 
       const isFolder = fileToDelete.mime === "inode/directory" || fileToDelete.mime === "application/x-directory";
 
@@ -476,7 +479,7 @@ export function useFileActions() {
         active = allFiles.filter((f) => f.id !== fileId);
       }
 
-      toast.success("Deleted permanently");
+      toast.success(t("actions.delete.success"));
       await applyOptimistic(channelId, active, { eventType: "file.deleted", eventPayload: { fileId } });
 
       // After the index commits, asynchronously delete offline caches and
@@ -503,9 +506,9 @@ export function useFileActions() {
       })();
     } catch (err: any) {
       console.error("Failed to delete permanently:", err);
-      toast.error(err.message || "Failed to delete");
+      toast.error(err.message || t("actions.delete.failed"));
     }
-  }, [getChannelId]);
+  }, [getChannelId, t]);
 
   const emptyTrash = useCallback(async () => {
     try {
@@ -515,15 +518,11 @@ export function useFileActions() {
       const active = allFiles.filter((f) => !f.trashed);
 
       if (trashed.length === 0) {
-        toast.info("Trash is already empty");
+        toast.info(t("actions.emptyTrash.alreadyEmpty"));
         return;
       }
 
-      toast.success(
-        trashed.length === 1
-          ? "1 item deleted permanently"
-          : `${trashed.length} items deleted permanently`
-      );
+      toast.success(t("actions.emptyTrash.success", { count: trashed.length }));
       await applyOptimistic(channelId, active, { eventType: "files.deleted", eventPayload: { count: trashed.length } });
 
       // After the index commits, asynchronously clear cache & delete telegram messages in background
@@ -547,9 +546,9 @@ export function useFileActions() {
       })();
     } catch (err: any) {
       console.error("Failed to empty trash:", err);
-      toast.error(err.message || "Failed to empty trash");
+      toast.error(err.message || t("actions.emptyTrash.failed"));
     }
-  }, [getChannelId]);
+  }, [getChannelId, t]);
 
   const moveMultipleToTrash = useCallback(async (fileIds: string[]) => {
     if (fileIds.length === 0) return;
@@ -574,13 +573,13 @@ export function useFileActions() {
         return f;
       });
 
-      toast.success(`Moved ${fileIds.length} item(s) to Trash`);
+      toast.success(t("actions.bulk.trashed", { count: fileIds.length }));
       await applyOptimistic(channelId, updatedFiles, { eventType: "files.trashed", eventPayload: { count: fileIds.length } });
     } catch (err: any) {
       console.error("Failed to move multiple to trash:", err);
-      toast.error(err.message || "Failed to move items to trash");
+      toast.error(err.message || t("actions.bulk.trashFailed"));
     }
-  }, [getChannelId]);
+  }, [getChannelId, t]);
 
   const restoreMultipleFromTrash = useCallback(async (fileIds: string[]) => {
     if (fileIds.length === 0) return;
@@ -605,13 +604,13 @@ export function useFileActions() {
         return f;
       });
 
-      toast.success(`Restored ${fileIds.length} item(s)`);
+      toast.success(t("actions.bulk.restored", { count: fileIds.length }));
       await applyOptimistic(channelId, updatedFiles, { eventType: "files.restored", eventPayload: { count: fileIds.length } });
     } catch (err: any) {
       console.error("Failed to restore multiple from trash:", err);
-      toast.error(err.message || "Failed to restore items");
+      toast.error(err.message || t("actions.bulk.restoreFailed"));
     }
-  }, [getChannelId]);
+  }, [getChannelId, t]);
 
   const deleteMultiplePermanently = useCallback(async (fileIds: string[]) => {
     if (fileIds.length === 0) return;
@@ -634,7 +633,7 @@ export function useFileActions() {
       const targets = files.filter(isTargetOrInFolder);
       const active = files.filter((f) => !isTargetOrInFolder(f));
 
-      toast.success(`Deleted ${fileIds.length} item(s) permanently`);
+      toast.success(t("actions.bulk.deleted", { count: fileIds.length }));
       await applyOptimistic(channelId, active, { eventType: "files.deleted", eventPayload: { count: fileIds.length } });
 
       // After the index commits, asynchronously clear cache & delete telegram messages in background
@@ -658,9 +657,9 @@ export function useFileActions() {
       })();
     } catch (err: any) {
       console.error("Failed to delete multiple permanently:", err);
-      toast.error(err.message || "Failed to delete items");
+      toast.error(err.message || t("actions.bulk.deleteFailed"));
     }
-  }, [getChannelId]);
+  }, [getChannelId, t]);
 
   const archiveMultiple = useCallback(async (fileIds: string[]) => {
     if (fileIds.length === 0) return;
@@ -685,13 +684,13 @@ export function useFileActions() {
         return f;
       });
 
-      toast.success(`Archived ${fileIds.length} item(s)`);
+      toast.success(t("actions.bulk.archived", { count: fileIds.length }));
       await applyOptimistic(channelId, updatedFiles, { eventType: "files.archived", eventPayload: { count: fileIds.length } });
     } catch (err: any) {
       console.error("Failed to archive multiple:", err);
-      toast.error(err.message || "Failed to archive items");
+      toast.error(err.message || t("actions.bulk.archiveFailed"));
     }
-  }, [getChannelId]);
+  }, [getChannelId, t]);
 
   const starMultiple = useCallback(async (fileIds: string[]) => {
     if (fileIds.length === 0) return;
@@ -716,13 +715,13 @@ export function useFileActions() {
         return f;
       });
 
-      toast.success(`Starred ${fileIds.length} item(s)`);
+      toast.success(t("actions.bulk.starred", { count: fileIds.length }));
       await applyOptimistic(channelId, updatedFiles, { eventType: "files.starred", eventPayload: { count: fileIds.length } });
     } catch (err: any) {
       console.error("Failed to star multiple:", err);
-      toast.error(err.message || "Failed to star items");
+      toast.error(err.message || t("actions.bulk.starFailed"));
     }
-  }, [getChannelId]);
+  }, [getChannelId, t]);
 
   const unarchiveMultiple = useCallback(async (fileIds: string[]) => {
     if (fileIds.length === 0) return;
@@ -747,13 +746,13 @@ export function useFileActions() {
         return f;
       });
 
-      toast.success(`Moved ${fileIds.length} item(s) back to My Drive`);
+      toast.success(t("actions.bulk.unarchived", { count: fileIds.length }));
       await applyOptimistic(channelId, updatedFiles, { eventType: "files.unarchived", eventPayload: { count: fileIds.length } });
     } catch (err: any) {
       console.error("Failed to unarchive multiple:", err);
-      toast.error(err.message || "Failed to unarchive items");
+      toast.error(err.message || t("actions.bulk.unarchiveFailed"));
     }
-  }, [getChannelId]);
+  }, [getChannelId, t]);
 
   const toggleOffline = useCallback(async (file: TeleFile) => {
     return fileActionQueue.enqueue(async () => {
@@ -764,12 +763,12 @@ export function useFileActions() {
         const nextOffline = currentFile ? !currentFile.offline : !file.offline;
 
         if (nextOffline) {
-          toast.info(`Downloading "${file.name}" for offline access...`);
+          toast.info(t("actions.offline.downloading", { name: file.name }));
           await cacheFileOffline(channelId, file.messageId, file.id);
-          toast.success(`"${file.name}" is now available offline`);
+          toast.success(t("actions.offline.available", { name: file.name }));
         } else {
           await removeOfflineCache(file.id);
-          toast.success(`"${file.name}" is no longer available offline`);
+          toast.success(t("actions.offline.unavailable", { name: file.name }));
         }
 
         // Update the offline flag through the same optimistic + queue path
@@ -784,10 +783,10 @@ export function useFileActions() {
         await applyOptimistic(channelId, updatedFiles, { eventType: "file.offlineToggled", eventPayload: { name: file.name, offline: nextOffline } });
       } catch (err: any) {
         console.error("Failed to toggle offline availability:", err);
-        toast.error(err.message || "Failed to update offline status");
+        toast.error(err.message || t("actions.offline.failed"));
       }
     });
-  }, [getChannelId]);
+  }, [getChannelId, t]);
 
   const moveMultipleFilesOrFolders = useCallback(async (fileIds: string[], targetFolderPath: string) => {
     if (fileIds.length === 0) return;
@@ -800,7 +799,7 @@ export function useFileActions() {
       const selectedFiles = files.filter((f) => selectedIdSet.has(f.id));
 
       if (selectedFiles.length === 0) {
-        toast.info("Nothing to move");
+        toast.info(t("actions.move.nothingToMove"));
         return;
       }
 
@@ -809,7 +808,7 @@ export function useFileActions() {
           (f) => isFolder(f) && getFolderFullPath(f) === normalizedTargetPath
         );
         if (!targetFolderExists) {
-          throw new Error("Destination folder no longer exists.");
+          throw new Error(t("actions.move.destinationMissing"));
         }
       }
 
@@ -821,7 +820,7 @@ export function useFileActions() {
 
       for (const { folder, fullPath } of selectedFolderPaths) {
         if (isSameOrDescendantPath(normalizedTargetPath, fullPath)) {
-          throw new Error(`Cannot move folder "${folder.name}" into itself or its subfolders.`);
+          throw new Error(t("actions.move.intoItself", { name: folder.name }));
         }
       }
 
@@ -875,17 +874,17 @@ export function useFileActions() {
 
       const hasChanges = updatedFiles.some((file, index) => file !== files[index]);
       if (!hasChanges) {
-        toast.info("Items are already in that folder");
+        toast.info(t("actions.move.alreadyInFolder"));
         return;
       }
 
-      toast.success(`Successfully moved ${fileIds.length} item(s)`);
+      toast.success(t("actions.move.success", { count: fileIds.length }));
       await applyOptimistic(channelId, updatedFiles, { eventType: "files.moved", eventPayload: { count: fileIds.length, target: targetFolderPath } });
     } catch (err: any) {
       console.error("Failed to move items:", err);
-      toast.error(err.message || "Failed to move items");
+      toast.error(err.message || t("actions.move.failed"));
     }
-  }, [getChannelId]);
+  }, [getChannelId, t]);
 
   return useMemo(() => ({
     isOperating,

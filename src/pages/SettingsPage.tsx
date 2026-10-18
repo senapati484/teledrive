@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { ArrowLeft, Smartphone, Eye, HardDrive, Info, Shield } from "lucide-react";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import AboutSection from "@/components/settings/AboutSection";
 type SectionType = "account" | "appearance" | "storage" | "backup" | "about";
 
 export default function SettingsPage() {
+  const { t } = useTranslation("settings");
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
@@ -24,31 +26,31 @@ export default function SettingsPage() {
   const sections = [
     {
       id: "account" as const,
-      label: "Telegram Account",
+      label: t("nav.account"),
       icon: Smartphone,
       component: TelegramAccountSection,
     },
     {
       id: "backup" as const,
-      label: "Device Backup",
+      label: t("nav.backup"),
       icon: Shield,
       component: BackupSection,
     },
     {
       id: "appearance" as const,
-      label: "Appearance",
+      label: t("nav.appearance"),
       icon: Eye,
       component: AppearanceSection,
     },
     {
       id: "storage" as const,
-      label: "Storage",
+      label: t("nav.storage"),
       icon: HardDrive,
       component: StorageSection,
     },
     {
       id: "about" as const,
-      label: "About",
+      label: t("nav.about"),
       icon: Info,
       component: AboutSection,
     },
@@ -140,13 +142,13 @@ export default function SettingsPage() {
               navigate("/drive/my-drive");
             }
           }}
-          title="Back to Drive"
+          title={t("page.backToDrive")}
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex items-center gap-2.5">
           <img src="/teledrive.png" alt="TeleDrive" className="h-7 w-7 object-contain" />
-          <h2 className="text-lg font-semibold tracking-tight text-[#1F1F1F] dark:text-[#E3E3E3]">Settings</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-[#1F1F1F] dark:text-[#E3E3E3]">{t("page.title")}</h2>
         </div>
       </header>
 
@@ -195,7 +197,7 @@ export default function SettingsPage() {
                     d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
                   />
                 </svg>
-                <span>Log Out</span>
+                <span>{t("logout.button")}</span>
               </button>
             </div>
           </aside>
@@ -241,10 +243,10 @@ export default function SettingsPage() {
             </div>
 
             <h3 className="text-base font-semibold text-[#1F1F1F] dark:text-[#E3E3E3] text-center mb-1.5">
-              Log Out
+              {t("logout.title")}
             </h3>
             <p className="text-sm text-[#444746] dark:text-[#C4C7C5] text-center leading-relaxed mb-6">
-              You will be signed out of your Telegram account. Your files will remain safe in your storage channel.
+              {t("logout.description")}
             </p>
 
             <div className="flex gap-3">
@@ -254,7 +256,7 @@ export default function SettingsPage() {
                 disabled={isLoggingOut}
                 onClick={() => setLogoutDialogOpen(false)}
               >
-                Cancel
+                {t("logout.cancel")}
               </Button>
               <Button
                 className="flex-1 rounded-full h-10 text-sm font-medium bg-rose-600 hover:bg-rose-700 text-white border-0 shadow-sm"
@@ -267,10 +269,10 @@ export default function SettingsPage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                     </svg>
-                    Logging out…
+                    {t("logout.loggingOut")}
                   </span>
                 ) : (
-                  "Log Out"
+                  t("logout.confirm")
                 )}
               </Button>
             </div>

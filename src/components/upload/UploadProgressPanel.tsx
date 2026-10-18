@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useFileStore } from "@/stores/fileStore";
 import {
   Upload,
@@ -51,6 +52,7 @@ export function UploadProgressPanel() {
   const removeFromQueue = useFileStore((state) => state.removeFromQueue);
   const [isMinimized, setIsMinimized] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const { t } = useTranslation("drive");
 
   // Auto-show when queue has items
   useEffect(() => {
@@ -106,9 +108,9 @@ export function UploadProgressPanel() {
           <span className="text-xs font-medium truncate pr-2">
             {isAllFinished
               ? errorCount > 0
-                ? `${errorCount} upload${errorCount > 1 ? "s" : ""} failed`
-                : `${doneCount} upload${doneCount !== 1 ? "s" : ""} complete`
-              : `Uploading ${uploadingCount} item${uploadingCount > 1 ? "s" : ""} (${overallProgressPercent}%)`}
+                ? t("upload.failed", { count: errorCount })
+                : t("upload.complete", { count: doneCount })
+              : t("upload.uploadingItems", { count: uploadingCount, percent: overallProgressPercent })}
           </span>
         </div>
         
@@ -117,7 +119,7 @@ export function UploadProgressPanel() {
             type="button"
             onClick={() => setIsMinimized(!isMinimized)}
             className="h-7 w-7 flex items-center justify-center text-[#444746] hover:text-[#1f1f1f] dark:text-[#c4c7c5] dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-700/60 rounded-full transition-colors cursor-pointer border-0 bg-transparent outline-none"
-            title={isMinimized ? "Expand" : "Collapse"}
+            title={isMinimized ? t("upload.expand") : t("upload.collapse")}
           >
             {isMinimized ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </button>
@@ -125,7 +127,7 @@ export function UploadProgressPanel() {
             type="button"
             onClick={handleClose}
             className="h-7 w-7 flex items-center justify-center text-[#444746] hover:text-[#1f1f1f] dark:text-[#c4c7c5] dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-700/60 rounded-full transition-colors cursor-pointer border-0 bg-transparent outline-none"
-            title="Close"
+            title={t("upload.close")}
           >
             <X className="h-4 w-4" />
           </button>
@@ -161,7 +163,7 @@ export function UploadProgressPanel() {
                   )}
                   {item.status === "pending" && (
                     <span className="text-[10px] text-[#444746] dark:text-[#c4c7c5] font-medium bg-[#f0f4f9] dark:bg-[#282a2c] px-2 py-0.5 rounded-full">
-                      Queued
+                      {t("upload.queued")}
                     </span>
                   )}
                   
@@ -180,7 +182,7 @@ export function UploadProgressPanel() {
               <div className="flex items-center justify-between text-[11px] text-[#444746] dark:text-[#8e918f]">
                 <span>{(item.size / (1024 * 1024)).toFixed(2)} MB</span>
                 {item.status === "uploading" && (
-                  <span className="text-[#0b57d0] dark:text-[#a8c7fa] text-[10px]">Uploading...</span>
+                  <span className="text-[#0b57d0] dark:text-[#a8c7fa] text-[10px]">{t("upload.uploading")}</span>
                 )}
               </div>
 

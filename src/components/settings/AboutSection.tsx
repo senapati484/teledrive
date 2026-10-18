@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Bug, ShieldAlert } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -22,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 export default function AboutSection() {
+  const { t } = useTranslation("settings");
   const [version, setVersion] = useState("0.1.1");
   const [checking, setChecking] = useState(false);
 
@@ -44,7 +46,7 @@ export default function AboutSection() {
       await openUrl(url);
     } catch (err) {
       console.error("Failed to open URL:", err);
-      toast.error("Failed to open link.");
+      toast.error(t("about.toasts.openLinkFailed"));
     }
   };
 
@@ -52,8 +54,8 @@ export default function AboutSection() {
     setChecking(true);
     setTimeout(() => {
       setChecking(false);
-      toast.success("You're up to date!", {
-        description: `TeleDrive v${version} is the latest version.`,
+      toast.success(t("about.toasts.upToDate"), {
+        description: t("about.toasts.latestVersion", { version }),
       });
     }, 800);
   };
@@ -61,9 +63,9 @@ export default function AboutSection() {
   return (
     <div className="space-y-6 select-none">
       <div>
-        <h3 className="text-base font-semibold text-[#1F1F1F] dark:text-[#E3E3E3]">About TeleDrive</h3>
+        <h3 className="text-base font-semibold text-[#1F1F1F] dark:text-[#E3E3E3]">{t("about.title")}</h3>
         <p className="text-sm text-[#444746] dark:text-[#C4C7C5] mt-1">
-          Learn more about the application, updates, and open-source project.
+          {t("about.description")}
         </p>
       </div>
 
@@ -71,7 +73,7 @@ export default function AboutSection() {
         <div className="flex items-center gap-3.5">
           <img
             src="/teledrive.png"
-            alt="TeleDrive Logo"
+            alt={t("about.logoAlt")}
             className="h-12 w-12 object-contain rounded-2xl shrink-0 border border-slate-200/80 dark:border-slate-700/80 p-0.5 bg-white dark:bg-[#282A2C]"
           />
           <div className="space-y-1">
@@ -82,13 +84,13 @@ export default function AboutSection() {
               </span>
             </div>
             <p className="text-xs text-[#747775]">
-              Virtual cloud storage client backed by Telegram
+              {t("about.tagline")}
             </p>
           </div>
         </div>
 
         <p className="text-xs text-[#444746] dark:text-[#C4C7C5] leading-relaxed">
-          TeleDrive is an open-source, cross-platform cloud drive client powered by Telegram. It maps your file storage to a private Telegram channel and organizes your files into a virtual hierarchical drive with fast search, preview, and real-time synchronization.
+          {t("about.summary")}
         </p>
 
         <div className="flex flex-wrap gap-2.5 pt-1">
@@ -99,7 +101,7 @@ export default function AboutSection() {
             className="rounded-full text-xs font-medium gap-2 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer h-9 px-4"
           >
             <GithubIcon className="h-4 w-4" />
-            GitHub Repository
+            {t("about.githubRepository")}
           </Button>
           <Button
             variant="outline"
@@ -108,20 +110,20 @@ export default function AboutSection() {
             className="rounded-full text-xs font-medium gap-2 border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer h-9 px-4"
           >
             <Bug className="h-4 w-4 text-[#444746] dark:text-[#C4C7C5]" />
-            Report an Issue
+            {t("about.reportIssue")}
           </Button>
         </div>
 
         <div className="pt-4 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between flex-wrap gap-3">
           <div className="text-xs text-[#747775]">
-            Channel-based cloud storage architecture
+            {t("about.architecture")}
           </div>
           <Button
             onClick={handleCheckUpdates}
             disabled={checking}
             className="rounded-full text-xs font-medium bg-[#0B57D0] hover:bg-[#0842A0] text-white dark:bg-[#A8C7FA] dark:hover:bg-[#D3E3FD] dark:text-[#062E6F] px-5 h-9 cursor-pointer transition-colors shadow-xs"
           >
-            {checking ? "Checking for updates..." : "Check for Updates"}
+            {checking ? t("about.checkingUpdates") : t("about.checkUpdates")}
           </Button>
         </div>
       </div>
@@ -130,9 +132,9 @@ export default function AboutSection() {
       <div className="flex gap-3.5 p-4 rounded-2xl bg-slate-50 dark:bg-[#282A2C]/50 border border-slate-200/70 dark:border-slate-800 text-[#444746] dark:text-[#C4C7C5]">
         <ShieldAlert className="h-5 w-5 shrink-0 mt-0.5 text-[#0B57D0] dark:text-[#A8C7FA]" />
         <div className="space-y-1 text-xs leading-relaxed">
-          <h5 className="font-semibold text-[#1F1F1F] dark:text-[#E3E3E3]">Disclaimer</h5>
+          <h5 className="font-semibold text-[#1F1F1F] dark:text-[#E3E3E3]">{t("about.disclaimer.title")}</h5>
           <p>
-            TeleDrive is an independent open-source client application and is not affiliated with, authorized, maintained, sponsored or endorsed by Telegram FZ-LLC or any of its affiliates.
+            {t("about.disclaimer.body")}
           </p>
         </div>
       </div>

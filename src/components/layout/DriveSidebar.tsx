@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
+import { Trans, useTranslation } from "react-i18next";
 import { Cloud } from "lucide-react";
 import { NewActionButton } from "./NewActionButton";
 import { cn } from "@/lib/utils";
@@ -40,6 +41,7 @@ export const DriveSidebar = React.memo(function DriveSidebar({
   handleSidebarDrop,
 }: DriveSidebarProps) {
   const location = useLocation();
+  const { t } = useTranslation("drive");
 
   return (
     <div className="flex flex-col h-full bg-background select-none">
@@ -103,7 +105,7 @@ export const DriveSidebar = React.memo(function DriveSidebar({
       <div className="px-4 pb-4 pt-3 space-y-2.5 select-none border-t border-slate-200/50 dark:border-slate-800/40">
         <div className="flex items-center gap-2 text-xs font-semibold text-[#444746] dark:text-[#c4c7c5]">
           <Cloud className="h-4.5 w-4.5 text-[#0b57d0] dark:text-[#a8c7fa]" />
-          <span>Storage</span>
+          <span>{t("sidebar.storage")}</span>
         </div>
 
         {/* Google style linear progress bar */}
@@ -113,13 +115,15 @@ export const DriveSidebar = React.memo(function DriveSidebar({
 
         <div className="flex flex-col gap-0.5">
           <span className="text-xs text-[#444746] dark:text-[#c4c7c5]">
-            <strong className="font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">
-              {formattedUsedSize}
-            </strong>{" "}
-            of Unlimited used
+            <Trans
+              t={t}
+              i18nKey="sidebar.usedOfUnlimited"
+              values={{ size: formattedUsedSize }}
+              components={{ strong: <strong className="font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]" /> }}
+            />
           </span>
           <span className="text-[11px] text-[#0b57d0] dark:text-[#a8c7fa] font-medium">
-            Telegram Cloud Storage
+            {t("sidebar.telegramCloudStorage")}
           </span>
         </div>
       </div>

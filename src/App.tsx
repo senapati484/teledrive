@@ -2,6 +2,7 @@ import { lazy, Suspense, useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./stores/authStore";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { restoreSession } from "./lib/telegram/restoreSession";
 import { bootstrapTeleDrive } from "./lib/telegram/bootstrap";
 import { Toaster } from "@/components/ui/sonner";
@@ -33,12 +34,13 @@ function LoadingFallback() {
 
 // Splash Screen Loader
 function SplashLoader({ status }: { status: string }) {
+  const { t } = useTranslation("drive");
   return (
     <div className="flex h-screen w-screen flex-col items-center justify-center bg-background text-foreground gap-4 select-none">
       <div className="flex flex-col items-center gap-4">
         <img
           src="/teledrive.png"
-          alt="TeleDrive Logo"
+          alt={t("logoAlt")}
           className="h-16 w-16 object-contain shrink-0"
         />
         <div className="flex items-center gap-2.5 text-[#444746] dark:text-[#C4C7C5] font-medium bg-surface dark:bg-[#1E1F20] border border-slate-200/80 dark:border-slate-800/80 px-5 py-2 rounded-full shadow-xs">
@@ -67,7 +69,8 @@ import { useTheme } from "./hooks/useTheme";
 function App() {
   useTheme(); // Initialize theme logic
   const [isRestoring, setIsRestoring] = useState(true);
-  const [status] = useState("Connecting to Telegram...");
+  const { t } = useTranslation("drive");
+  const status = t("splash.connecting");
 
   useEffect(() => {
     let active = true;

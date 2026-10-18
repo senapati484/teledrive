@@ -6,6 +6,7 @@
 import { memo, useState, useMemo, useCallback } from "react";
 import { Search, Check } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   content: string;
@@ -103,6 +104,7 @@ export const CsvTableViewer = memo(function CsvTableViewer({
   isDark = false,
   className = "",
 }: Props) {
+  const { t } = useTranslation("preview");
   const [filterQuery, setFilterQuery] = useState("");
   const [copiedCell, setCopiedCell] = useState<string | null>(null);
 
@@ -133,9 +135,9 @@ export const CsvTableViewer = memo(function CsvTableViewer({
   const handleCopyCell = useCallback((val: string, key: string) => {
     navigator.clipboard.writeText(val);
     setCopiedCell(key);
-    toast.success("Copied cell value to clipboard");
+    toast.success(t("csv.toast.copied"));
     setTimeout(() => setCopiedCell(null), 1500);
-  }, []);
+  }, [t]);
 
   const totalCols = headers.length;
 
@@ -177,7 +179,7 @@ export const CsvTableViewer = memo(function CsvTableViewer({
             <Search className="h-3.5 w-3.5 shrink-0 opacity-60" />
             <input
               type="text"
-              placeholder={`Filter ${dataRows.length} rows…`}
+              placeholder={t("csv.filterPlaceholder", { count: dataRows.length })}
               value={filterQuery}
               onChange={(e) => setFilterQuery(e.target.value)}
               className="bg-transparent border-0 outline-none w-full text-xs"
@@ -188,7 +190,7 @@ export const CsvTableViewer = memo(function CsvTableViewer({
                 onClick={() => setFilterQuery("")}
                 className="text-[10px] opacity-60 hover:opacity-100 cursor-pointer"
               >
-                Clear
+                {t("csv.clear")}
               </button>
             )}
           </div>
@@ -196,10 +198,10 @@ export const CsvTableViewer = memo(function CsvTableViewer({
 
         <div className="flex items-center gap-2 text-xs font-mono opacity-70">
           <span>
-            {filteredRows.length} of {dataRows.length} rows
+            {t("csv.rowsShown", { shown: filteredRows.length, count: dataRows.length })}
           </span>
           <span>·</span>
-          <span>{totalCols} columns</span>
+          <span>{t("csv.columns", { count: totalCols })}</span>
         </div>
       </div>
 
@@ -213,7 +215,7 @@ export const CsvTableViewer = memo(function CsvTableViewer({
       >
         {allRows.length === 0 ? (
           <div className="h-full flex items-center justify-center opacity-60 text-sm">
-            Empty dataset
+            {t("csv.empty")}
           </div>
         ) : (
           <table
@@ -250,7 +252,7 @@ export const CsvTableViewer = memo(function CsvTableViewer({
                     title={h}
                   >
                     <div className="flex items-center justify-between gap-1.5">
-                      <span className="truncate">{h || `Column ${getColLetter(i)}`}</span>
+                      <span className="truncate">{h || t("csv.columnFallback", { letter: getColLetter(i) })}</span>
                       <span
                         className="text-[9px] font-normal px-1 py-0.5 rounded opacity-60"
                         style={{ background: isDark ? "#333537" : "#dfe3eb" }}
@@ -309,7 +311,7 @@ export const CsvTableViewer = memo(function CsvTableViewer({
                         <td
                           key={cIdx}
                           onClick={() => handleCopyCell(cellVal, cellKey)}
-                          title={`${cellVal} (Click to copy)`}
+                          title={t("csv.cellTitle", { value: cellVal })}
                           className="p-2.5 border-b border-r truncate max-w-[320px] cursor-pointer hover:bg-blue-500/15 relative"
                           style={{
                             borderColor: isDark ? "#2e3134" : "#e0e3e7",

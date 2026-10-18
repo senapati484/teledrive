@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { Trans, useTranslation } from "react-i18next";
 import { AlertTriangle, Eye, EyeOff, Loader2, ArrowLeft, MessageSquare, Lock } from "lucide-react";
 import { Api } from "telegram";
 import { useAuthStore } from "@/stores/authStore";
@@ -117,6 +118,7 @@ interface OtpBoxProps {
 }
 
 function OtpBox({ value, onChange, onKeyDown, onPaste, inputRef, disabled, index, isFilled }: OtpBoxProps) {
+  const { t } = useTranslation("auth");
   const [focused, setFocused] = useState(false);
 
   return (
@@ -137,7 +139,7 @@ function OtpBox({ value, onChange, onKeyDown, onPaste, inputRef, disabled, index
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         disabled={disabled}
-        aria-label={`Digit ${index + 1}`}
+        aria-label={t("otp.digit", { number: index + 1 })}
         className={`
           w-12 h-14 text-center font-bold text-xl rounded-2xl
           border-2 outline-none transition-all duration-200
@@ -235,6 +237,7 @@ function BackButton({ onClick, disabled, label }: { onClick: () => void; disable
 
 // ─── Main AuthPage ────────────────────────────────────────────────────────────
 export default function AuthPage() {
+  const { t } = useTranslation("auth");
   const navigate = useNavigate();
   const setSession = useAuthStore((state) => state.setSession);
 
@@ -252,7 +255,7 @@ export default function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [bootstrapStatus, setBootstrapStatus] = useState("Connecting to Telegram...");
+  const [bootstrapStatus, setBootstrapStatus] = useState(() => t("bootstrap.connecting"));
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
 
   // OTP box refs
@@ -292,8 +295,8 @@ export default function AuthPage() {
   // ── Step 1: Send code ────────────────────────────────────────────────────
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phone.trim()) { setError("Phone number is required"); return; }
-    if (!configApiId || !configApiHash) { setError("API credentials not configured."); return; }
+    if (!phone.trim()) { setError(t("errors.phoneRequired")); return; }
+    if (!configApiId || !configApiHash) { setError(t("errors.apiCredentialsMissing")); return; }
 
     setLoading(true);
     setError(null);
@@ -313,10 +316,10 @@ export default function AuthPage() {
 
       setPhoneCodeHash((result as any).phoneCodeHash);
       setStep("otp");
-      toast.success("Verification code sent to your Telegram!");
+      toast.success(t("toasts.codeSent"));
     } catch (err: any) {
       console.error("Send code failed:", err);
-      setError(err.message || "Failed to send code. Make sure the country code is correct.");
+      setError(err.message || t("errors.sendCodeFailed"));
     } finally {
       setLoading(false);
     }
@@ -352,7 +355,7 @@ export default function AuthPage() {
   const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = otp.join("");
-    if (code.length !== 5) { setError("Please enter the complete 5-digit code."); return; }
+    if (code.length !== 5) { setError(t("errors.incompleteCode")); return; }
     if (!configApiId || !configApiHash) return;
 
     setLoading(true);
@@ -379,7 +382,7 @@ export default function AuthPage() {
       }
     } catch (err: any) {
       console.error("OTP verification failed:", err);
-      setError(err.message || "Invalid verification code.");
+      setError(err.message || t("errors.invalidCode"));
       setOtp(["", "", "", "", ""]);
       otpRefs[0].current?.focus();
     } finally {
@@ -390,7 +393,7 @@ export default function AuthPage() {
   // ── Step 3: 2FA password ─────────────────────────────────────────────────
   const handleVerifyPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!password) { setError("Password is required."); return; }
+    if (!password) { setError(t("errors.passwordRequired")); return; }
 
     setLoading(true);
     setError(null);
@@ -413,16 +416,16 @@ export default function AuthPage() {
       const msg = err.message || "";
       // Translate raw Telegram errors into user-friendly messages
       if (msg.includes("FLOOD_WAIT")) {
-        const seconds = msg.match(/\d+/)?.[0] || "a few";
-        setError(`Too many attempts. Please wait ${seconds} seconds before trying again.`);
+        const seconds = msg.match(/\d+/)?.[0];
+        setError(seconds ? t("errors.floodWait", { count: Number(seconds) }) : t("errors.floodWaitFewSeconds"));
       } else if (msg.includes("PASSWORD_HASH_INVALID") || msg.includes("Incorrect password")) {
-        setError("Incorrect password. Please check and try again.");
+        setError(t("errors.incorrectPassword"));
       } else if (msg.includes("PASSWORD_EMPTY")) {
-        setError("Password cannot be empty.");
+        setError(t("errors.passwordEmpty"));
       } else if (msg.includes("Platform compatibility")) {
         setError(msg);
       } else {
-        setError(msg || "Incorrect cloud password. Please try again.");
+        setError(msg || t("errors.incorrectCloudPassword"));
       }
     } finally {
       setLoading(false);
@@ -451,12 +454,12 @@ export default function AuthPage() {
       await bootstrapTeleDrive((status) => {
         setBootstrapStatus(status);
       }, phone.trim());
-      toast.success("TeleDrive is ready!");
+      toast.success(t("toasts.ready"));
       setSession(sessionString, phone.trim());
       navigate("/drive/my-drive");
     } catch (err: any) {
       console.error("Bootstrap failed:", err);
-      setBootstrapError(err.message || "Failed to bootstrap storage channel. Please retry.");
+      setBootstrapError(err.message || t("errors.bootstrapFailed"));
     }
   };
 
@@ -470,7 +473,7 @@ export default function AuthPage() {
             <Loader2 className="h-12 w-12 animate-spin text-[#0B57D0] dark:text-[#A8C7FA] absolute inset-0" />
           </div>
           <span className="text-xs font-medium text-[#747775] dark:text-[#9aa0a6] mt-1">
-            Loading TeleDrive...
+            {t("loading")}
           </span>
         </div>
       </div>
@@ -510,7 +513,7 @@ export default function AuthPage() {
               </span>
             </Link>
             <p className="text-[10px] font-medium tracking-widest uppercase text-[#9aa0a6] dark:text-[#747775] mt-1">
-              Cloud Storage
+              {t("tagline")}
             </p>
           </div>
 
@@ -526,16 +529,16 @@ export default function AuthPage() {
             <form onSubmit={handleSendCode} className="space-y-5 animate-slide-up-fade" noValidate>
               <div className="text-center space-y-1.5 mb-6">
                 <h1 className="text-[22px] font-normal text-[#1F1F1F] dark:text-[#E3E3E3] leading-tight">
-                  Sign in
+                  {t("phone.title")}
                 </h1>
                 <p className="text-sm text-[#747775] dark:text-[#9aa0a6] leading-relaxed">
-                  Use your Telegram account to continue
+                  {t("phone.subtitle")}
                 </p>
               </div>
 
               <FloatingInput
                 id="phone-number"
-                label="Phone number (+country code)"
+                label={t("phone.label")}
                 type="tel"
                 value={phone}
                 onChange={(e) => { setPhone(e.target.value); setError(null); }}
@@ -548,15 +551,20 @@ export default function AuthPage() {
               <div className="pt-1">
                 <PrimaryButton
                   loading={loading}
-                  loadingLabel="Sending code..."
-                  label="Next"
+                  loadingLabel={t("phone.sending")}
+                  label={t("phone.next")}
                   disabled={loading || !phone.trim()}
                 />
               </div>
 
               <p className="text-center text-[11px] text-[#9aa0a6] dark:text-[#747775] leading-relaxed pt-1">
-                By continuing, you agree to our{" "}
-                <span className="text-[#0B57D0] dark:text-[#A8C7FA] cursor-pointer hover:underline">Terms of Service</span>
+                <Trans
+                  t={t}
+                  i18nKey="phone.terms"
+                  components={{
+                    terms: <span className="text-[#0B57D0] dark:text-[#A8C7FA] cursor-pointer hover:underline" />,
+                  }}
+                />
               </p>
             </form>
           )}
@@ -569,17 +577,23 @@ export default function AuthPage() {
                   <MessageSquare className="h-5 w-5 text-[#0B57D0] dark:text-[#A8C7FA]" />
                 </div>
                 <h1 className="text-[22px] font-normal text-[#1F1F1F] dark:text-[#E3E3E3] leading-tight">
-                  Verify your number
+                  {t("otp.title")}
                 </h1>
                 <p className="text-sm text-[#747775] dark:text-[#9aa0a6] leading-relaxed">
-                  We sent a code to{" "}
-                  <button
-                    type="button"
-                    onClick={() => { if (!loading) setStep("phone"); }}
-                    className="font-semibold text-[#1F1F1F] dark:text-[#E3E3E3] hover:text-[#0B57D0] dark:hover:text-[#A8C7FA] transition-colors underline-offset-2 hover:underline cursor-pointer"
-                  >
-                    {phone}
-                  </button>
+                  <Trans
+                    t={t}
+                    i18nKey="otp.subtitle"
+                    values={{ phone }}
+                    components={{
+                      phone: (
+                        <button
+                          type="button"
+                          onClick={() => { if (!loading) setStep("phone"); }}
+                          className="font-semibold text-[#1F1F1F] dark:text-[#E3E3E3] hover:text-[#0B57D0] dark:hover:text-[#A8C7FA] transition-colors underline-offset-2 hover:underline cursor-pointer"
+                        />
+                      ),
+                    }}
+                  />
                 </p>
               </div>
 
@@ -614,14 +628,14 @@ export default function AuthPage() {
               <div className="space-y-2.5">
                 <PrimaryButton
                   loading={loading}
-                  loadingLabel="Verifying..."
-                  label="Verify"
+                  loadingLabel={t("otp.verifying")}
+                  label={t("otp.verify")}
                   disabled={loading || otp.join("").length !== 5}
                 />
                 <BackButton
                   disabled={loading}
                   onClick={() => { setStep("phone"); setOtp(["", "", "", "", ""]); setError(null); }}
-                  label="Try a different number"
+                  label={t("otp.differentNumber")}
                 />
               </div>
             </form>
@@ -635,17 +649,17 @@ export default function AuthPage() {
                   <Lock className="h-5 w-5 text-[#F9AB00] dark:text-[#fdd663]" />
                 </div>
                 <h1 className="text-[22px] font-normal text-[#1F1F1F] dark:text-[#E3E3E3] leading-tight">
-                  Two-Step Verification
+                  {t("password.title")}
                 </h1>
                 <p className="text-sm text-[#747775] dark:text-[#9aa0a6] leading-relaxed">
-                  Your account has an additional cloud password
+                  {t("password.subtitle")}
                 </p>
               </div>
 
               <div className="mt-2">
                 <FloatingInput
                   id="cloud-password"
-                  label="Cloud password"
+                  label={t("password.label")}
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => { setPassword(e.target.value); setError(null); }}
@@ -658,7 +672,7 @@ export default function AuthPage() {
                       tabIndex={-1}
                       onClick={() => setShowPassword(!showPassword)}
                       className="text-[#747775] hover:text-[#1F1F1F] dark:hover:text-[#E3E3E3] transition-colors p-1 rounded-lg cursor-pointer"
-                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      aria-label={showPassword ? t("password.hide") : t("password.show")}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -669,14 +683,14 @@ export default function AuthPage() {
               <div className="space-y-2.5 pt-1">
                 <PrimaryButton
                   loading={loading}
-                  loadingLabel="Signing in..."
-                  label="Sign in"
+                  loadingLabel={t("password.signingIn")}
+                  label={t("password.signIn")}
                   disabled={loading || !password}
                 />
                 <BackButton
                   disabled={loading}
                   onClick={() => { setStep("otp"); setPassword(""); setError(null); }}
-                  label="Back to code verification"
+                  label={t("password.back")}
                 />
               </div>
             </form>
@@ -687,10 +701,10 @@ export default function AuthPage() {
             <div className="space-y-6 py-2 text-center animate-slide-up-fade">
               <div className="flex flex-col items-center gap-1.5 mb-2">
                 <h1 className="text-[22px] font-normal text-[#1F1F1F] dark:text-[#E3E3E3]">
-                  Setting up your Drive
+                  {t("bootstrap.title")}
                 </h1>
                 <p className="text-sm text-[#747775] dark:text-[#9aa0a6]">
-                  Preparing your personal Telegram storage…
+                  {t("bootstrap.subtitle")}
                 </p>
               </div>
 
@@ -701,10 +715,10 @@ export default function AuthPage() {
                     type="button"
                     loading={false}
                     loadingLabel=""
-                    label="Retry Setup"
+                    label={t("bootstrap.retry")}
                     onClick={() => {
                       setBootstrapError(null);
-                      setBootstrapStatus("Reconnecting to Telegram...");
+                      setBootstrapStatus(t("bootstrap.reconnecting"));
                       setStep("phone");
                       setTimeout(() => setStep("bootstrap"), 50);
                     }}
@@ -745,7 +759,7 @@ export default function AuthPage() {
 
         {/* Footer note */}
         <p className="text-center text-[11px] text-[#9aa0a6] dark:text-[#5f6368] mt-4">
-          Secured by Telegram MTProto · v0.1.1
+          {t("footer", { version: "0.1.1" })}
         </p>
       </div>
     </div>

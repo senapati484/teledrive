@@ -25,6 +25,7 @@ import {
 import { TeleFile } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { isEditableFile } from "@/lib/files/editableTypes";
+import { useTranslation } from "react-i18next";
 
 interface FileActionsMenuProps {
   file: TeleFile;
@@ -56,6 +57,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
   onUnarchive,
   onOfflineToggle,
 }: FileActionsMenuProps) {
+  const { t } = useTranslation("files");
   const isDirectory = file.mime === "inode/directory" || file.mime === "application/x-directory";
 
   return (
@@ -83,7 +85,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
               className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
             >
               <Eye className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
-              <span>Preview</span>
+              <span>{t("menu.preview")}</span>
             </DropdownMenuItem>
             {onEdit && isEditableFile(file) && (
               <DropdownMenuItem
@@ -91,7 +93,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
                 className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
               >
                 <Pencil className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
-                <span>Edit</span>
+                <span>{t("menu.edit")}</span>
               </DropdownMenuItem>
             )}
             <DropdownMenuItem
@@ -99,7 +101,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
               className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
             >
               <Download className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
-              <span>Download</span>
+              <span>{t("menu.download")}</span>
             </DropdownMenuItem>
             {onOfflineToggle && (
               <DropdownMenuItem
@@ -111,7 +113,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
                     "h-4 w-4 shrink-0 transition-colors",
                     file.offline ? "text-emerald-500 fill-emerald-500/20" : "text-[#444746] dark:text-[#c4c7c5]"
                   )} strokeWidth={1.75} />
-                  <span>Available offline</span>
+                  <span>{t("menu.availableOffline")}</span>
                 </div>
                 {file.offline && <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0" />}
               </DropdownMenuItem>
@@ -128,7 +130,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
               className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
             >
               <Edit2 className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
-              <span>Rename</span>
+              <span>{t("menu.rename")}</span>
             </DropdownMenuItem>
             {onMoveTo && (
               <DropdownMenuItem
@@ -136,7 +138,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
                 className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
               >
                 <FolderInput className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
-                <span>Move to</span>
+                <span>{t("menu.moveTo")}</span>
               </DropdownMenuItem>
             )}
             <DropdownMenuItem
@@ -152,7 +154,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
                 )}
                 strokeWidth={1.75}
               />
-              <span>{file.starred ? "Remove star" : "Add star"}</span>
+              <span>{file.starred ? t("menu.removeStar") : t("menu.addStar")}</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator className="-mx-1.5 my-1 bg-slate-200/70 dark:bg-slate-800/80" />
           </>
@@ -166,7 +168,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
               className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
             >
               <Archive className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
-              <span>Archive</span>
+              <span>{t("menu.archive")}</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator className="-mx-1.5 my-1 bg-slate-200/70 dark:bg-slate-800/80" />
           </>
@@ -178,7 +180,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
               className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
             >
               <ArchiveRestore className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
-              <span>Unarchive</span>
+              <span>{t("menu.unarchive")}</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator className="-mx-1.5 my-1 bg-slate-200/70 dark:bg-slate-800/80" />
           </>
@@ -192,7 +194,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
               className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
             >
               <RotateCcw className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
-              <span>Restore</span>
+              <span>{t("menu.restore")}</span>
             </DropdownMenuItem>
             {onDeletePermanently && (
               <>
@@ -202,7 +204,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
                   className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
                 >
                   <Trash2 className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-                  <span>Delete Permanently</span>
+                  <span>{t("menu.deletePermanently")}</span>
                 </DropdownMenuItem>
               </>
             )}
@@ -214,7 +216,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
               className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
             >
               <Trash2 className="h-4 w-4 shrink-0" strokeWidth={1.75} />
-              <span>Move to Trash</span>
+              <span>{t("menu.moveToTrash")}</span>
             </DropdownMenuItem>
           )
         )}

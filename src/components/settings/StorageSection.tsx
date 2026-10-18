@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { HardDrive, RefreshCw, Info, Loader2, Files, Folder, Trash2, ShieldCheck } from "lucide-react";
+import { Trans, useTranslation } from "react-i18next";
 import { useFileStore } from "@/stores/fileStore";
 import { loadIndex } from "@/lib/storage/metadataStore";
 import { getSecret, VAULT_KEY_CHANNEL_ID, channelIdKey } from "@/lib/secure/vault";
@@ -23,6 +24,7 @@ function safeSize(raw: unknown): number {
 }
 
 export default function StorageSection() {
+  const { t } = useTranslation("settings");
   const files = useFileStore((state) => state.files);
   const setFiles = useFileStore((state) => state.setFiles);
   const phoneNumber = useAuthStore((state) => state.phoneNumber);
@@ -46,7 +48,7 @@ export default function StorageSection() {
         channelId = await getSecret(VAULT_KEY_CHANNEL_ID);
       }
       if (!channelId) {
-        toast.error("Storage channel not initialised yet.");
+        toast.error(t("storage.toasts.channelNotInitialised"));
         return;
       }
       let freshFiles = await loadIndex(channelId);
@@ -57,10 +59,10 @@ export default function StorageSection() {
         console.warn("[StorageSection] Failed to sync offline status with disk:", err);
       }
       setFiles(freshFiles);
-      toast.success("Storage refreshed from Telegram.");
+      toast.success(t("storage.toasts.refreshed"));
     } catch (err: any) {
       console.error("[StorageSection] Recalculate failed:", err);
-      toast.error(err?.message || "Failed to refresh storage data.");
+      toast.error(err?.message || t("storage.toasts.refreshFailed"));
     } finally {
       setIsRefreshing(false);
     }
@@ -70,10 +72,10 @@ export default function StorageSection() {
     <div className="space-y-6 select-none">
       <div className="space-y-1">
         <h2 className="text-xl font-semibold tracking-tight text-[#1F1F1F] dark:text-[#E3E3E3]">
-          Storage
+          {t("storage.title")}
         </h2>
         <p className="text-sm text-[#444746] dark:text-[#C4C7C5]">
-          Monitor your Telegram cloud storage space, active files, and trash retention.
+          {t("storage.description")}
         </p>
       </div>
 
@@ -86,12 +88,12 @@ export default function StorageSection() {
             </div>
             <div>
               <span className="text-[11px] font-semibold text-[#747775] dark:text-[#8E918F] uppercase tracking-wider block">
-                Total Storage Used
+                {t("storage.totalUsed")}
               </span>
               {isRefreshing ? (
                 <span className="text-xl font-bold flex items-center gap-2 text-slate-500 dark:text-slate-400">
                   <Loader2 className="h-4 w-4 animate-spin text-[#0B57D0] dark:text-[#A8C7FA]" />
-                  Calculating…
+                  {t("storage.calculating")}
                 </span>
               ) : (
                 <div className="flex items-baseline gap-2">
@@ -99,7 +101,7 @@ export default function StorageSection() {
                     {formattedSize}
                   </span>
                   <span className="text-xs font-medium text-[#747775] dark:text-[#8E918F]">
-                    of Unlimited
+                    {t("storage.ofUnlimited")}
                   </span>
                 </div>
               )}
@@ -108,7 +110,7 @@ export default function StorageSection() {
 
           <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-500/20 rounded-full px-3 py-1 self-start sm:self-auto">
             <ShieldCheck className="h-3.5 w-3.5" />
-            Unlimited Cloud Storage
+            {t("storage.unlimitedBadge")}
           </span>
         </div>
 
@@ -119,7 +121,7 @@ export default function StorageSection() {
           </div>
           <div className="flex justify-between text-[11px] text-[#747775] dark:text-[#8E918F] font-medium">
             <span>0 Bytes</span>
-            <span>Telegram Channel Storage (Unlimited)</span>
+            <span>{t("storage.meterLabel")}</span>
           </div>
         </div>
 
@@ -131,7 +133,7 @@ export default function StorageSection() {
             </div>
             <div>
               <span className="text-[11px] font-medium text-[#747775] dark:text-[#8E918F] block">
-                Files Stored
+                {t("storage.stats.files")}
               </span>
               <span className="font-bold text-base text-[#1F1F1F] dark:text-[#E3E3E3]">
                 {isRefreshing ? "…" : activeFiles.length}
@@ -145,7 +147,7 @@ export default function StorageSection() {
             </div>
             <div>
               <span className="text-[11px] font-medium text-[#747775] dark:text-[#8E918F] block">
-                Folders Created
+                {t("storage.stats.folders")}
               </span>
               <span className="font-bold text-base text-[#1F1F1F] dark:text-[#E3E3E3]">
                 {isRefreshing ? "…" : activeFolders.length}
@@ -159,7 +161,7 @@ export default function StorageSection() {
             </div>
             <div>
               <span className="text-[11px] font-medium text-[#747775] dark:text-[#8E918F] block">
-                Items in Trash
+                {t("storage.stats.trash")}
               </span>
               <span className="font-bold text-base text-[#1F1F1F] dark:text-[#E3E3E3]">
                 {isRefreshing ? "…" : trashedItems.length}
@@ -181,7 +183,7 @@ export default function StorageSection() {
             ) : (
               <RefreshCw className="h-3.5 w-3.5 text-[#444746] dark:text-[#C4C7C5]" />
             )}
-            {isRefreshing ? "Recalculating…" : "Recalculate Storage"}
+            {isRefreshing ? t("storage.recalculating") : t("storage.recalculate")}
           </Button>
         </div>
       </div>
@@ -191,10 +193,10 @@ export default function StorageSection() {
         <Info className="h-4.5 w-4.5 text-[#0B57D0] dark:text-[#A8C7FA] shrink-0 mt-0.5" />
         <div className="space-y-1">
           <p>
-            Telegram does not impose any limit on the cumulative volume of data stored in private channels.
+            {t("storage.info.noLimit")}
           </p>
           <p>
-            Individual file limits: up to <strong>2 GB</strong> per single file for standard accounts, and up to <strong>4 GB</strong> for Telegram Premium subscribers.
+            <Trans t={t} i18nKey="storage.info.fileLimits" components={{ strong: <strong /> }} />
           </p>
         </div>
       </div>

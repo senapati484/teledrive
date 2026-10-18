@@ -19,6 +19,7 @@
  * idle.
  */
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Cloud,
   CheckCircle2,
@@ -34,6 +35,7 @@ const AUTO_DISMISS_MS = 6000;
 
 export function BackupProgressOverlay() {
   const state = useBackupProgressStore();
+  const { t } = useTranslation("drive");
 
   // Track the last "done/failed/cancelled" timestamp so we can auto-
   // dismiss the panel after AUTO_DISMISS_MS. The store doesn't own
@@ -73,15 +75,15 @@ export function BackupProgressOverlay() {
 
   const title = isActive
     ? state.status === "walking"
-      ? "Scanning folders…"
-      : `Backing up — ${state.uploaded} / ${state.total}`
+      ? t("backup.scanning")
+      : t("backup.backingUp", { uploaded: state.uploaded, total: state.total })
     : state.status === "done"
       ? state.lastResult && state.lastResult.filesUploaded > 0
-        ? `Backup complete — ${state.lastResult.filesUploaded} file${state.lastResult.filesUploaded === 1 ? "" : "s"} uploaded`
-        : "Backup complete — nothing changed"
+        ? t("backup.completeUploaded", { count: state.lastResult.filesUploaded })
+        : t("backup.completeNothingChanged")
       : state.status === "cancelled"
-        ? "Backup cancelled"
-        : "Backup failed";
+        ? t("backup.cancelled")
+        : t("backup.failed");
 
   const sublabel = (() => {
     if (isActive) {
@@ -93,27 +95,27 @@ export function BackupProgressOverlay() {
         const r = state.retry;
         const waitSec = Math.max(1, Math.round(r.waitMs / 1000));
         if (r.floodSeconds != null) {
-          return `Retrying ${r.attempt}/${r.maxAttempts} — Telegram rate limit, waiting ${waitSec}s`;
+          return t("backup.retryRateLimit", { attempt: r.attempt, maxAttempts: r.maxAttempts, seconds: waitSec });
         }
-        return `Retrying ${r.attempt}/${r.maxAttempts} — network blip, waiting ${waitSec}s`;
+        return t("backup.retryNetwork", { attempt: r.attempt, maxAttempts: r.maxAttempts, seconds: waitSec });
       }
       if (state.status === "uploading" && state.currentFile) {
         return truncateMid(state.currentFile, 56);
       }
       if (state.status === "walking") {
-        return "Reading folder contents from disk";
+        return t("backup.readingFolders");
       }
       return "";
     }
     if (state.status === "done" && state.lastResult) {
       const parts: string[] = [];
-      if (state.lastResult.filesUploaded > 0) parts.push(`${state.lastResult.filesUploaded} uploaded`);
-      if (state.lastResult.filesSkipped > 0) parts.push(`${state.lastResult.filesSkipped} unchanged`);
-      if (state.lastResult.filesFailed > 0) parts.push(`${state.lastResult.filesFailed} failed`);
+      if (state.lastResult.filesUploaded > 0) parts.push(t("backup.summaryUploaded", { count: state.lastResult.filesUploaded }));
+      if (state.lastResult.filesSkipped > 0) parts.push(t("backup.summaryUnchanged", { count: state.lastResult.filesSkipped }));
+      if (state.lastResult.filesFailed > 0) parts.push(t("backup.summaryFailed", { count: state.lastResult.filesFailed }));
       return parts.join(" · ");
     }
     if (state.status === "failed" && state.error) return state.error;
-    if (state.status === "cancelled") return "You can resume anytime.";
+    if (state.status === "cancelled") return t("backup.resumeAnytime");
     return "";
   })();
 
@@ -190,7 +192,7 @@ export function BackupProgressOverlay() {
             type="button"
             onClick={() => state.clear()}
             className="h-7 w-7 rounded-full hover:bg-[#F0F4F9] dark:hover:bg-[#333537] flex items-center justify-center text-[#444746] dark:text-[#C4C7C5] hover:text-[#1F1F1F] dark:hover:text-[#E3E3E3] shrink-0 transition-colors cursor-pointer"
-            aria-label="Dismiss"
+            aria-label={t("backup.dismiss")}
           >
             <X className="h-4 w-4" />
           </button>
