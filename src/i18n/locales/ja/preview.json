@@ -1,0 +1,153 @@
+{
+  "loading": "読み込み中…",
+  "downloadInstead": "代わりにダウンロード",
+  "truncatedNotice": "--- [プレビューが切り詰められました: ファイルが 3MB の制限を超えています] ---",
+  "errors": {
+    "offlineUnavailable": "現在オフラインですが、このファイルは「オフラインで使用可能」としてマークされていません。インターネットに接続して開きます。",
+    "downloadFailed": "ファイルのダウンロードに失敗しました。"
+  },
+  "toast": {
+    "preparingSystemViewer": "システム ビューア用のドキュメントを準備しています...",
+    "openedInSystemViewer": "システム ビューアでドキュメントを開きました。",
+    "systemViewerFailed": "システム ビューアを開けませんでした。代わりにファイルをダウンロードしています...",
+    "saved": "「{{name}}」は正常に保存されました。",
+    "saveFailed": "保存に失敗しました: {{メッセージ}}",
+    "unknownError": "不明なエラー",
+    "copied": "クリップボードにコピーされました",
+    "jsonFormatted": "JSON形式",
+    "invalidJson": "無効な JSON: {{メッセージ}}"
+  },
+  "topbar": {
+    "editing": "編集",
+    "saved": "保存されました",
+    "cancel": "キャンセル",
+    "saving": "保存中…",
+    "save": "保存",
+    "formatJsonTitle": "JSON形式（Prettify）",
+    "format": "形式",
+    "disableWrap": "ワードラップを無効にする",
+    "enableWrap": "ワードラップを有効にする",
+    "fontSizeTitle": "フォントサイズ: {{size}}px (クリックして切り替え)",
+    "copyTitle": "コンテンツをクリップボードにコピーする",
+    "runTitle": "O2 コードエディターで実行",
+    "run": "走る",
+    "editTitle": "ファイルを編集する",
+    "edit": "編集",
+    "toggleDetails": "詳細を切り替え",
+    "openInSystemViewerTitle": "システムのデフォルトの PDF ビューアで開く",
+    "openInSystemViewer": "システムビューアで開く",
+    "download": "ダウンロード",
+    "close": "近い"
+  },
+  "viewMode": {
+    "preview": "プレビュー",
+    "source": "ソース",
+    "table": "テーブル",
+    "raw": "生",
+    "vector": "ベクター",
+    "code": "コード"
+  },
+  "image": {
+    "zoomOut": "ズームアウト",
+    "zoomIn": "ズームイン",
+    "resetZoom": "ズームフィット/リセット",
+    "rotateCounterClockwise": "反時計回りに回転",
+    "rotateClockwise": "時計回りに回転",
+    "toggleGrid": "グリッドの背景の切り替え"
+  },
+  "details": {
+    "title": "ファイルの詳細",
+    "name": "名前",
+    "dimensions": "寸法",
+    "loadingDimensions": "読み込み中...",
+    "fileSize": "ファイルサイズ",
+    "mimeType": "MIME タイプ",
+    "path": "パス",
+    "uploadedAt": "アップロード先"
+  },
+  "media": {
+    "skipBack": "10 秒前にスキップ",
+    "skipForward": "10 秒スキップ",
+    "audioTrack": "オーディオトラック"
+  },
+  "archive": {
+    "badge": "{{ext}} アーカイブ",
+    "description": "圧縮されたアーカイブをブラウザーで直接プレビューすることはできません。このアーカイブをダウンロードして、その内容をコンピュータに抽出して表示します。",
+    "download": "アーカイブをダウンロード"
+  },
+  "unsupported": {
+    "description": "このファイル タイプではプレビューを利用できません。ダウンロードして、システム上の互換性のあるアプリケーションで開くことができます。",
+    "download": "ダウンロードファイル"
+  },
+  "status": {
+    "words_one": "{{カウント, 数値}} 単語",
+    "words_other": "{{カウント, 数値}} 単語",
+    "readingTime_one": "{{count}} 分で読みました",
+    "readingTime_other": "{{count}} 分で読みました",
+    "rows_one": "{{カウント, 数値}} 行",
+    "rows_other": "{{カウント, 数値}} 行",
+    "lines_one": "{{カウント, 数値}} 行",
+    "lines_other": "{{カウント, 数値}} 行",
+    "wrapOn": "ラップ: オン",
+    "wrapOff": "ラップ: オフ",
+    "cursor": "Ln {{line}}、Col {{col}}",
+    "editorInfo": "タブ：スペース2個・UTF-8・LF"
+  },
+  "pdfErrorBoundary": {
+    "title": "PDF ビューアでエラーが発生しました",
+    "description": "PDF をレンダリングできませんでした。リロードしてみてください。",
+    "retry": "リトライ"
+  },
+  "pdf": {
+    "loading": "PDFドキュメントをロードしています",
+    "preparing": "書類を準備しています...",
+    "errorTitle": "ドキュメントをプレビューできない",
+    "openInSystemViewer": "システムビューアで開く",
+    "noDocument": "ドキュメントがロードされていません。",
+    "errors": {
+      "noData": "文書データを受信しませんでした。",
+      "invalid": "このファイルは破損しているか、有効な PDF ではないようです。",
+      "passwordProtected": "このPDFはパスワードで保護されています。パスワードで保護された PDF はサポートされていません。",
+      "engineUnavailable": "PDF エンジンは使用できません。アプリケーションをリロードしてください。",
+      "loadFailed": "PDFドキュメントの読み込みに失敗しました。ファイルが破損している可能性があります。"
+    },
+    "toolbar": {
+      "previousPage": "前のページ (↑ / PageUp)",
+      "jumpToPage": "クリックするとページにジャンプします",
+      "nextPage": "次のページ (↓ / PageDown)",
+      "zoomOut": "ズームアウト (Ctrl+-)",
+      "resetZoom": "100% にリセット (Ctrl+0)",
+      "zoomIn": "ズームイン (Ctrl+=)",
+      "fitWidth": "幅に合わせる",
+      "fitPage": "ページ全体にフィット",
+      "fit": "フィット",
+      "rotate": "時計回りに回転",
+      "print": "ドキュメントの印刷",
+      "openInSystemAppTitle": "システムのデフォルト PDF アプリケーションで開く",
+      "systemViewer": "システムビューア"
+    }
+  },
+  "csv": {
+    "toast": {
+      "copied": "セル値をクリップボードにコピーしました"
+    },
+    "filterPlaceholder_one": "{{count}} 行をフィルタリング…",
+    "filterPlaceholder_other": "{{count}} 行をフィルタリング…",
+    "clear": "クリア",
+    "rowsShown_one": "{{count}} 行中 {{表示}}",
+    "rowsShown_other": "{{count}} 行中 {{表示}}",
+    "columns_one": "{{count}} 列",
+    "columns_other": "{{count}} 列",
+    "empty": "空のデータセット",
+    "columnFallback": "列 {{文字}}",
+    "cellTitle": "{{値}} (クリックしてコピー)"
+  },
+  "codeEditor": {
+    "loading": "エディターを読み込み中…"
+  },
+  "syntaxHighlighter": {
+    "ariaLabel": "コードビューア",
+    "largeFile_one": "大きなファイル ({{count, number}} 行) - パフォーマンスのために構文の強調表示はスキップされます",
+    "largeFile_other": "大きなファイル ({{count, number}} 行) — パフォーマンスのために構文の強調表示はスキップされます"
+  }
+}

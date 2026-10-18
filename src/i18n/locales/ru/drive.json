@@ -1,0 +1,116 @@
+{
+  "logoAlt": "Логотип TeleDrive",
+  "actions": {
+    "close": "Закрыть"
+  },
+  "splash": {
+    "connecting": "Подключение к Telegram..."
+  },
+  "nav": {
+    "myDrive": "Мой диск",
+    "recent": "Недавние",
+    "starred": "Избранное",
+    "archived": "Архив",
+    "trash": "Корзина",
+    "backups": "Резервные копии",
+    "settings": "Настройки"
+  },
+  "header": {
+    "switchToLight": "Переключить на светлую тему",
+    "switchToDark": "Переключить на тёмную тему",
+    "settings": "Настройки"
+  },
+  "indexQueue": {
+    "saveFailedTitle": "Не удалось сохранить индекс — нажмите для повтора",
+    "liveSyncTitle": "Синхронизация между устройствами в реальном времени",
+    "backupSnapshotTitle": "Создание снимка резервной копии...",
+    "saveFailed": "Сбой сохранения",
+    "retryingIn": "Повтор через {{seconds}}с",
+    "synced": "Синхронизировано",
+    "backupInProgress": "Резервное копирование...",
+    "syncing": "Синхронизация",
+    "retry": "Повторить"
+  },
+  "dropOverlay": {
+    "title": "Перетащите файлы для загрузки на Мой диск",
+    "description": "Отпустите, чтобы начать загрузку"
+  },
+  "offlineBanner": "Вы находитесь в автономном режиме. Некоторые функции могут быть недоступны.",
+  "shortcuts": {
+    "title": "Горячие клавиши",
+    "navigationGroup": "Навигация и поиск",
+    "focusSearch": "Перейти к поиску",
+    "focusSearchKeys": "/ или {{modKey}}F",
+    "clearSelection": "Снять выделение",
+    "scrollToTop": "Прокрутить вверх",
+    "scrollToBottom": "Прокрутить вниз",
+    "showHelp": "Показать горячие клавиши",
+    "selectionGroup": "Действия с выбранным",
+    "selectAll": "Выбрать все элементы",
+    "moveToTrash": "Переместить в корзину",
+    "rename": "Переименовать элемент",
+    "download": "Скачать файл"
+  },
+  "sidebar": {
+    "storage": "Хранилище",
+    "usedOfUnlimited": "Использовано: <strong>{{size}}</strong> из неограниченного",
+    "telegramCloudStorage": "Облачное хранилище Telegram"
+  },
+  "newMenu": {
+    "ariaLabel": "Новый элемент",
+    "new": "Создать",
+    "newFolder": "Новая папка",
+    "fileUpload": "Загрузить файлы",
+    "folderUpload": "Загрузить папку"
+  },
+  "search": {
+    "placeholder": "Поиск на диске",
+    "matchingHeader": "Подходящие файлы и папки",
+    "folder": "Папка",
+    "fileIn": "Файл • {{location}}",
+    "noResults": "Подходящие файлы не найдены"
+  },
+  "upload": {
+    "failed_one": "Ошибка загрузки {{count}} файла",
+    "failed_other": "Ошибки загрузки {{count}} файлов",
+    "complete_one": "Загружен {{count}} файл",
+    "complete_other": "Загружено {{count}} файлов",
+    "uploadingItems_one": "Загрузка {{count}} файла ({{percent}}%)",
+    "uploadingItems_other": "Загрузка {{count}} файлов ({{percent}}%)",
+    "expand": "Развернуть",
+    "collapse": "Свернуть",
+    "close": "Закрыть",
+    "queued": "В очереди",
+    "uploading": "Загрузка..."
+  },
+  "backup": {
+    "scanning": "Сканирование папок…",
+    "backingUp": "Резервное копирование — {{uploaded}} / {{total}}",
+    "completeUploaded_one": "Резервное копирование завершено — загружен {{count}} файл",
+    "completeUploaded_other": "Резервное копирование завершено — загружено {{count}} файлов",
+    "completeNothingChanged": "Резервное копирование завершено — изменений нет",
+    "cancelled": "Резервное копирование отменено",
+    "failed": "Сбой резервного копирования",
+    "retryRateLimit": "Повтор {{attempt}}/{{maxAttempts}} — лимит Telegram, ожидание {{seconds}}с",
+    "retryNetwork": "Повтор {{attempt}}/{{maxAttempts}} — сбой сети, ожидание {{seconds}}с",
+    "readingFolders": "Чтение содержимого папок с диска",
+    "summaryUploaded_one": "{{count}} загружен",
+    "summaryUploaded_other": "{{count}} загружено",
+    "summaryUnchanged_one": "{{count}} без изменений",
+    "summaryUnchanged_other": "{{count}} без изменений",
+    "summaryFailed_one": "{{count}} с ошибкой",
+    "summaryFailed_other": "{{count}} с ошибками",
+    "resumeAnytime": "Вы можете возобновить в любое время.",
+    "dismiss": "Закрыть"
+  },
+  "errorBoundary": {
+    "title": "Что-то пошло не так",
+    "description": "Произошла непредвиденная ошибка. Перезагрузите приложение, чтобы продолжить.",
+    "reload": "Перезагрузить приложение"
+  },
+  "notFound": {
+    "title": "404 - Страница не найдена",
+    "description": "Запрашиваемая страница не существует.",
+    "goToMyDrive": "Перейти на Мой диск"
+  }
+}

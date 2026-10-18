@@ -1,0 +1,153 @@
+{
+  "loading": "Загрузка…",
+  "downloadInstead": "Скачать вместо просмотра",
+  "truncatedNotice": "--- [Предпросмотр обрезан: файл превышает лимит 3 МБ] ---",
+  "errors": {
+    "offlineUnavailable": "Вы находитесь в автономном режиме, и этот файл не помечен как «Доступно офлайн». Подключитесь к Интернету, чтобы открыть его.",
+    "downloadFailed": "Не удалось скачать файл."
+  },
+  "toast": {
+    "preparingSystemViewer": "Подготовка документа для системного просмотрщика...",
+    "openedInSystemViewer": "Документ открыт в системном средстве просмотра.",
+    "systemViewerFailed": "Не удалось открыть системный просмотрщик. Файл будет скачан...",
+    "saved": "«{{name}}» успешно сохранен!",
+    "saveFailed": "Сбой сохранения: {{message}}",
+    "unknownError": "Неизвестная ошибка",
+    "copied": "Скопировано в буфер обмена",
+    "jsonFormatted": "JSON отформатирован",
+    "invalidJson": "Некорректный JSON: {{message}}"
+  },
+  "topbar": {
+    "editing": "Редактирование",
+    "saved": "Сохранено",
+    "cancel": "Отмена",
+    "saving": "Сохранение…",
+    "save": "Сохранить",
+    "formatJsonTitle": "Форматировать JSON (Prettify)",
+    "format": "Форматировать",
+    "disableWrap": "Отключить перенос строк",
+    "enableWrap": "Включить перенос строк",
+    "fontSizeTitle": "Размер шрифта: {{size}}px (нажмите для переключения)",
+    "copyTitle": "Копировать содержимое в буфер обмена",
+    "runTitle": "Запустить в редакторе кода O2",
+    "run": "Запустить",
+    "editTitle": "Редактировать файл",
+    "edit": "Редактировать",
+    "toggleDetails": "Свойства файла",
+    "openInSystemViewerTitle": "Открыть в системном приложении просмотра PDF",
+    "openInSystemViewer": "Открыть в системе",
+    "download": "Скачать",
+    "close": "Закрыть"
+  },
+  "viewMode": {
+    "preview": "Предпросмотр",
+    "source": "Исходный код",
+    "table": "Таблица",
+    "raw": "Текст",
+    "vector": "Вектор",
+    "code": "Код"
+  },
+  "image": {
+    "zoomOut": "Уменьшить",
+    "zoomIn": "Увеличить",
+    "resetZoom": "Исходный размер",
+    "rotateCounterClockwise": "Повернуть против часовой стрелки",
+    "rotateClockwise": "Повернуть по часовой стрелке",
+    "toggleGrid": "Включить/выключить сетку фона"
+  },
+  "details": {
+    "title": "Свойства файла",
+    "name": "Имя",
+    "dimensions": "Разрешение",
+    "loadingDimensions": "Загрузка...",
+    "fileSize": "Размер файла",
+    "mimeType": "MIME-тип",
+    "path": "Путь",
+    "uploadedAt": "Дата загрузки"
+  },
+  "media": {
+    "skipBack": "Назад на 10 сек.",
+    "skipForward": "Вперед на 10 сек.",
+    "audioTrack": "Аудиодорожка"
+  },
+  "archive": {
+    "badge": "АРХИВ {{ext}}",
+    "description": "Сжатые архивы нельзя просмотреть непосредственно в приложении. Скачайте архив, чтобы распаковать его на своем компьютере.",
+    "download": "Скачать архив"
+  },
+  "unsupported": {
+    "description": "Предпросмотр для этого типа файлов недоступен. Вы можете скачать файл и открыть его в совместимой программе.",
+    "download": "Скачать файл"
+  },
+  "status": {
+    "words_one": "{{count, number}} слово",
+    "words_other": "{{count, number}} слов",
+    "readingTime_one": "{{count}} мин. чтения",
+    "readingTime_other": "{{count}} мин. чтения",
+    "rows_one": "{{count, number}} строка",
+    "rows_other": "{{count, number}} строк",
+    "lines_one": "{{count, number}} строка",
+    "lines_other": "{{count, number}} строк",
+    "wrapOn": "Перенос: Вкл.",
+    "wrapOff": "Перенос: Выкл.",
+    "cursor": "Стр. {{line}}, Кол. {{col}}",
+    "editorInfo": "Таб: 2 пробела · UTF-8 · LF"
+  },
+  "pdfErrorBoundary": {
+    "title": "Ошибка средства просмотра PDF",
+    "description": "Не удалось отобразить PDF. Попробуйте перезагрузить.",
+    "retry": "Повторить"
+  },
+  "pdf": {
+    "loading": "Загрузка документа PDF",
+    "preparing": "Подготовка документа...",
+    "errorTitle": "Не удалось просмотреть документ",
+    "openInSystemViewer": "Открыть в системном просмотрщике",
+    "noDocument": "Документ не загружен.",
+    "errors": {
+      "noData": "Данные документа не получены.",
+      "invalid": "Файл поврежден или не является допустимым документом PDF.",
+      "passwordProtected": "Этот PDF защищен паролем. Защищенные паролем PDF не поддерживаются.",
+      "engineUnavailable": "Модуль PDF недоступен. Перезагрузите приложение.",
+      "loadFailed": "Не удалось загрузить документ PDF. Возможно, файл поврежден."
+    },
+    "toolbar": {
+      "previousPage": "Предыдущая страница (↑ / PageUp)",
+      "jumpToPage": "Нажмите, чтобы перейти к странице",
+      "nextPage": "Следующая страница (↓ / PageDown)",
+      "zoomOut": "Уменьшить (Ctrl+-)",
+      "resetZoom": "Масштаб 100% (Ctrl+0)",
+      "zoomIn": "Увеличить (Ctrl+=)",
+      "fitWidth": "По ширине",
+      "fitPage": "По размеру страницы",
+      "fit": "Подогнать",
+      "rotate": "Повернуть по часовой стрелке",
+      "print": "Печать документа",
+      "openInSystemAppTitle": "Открыть в стандартном средстве просмотра PDF",
+      "systemViewer": "Системный просмотрщик"
+    }
+  },
+  "csv": {
+    "toast": {
+      "copied": "Значение ячейки скопировано в буфер обмена"
+    },
+    "filterPlaceholder_one": "Фильтровать {{count}} строку…",
+    "filterPlaceholder_other": "Фильтровать {{count}} строк…",
+    "clear": "Очистить",
+    "rowsShown_one": "{{shown}} из {{count}} строки",
+    "rowsShown_other": "{{shown}} из {{count}} строк",
+    "columns_one": "{{count}} колонка",
+    "columns_other": "{{count}} колонок",
+    "empty": "Пустой набор данных",
+    "columnFallback": "Колонка {{letter}}",
+    "cellTitle": "{{value}} (Нажмите для копирования)"
+  },
+  "codeEditor": {
+    "loading": "Загрузка редактора…"
+  },
+  "syntaxHighlighter": {
+    "ariaLabel": "Просмотрщик кода",
+    "largeFile_one": "Большой файл ({{count, number}} строка) — подсветка синтаксиса отключена для ускорения работы",
+    "largeFile_other": "Большой файл ({{count, number}} строк) — подсветка синтаксиса отключена для ускорения работы"
+  }
+}

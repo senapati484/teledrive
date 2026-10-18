@@ -1,0 +1,116 @@
+{
+  "logoAlt": "TeleDrive-Logo",
+  "actions": {
+    "close": "Schließen"
+  },
+  "splash": {
+    "connecting": "Mit Telegram verbinden..."
+  },
+  "nav": {
+    "myDrive": "Mein Laufwerk",
+    "recent": "Jüngste",
+    "starred": "Mit einem Stern versehen",
+    "archived": "Archiviert",
+    "trash": "Müll",
+    "backups": "Backups",
+    "settings": "Einstellungen"
+  },
+  "header": {
+    "switchToLight": "Wechseln Sie zum Lichtthema",
+    "switchToDark": "Wechseln Sie zum dunklen Thema",
+    "settings": "Einstellungen"
+  },
+  "indexQueue": {
+    "saveFailedTitle": "Indexspeicherung fehlgeschlagen – klicken Sie, um es erneut zu versuchen",
+    "liveSyncTitle": "Live-Synchronisierung mehrerer Geräte",
+    "backupSnapshotTitle": "Backup-Snapshot läuft",
+    "saveFailed": "Speichern fehlgeschlagen",
+    "retryingIn": "Wiederholen Sie den Vorgang in {{seconds}}s",
+    "synced": "Synchronisiert",
+    "backupInProgress": "Sicherung läuft",
+    "syncing": "Synchronisierung",
+    "retry": "Wiederholen"
+  },
+  "dropOverlay": {
+    "title": "Legen Sie Dateien ab, um sie auf „Mein Laufwerk“ hochzuladen",
+    "description": "Lassen Sie es los, um sofort mit dem Hochladen zu beginnen"
+  },
+  "offlineBanner": "Sie sind derzeit offline. Einige Funktionen sind möglicherweise nicht verfügbar.",
+  "shortcuts": {
+    "title": "Tastaturkürzel",
+    "navigationGroup": "Navigation und Suche",
+    "focusSearch": "Fokussuche",
+    "focusSearchKeys": "/ oder {{modKey}}F",
+    "clearSelection": "Klare Auswahl / Unschärfe",
+    "scrollToTop": "Scrollen Sie nach oben",
+    "scrollToBottom": "Scrollen Sie nach unten",
+    "showHelp": "Hilfe zu Verknüpfungen anzeigen",
+    "selectionGroup": "Aktionen bei der Auswahl",
+    "selectAll": "Wählen Sie alle Elemente aus",
+    "moveToTrash": "In den Papierkorb verschieben",
+    "rename": "Element umbenennen",
+    "download": "Datei herunterladen"
+  },
+  "sidebar": {
+    "storage": "Lagerung",
+    "usedOfUnlimited": "<strong>{{size}}</strong> von Unbegrenzt verwendet",
+    "telegramCloudStorage": "Telegram-Cloud-Speicher"
+  },
+  "newMenu": {
+    "ariaLabel": "Neuer Artikel",
+    "new": "Neu",
+    "newFolder": "Neuer Ordner",
+    "fileUpload": "Datei-Upload",
+    "folderUpload": "Ordner hochladen"
+  },
+  "search": {
+    "placeholder": "In Drive suchen",
+    "matchingHeader": "Passende Dateien und Ordner",
+    "folder": "Ordner",
+    "fileIn": "Datei • {{location}}",
+    "noResults": "Keine passenden Dateien gefunden"
+  },
+  "upload": {
+    "failed_one": "{{count}} Upload fehlgeschlagen",
+    "failed_other": "{{count}} Uploads sind fehlgeschlagen",
+    "complete_one": "{{count}} Upload abgeschlossen",
+    "complete_other": "{{count}} Uploads abgeschlossen",
+    "uploadingItems_one": "{{count}} Artikel wird hochgeladen ({{percent}}%)",
+    "uploadingItems_other": "{{count}} Artikel werden hochgeladen ({{percent}} %)",
+    "expand": "Expandieren",
+    "collapse": "Zusammenbruch",
+    "close": "Schließen",
+    "queued": "In der Warteschlange",
+    "uploading": "Hochladen..."
+  },
+  "backup": {
+    "scanning": "Ordner scannen…",
+    "backingUp": "Sichern – {{uploaded}} / {{total}}",
+    "completeUploaded_one": "Sicherung abgeschlossen – {{count}} Datei hochgeladen",
+    "completeUploaded_other": "Sicherung abgeschlossen – {{count}} Dateien hochgeladen",
+    "completeNothingChanged": "Sicherung abgeschlossen – nichts hat sich geändert",
+    "cancelled": "Sicherung abgebrochen",
+    "failed": "Die Sicherung ist fehlgeschlagen",
+    "retryRateLimit": "Wiederholung: {{attempt}}/{{maxAttempts}} – Begrenzung der Telegrammrate, Wartezeit {{seconds}}s",
+    "retryNetwork": "Wiederholung {{attempt}}/{{maxAttempts}} – Netzwerkfehler, Wartezeit {{seconds}}s",
+    "readingFolders": "Ordnerinhalte von der Festplatte lesen",
+    "summaryUploaded_one": "{{count}} hochgeladen",
+    "summaryUploaded_other": "{{count}} hochgeladen",
+    "summaryUnchanged_one": "{{count}} unverändert",
+    "summaryUnchanged_other": "{{count}} unverändert",
+    "summaryFailed_one": "{{count}} fehlgeschlagen",
+    "summaryFailed_other": "{{count}} fehlgeschlagen",
+    "resumeAnytime": "Sie können jederzeit fortfahren.",
+    "dismiss": "Zurückweisen"
+  },
+  "errorBoundary": {
+    "title": "Etwas ist schief gelaufen",
+    "description": "Es ist ein unerwartetes Problem aufgetreten. Bitte laden Sie die Anwendung neu, um fortzufahren.",
+    "reload": "Anwendung neu laden"
+  },
+  "notFound": {
+    "title": "404 – Seite nicht gefunden",
+    "description": "Die gesuchte Seite existiert nicht.",
+    "goToMyDrive": "Gehen Sie zu „Mein Laufwerk“."
+  }
+}

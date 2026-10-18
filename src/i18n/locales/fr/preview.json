@@ -1,0 +1,156 @@
+{
+  "loading": "Chargement…",
+  "downloadInstead": "Télécharger à la place",
+  "truncatedNotice": "--- [Aperçu tronqué : le fichier dépasse la limite de 3 Mo] ---",
+  "errors": {
+    "offlineUnavailable": "Vous êtes actuellement hors ligne et ce fichier n'est pas marqué comme « Disponible hors ligne ». Connectez-vous à Internet pour l'ouvrir.",
+    "downloadFailed": "Échec du téléchargement du fichier."
+  },
+  "toast": {
+    "preparingSystemViewer": "Préparation du document pour la visionneuse système...",
+    "openedInSystemViewer": "Document ouvert dans la visionneuse système.",
+    "systemViewerFailed": "Impossible d'ouvrir la visionneuse système. Téléchargement du fichier à la place...",
+    "saved": "\"{{name}}\" enregistré avec succès !",
+    "saveFailed": "Échec de l'enregistrement : {{message}}",
+    "unknownError": "Erreur inconnue",
+    "copied": "Copié dans le presse-papiers",
+    "jsonFormatted": "JSON formaté",
+    "invalidJson": "JSON non valide : {{message}}"
+  },
+  "topbar": {
+    "editing": "Modification",
+    "saved": "Enregistré",
+    "cancel": "Annuler",
+    "saving": "Enregistrement…",
+    "save": "Enregistrer",
+    "formatJsonTitle": "Formater le JSON",
+    "format": "Formater",
+    "disableWrap": "Désactiver le retour à la ligne",
+    "enableWrap": "Activer le retour à la ligne",
+    "fontSizeTitle": "Taille de police : {{size}}px (cliquez pour changer)",
+    "copyTitle": "Copier le contenu dans le presse-papiers",
+    "runTitle": "Exécuter dans l'éditeur O2",
+    "run": "Exécuter",
+    "editTitle": "Modifier le fichier",
+    "edit": "Modifier",
+    "toggleDetails": "Afficher/masquer les détails",
+    "openInSystemViewerTitle": "Ouvrir dans la visionneuse PDF par défaut du système",
+    "openInSystemViewer": "Ouvrir dans l'application système",
+    "download": "Télécharger",
+    "close": "Fermer"
+  },
+  "viewMode": {
+    "preview": "Aperçu",
+    "source": "Source",
+    "table": "Tableau",
+    "raw": "Brut",
+    "vector": "Vecteur",
+    "code": "Code"
+  },
+  "image": {
+    "zoomOut": "Zoom arrière",
+    "zoomIn": "Zoom avant",
+    "resetZoom": "Ajuster / Réinitialiser le zoom",
+    "rotateCounterClockwise": "Pivoter vers la gauche",
+    "rotateClockwise": "Pivoter vers la droite",
+    "toggleGrid": "Basculer la grille d'arrière-plan"
+  },
+  "details": {
+    "title": "Détails du fichier",
+    "name": "Nom",
+    "dimensions": "Dimensions",
+    "loadingDimensions": "Chargement...",
+    "fileSize": "Taille du fichier",
+    "mimeType": "Type MIME",
+    "path": "Emplacement",
+    "uploadedAt": "Téléversé le"
+  },
+  "media": {
+    "skipBack": "Reculer de 10s",
+    "skipForward": "Avancer de 10s",
+    "audioTrack": "Piste audio"
+  },
+  "archive": {
+    "badge": "ARCHIVE {{ext}}",
+    "description": "Les archives compressées ne peuvent pas être prévisualisées directement. Téléchargez cette archive pour extraire et afficher son contenu.",
+    "download": "Télécharger l'archive"
+  },
+  "unsupported": {
+    "description": "Aucun aperçu n'est disponible pour ce type de fichier. Vous pouvez le télécharger et l'ouvrir dans une application compatible.",
+    "download": "Télécharger le fichier"
+  },
+  "status": {
+    "words_one": "{{count, number}} mot",
+    "words_other": "{{count, number}} mots",
+    "readingTime_one": "{{count}} min de lecture",
+    "readingTime_other": "{{count}} min de lecture",
+    "rows_one": "{{count, number}} ligne",
+    "rows_other": "{{count, number}} lignes",
+    "lines_one": "{{count, number}} ligne",
+    "lines_other": "{{count, number}} lignes",
+    "wrapOn": "Retour à la ligne : Activé",
+    "wrapOff": "Retour à la ligne : Désactivé",
+    "cursor": "Ligne {{line}}, Col {{col}}",
+    "editorInfo": "Tabulation : 2 espaces · UTF-8 · LF"
+  },
+  "pdfErrorBoundary": {
+    "title": "La visionneuse PDF a rencontré une erreur",
+    "description": "Le document PDF n'a pas pu être affiché. Essayez de recharger.",
+    "retry": "Réessayer"
+  },
+  "pdf": {
+    "loading": "Chargement du document PDF",
+    "preparing": "Préparation de votre document...",
+    "errorTitle": "Impossible d'afficher le document",
+    "openInSystemViewer": "Ouvrir dans l'application système",
+    "noDocument": "Aucun document chargé.",
+    "errors": {
+      "noData": "Aucune donnée de document reçue.",
+      "invalid": "Ce fichier semble corrompu ou n'est pas un fichier PDF valide.",
+      "passwordProtected": "Ce PDF est protégé par mot de passe. Les PDF protégés ne sont pas pris en charge.",
+      "engineUnavailable": "Le moteur PDF n'est pas disponible. Veuillez recharger l'application.",
+      "loadFailed": "Échec du chargement du PDF. Le fichier est peut-être corrompu."
+    },
+    "toolbar": {
+      "previousPage": "Page précédente (↑ / PageUp)",
+      "jumpToPage": "Cliquer pour aller à la page",
+      "nextPage": "Page suivante (↓ / PageDown)",
+      "zoomOut": "Zoom arrière (Ctrl+-)",
+      "resetZoom": "Réinitialiser à 100% (Ctrl+0)",
+      "zoomIn": "Zoom avant (Ctrl+=)",
+      "fitWidth": "Ajuster à la largeur",
+      "fitPage": "Page entière",
+      "fit": "Ajuster",
+      "rotate": "Pivoter dans le sens horaire",
+      "print": "Imprimer le document",
+      "openInSystemAppTitle": "Ouvrir dans l'application PDF par défaut du système",
+      "systemViewer": "Visionneuse système"
+    }
+  },
+  "csv": {
+    "toast": {
+      "copied": "Valeur de cellule copiée dans le presse-papiers"
+    },
+    "filterPlaceholder_one": "Filtrer {{count}} ligne…",
+    "filterPlaceholder_other": "Filtrer {{count}} lignes…",
+    "clear": "Effacer",
+    "rowsShown_one": "{{shown}} sur {{count}} ligne",
+    "rowsShown_other": "{{shown}} sur {{count}} lignes",
+    "columns_one": "{{count}} colonne",
+    "columns_other": "{{count}} colonnes",
+    "emptyFiltered": "Aucune ligne ne correspond à votre filtre.",
+    "resetFilter": "Réinitialiser le filtre",
+    "noData": "Aucune donnée trouvée dans ce tableau.",
+    "empty": "Jeu de données vide",
+    "columnFallback": "Colonne {{letter}}",
+    "cellTitle": "{{value}} (Cliquer pour copier)"
+  },
+  "codeEditor": {
+    "loading": "Chargement de l'éditeur…"
+  },
+  "syntaxHighlighter": {
+    "ariaLabel": "Visualiseur de code",
+    "largeFile_one": "Fichier volumineux ({{count, number}} ligne) — coloration syntaxique désactivée pour la performance",
+    "largeFile_other": "Fichier volumineux ({{count, number}} lignes) — coloration syntaxique désactivée pour la performance"
+  }
+}

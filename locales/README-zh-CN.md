@@ -7,7 +7,7 @@
 **基于私人 Telegram 频道打造的无限个人云存储桌面客户端。**  
 零服务器租金 · 零订阅费用 · 直接通过 MTProto 端到端加密直连 Telegram。
 
-[**English**](../README.md) • [**Português (Brasil)**](README-pt-BR.md) • [**Español**](README-es.md) • [**简体中文**](README-zh-CN.md) • [**Русский**](README-ru.md) • [**日本語**](README-ja.md) • [**Deutsch**](README-de.md)
+[**English**](../README.md) • [**Português (Brasil)**](README-pt-BR.md) • [**Español**](README-es.md) • [**繁體中文**](README-zh-TW.md) • [**简体中文**](README-zh-CN.md) • [**हिन्दी**](README-hi.md) • [**Français**](README-fr.md) • [**Bahasa Indonesia**](README-id.md) • [**Русский**](README-ru.md) • [**日本語**](README-ja.md) • [**Deutsch**](README-de.md)
 
 [![总下载量](https://img.shields.io/sourceforge/dt/teledrive?style=flat-square&logo=sourceforge&logoColor=white)](https://sourceforge.net/projects/teledrive/files/)
 [![最新版本](https://img.shields.io/badge/版本-v0.1.1-2082f7.svg?style=flat-square)](https://sourceforge.net/projects/teledrive/files/v0.1.1/)
@@ -82,9 +82,9 @@ Telegram 在私人频道中提供了几乎无限的免费云存储空间，但�
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                       React 19 前端架构                         │
+│                       React 19 前端架构                          │
 │   ┌─────────────────────┐             ┌─────────────────────┐   │
-│   │    Zustand 全局状态  │             │   GramJS 协议引擎   │   │
+│   │    Zustand 全局状态  │             │   GramJS 协议引擎    │   │
 │   └──────────┬──────────┘             └──────────┬──────────┘   │
 └──────────────┼───────────────────────────────────┼──────────────┘
                │                                   │
@@ -92,9 +92,9 @@ Telegram 在私人频道中提供了几乎无限的免费云存储空间，但�
          (二进制调用桥梁)                    (TLS 443 安全加密)
                │                                   │
 ┌──────────────▼──────────┐              ┌─────────▼──────────────┐
-│     Tauri Rust 核心     │              │  Telegram 官方云 API   │
-│  ┌───────────────────┐  │              │     (个人私有频道)      │
-│  │ Stronghold 保险库 │  │              └────────────────────────┘
+│     Tauri Rust 核心      │              │  Telegram 官方云 API    │
+│  ┌───────────────────┐  │              │     (个人私有频道)       │
+│  │ Stronghold 保险库  │  │              └────────────────────────┘
 │  └───────────────────┘  │
 └─────────────────────────┘
 ```

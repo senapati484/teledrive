@@ -1,0 +1,116 @@
+{
+  "logoAlt": "电信标志",
+  "actions": {
+    "close": "关闭"
+  },
+  "splash": {
+    "connecting": "正在连接到电报..."
+  },
+  "nav": {
+    "myDrive": "我的驾驶",
+    "recent": "最近的",
+    "starred": "已加星标",
+    "archived": "已存档",
+    "trash": "垃圾",
+    "backups": "备份",
+    "settings": "设置"
+  },
+  "header": {
+    "switchToLight": "切换到浅色主题",
+    "switchToDark": "切换到黑暗主题",
+    "settings": "设置"
+  },
+  "indexQueue": {
+    "saveFailedTitle": "索引保存失败 — 单击重试",
+    "liveSyncTitle": "实时多设备同步",
+    "backupSnapshotTitle": "备份快照正在进行中",
+    "saveFailed": "保存失败",
+    "retryingIn": "{{秒}}秒后重试",
+    "synced": "已同步",
+    "backupInProgress": "备份正在进行中",
+    "syncing": "正在同步",
+    "retry": "重试"
+  },
+  "dropOverlay": {
+    "title": "拖放要上传到“我的云端硬盘”的文件",
+    "description": "释放立即开始上传"
+  },
+  "offlineBanner": "您目前处于离线状态。某些功能可能不可用。",
+  "shortcuts": {
+    "title": "键盘快捷键",
+    "navigationGroup": "导航与搜索",
+    "focusSearch": "焦点搜索",
+    "focusSearchKeys": "/ 或 {{modKey}}F",
+    "clearSelection": "清晰选择/模糊",
+    "scrollToTop": "滚动到顶部",
+    "scrollToBottom": "滚动到底部",
+    "showHelp": "显示快捷方式帮助",
+    "selectionGroup": "选择行动",
+    "selectAll": "选择所有项目",
+    "moveToTrash": "移至垃圾箱",
+    "rename": "重命名项目",
+    "download": "下载文件"
+  },
+  "sidebar": {
+    "storage": "贮存",
+    "usedOfUnlimited": "<strong>{{size}}</strong> 无限使用",
+    "telegramCloudStorage": "电报云存储"
+  },
+  "newMenu": {
+    "ariaLabel": "新商品",
+    "new": "新的",
+    "newFolder": "新建文件夹",
+    "fileUpload": "文件上传",
+    "folderUpload": "文件夹上传"
+  },
+  "search": {
+    "placeholder": "在云端硬盘中搜索",
+    "matchingHeader": "匹配文件和文件夹",
+    "folder": "文件夹",
+    "fileIn": "文件 • {{位置}}",
+    "noResults": "没有找到匹配的文件"
+  },
+  "upload": {
+    "failed_one": "{{count}} 上传失败",
+    "failed_other": "{{count}} 个上传失败",
+    "complete_one": "{{count}} 上传完成",
+    "complete_other": "{{count}} 个上传已完成",
+    "uploadingItems_one": "正在上传 {{count}} 项 ({{percent}}%)",
+    "uploadingItems_other": "正在上传 {{count}} 项 ({{percent}}%)",
+    "expand": "扩张",
+    "collapse": "坍塌",
+    "close": "关闭",
+    "queued": "排队",
+    "uploading": "正在上传..."
+  },
+  "backup": {
+    "scanning": "正在扫描文件夹...",
+    "backingUp": "正在备份 — {{上传}} / {{总计}}",
+    "completeUploaded_one": "备份完成 — 已上传 {{count}} 个文件",
+    "completeUploaded_other": "备份完成 — 已上传 {{count}} 个文件",
+    "completeNothingChanged": "备份完成 — 没有任何变化",
+    "cancelled": "备份已取消",
+    "failed": "备份失败",
+    "retryRateLimit": "重试 {{attempt}}/{{maxAttempts}} — Telegram 速率限制，等待 {{seconds}} 秒",
+    "retryNetwork": "重试 {{attempt}}/{{maxAttempts}} — 网络故障，等待 {{seconds}} 秒",
+    "readingFolders": "从磁盘读取文件夹内容",
+    "summaryUploaded_one": "已上传 {{count}} 个",
+    "summaryUploaded_other": "已上传 {{count}} 个",
+    "summaryUnchanged_one": "{{count}} 不变",
+    "summaryUnchanged_other": "{{count}} 不变",
+    "summaryFailed_one": "{{count}} 失败",
+    "summaryFailed_other": "{{count}} 失败",
+    "resumeAnytime": "您可以随时恢复。",
+    "dismiss": "解雇"
+  },
+  "errorBoundary": {
+    "title": "出了点问题",
+    "description": "出现意外问题。请重新加载应用程序以继续。",
+    "reload": "重新加载应用程序"
+  },
+  "notFound": {
+    "title": "404 - 找不到页面",
+    "description": "您要查找的页面不存在。",
+    "goToMyDrive": "前往我的云端硬盘"
+  }
+}

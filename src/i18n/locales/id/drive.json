@@ -1,0 +1,116 @@
+{
+  "logoAlt": "Logo TeleDrive",
+  "actions": {
+    "close": "Tutup"
+  },
+  "splash": {
+    "connecting": "Menghubungkan ke Telegram..."
+  },
+  "nav": {
+    "myDrive": "Drive Saya",
+    "recent": "Terbaru",
+    "starred": "Berbintang",
+    "archived": "Diarsipkan",
+    "trash": "Sampah",
+    "backups": "Cadangan",
+    "settings": "Pengaturan"
+  },
+  "header": {
+    "switchToLight": "Beralih ke Tema Terang",
+    "switchToDark": "Beralih ke Tema Gelap",
+    "settings": "Pengaturan"
+  },
+  "indexQueue": {
+    "saveFailedTitle": "Penyimpanan indeks gagal — klik untuk mencoba lagi",
+    "liveSyncTitle": "Sinkronisasi langsung multi-perangkat",
+    "backupSnapshotTitle": "Snapshot cadangan sedang berlangsung",
+    "saveFailed": "Gagal menyimpan",
+    "retryingIn": "Mencoba lagi dalam {{seconds}} dtk",
+    "synced": "Tersinkronkan",
+    "backupInProgress": "Cadangan sedang berlangsung",
+    "syncing": "Menyinkronkan",
+    "retry": "Coba Lagi"
+  },
+  "dropOverlay": {
+    "title": "Tarik dan lepas berkas untuk diunggah ke Drive Saya",
+    "description": "Lepaskan untuk langsung memulai pengunggahan"
+  },
+  "offlineBanner": "Anda sedang offline. Beberapa fitur mungkin tidak tersedia.",
+  "shortcuts": {
+    "title": "Pintasan Papan Ketik",
+    "navigationGroup": "Navigasi & Pencarian",
+    "focusSearch": "Fokus Pencarian",
+    "focusSearchKeys": "/ atau {{modKey}}F",
+    "clearSelection": "Hapus pilihan / tutup pencarian",
+    "scrollToTop": "Gulir ke atas",
+    "scrollToBottom": "Gulir ke bawah",
+    "showHelp": "Tampilkan bantuan pintasan",
+    "selectionGroup": "Tindakan pada Pilihan",
+    "selectAll": "Pilih semua item",
+    "moveToTrash": "Pindahkan ke Sampah",
+    "rename": "Ganti nama item",
+    "download": "Unduh berkas"
+  },
+  "sidebar": {
+    "storage": "Penyimpanan",
+    "usedOfUnlimited": "<strong>{{size}}</strong> terpakai dari Tanpa Batas",
+    "telegramCloudStorage": "Penyimpanan Cloud Telegram"
+  },
+  "newMenu": {
+    "ariaLabel": "Item baru",
+    "new": "Baru",
+    "newFolder": "Folder baru",
+    "fileUpload": "Unggah berkas",
+    "folderUpload": "Unggah folder"
+  },
+  "search": {
+    "placeholder": "Cari di Drive",
+    "matchingHeader": "Berkas & Folder yang Cocok",
+    "folder": "Folder",
+    "fileIn": "Berkas • {{location}}",
+    "noResults": "Tidak ada berkas yang cocok ditemukan"
+  },
+  "upload": {
+    "failed_one": "{{count}} unggahan gagal",
+    "failed_other": "{{count}} unggahan gagal",
+    "complete_one": "{{count}} unggahan selesai",
+    "complete_other": "{{count}} unggahan selesai",
+    "uploadingItems_one": "Mengunggah {{count}} item ({{percent}}%)",
+    "uploadingItems_other": "Mengunggah {{count}} item ({{percent}}%)",
+    "expand": "Perluas",
+    "collapse": "Ciutkan",
+    "close": "Tutup",
+    "queued": "Dalam antrean",
+    "uploading": "Mengunggah..."
+  },
+  "backup": {
+    "scanning": "Memindai folder…",
+    "backingUp": "Mencadangkan — {{uploaded}} / {{total}}",
+    "completeUploaded_one": "Pencadangan selesai — {{count}} berkas diunggah",
+    "completeUploaded_other": "Pencadangan selesai — {{count}} berkas diunggah",
+    "completeNothingChanged": "Pencadangan selesai — tidak ada perubahan",
+    "cancelled": "Pencadangan dibatalkan",
+    "failed": "Pencadangan gagal",
+    "retryRateLimit": "Mencoba lagi {{attempt}}/{{maxAttempts}} — batas Telegram, menunggu {{seconds}} dtk",
+    "retryNetwork": "Mencoba lagi {{attempt}}/{{maxAttempts}} — gangguan jaringan, menunggu {{seconds}} dtk",
+    "readingFolders": "Membaca isi folder dari disk",
+    "summaryUploaded_one": "{{count}} diunggah",
+    "summaryUploaded_other": "{{count}} diunggah",
+    "summaryUnchanged_one": "{{count}} tidak berubah",
+    "summaryUnchanged_other": "{{count}} tidak berubah",
+    "summaryFailed_one": "{{count}} gagal",
+    "summaryFailed_other": "{{count}} gagal",
+    "resumeAnytime": "Anda dapat melanjutkannya kapan saja.",
+    "dismiss": "Tutup"
+  },
+  "errorBoundary": {
+    "title": "Terjadi kesalahan",
+    "description": "Terjadi masalah yang tidak terduga. Silakan muat ulang aplikasi untuk melanjutkan.",
+    "reload": "Muat Ulang Aplikasi"
+  },
+  "notFound": {
+    "title": "404 - Halaman Tidak Ditemukan",
+    "description": "Halaman yang Anda cari tidak ada.",
+    "goToMyDrive": "Buka Drive Saya"
+  }
+}

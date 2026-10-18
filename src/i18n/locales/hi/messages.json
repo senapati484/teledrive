@@ -1,0 +1,65 @@
+{
+  "common": {
+    "unknownError": "अज्ञात त्रुटि"
+  },
+  "bootstrap": {
+    "status": {
+      "connecting": "Telegram से कनेक्ट हो रहा है...",
+      "verifyingChannel": "सुरक्षित स्टोरेज चैनल सत्यापित किया जा रहा है...",
+      "loadingIndex": "फ़ाइल मेटाडेटा इंडेक्स लोड हो रहा है...",
+      "recoveryScan": "आपकी फ़ाइलें जांची जा रही हैं (पुनर्प्राप्ति स्कैन)...",
+      "initializingView": "स्थानीय स्टोरेज दृश्य प्रारंभ किया जा रहा है..."
+    }
+  },
+  "backup": {
+    "errors": {
+      "noFolders": "पहले सेटिंग्स → डिवाइस बैकअप में कम से कम एक फ़ोल्डर चुनें।",
+      "channelNotReady": "स्टोरेज चैनल तैयार नहीं है। कृपया पहला लॉगिन पूरा करें।",
+      "clientUnreachable": "Telegram क्लाइंट तक पहुंच संभव नहीं: {{message}}",
+      "walkerFailed": "वॉकर विफल: {{message}}",
+      "manifestCorrupt": "बैकअप मैनिफ़ेस्ट दूषित है — समीक्षा होने तक अपलोड अस्वीकृत।",
+      "cancelled": "उपयोगकर्ता द्वारा रद्द किया गया।",
+      "sessionExpired": "Telegram सत्र समाप्त हो गया। सेटिंग्स → Telegram खाता में खाता पुनः कनेक्ट करें, फिर बैकअप दोबारा चलाएं।"
+    }
+  },
+  "upload": {
+    "channelNotConfigured": "Telegram स्टोरेज चैनल कॉन्फ़िगर नहीं है। कृपया सेटिंग्स जांचें।",
+    "success": "\"{{name}}\" सफलतापूर्वक अपलोड हो गया!",
+    "indexSaveFailed": "\"{{name}}\" के लिए इंडेक्स सेव विफल — ड्राइव रीफ़्रेश करें।",
+    "failedFallback": "अपलोड विफल",
+    "failed": "\"{{name}}\" अपलोड करने में विफल: {{message}}",
+    "emptyFile": "\"{{name}}\" खाली है। खाली फ़ाइलें (0 बाइट्स) Telegram द्वारा समर्थित नहीं हैं।"
+  },
+  "download": {
+    "cancelled": "डाउनलोड रद्द किया गया।",
+    "progress": "\"{{name}}\" डाउनलोड हो रहा है... {{percent}}%",
+    "success": "\"{{name}}\" सफलतापूर्वक डाउनलोड हो गया!",
+    "failed": "फ़ाइल डाउनलोड करने में विफल। कृपया अनुमतियां जांचें और पुनः प्रयास करें।",
+    "errors": {
+      "mediaNotFound": "Telegram पर लक्षित फ़ाइल संदेश या मीडिया नहीं मिला।",
+      "mediaFailed": "मीडिया डाउनलोड करने में विफल।"
+    }
+  },
+  "indexQueue": {
+    "rateLimitRetrying": "Telegram दर सीमा — पुनः प्रयास जारी"
+  },
+  "storage": {
+    "saveFailed": "{{path}} पर फ़ाइल सहेजने में असमर्थ। कृपया स्टोरेज अनुमतियां जांचें।"
+  },
+  "relativeTime": {
+    "unknown": "अज्ञात",
+    "justNow": "अभी-अभी",
+    "second_one": "{{count}} सेकंड",
+    "second_other": "{{count}} सेकंड",
+    "minute_one": "{{count}} मिनट",
+    "minute_other": "{{count}} मिनट",
+    "hour_one": "{{count}} घंटा",
+    "hour_other": "{{count}} घंटे",
+    "day_one": "{{count}} दिन",
+    "day_other": "{{count}} दिन",
+    "month_one": "{{count}} महीना",
+    "month_other": "{{count}} महीने",
+    "year_one": "{{count}} वर्ष",
+    "year_other": "{{count}} वर्ष"
+  }
+}

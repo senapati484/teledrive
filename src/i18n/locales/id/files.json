@@ -1,0 +1,329 @@
+{
+  "menu": {
+    "preview": "Pratinjau",
+    "openInSystemApp": "Buka di Aplikasi Sistem",
+    "edit": "Edit",
+    "download": "Unduh",
+    "availableOffline": "Tersedia offline",
+    "rename": "Ganti nama",
+    "moveTo": "Pindahkan ke",
+    "addStar": "Tambahkan bintang",
+    "removeStar": "Hapus bintang",
+    "archive": "Arsipkan",
+    "unarchive": "Batalkan pengarsipan",
+    "restore": "Pulihkan",
+    "deletePermanently": "Hapus Permanen",
+    "moveToTrash": "Pindahkan ke Sampah"
+  },
+  "browser": {
+    "fileType": {
+      "folder": "Folder",
+      "pdf": "Dokumen PDF",
+      "image": "Gambar",
+      "video": "Video",
+      "audio": "Audio",
+      "text": "Dokumen Teks",
+      "archive": "Arsip",
+      "word": "Dokumen Word",
+      "spreadsheet": "Lembar Bentang",
+      "presentation": "Presentasi",
+      "sourceCode": "Kode Sumber",
+      "generic": "Berkas {{ext}}",
+      "file": "Berkas"
+    },
+    "sort": {
+      "label": "Urutkan: {{sort}}",
+      "short": {
+        "nameAsc": "Nama (A-Z)",
+        "nameDesc": "Nama (Z-A)",
+        "newest": "Terbaru",
+        "oldest": "Terlama",
+        "largest": "Terbesar",
+        "smallest": "Terkecil"
+      },
+      "options": {
+        "nameAsc": "Nama (A ke Z)",
+        "nameDesc": "Nama (Z ke A)",
+        "dateDesc": "Terakhir diubah",
+        "dateAsc": "Paling awal diubah",
+        "sizeDesc": "Ukuran berkas (terbesar)",
+        "sizeAsc": "Ukuran berkas (terkecil)"
+      }
+    },
+    "header": {
+      "starred": "Berbintang",
+      "recent": "Terbaru",
+      "trash": "Sampah",
+      "archived": "Diarsipkan",
+      "backups": "Cadangan",
+      "myDrive": "Drive Saya",
+      "searchResults": "Hasil pencarian untuk \"{{query}}\""
+    },
+    "systemApp": {
+      "preparing": "Menyiapkan \"{{name}}\" untuk aplikasi sistem...",
+      "opened": "Membuka \"{{name}}\" di penampil sistem.",
+      "failed": "Tidak dapat membuka di penampil sistem: {{error}}",
+      "unknownError": "Kesalahan tidak diketahui"
+    },
+    "emptyState": {
+      "drive": {
+        "title": "Drive Anda kosong",
+        "subtitle": "Unggah berkas atau buat folder untuk memulai."
+      },
+      "starred": {
+        "title": "Tidak ada berkas berbintang",
+        "subtitle": "Beri bintang pada berkas yang ingin Anda temukan dengan mudah nanti."
+      },
+      "recent": {
+        "title": "Tidak ada berkas terbaru",
+        "subtitle": "Berkas yang baru saja Anda lihat atau unggah akan muncul di sini."
+      },
+      "trash": {
+        "title": "Sampah kosong",
+        "subtitle": "Item yang dipindahkan ke sampah akan muncul di sini."
+      },
+      "archived": {
+        "title": "Tidak ada berkas yang diarsipkan",
+        "subtitle": "Arsipkan berkas yang ingin Anda simpan tanpa memadati drive utama Anda."
+      },
+      "search": {
+        "title": "Tidak ada hasil pencarian",
+        "subtitle": "Kami tidak dapat menemukan item yang cocok dengan \"{{query}}\"."
+      },
+      "backups": {
+        "title": "Belum ada cadangan",
+        "subtitle": "Pilih folder di Pengaturan → Pencadangan Perangkat, lalu jalankan pencadangan."
+      },
+      "folder": {
+        "title": "Folder ini kosong",
+        "subtitle": "Unggah berkas atau buat folder di direktori ini."
+      },
+      "uploadFiles": "Unggah File",
+      "newFolder": "Folder Baru"
+    },
+    "trashBanner": {
+      "title": "Item di tempat sampah akan disimpan sampai Anda menghapusnya secara permanen.",
+      "emptyTrash": "Kosongkan Sampah"
+    },
+    "offlineFilterBanner": {
+      "showingOnly": "Hanya menampilkan berkas yang tersedia offline."
+    },
+    "modals": {
+      "newFolder": {
+        "title": "Folder Baru",
+        "placeholder": "Nama folder",
+        "cancel": "Batal",
+        "create": "Buat",
+        "creating": "Membuat…"
+      },
+      "rename": {
+        "title": "Ganti Nama",
+        "placeholder": "Nama baru",
+        "cancel": "Batal",
+        "rename": "Ganti nama",
+        "renaming": "Mengganti nama…"
+      },
+      "moveTo": {
+        "title": "Pindahkan ke",
+        "description": "Pilih folder tujuan untuk \"{{name}}\".",
+        "myDrive": "Drive Saya",
+        "cancel": "Batal",
+        "move": "Pindahkan",
+        "moving": "Memindahkan…"
+      },
+      "deleteConfirm": {
+        "title": "Hapus Permanen?",
+        "description": "Tindakan ini tidak dapat dibatalkan. \"{{name}}\" akan dihapus secara permanen.",
+        "cancel": "Batal",
+        "delete": "Hapus",
+        "deleting": "Menghapus…"
+      },
+      "emptyTrashConfirm": {
+        "title": "Kosongkan Sampah?",
+        "description": "Semua item di tempat sampah akan dihapus secara permanen.",
+        "cancel": "Batal",
+        "empty": "Kosongkan Sampah",
+        "emptying": "Mengosongkan…"
+      }
+    },
+    "toasts": {
+      "folderCreated": "Folder \"{{name}}\" berhasil dibuat.",
+      "folderCreateFailed": "Gagal membuat folder.",
+      "renamed": "Nama diganti menjadi \"{{name}}\".",
+      "renameFailed": "Gagal mengganti nama.",
+      "moved": "\"{{name}}\" dipindahkan ke {{target}}.",
+      "moveFailed": "Gagal memindahkan.",
+      "deleted": "\"{{name}}\" dihapus secara permanen.",
+      "deleteFailed": "Gagal menghapus.",
+      "trashEmptied": "Tempat sampah berhasil dikosongkan.",
+      "trashEmptyFailed": "Gagal mengosongkan tempat sampah.",
+      "movedToTrash": "\"{{name}}\" dipindahkan ke sampah.",
+      "moveToTrashFailed": "Gagal memindahkan ke sampah.",
+      "restored": "\"{{name}}\" dipulihkan.",
+      "restoreFailed": "Gagal memulihkan.",
+      "starred": "\"{{name}}\" ditambahkan ke berbintang.",
+      "unstarred": "\"{{name}}\" dihapus dari berbintang.",
+      "starFailed": "Gagal memperbarui status bintang.",
+      "archived": "\"{{name}}\" diarsipkan.",
+      "unarchived": "\"{{name}}\" batal diarsipkan.",
+      "archiveFailed": "Gagal memperbarui status arsip.",
+      "offlineAvailable": "\"{{name}}\" sekarang tersedia offline.",
+      "offlineRemoved": "\"{{name}}\" tidak lagi tersedia offline.",
+      "offlineFailed": "Gagal memperbarui ketersediaan offline."
+    },
+    "columns": {
+      "name": "Nama",
+      "modified": "Terakhir diubah",
+      "size": "Ukuran",
+      "actions": "Tindakan",
+      "type": "Tipe",
+      "fileSize": "Ukuran file",
+      "lastModified": "Terakhir diubah"
+    },
+    "emptyTrashButton": "Kosongkan Sampah",
+    "switchToListView": "Beralih ke tampilan daftar",
+    "switchToGridView": "Beralih ke tampilan kisi",
+    "backupsBanner": {
+      "title": "Cadangan bersifat hanya-baca.",
+      "description": "Untuk mengubah folder yang dicadangkan, buka <settingsPath>Pengaturan → Pencadangan Perangkat</settingsPath>."
+    },
+    "filters": {
+      "all": "Semua",
+      "documents": "Dokumen",
+      "images": "Gambar",
+      "videos": "Video",
+      "audio": "Audio"
+    },
+    "sections": {
+      "folders": "Folder",
+      "foldersPartial": "Folder ({{shown}} dari {{total}})",
+      "files": "File",
+      "filesPartial": "File ({{shown}} dari {{total}})"
+    },
+    "dragPreview": {
+      "items_one": "{{count}} item",
+      "items_other": "{{count}} item"
+    },
+    "bulkBar": {
+      "selected_one": "dipilih",
+      "selected_other": "dipilih",
+      "restoreSelected": "Pulihkan yang dipilih",
+      "deletePermanently": "Hapus permanen",
+      "moveSelectedToTrash": "Pindahkan yang dipilih ke sampah",
+      "clearSelection": "Hapus pilihan"
+    },
+    "mobileMenu": {
+      "addToStarred": "Tambahkan ke Berbintang",
+      "removeFromStarred": "Hapus dari Berbintang"
+    },
+    "dialogs": {
+      "cancel": "Batal",
+      "deleting": "Menghapus…",
+      "deleteForever": "Hapus selamanya",
+      "createFolder": {
+        "title": "Folder baru",
+        "placeholder": "Folder tanpa judul",
+        "submit": "Buat"
+      },
+      "rename": {
+        "title": "Ganti nama",
+        "placeholder": "Nama baru",
+        "submit": "OK"
+      },
+      "emptyTrash": {
+        "title": "Kosongkan sampah?",
+        "description_one": "Ini akan menghapus secara permanen <strong>{{count}} item</strong> dari saluran Telegram Anda. Tindakan ini tidak dapat dibatalkan.",
+        "description_other": "Ini akan menghapus secara permanen <strong>{{count}} item</strong> dari saluran Telegram Anda. Tindakan ini tidak dapat dibatalkan.",
+        "confirm": "Kosongkan sampah"
+      },
+      "deleteItem": {
+        "title": "Hapus permanen?",
+        "descriptionFile": "Apakah Anda yakin ingin menghapus <strong>{{name}}</strong> secara permanen? Tindakan ini akan menghapus file dari saluran penyimpanan Telegram Anda dan tidak dapat dibatalkan.",
+        "descriptionFolder": "Apakah Anda yakin ingin menghapus <strong>{{name}}</strong> secara permanen? Tindakan ini tidak dapat dibatalkan."
+      },
+      "bulkDelete": {
+        "title": "Hapus selamanya?",
+        "description_one": "Ini akan menghapus secara permanen <strong>{{count}} item yang dipilih</strong> dari saluran Telegram Anda. Tindakan ini tidak dapat dibatalkan.",
+        "description_other": "Ini akan menghapus secara permanen <strong>{{count}} item yang dipilih</strong> dari saluran Telegram Anda. Tindakan ini tidak dapat dibatalkan."
+      }
+    }
+  },
+  "actions": {
+    "bootstrapPending": "Masih memuat drive Anda — silakan coba sebentar lagi.",
+    "saveFailed": "Penyimpanan gagal dan dibatalkan: {{error}}",
+    "unknownError": "Kesalahan tidak diketahui",
+    "channelNotInitialized": "Saluran penyimpanan Telegram belum diinisialisasi",
+    "fileNotFound": "File tidak ditemukan",
+    "folder": {
+      "alreadyExists": "Folder \"{{name}}\" sudah ada",
+      "created": "Folder \"{{name}}\" berhasil dibuat",
+      "createFailed": "Gagal membuat folder"
+    },
+    "rename": {
+      "success": "Berhasil mengganti nama",
+      "failed": "Gagal mengganti nama"
+    },
+    "star": {
+      "added": "Ditambahkan ke Berbintang",
+      "removed": "Dihapus dari Berbintang",
+      "failed": "Gagal memperbarui bintang"
+    },
+    "trash": {
+      "moved": "\"{{name}}\" dipindahkan ke Sampah",
+      "moveFailed": "Gagal memindahkan ke sampah",
+      "restored": "\"{{name}}\" dipulihkan",
+      "restoreFailed": "Gagal memulihkan"
+    },
+    "archive": {
+      "archived": "\"{{name}}\" diarsipkan",
+      "archiveFailed": "Gagal mengarsipkan",
+      "unarchived": "\"{{name}}\" dikembalikan ke Drive Saya",
+      "unarchiveFailed": "Gagal membatalkan pengarsipan"
+    },
+    "delete": {
+      "success": "Dihapus permanen",
+      "failed": "Gagal menghapus"
+    },
+    "emptyTrash": {
+      "alreadyEmpty": "Sampah sudah kosong",
+      "success_one": "{{count}} item dihapus secara permanen",
+      "success_other": "{{count}} item dihapus secara permanen",
+      "failed": "Gagal mengosongkan sampah"
+    },
+    "bulk": {
+      "trashed_one": "{{count}} item dipindahkan ke Sampah",
+      "trashed_other": "{{count}} item dipindahkan ke Sampah",
+      "trashFailed": "Gagal memindahkan item ke sampah",
+      "restored_one": "{{count}} item dipulihkan",
+      "restored_other": "{{count}} item dipulihkan",
+      "restoreFailed": "Gagal memulihkan item",
+      "deleted_one": "{{count}} item dihapus permanen",
+      "deleted_other": "{{count}} item dihapus permanen",
+      "deleteFailed": "Gagal menghapus item",
+      "archived_one": "{{count}} item diarsipkan",
+      "archived_other": "{{count}} item diarsipkan",
+      "archiveFailed": "Gagal mengarsipkan item",
+      "starred_one": "{{count}} item ditambahkan ke Berbintang",
+      "starred_other": "{{count}} item ditambahkan ke Berbintang",
+      "starFailed": "Gagal menambahkan bintang ke item",
+      "unarchived_one": "{{count}} item dikembalikan ke Drive Saya",
+      "unarchived_other": "{{count}} item dikembalikan ke Drive Saya",
+      "unarchiveFailed": "Gagal membatalkan pengarsipan item"
+    },
+    "offline": {
+      "downloading": "Mengunduh \"{{name}}\" untuk akses offline...",
+      "available": "\"{{name}}\" sekarang tersedia offline",
+      "unavailable": "\"{{name}}\" tidak lagi tersedia offline",
+      "failed": "Gagal memperbarui status offline"
+    },
+    "move": {
+      "nothingToMove": "Tidak ada yang perlu dipindahkan",
+      "destinationMissing": "Folder tujuan sudah tidak ada.",
+      "intoItself": "Tidak dapat memindahkan folder \"{{name}}\" ke dalam dirinya sendiri atau subfoldernya.",
+      "alreadyInFolder": "Item sudah ada di folder tersebut",
+      "success_one": "Berhasil memindahkan {{count}} item",
+      "success_other": "Berhasil memindahkan {{count}} item",
+      "failed": "Gagal memindahkan item"
+    }
+  }
+}

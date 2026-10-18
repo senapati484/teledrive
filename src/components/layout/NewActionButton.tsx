@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +38,7 @@ export const NewActionButton = React.memo(function NewActionButton({
   isFab = false,
 }: NewActionButtonProps) {
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation("drive");
 
   const handleCreateFolder = () => {
     setOpen(false);
@@ -63,7 +65,7 @@ export const NewActionButton = React.memo(function NewActionButton({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          aria-label="New item"
+          aria-label={t("newMenu.ariaLabel")}
           aria-expanded={open}
           className={cn(
             isFab
@@ -75,7 +77,7 @@ export const NewActionButton = React.memo(function NewActionButton({
           <GooglePlusIcon />
           {!isFab && (
             <span className="text-sm font-semibold tracking-wide text-[#1f1f1f] dark:text-[#e3e3e3]">
-              New
+              {t("newMenu.new")}
             </span>
           )}
         </button>
@@ -94,7 +96,7 @@ export const NewActionButton = React.memo(function NewActionButton({
           className="rounded-xl text-xs font-semibold px-3.5 py-2.5 cursor-pointer hover:bg-[#f0f4f9] dark:hover:bg-[#333537] flex items-center gap-3 text-[#1f1f1f] dark:text-[#e3e3e3]"
         >
           <FolderPlus className="h-4.5 w-4.5 text-[#0b57d0] dark:text-[#a8c7fa]" />
-          <span>New folder</span>
+          <span>{t("newMenu.newFolder")}</span>
         </DropdownMenuItem>
         <div className="h-px bg-slate-200/70 dark:bg-slate-700/60 my-1.5" />
         <DropdownMenuItem
@@ -105,7 +107,7 @@ export const NewActionButton = React.memo(function NewActionButton({
           className="rounded-xl text-xs font-semibold px-3.5 py-2.5 cursor-pointer hover:bg-[#f0f4f9] dark:hover:bg-[#333537] flex items-center gap-3 text-[#1f1f1f] dark:text-[#e3e3e3]"
         >
           <Upload className="h-4.5 w-4.5 text-[#0b57d0] dark:text-[#a8c7fa]" />
-          <span>File upload</span>
+          <span>{t("newMenu.fileUpload")}</span>
         </DropdownMenuItem>
         <DropdownMenuItem
           onSelect={(e) => {
@@ -115,7 +117,7 @@ export const NewActionButton = React.memo(function NewActionButton({
           className="rounded-xl text-xs font-semibold px-3.5 py-2.5 cursor-pointer hover:bg-[#f0f4f9] dark:hover:bg-[#333537] flex items-center gap-3 text-[#1f1f1f] dark:text-[#e3e3e3]"
         >
           <Folder className="h-4.5 w-4.5 text-[#444746] dark:text-[#c4c7c5]" />
-          <span>Folder upload</span>
+          <span>{t("newMenu.folderUpload")}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

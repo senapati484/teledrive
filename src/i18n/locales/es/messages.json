@@ -1,0 +1,65 @@
+{
+  "common": {
+    "unknownError": "Error desconocido"
+  },
+  "bootstrap": {
+    "status": {
+      "connecting": "Conectándose a Telegram...",
+      "verifyingChannel": "Verificando canal de almacenamiento seguro...",
+      "loadingIndex": "Cargando índice de metadatos del archivo...",
+      "recoveryScan": "Verificando sus archivos (escaneo de recuperación)...",
+      "initializingView": "Inicializando la vista de almacenamiento local..."
+    }
+  },
+  "backup": {
+    "errors": {
+      "noFolders": "Elija primero al menos una carpeta en Configuración → Copia de seguridad del dispositivo.",
+      "channelNotReady": "El canal de almacenamiento no está listo. Por favor complete el primer inicio de sesión.",
+      "clientUnreachable": "Cliente de Telegram inalcanzable: {{message}}",
+      "walkerFailed": "Andador falló: {{message}}",
+      "manifestCorrupt": "El manifiesto de respaldo está corrupto y se niega a cargar hasta que se revise.",
+      "cancelled": "Cancelado por el usuario.",
+      "sessionExpired": "La sesión de Telegram expiró. Vuelva a conectar su cuenta en Configuración → Cuenta de Telegram, luego ejecute la copia de seguridad nuevamente."
+    }
+  },
+  "upload": {
+    "channelNotConfigured": "El canal de almacenamiento de Telegram no está configurado. Por favor verifique la configuración.",
+    "success": "\"{{name}}\" subido correctamente!",
+    "indexSaveFailed": "Error al guardar el índice para \"{{name}}\": actualice la unidad.",
+    "failedFallback": "Error al subir",
+    "failed": "No se pudo cargar \"{{name}}\": {{message}}",
+    "emptyFile": "\"{{name}}\" está vacío. Telegram no admite archivos vacíos (0 bytes)."
+  },
+  "download": {
+    "cancelled": "Descarga cancelada.",
+    "progress": "Descargando \"{{name}}\"... {{percent}}%",
+    "success": "\"{{name}}\" ¡descargado exitosamente!",
+    "failed": "No se pudo descargar el archivo. Por favor verifique los permisos e inténtelo nuevamente.",
+    "errors": {
+      "mediaNotFound": "Mensaje de archivo de destino o medios no encontrados en Telegram.",
+      "mediaFailed": "No se pudo descargar el medio."
+    }
+  },
+  "indexQueue": {
+    "rateLimitRetrying": "Límite de velocidad de Telegram: reintentar"
+  },
+  "storage": {
+    "saveFailed": "No se puede guardar el archivo en {{path}}. Por favor verifique los permisos de almacenamiento."
+  },
+  "relativeTime": {
+    "unknown": "desconocido",
+    "justNow": "En este momento",
+    "second_one": "{{count}} segundo",
+    "second_other": "{{count}} segundos",
+    "minute_one": "{{count}} minuto",
+    "minute_other": "{{count}} minutos",
+    "hour_one": "{{count}} hora",
+    "hour_other": "{{count}} horas",
+    "day_one": "{{count}} día",
+    "day_other": "{{count}} días",
+    "month_one": "{{count}} mes",
+    "month_other": "{{count}} meses",
+    "year_one": "{{count}} año",
+    "year_other": "{{count}} años"
+  }
+}

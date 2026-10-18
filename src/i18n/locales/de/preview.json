@@ -1,0 +1,153 @@
+{
+  "loading": "Laden…",
+  "downloadInstead": "Laden Sie stattdessen herunter",
+  "truncatedNotice": "--- [Vorschau gekürzt: Datei überschreitet 3 MB-Grenze] ---",
+  "errors": {
+    "offlineUnavailable": "Sie sind derzeit offline und diese Datei wurde nicht als „Offline verfügbar“ markiert. Stellen Sie eine Verbindung zum Internet her, um es zu öffnen.",
+    "downloadFailed": "Datei konnte nicht heruntergeladen werden."
+  },
+  "toast": {
+    "preparingSystemViewer": "Dokument wird für System Viewer vorbereitet...",
+    "openedInSystemViewer": "Geöffnetes Dokument im System Viewer.",
+    "systemViewerFailed": "System Viewer konnte nicht geöffnet werden. Stattdessen wird die Datei heruntergeladen...",
+    "saved": "„{{name}}“ erfolgreich gespeichert!",
+    "saveFailed": "Speichern fehlgeschlagen: {{message}}",
+    "unknownError": "Unbekannter Fehler",
+    "copied": "In die Zwischenablage kopiert",
+    "jsonFormatted": "JSON-formatiert",
+    "invalidJson": "Ungültiger JSON: {{message}}"
+  },
+  "topbar": {
+    "editing": "Bearbeitung",
+    "saved": "Gespeichert",
+    "cancel": "Stornieren",
+    "saving": "Sparen…",
+    "save": "Speichern",
+    "formatJsonTitle": "JSON formatieren (Prettify)",
+    "format": "Format",
+    "disableWrap": "Zeilenumbruch deaktivieren",
+    "enableWrap": "Aktivieren Sie den Zeilenumbruch",
+    "fontSizeTitle": "Schriftgröße: {{size}}px (zum Umschalten klicken)",
+    "copyTitle": "Inhalt in die Zwischenablage kopieren",
+    "runTitle": "Im O2-Code-Editor ausführen",
+    "run": "Laufen",
+    "editTitle": "Datei bearbeiten",
+    "edit": "Bearbeiten",
+    "toggleDetails": "Details umschalten",
+    "openInSystemViewerTitle": "Im Standard-PDF-Viewer des Systems öffnen",
+    "openInSystemViewer": "Im System Viewer öffnen",
+    "download": "Herunterladen",
+    "close": "Schließen"
+  },
+  "viewMode": {
+    "preview": "Vorschau",
+    "source": "Quelle",
+    "table": "Tisch",
+    "raw": "Roh",
+    "vector": "Vektor",
+    "code": "Code"
+  },
+  "image": {
+    "zoomOut": "Herauszoomen",
+    "zoomIn": "Vergrößern",
+    "resetZoom": "Zoom anpassen / zurücksetzen",
+    "rotateCounterClockwise": "Gegen den Uhrzeigersinn drehen",
+    "rotateClockwise": "Im Uhrzeigersinn drehen",
+    "toggleGrid": "Rasterhintergrund umschalten"
+  },
+  "details": {
+    "title": "Dateidetails",
+    "name": "Name",
+    "dimensions": "Abmessungen",
+    "loadingDimensions": "Laden...",
+    "fileSize": "Dateigröße",
+    "mimeType": "Mime-Typ",
+    "path": "Weg",
+    "uploadedAt": "Hochgeladen unter"
+  },
+  "media": {
+    "skipBack": "Springe 10 Sekunden zurück",
+    "skipForward": "10 Sekunden vorwärts springen",
+    "audioTrack": "Audiospur"
+  },
+  "archive": {
+    "badge": "{{ext}} ARCHIV",
+    "description": "Komprimierte Archive können nicht direkt im Browser in der Vorschau angezeigt werden. Laden Sie dieses Archiv herunter, um seinen Inhalt zu extrahieren und auf Ihrem Computer anzuzeigen.",
+    "download": "Archiv herunterladen"
+  },
+  "unsupported": {
+    "description": "Für diesen Dateityp ist keine Vorschau verfügbar. Sie können es herunterladen und in einer kompatiblen Anwendung auf Ihrem System öffnen.",
+    "download": "Datei herunterladen"
+  },
+  "status": {
+    "words_one": "{{count, number}} Wort",
+    "words_other": "{{count, number}} Wörter",
+    "readingTime_one": "{{count}} Min. gelesen",
+    "readingTime_other": "{{count}} Min. gelesen",
+    "rows_one": "{{count, number}} Zeile",
+    "rows_other": "{{count, number}} Zeilen",
+    "lines_one": "{{count, number}} Zeile",
+    "lines_other": "{{count, number}} Zeilen",
+    "wrapOn": "Wrap: An",
+    "wrapOff": "Wrap: Aus",
+    "cursor": "Ln {{line}}, Col {{col}}",
+    "editorInfo": "Tab: 2 Leerzeichen · UTF-8 · LF"
+  },
+  "pdfErrorBoundary": {
+    "title": "Beim PDF-Viewer ist ein Fehler aufgetreten",
+    "description": "Das PDF konnte nicht gerendert werden. Versuchen Sie es mit einem Neuladen.",
+    "retry": "Wiederholen"
+  },
+  "pdf": {
+    "loading": "PDF-Dokument wird geladen",
+    "preparing": "Bereiten Sie Ihr Dokument vor...",
+    "errorTitle": "Vorschau des Dokuments nicht möglich",
+    "openInSystemViewer": "Im System Viewer öffnen",
+    "noDocument": "Kein Dokument geladen.",
+    "errors": {
+      "noData": "Keine Dokumentdaten empfangen.",
+      "invalid": "Diese Datei scheint beschädigt zu sein oder ist keine gültige PDF-Datei.",
+      "passwordProtected": "Dieses PDF ist passwortgeschützt. Passwortgeschützte PDFs werden nicht unterstützt.",
+      "engineUnavailable": "Die PDF-Engine ist nicht verfügbar. Bitte laden Sie die Anwendung neu.",
+      "loadFailed": "Das PDF-Dokument konnte nicht geladen werden. Die Datei ist möglicherweise beschädigt."
+    },
+    "toolbar": {
+      "previousPage": "Vorherige Seite ( ↑ / PageUp)",
+      "jumpToPage": "Klicken Sie, um zur Seite zu springen",
+      "nextPage": "Nächste Seite (↓ / PageDown)",
+      "zoomOut": "Verkleinern (Strg+-)",
+      "resetZoom": "Auf 100 % zurücksetzen (Strg+0)",
+      "zoomIn": "Vergrößern (Strg+=)",
+      "fitWidth": "An Breite anpassen",
+      "fitPage": "Ganze Seite anpassen",
+      "fit": "Fit",
+      "rotate": "Im Uhrzeigersinn drehen",
+      "print": "Dokument drucken",
+      "openInSystemAppTitle": "In der Standard-PDF-Anwendung des Systems öffnen",
+      "systemViewer": "Systembetrachter"
+    }
+  },
+  "csv": {
+    "toast": {
+      "copied": "Zellwert in die Zwischenablage kopiert"
+    },
+    "filterPlaceholder_one": "{{count}} Zeile filtern…",
+    "filterPlaceholder_other": "{{count}} Zeilen filtern…",
+    "clear": "Klar",
+    "rowsShown_one": "{{shown}} von {{count}} Zeile",
+    "rowsShown_other": "{{shown}} von {{count}} Zeilen",
+    "columns_one": "{{count}} Spalte",
+    "columns_other": "{{count}} Spalten",
+    "empty": "Leerer Datensatz",
+    "columnFallback": "Spalte {{letter}}",
+    "cellTitle": "{{value}} (Zum Kopieren klicken)"
+  },
+  "codeEditor": {
+    "loading": "Editor wird geladen…"
+  },
+  "syntaxHighlighter": {
+    "ariaLabel": "Code-Viewer",
+    "largeFile_one": "Große Datei (Zeile {{count, number}}) – Syntaxhervorhebung wird aus Leistungsgründen übersprungen",
+    "largeFile_other": "Große Datei ({{count, number}} Zeilen) – Syntaxhervorhebung wird aus Leistungsgründen übersprungen"
+  }
+}

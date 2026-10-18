@@ -1,0 +1,116 @@
+{
+  "logoAlt": "Logotipo de TeleDrive",
+  "actions": {
+    "close": "Cerrar"
+  },
+  "splash": {
+    "connecting": "Conectando a Telegram..."
+  },
+  "nav": {
+    "myDrive": "Mi Unidad",
+    "recent": "Recientes",
+    "starred": "Destacados",
+    "archived": "Archivados",
+    "trash": "Papelera",
+    "backups": "Copias de seguridad",
+    "settings": "Ajustes"
+  },
+  "header": {
+    "switchToLight": "Cambiar a tema claro",
+    "switchToDark": "Cambiar a tema oscuro",
+    "settings": "Ajustes"
+  },
+  "indexQueue": {
+    "saveFailedTitle": "Error al guardar el índice — haz clic para reintentar",
+    "liveSyncTitle": "Sincronización multidispositivo en vivo",
+    "backupSnapshotTitle": "Copia de seguridad en curso",
+    "saveFailed": "Error al guardar",
+    "retryingIn": "Reintentando en {{seconds}}s",
+    "synced": "Sincronizado",
+    "backupInProgress": "Copia de seguridad en curso",
+    "syncing": "Sincronizando",
+    "retry": "Reintentar"
+  },
+  "dropOverlay": {
+    "title": "Suelta archivos para subir a Mi Unidad",
+    "description": "Suelta para comenzar la subida de inmediato"
+  },
+  "offlineBanner": "Actualmente no tienes conexión. Algunas funciones pueden no estar disponibles.",
+  "shortcuts": {
+    "title": "Atajos de teclado",
+    "navigationGroup": "Navegación y búsqueda",
+    "focusSearch": "Enfocar búsqueda",
+    "focusSearchKeys": "/ o {{modKey}}F",
+    "clearSelection": "Limpiar selección / deseleccionar",
+    "scrollToTop": "Desplazarse arriba",
+    "scrollToBottom": "Desplazarse abajo",
+    "showHelp": "Mostrar ayuda de atajos",
+    "selectionGroup": "Acciones en selección",
+    "selectAll": "Seleccionar todos los elementos",
+    "moveToTrash": "Mover a la papelera",
+    "rename": "Renombrar elemento",
+    "download": "Descargar archivo"
+  },
+  "sidebar": {
+    "storage": "Almacenamiento",
+    "usedOfUnlimited": "<strong>{{size}}</strong> de ilimitado usado",
+    "telegramCloudStorage": "Almacenamiento en la nube de Telegram"
+  },
+  "newMenu": {
+    "ariaLabel": "Nuevo elemento",
+    "new": "Nuevo",
+    "newFolder": "Nueva carpeta",
+    "fileUpload": "Subir archivo",
+    "folderUpload": "Subir carpeta"
+  },
+  "search": {
+    "placeholder": "Buscar en Drive",
+    "matchingHeader": "Archivos y carpetas coincidentes",
+    "folder": "Carpeta",
+    "fileIn": "Archivo • {{location}}",
+    "noResults": "No se encontraron archivos coincidentes"
+  },
+  "upload": {
+    "failed_one": "{{count}} subida falló",
+    "failed_other": "{{count}} subidas fallaron",
+    "complete_one": "{{count}} subida completada",
+    "complete_other": "{{count}} subidas completadas",
+    "uploadingItems_one": "Subiendo {{count}} elemento ({{percent}}%)",
+    "uploadingItems_other": "Subiendo {{count}} elementos ({{percent}}%)",
+    "expand": "Expandir",
+    "collapse": "Contraer",
+    "close": "Cerrar",
+    "queued": "En cola",
+    "uploading": "Subiendo..."
+  },
+  "backup": {
+    "scanning": "Escaneando carpetas…",
+    "backingUp": "Respaldando — {{uploaded}} / {{total}}",
+    "completeUploaded_one": "Copia completada — {{count}} archivo subido",
+    "completeUploaded_other": "Copia completada — {{count}} archivos subidos",
+    "completeNothingChanged": "Copia completada — sin cambios",
+    "cancelled": "Copia cancelada",
+    "failed": "Copia fallida",
+    "retryRateLimit": "Reintentando {{attempt}}/{{maxAttempts}} — límite de Telegram, esperando {{seconds}}s",
+    "retryNetwork": "Reintentando {{attempt}}/{{maxAttempts}} — problema de red, esperando {{seconds}}s",
+    "readingFolders": "Leyendo contenido de carpetas desde el disco",
+    "summaryUploaded_one": "{{count}} subido",
+    "summaryUploaded_other": "{{count}} subidos",
+    "summaryUnchanged_one": "{{count}} sin cambios",
+    "summaryUnchanged_other": "{{count}} sin cambios",
+    "summaryFailed_one": "{{count}} fallido",
+    "summaryFailed_other": "{{count}} fallidos",
+    "resumeAnytime": "Puedes reanudar en cualquier momento.",
+    "dismiss": "Descartar"
+  },
+  "errorBoundary": {
+    "title": "Algo salió mal",
+    "description": "Ocurrió un problema inesperado. Por favor recarga la aplicación para continuar.",
+    "reload": "Recargar aplicación"
+  },
+  "notFound": {
+    "title": "404 - Página no encontrada",
+    "description": "La página que buscas no existe.",
+    "goToMyDrive": "Ir a Mi Unidad"
+  }
+}

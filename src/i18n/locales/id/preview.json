@@ -1,0 +1,156 @@
+{
+  "loading": "Memuat…",
+  "downloadInstead": "Unduh Saja",
+  "truncatedNotice": "--- [Pratinjau terpotong: Berkas melebihi batas 3MB] ---",
+  "errors": {
+    "offlineUnavailable": "Anda sedang offline, dan berkas ini belum ditandai sebagai 'Tersedia offline'. Hubungkan ke internet untuk membukanya.",
+    "downloadFailed": "Gagal mengunduh berkas."
+  },
+  "toast": {
+    "preparingSystemViewer": "Menyiapkan dokumen untuk penampil sistem...",
+    "openedInSystemViewer": "Membuka dokumen di penampil sistem.",
+    "systemViewerFailed": "Tidak dapat membuka penampil sistem. Mengunduh berkas sebagai gantinya...",
+    "saved": "\"{{name}}\" berhasil disimpan!",
+    "saveFailed": "Gagal menyimpan: {{message}}",
+    "unknownError": "Kesalahan tidak diketahui",
+    "copied": "Disalin ke papan klip",
+    "jsonFormatted": "JSON diformat",
+    "invalidJson": "JSON tidak valid: {{message}}"
+  },
+  "topbar": {
+    "editing": "Mengedit",
+    "saved": "Tersimpan",
+    "cancel": "Batal",
+    "saving": "Menyimpan…",
+    "save": "Simpan",
+    "formatJsonTitle": "Format JSON",
+    "format": "Format",
+    "disableWrap": "Nonaktifkan pembungkusan kata",
+    "enableWrap": "Aktifkan pembungkusan kata",
+    "fontSizeTitle": "Ukuran font: {{size}}px (klik untuk beralih)",
+    "copyTitle": "Salin konten ke papan klip",
+    "runTitle": "Jalankan di Editor Kode O2",
+    "run": "Jalankan",
+    "editTitle": "Edit berkas",
+    "edit": "Edit",
+    "toggleDetails": "Beralih detail",
+    "openInSystemViewerTitle": "Buka di Penampil PDF Default Sistem",
+    "openInSystemViewer": "Buka di Penampil Sistem",
+    "download": "Unduh",
+    "close": "Tutup"
+  },
+  "viewMode": {
+    "preview": "Pratinjau",
+    "source": "Sumber",
+    "table": "Tabel",
+    "raw": "Mentah",
+    "vector": "Vektor",
+    "code": "Kode"
+  },
+  "image": {
+    "zoomOut": "Perkecil",
+    "zoomIn": "Perbesar",
+    "resetZoom": "Atur Ulang Zoom",
+    "rotateCounterClockwise": "Putar Berlawanan Arah Jarum Jam",
+    "rotateClockwise": "Putar Searah Jarum Jam",
+    "toggleGrid": "Alihkan Latar Kisi"
+  },
+  "details": {
+    "title": "Detail Berkas",
+    "name": "Nama",
+    "dimensions": "Dimensi",
+    "loadingDimensions": "Memuat...",
+    "fileSize": "Ukuran Berkas",
+    "mimeType": "Tipe MIME",
+    "path": "Jalur",
+    "uploadedAt": "Diunggah Pada"
+  },
+  "media": {
+    "skipBack": "Mundur 10 dtk",
+    "skipForward": "Maju 10 dtk",
+    "audioTrack": "Trek Audio"
+  },
+  "archive": {
+    "badge": "ARSIP {{ext}}",
+    "description": "Arsip terkompresi tidak dapat dipratinjau langsung di aplikasi. Unduh arsip ini untuk mengekstrak dan melihat isinya.",
+    "download": "Unduh Arsip"
+  },
+  "unsupported": {
+    "description": "Tidak ada pratinjau yang tersedia untuk jenis berkas ini. Anda dapat mengunduh dan membukanya di aplikasi yang kompatibel.",
+    "download": "Unduh Berkas"
+  },
+  "status": {
+    "words_one": "{{count, number}} kata",
+    "words_other": "{{count, number}} kata",
+    "readingTime_one": "{{count}} mnt baca",
+    "readingTime_other": "{{count}} mnt baca",
+    "rows_one": "{{count, number}} baris",
+    "rows_other": "{{count, number}} baris",
+    "lines_one": "{{count, number}} baris",
+    "lines_other": "{{count, number}} baris",
+    "wrapOn": "Bungkus: Aktif",
+    "wrapOff": "Bungkus: Nonaktif",
+    "cursor": "Brs {{line}}, Kol {{col}}",
+    "editorInfo": "Tab: 2 spasi · UTF-8 · LF"
+  },
+  "pdfErrorBoundary": {
+    "title": "Penampil PDF mengalami kesalahan",
+    "description": "PDF tidak dapat dirender. Coba muat ulang.",
+    "retry": "Coba Lagi"
+  },
+  "pdf": {
+    "loading": "Memuat dokumen PDF",
+    "preparing": "Menyiapkan dokumen Anda...",
+    "errorTitle": "Tidak dapat melihat pratinjau dokumen",
+    "openInSystemViewer": "Buka di Penampil Sistem",
+    "noDocument": "Tidak ada dokumen yang dimuat.",
+    "errors": {
+      "noData": "Tidak ada data dokumen yang diterima.",
+      "invalid": "Berkas ini tampaknya rusak atau bukan berkas PDF yang valid.",
+      "passwordProtected": "PDF ini dilindungi kata sandi. PDF yang dilindungi kata sandi tidak didukung.",
+      "engineUnavailable": "Mesin PDF tidak tersedia. Silakan muat ulang aplikasi.",
+      "loadFailed": "Gagal memuat dokumen PDF. Berkas mungkin rusak."
+    },
+    "toolbar": {
+      "previousPage": "Halaman Sebelumnya (↑ / PageUp)",
+      "jumpToPage": "Klik untuk melompat ke halaman",
+      "nextPage": "Halaman Berikutnya (↓ / PageDown)",
+      "zoomOut": "Perkecil (Ctrl+-)",
+      "resetZoom": "Atur ulang ke 100% (Ctrl+0)",
+      "zoomIn": "Perbesar (Ctrl+=)",
+      "fitWidth": "Sesuaikan Lebar",
+      "fitPage": "Halaman Penuh",
+      "fit": "Sesuaikan",
+      "rotate": "Putar Searah Jarum Jam",
+      "print": "Cetak Dokumen",
+      "openInSystemAppTitle": "Buka di Aplikasi PDF Default Sistem",
+      "systemViewer": "Penampil Sistem"
+    }
+  },
+  "csv": {
+    "toast": {
+      "copied": "Nilai sel disalin ke papan klip"
+    },
+    "filterPlaceholder_one": "Saring {{count}} baris…",
+    "filterPlaceholder_other": "Saring {{count}} baris…",
+    "clear": "Hapus",
+    "rowsShown_one": "{{shown}} dari {{count}} baris",
+    "rowsShown_other": "{{shown}} dari {{count}} baris",
+    "columns_one": "{{count}} kolom",
+    "columns_other": "{{count}} kolom",
+    "emptyFiltered": "Tidak ada baris yang cocok dengan filter Anda.",
+    "resetFilter": "Atur Ulang Filter",
+    "noData": "Tidak ada data yang ditemukan dalam tabel ini.",
+    "empty": "Dataset kosong",
+    "columnFallback": "Kolom {{letter}}",
+    "cellTitle": "{{value}} (Klik untuk menyalin)"
+  },
+  "codeEditor": {
+    "loading": "Memuat editor…"
+  },
+  "syntaxHighlighter": {
+    "ariaLabel": "Penampil kode",
+    "largeFile_one": "File besar ({{count, number}} baris) — penyorotan sintaksis dilewati untuk performa",
+    "largeFile_other": "File besar ({{count, number}} baris) — penyorotan sintaksis dilewati untuk performa"
+  }
+}

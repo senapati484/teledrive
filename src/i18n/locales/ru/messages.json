@@ -1,0 +1,65 @@
+{
+  "common": {
+    "unknownError": "Неизвестная ошибка"
+  },
+  "bootstrap": {
+    "status": {
+      "connecting": "Подключение к Telegram...",
+      "verifyingChannel": "Проверка безопасного канала хранилища...",
+      "loadingIndex": "Загрузка индекса метаданных файлов...",
+      "recoveryScan": "Проверка ваших файлов (сканирование восстановления)...",
+      "initializingView": "Инициализация локального представления..."
+    }
+  },
+  "backup": {
+    "errors": {
+      "noFolders": "Сначала выберите хотя бы одну папку в «Настройки → Резервное копирование устройства».",
+      "channelNotReady": "Канал хранилища не готов. Завершите первый вход.",
+      "clientUnreachable": "Клиент Telegram недоступен: {{message}}",
+      "walkerFailed": "Ошибка обхода файловой системы: {{message}}",
+      "manifestCorrupt": "Манифест резервной копии поврежден — отправка отклонена.",
+      "cancelled": "Отменено пользователем.",
+      "sessionExpired": "Сессия Telegram истекла. Переподключите аккаунт в «Настройки → Аккаунт Telegram», затем запустите копирование снова."
+    }
+  },
+  "upload": {
+    "channelNotConfigured": "Канал хранилища Telegram не настроен. Проверьте настройки.",
+    "success": "«{{name}}» успешно загружен!",
+    "indexSaveFailed": "Не удалось сохранить индекс для «{{name}}» — обновите диск.",
+    "failedFallback": "Сбой загрузки",
+    "failed": "Не удалось загрузить «{{name}}»: {{message}}",
+    "emptyFile": "«{{name}}» пуст. Пустые файлы (0 байт) не поддерживаются в Telegram."
+  },
+  "download": {
+    "cancelled": "Скачивание отменено.",
+    "progress": "Скачивание «{{name}}»... {{percent}}%",
+    "success": "«{{name}}» успешно скачан!",
+    "failed": "Не удалось скачать файл. Проверьте права доступа и попробуйте снова.",
+    "errors": {
+      "mediaNotFound": "Сообщение или медиафайлы не найдены в Telegram.",
+      "mediaFailed": "Не удалось скачать медиафайл."
+    }
+  },
+  "indexQueue": {
+    "rateLimitRetrying": "Ограничение скорости Telegram — повторная попытка"
+  },
+  "storage": {
+    "saveFailed": "Не удалось сохранить файл в {{path}}. Проверьте права доступа."
+  },
+  "relativeTime": {
+    "unknown": "неизвестно",
+    "justNow": "только что",
+    "second_one": "{{count}} секунду назад",
+    "second_other": "{{count}} секунд назад",
+    "minute_one": "{{count}} минуту назад",
+    "minute_other": "{{count}} минут назад",
+    "hour_one": "{{count}} час назад",
+    "hour_other": "{{count}} часов назад",
+    "day_one": "{{count}} день назад",
+    "day_other": "{{count}} дней назад",
+    "month_one": "{{count}} месяц назад",
+    "month_other": "{{count}} месяцев назад",
+    "year_one": "{{count}} год назад",
+    "year_other": "{{count}} лет назад"
+  }
+}

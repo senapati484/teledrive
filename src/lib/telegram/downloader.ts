@@ -2,6 +2,7 @@ import { getClient } from "./client";
 import { save as tauriSaveDialog } from "@tauri-apps/plugin-dialog";
 import { saveBinaryFile } from "../storage/safeFileWriter";
 import { toast } from "sonner";
+import i18n from "@/i18n";
 
 /**
  * Safely converts any value (number, bigint, or bigInt.BigInteger object) to a standard JS number.
@@ -65,11 +66,11 @@ export async function downloadFileFromTelegram(
     });
     
     if (!targetPath) {
-      toast.info("Download cancelled.");
+      toast.info(i18n.t("messages:download.cancelled"));
       return;
     }
     
-    toast.loading(`Downloading "${fileName}"... 0%`, { id: toastId });
+    toast.loading(i18n.t("messages:download.progress", { name: fileName, percent: 0 }), { id: toastId });
     
     // Download the media buffer from Telegram
     let lastReportedPct = -1;
@@ -81,7 +82,7 @@ export async function downloadFileFromTelegram(
           const pct = Math.round((downloaded / total) * 100);
           if (pct !== lastReportedPct && (pct % 5 === 0 || pct === 100)) {
             lastReportedPct = pct;
-            toast.loading(`Downloading "${fileName}"... ${pct}%`, { id: toastId });
+            toast.loading(i18n.t("messages:download.progress", { name: fileName, percent: pct }), { id: toastId });
           }
           onProgress?.(pct);
         }
@@ -94,10 +95,10 @@ export async function downloadFileFromTelegram(
     
     // Save the file to disk using robust native binary writer
     await saveBinaryFile(targetPath, buffer);
-    toast.success(`"${fileName}" downloaded successfully!`, { id: toastId });
+    toast.success(i18n.t("messages:download.success", { name: fileName }), { id: toastId });
   } catch (error: any) {
     console.error("Failed to download file:", error);
-    toast.error("Failed to download file. Please check permissions and try again.", { id: toastId });
+    toast.error(i18n.t("messages:download.failed"), { id: toastId });
   }
 }
 
@@ -125,7 +126,7 @@ export async function downloadFileToBuffer(
     
     const message = messages[0];
     if (!message || !message.media) {
-      throw new Error("Target file message or media not found on Telegram.");
+      throw new Error(i18n.t("messages:download.errors.mediaNotFound"));
     }
     
     const buffer = (await client.downloadMedia(message.media, {
@@ -140,7 +141,7 @@ export async function downloadFileToBuffer(
     })) as any;
     
     if (!buffer) {
-      throw new Error("Failed to download media.");
+      throw new Error(i18n.t("messages:download.errors.mediaFailed"));
     }
     
     if (typeof Buffer !== "undefined" && Buffer.isBuffer(buffer)) {

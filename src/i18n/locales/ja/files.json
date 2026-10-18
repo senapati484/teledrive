@@ -1,0 +1,256 @@
+{
+  "menu": {
+    "preview": "プレビュー",
+    "openInSystemApp": "システムアプリで開く",
+    "edit": "編集",
+    "download": "ダウンロード",
+    "availableOffline": "オフラインで利用可能",
+    "rename": "名前の変更",
+    "moveTo": "に移動します",
+    "addStar": "スターを追加",
+    "removeStar": "スターを削除",
+    "archive": "アーカイブ",
+    "unarchive": "アーカイブを解除する",
+    "restore": "復元する",
+    "deletePermanently": "完全に削除",
+    "moveToTrash": "ゴミ箱に移動"
+  },
+  "browser": {
+    "fileType": {
+      "folder": "フォルダ",
+      "pdf": "PDFドキュメント",
+      "image": "画像",
+      "video": "ビデオ",
+      "audio": "オーディオ",
+      "text": "テキストドキュメント",
+      "archive": "アーカイブ",
+      "word": "Word文書",
+      "spreadsheet": "スプレッドシート",
+      "presentation": "プレゼンテーション",
+      "sourceCode": "ソースコード",
+      "generic": "{{ext}} ファイル",
+      "file": "ファイル"
+    },
+    "sort": {
+      "label": "並べ替え: {{並べ替え}}",
+      "short": {
+        "nameAsc": "名前 (A ～ Z)",
+        "nameDesc": "名前 (Z-A)",
+        "newest": "最新",
+        "oldest": "最古の",
+        "largest": "最大",
+        "smallest": "最小"
+      },
+      "options": {
+        "nameAsc": "名前 (A から Z)",
+        "nameDesc": "名前 (Z から A)",
+        "dateDesc": "最終更新日",
+        "dateAsc": "最も早く変更されたもの",
+        "sizeDesc": "ファイルサイズ（最大）",
+        "sizeAsc": "ファイルサイズ（最小）"
+      }
+    },
+    "header": {
+      "starred": "スター付き",
+      "recent": "最近の",
+      "trash": "ごみ",
+      "archived": "アーカイブ済み",
+      "backups": "バックアップ",
+      "myDrive": "私のドライブ",
+      "searchResults": "「{{クエリ}}」の検索結果"
+    },
+    "systemApp": {
+      "preparing": "システム アプリケーション用に「{{name}}」を準備しています...",
+      "opened": "システム ビューアで「{{name}}」を開きました。",
+      "failed": "システム ビューアで開けませんでした: {{error}}",
+      "unknownError": "不明なエラー"
+    },
+    "emptyState": {
+      "drive": {
+        "title": "ドライブが空です",
+        "subtitle": "ファイルをアップロードするかフォルダーを作成して開始します。"
+      },
+      "starred": {
+        "title": "スター付きファイルはありません",
+        "subtitle": "後で簡単に見つけたいファイルにはスターを付けます。"
+      },
+      "recent": {
+        "title": "最近のファイルはありません",
+        "subtitle": "最近表示またはアップロードしたファイルがここに表示されます。"
+      },
+      "trash": {
+        "title": "ゴミ箱が空です",
+        "subtitle": "ゴミ箱に移動されたアイテムがここに表示されます。"
+      },
+      "archived": {
+        "title": "アーカイブされたファイルはありません",
+        "subtitle": "メインドライブに保存する必要はないが、保存しておきたいファイルをアーカイブします。"
+      },
+      "search": {
+        "title": "検索結果がありません",
+        "subtitle": "「{{query}}」に一致するアイテムが見つかりませんでした。"
+      },
+      "backups": {
+        "title": "まだバックアップがありません",
+        "subtitle": "「設定」→「デバイスバックアップ」でこの Mac 上のフォルダーを選択し、バックアップを実行します。ミラーリングされたファイルがここに表示されます。"
+      },
+      "folder": {
+        "title": "このフォルダは空です",
+        "subtitle": "このディレクトリにファイルをアップロードするか、フォルダーを作成します。"
+      },
+      "uploadFiles": "ファイルをアップロードする",
+      "newFolder": "新しいフォルダー"
+    },
+    "emptyTrashButton": "ゴミ箱を空にする",
+    "switchToListView": "リストビューに切り替える",
+    "switchToGridView": "グリッドビューに切り替える",
+    "backupsBanner": {
+      "title": "バックアップは読み取り専用です。",
+      "description": "バックアップするフォルダーを変更するには、<settingsPath>[設定] → [デバイス バックアップ]</settingsPath> を開きます。"
+    },
+    "filters": {
+      "all": "全て",
+      "documents": "書類",
+      "images": "画像",
+      "videos": "動画",
+      "audio": "オーディオ"
+    },
+    "sections": {
+      "folders": "フォルダー",
+      "foldersPartial": "フォルダ ({{合計}} 個中 {{表示}})",
+      "files": "ファイル",
+      "filesPartial": "ファイル（{{total}}中{{表示}}）"
+    },
+    "columns": {
+      "name": "名前",
+      "type": "タイプ",
+      "fileSize": "ファイルサイズ",
+      "lastModified": "最終更新日"
+    },
+    "dragPreview": {
+      "items_one": "{{count}} 個のアイテム",
+      "items_other": "{{count}} 個のアイテム"
+    },
+    "bulkBar": {
+      "selected_one": "選択された",
+      "selected_other": "選択された",
+      "restoreSelected": "選択したものを復元する",
+      "deletePermanently": "完全に削除",
+      "moveSelectedToTrash": "選択したものをゴミ箱に移動",
+      "clearSelection": "選択をクリア"
+    },
+    "mobileMenu": {
+      "addToStarred": "スター付きに追加",
+      "removeFromStarred": "スター付きから削除"
+    },
+    "dialogs": {
+      "cancel": "キャンセル",
+      "deleting": "削除中…",
+      "deleteForever": "永久に削除",
+      "createFolder": {
+        "title": "新しいフォルダー",
+        "placeholder": "無題のフォルダー",
+        "submit": "作成する"
+      },
+      "rename": {
+        "title": "名前の変更",
+        "placeholder": "新しい名前",
+        "submit": "わかりました"
+      },
+      "emptyTrash": {
+        "title": "ゴミ箱を空にしますか？",
+        "description_one": "これにより、Telegram ストレージ チャネルから <strong>{{count}} 個のアイテム</strong>が完全に削除されます。この操作は元に戻すことができません。",
+        "description_other": "これにより、Telegram ストレージ チャネルから <strong>{{count}} 個のアイテム</strong>が完全に削除されます。この操作は元に戻すことができません。",
+        "confirm": "ゴミ箱を空にする"
+      },
+      "deleteItem": {
+        "title": "永久に削除しますか?",
+        "descriptionFile": "<strong>{{name}}</strong> を完全に削除してもよろしいですか?これにより、実際のファイルが Telegram ストレージ チャネルから削除されます。この操作は元に戻すことができません。",
+        "descriptionFolder": "<strong>{{name}}</strong> を完全に削除してもよろしいですか?この操作は元に戻すことができません。"
+      },
+      "bulkDelete": {
+        "title": "永久に削除しますか？",
+        "description_one": "これにより、Telegram ストレージ チャネルから <strong>{{count}} 個の選択したアイテム</strong>が完全に削除されます。この操作は元に戻すことができません。",
+        "description_other": "これにより、Telegram ストレージ チャネルから <strong>{{count}} 個の選択したアイテム</strong>が完全に削除されます。この操作は元に戻すことができません。"
+      }
+    }
+  },
+  "actions": {
+    "bootstrapPending": "ドライブをロード中です - しばらくしてから再試行してください。",
+    "saveFailed": "保存に失敗し、ロールバックされました: {{error}}",
+    "unknownError": "不明なエラー",
+    "channelNotInitialized": "テレグラムストレージチャネルが初期化されていません",
+    "fileNotFound": "ファイルが見つかりません",
+    "folder": {
+      "alreadyExists": "フォルダ「{{name}}」はすでに存在します",
+      "created": "フォルダ「{{name}}」が正常に作成されました",
+      "createFailed": "フォルダーの作成に失敗しました"
+    },
+    "rename": {
+      "success": "名前が正常に変更されました",
+      "failed": "名前の変更に失敗しました"
+    },
+    "star": {
+      "added": "スター付きに追加されました",
+      "removed": "スター付きから削除されました",
+      "failed": "スターの更新に失敗しました"
+    },
+    "trash": {
+      "moved": "「{{name}}」をゴミ箱に移動しました",
+      "moveFailed": "ゴミ箱への移動に失敗しました",
+      "restored": "「{{name}}」を復元しました",
+      "restoreFailed": "復元に失敗しました"
+    },
+    "archive": {
+      "archived": "「{{name}}」をアーカイブしました",
+      "archiveFailed": "アーカイブに失敗しました",
+      "unarchived": "「{{name}}」をマイドライブに戻しました",
+      "unarchiveFailed": "アーカイブを解除できませんでした"
+    },
+    "delete": {
+      "success": "完全に削除されました",
+      "failed": "削除に失敗しました"
+    },
+    "emptyTrash": {
+      "alreadyEmpty": "ゴミ箱はすでに空です",
+      "success_one": "{{count}} 個のアイテムが完全に削除されました",
+      "success_other": "{{count}} 個のアイテムが完全に削除されました",
+      "failed": "ゴミ箱を空にできませんでした"
+    },
+    "bulk": {
+      "trashed_one": "{{count}} 個のアイテムをゴミ箱に移動しました",
+      "trashed_other": "{{count}} 個のアイテムをゴミ箱に移動しました",
+      "trashFailed": "アイテムをゴミ箱に移動できませんでした",
+      "restored_one": "{{count}} 個のアイテムを復元しました",
+      "restored_other": "{{count}} 個のアイテムを復元しました",
+      "restoreFailed": "アイテムの復元に失敗しました",
+      "deleted_one": "{{count}} 個のアイテムを完全に削除しました",
+      "deleted_other": "{{count}} 個のアイテムを完全に削除しました",
+      "deleteFailed": "アイテムの削除に失敗しました",
+      "archived_one": "アーカイブされた {{count}} 個のアイテム",
+      "archived_other": "アーカイブされた {{count}} 個のアイテム",
+      "archiveFailed": "アイテムのアーカイブに失敗しました",
+      "starred_one": "スター付きの {{count}} 個のアイテム",
+      "starred_other": "スター付きの {{count}} 個のアイテム",
+      "starFailed": "アイテムにスターを付けることができませんでした",
+      "unarchived_one": "{{count}} 個のアイテムをマイドライブに戻しました",
+      "unarchived_other": "{{count}} 個のアイテムをマイドライブに戻しました",
+      "unarchiveFailed": "アイテムのアーカイブを解除できませんでした"
+    },
+    "offline": {
+      "downloading": "オフライン アクセスのために「{{name}}」をダウンロードしています...",
+      "available": "「{{name}}」はオフラインで利用できるようになりました",
+      "unavailable": "「{{name}}」はオフラインでは利用できなくなりました",
+      "failed": "オフラインステータスの更新に失敗しました"
+    },
+    "move": {
+      "nothingToMove": "何も動かすものがない",
+      "destinationMissing": "宛先フォルダーは存在しません。",
+      "intoItself": "フォルダー「{{name}}」をそれ自体またはそのサブフォルダーに移動できません。",
+      "alreadyInFolder": "アイテムはすでにそのフォルダー内にあります",
+      "success_one": "{{count}} 個のアイテムを正常に移動しました",
+      "success_other": "{{count}} 個のアイテムを正常に移動しました",
+      "failed": "アイテムの移動に失敗しました"
+    }
+  }
+}

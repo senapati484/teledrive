@@ -18,6 +18,7 @@ import {
   loadManifest,
   manifestEntryToTeleFile,
 } from "../backup/manifest";
+import i18n from "@/i18n";
 
 /**
  * Bootstraps TeleDrive storage channel and loads the metadata.
@@ -59,13 +60,13 @@ async function bootstrapTeleDriveInner(
   onStatusChange: ((status: string) => void) | undefined,
   phone: string
 ): Promise<string> {
-  onStatusChange?.("Connecting to Telegram...");
+  onStatusChange?.(i18n.t("messages:bootstrap.status.connecting"));
   const client = getClient();
 
-  onStatusChange?.("Verifying secure storage channel...");
+  onStatusChange?.(i18n.t("messages:bootstrap.status.verifyingChannel"));
   const channelId = await ensureStorageChannel(phone);
 
-  onStatusChange?.("Loading file metadata index...");
+  onStatusChange?.(i18n.t("messages:bootstrap.status.loadingIndex"));
   let files = await loadIndex(channelId);
   try {
     const { syncOfflineStatusWithDisk } = await import("../storage/offlineStorage");
@@ -168,7 +169,7 @@ async function bootstrapTeleDriveInner(
   // and break every user action. We wrap the whole block in a race
   // against a hard timer so bootstrap ALWAYS finishes — orphan recovery
   // is best-effort; gate release is mandatory.
-  onStatusChange?.("Verifying your files (recovery scan)...");
+  onStatusChange?.(i18n.t("messages:bootstrap.status.recoveryScan"));
 
   // Wrap the ENTIRE recovery block (including its own log line) in an IIFE
   // + Promise.race. We do NOT await a log_vault_state invoke BEFORE the
@@ -414,7 +415,7 @@ async function bootstrapTeleDriveInner(
   // Gate was released right after `setFiles(files)` near the top of this
   // function. We do NOT re-set it here — doing so would clobber the early
   // release and reintroduce the bootstrap hang the user just hit.
-  onStatusChange?.("Initializing local storage view...");
+  onStatusChange?.(i18n.t("messages:bootstrap.status.initializingView"));
 
   return channelId;
 }

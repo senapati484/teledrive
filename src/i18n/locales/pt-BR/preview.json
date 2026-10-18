@@ -1,0 +1,161 @@
+{
+  "loading": "Carregando…",
+  "downloadInstead": "Baixar arquivo",
+  "truncatedNotice": "--- [Pré-visualização truncada: o arquivo excede o limite de 3 MB] ---",
+  "errors": {
+    "offlineUnavailable": "Você está off-line e este arquivo não foi marcado como \"Disponível off-line\". Conecte-se à internet para abri-lo.",
+    "downloadFailed": "Falha ao baixar o arquivo."
+  },
+  "toast": {
+    "preparingSystemViewer": "Preparando o documento para o visualizador do sistema...",
+    "openedInSystemViewer": "Documento aberto no visualizador do sistema.",
+    "systemViewerFailed": "Não foi possível abrir o visualizador do sistema. Baixando o arquivo...",
+    "saved": "\"{{name}}\" salvo com sucesso!",
+    "saveFailed": "Falha ao salvar: {{message}}",
+    "unknownError": "Erro desconhecido",
+    "copied": "Copiado para a área de transferência",
+    "jsonFormatted": "JSON formatado",
+    "invalidJson": "JSON inválido: {{message}}"
+  },
+  "topbar": {
+    "editing": "Editando",
+    "saved": "Salvo",
+    "cancel": "Cancelar",
+    "saving": "Salvando…",
+    "save": "Salvar",
+    "formatJsonTitle": "Formatar JSON (indentar)",
+    "format": "Formatar",
+    "disableWrap": "Desativar quebra de linha",
+    "enableWrap": "Ativar quebra de linha",
+    "fontSizeTitle": "Tamanho da fonte: {{size}}px (clique para alternar)",
+    "copyTitle": "Copiar conteúdo para a área de transferência",
+    "runTitle": "Executar no O2 Code Editor",
+    "run": "Executar",
+    "editTitle": "Editar arquivo",
+    "edit": "Editar",
+    "toggleDetails": "Mostrar/ocultar detalhes",
+    "openInSystemViewerTitle": "Abrir no visualizador de PDF padrão do sistema",
+    "openInSystemViewer": "Abrir no visualizador do sistema",
+    "download": "Baixar",
+    "close": "Fechar"
+  },
+  "viewMode": {
+    "preview": "Visualizar",
+    "source": "Código-fonte",
+    "table": "Tabela",
+    "raw": "Bruto",
+    "vector": "Vetor",
+    "code": "Código"
+  },
+  "image": {
+    "zoomOut": "Diminuir zoom",
+    "zoomIn": "Aumentar zoom",
+    "resetZoom": "Ajustar / redefinir zoom",
+    "rotateCounterClockwise": "Girar no sentido anti-horário",
+    "rotateClockwise": "Girar no sentido horário",
+    "toggleGrid": "Mostrar/ocultar grade de fundo"
+  },
+  "details": {
+    "title": "Detalhes do arquivo",
+    "name": "Nome",
+    "dimensions": "Dimensões",
+    "loadingDimensions": "Carregando...",
+    "fileSize": "Tamanho do arquivo",
+    "mimeType": "Tipo MIME",
+    "path": "Caminho",
+    "uploadedAt": "Enviado em"
+  },
+  "media": {
+    "skipBack": "Voltar 10 s",
+    "skipForward": "Avançar 10 s",
+    "audioTrack": "Faixa de áudio"
+  },
+  "archive": {
+    "badge": "{{ext}} COMPACTADO",
+    "description": "Arquivos compactados não podem ser visualizados diretamente aqui. Baixe o arquivo para extrair e ver o conteúdo no seu computador.",
+    "download": "Baixar arquivo compactado"
+  },
+  "unsupported": {
+    "description": "Não há pré-visualização disponível para este tipo de arquivo. Você pode baixá-lo e abri-lo em um aplicativo compatível no seu sistema.",
+    "download": "Baixar arquivo"
+  },
+  "status": {
+    "words_one": "{{count, number}} palavra",
+    "words_other": "{{count, number}} palavras",
+    "readingTime_one": "{{count}} min de leitura",
+    "readingTime_other": "{{count}} min de leitura",
+    "rows_one": "{{count, number}} linha",
+    "rows_other": "{{count, number}} linhas",
+    "lines_one": "{{count, number}} linha",
+    "lines_other": "{{count, number}} linhas",
+    "wrapOn": "Quebra de linha: ativada",
+    "wrapOff": "Quebra de linha: desativada",
+    "cursor": "Ln {{line}}, Col {{col}}",
+    "editorInfo": "Tab: 2 espaços · UTF-8 · LF",
+    "words_zero": "{{count, number}} palavras",
+    "readingTime_zero": "{{count}} min de leitura",
+    "rows_zero": "{{count, number}} linhas",
+    "lines_zero": "{{count, number}} linhas"
+  },
+  "pdfErrorBoundary": {
+    "title": "O visualizador de PDF encontrou um erro",
+    "description": "Não foi possível renderizar o PDF. Tente recarregar.",
+    "retry": "Tentar novamente"
+  },
+  "pdf": {
+    "loading": "Carregando documento PDF",
+    "preparing": "Preparando seu documento...",
+    "errorTitle": "Não é possível visualizar o documento",
+    "openInSystemViewer": "Abrir no visualizador do sistema",
+    "noDocument": "Nenhum documento carregado.",
+    "errors": {
+      "noData": "Nenhum dado do documento foi recebido.",
+      "invalid": "Este arquivo parece estar corrompido ou não é um PDF válido.",
+      "passwordProtected": "Este PDF é protegido por senha. PDFs protegidos por senha não são compatíveis.",
+      "engineUnavailable": "O mecanismo de PDF não está disponível. Recarregue o aplicativo.",
+      "loadFailed": "Falha ao carregar o documento PDF. O arquivo pode estar corrompido."
+    },
+    "toolbar": {
+      "previousPage": "Página anterior (↑ / PageUp)",
+      "jumpToPage": "Clique para ir para uma página",
+      "nextPage": "Próxima página (↓ / PageDown)",
+      "zoomOut": "Diminuir zoom (Ctrl+-)",
+      "resetZoom": "Redefinir para 100% (Ctrl+0)",
+      "zoomIn": "Aumentar zoom (Ctrl+=)",
+      "fitWidth": "Ajustar à largura",
+      "fitPage": "Ajustar à página inteira",
+      "fit": "Ajustar",
+      "rotate": "Girar no sentido horário",
+      "print": "Imprimir documento",
+      "openInSystemAppTitle": "Abrir no aplicativo de PDF padrão do sistema",
+      "systemViewer": "Visualizador do sistema"
+    }
+  },
+  "csv": {
+    "toast": {
+      "copied": "Valor da célula copiado para a área de transferência"
+    },
+    "filterPlaceholder_one": "Filtrar {{count}} linha…",
+    "filterPlaceholder_other": "Filtrar {{count}} linhas…",
+    "clear": "Limpar",
+    "rowsShown_one": "{{shown}} de {{count}} linha",
+    "rowsShown_other": "{{shown}} de {{count}} linhas",
+    "columns_one": "{{count}} coluna",
+    "columns_other": "{{count}} colunas",
+    "empty": "Conjunto de dados vazio",
+    "columnFallback": "Coluna {{letter}}",
+    "cellTitle": "{{value}} (clique para copiar)",
+    "filterPlaceholder_zero": "Filtrar {{count}} linhas…",
+    "rowsShown_zero": "{{shown}} de {{count}} linhas",
+    "columns_zero": "{{count}} colunas"
+  },
+  "codeEditor": {
+    "loading": "Carregando editor…"
+  },
+  "syntaxHighlighter": {
+    "ariaLabel": "Visualizador de código",
+    "largeFile_one": "Arquivo grande ({{count, number}} linha) — realce de sintaxe desativado para melhor desempenho",
+    "largeFile_other": "Arquivo grande ({{count, number}} linhas) — realce de sintaxe desativado para melhor desempenho",
+    "largeFile_zero": "Arquivo grande ({{count, number}} linhas) — realce de sintaxe desativado para melhor desempenho"
+  }
+}

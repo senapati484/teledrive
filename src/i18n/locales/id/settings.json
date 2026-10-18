@@ -1,0 +1,239 @@
+{
+  "page": {
+    "title": "Pengaturan",
+    "backToDrive": "Kembali ke Drive"
+  },
+  "nav": {
+    "account": "Akun Telegram",
+    "backup": "Pencadangan Perangkat",
+    "appearance": "Tampilan",
+    "language": "Bahasa",
+    "storage": "Penyimpanan",
+    "about": "Tentang"
+  },
+  "language": {
+    "title": "Bahasa",
+    "description": "Pilih bahasa yang digunakan di seluruh antarmuka, menu, dan notifikasi TeleDrive.",
+    "activeLanguage": "Bahasa Aktif",
+    "cardDescription": "Pilih bahasa preferensi Anda. Perubahan langsung berlaku di seluruh aplikasi.",
+    "callout": "<strong>Sinkronisasi Instan:</strong> TeleDrive menyimpan preferensi bahasa Anda secara lokal dan menerapkannya secara otomatis ke semua jendela dan sesi."
+  },
+  "logout": {
+    "button": "Keluar",
+    "title": "Keluar",
+    "description": "Anda akan keluar dari akun Telegram Anda. Berkas Anda akan tetap aman di saluran penyimpanan Anda.",
+    "cancel": "Batal",
+    "confirm": "Keluar",
+    "loggingOut": "Sedang keluar…"
+  },
+  "account": {
+    "title": "Akun Telegram",
+    "description": "Kelola kredensial Telegram Anda yang terhubung dan saluran penyimpanan cloud.",
+    "notConnected": {
+      "title": "Tidak terhubung",
+      "description": "Hubungkan akun Telegram Anda untuk mulai menyimpan berkas tanpa batas di saluran pribadi Anda.",
+      "connect": "Hubungkan Akun Telegram"
+    },
+    "activeSession": "Sesi Aktif",
+    "connectedVia": "Terhubung melalui klien Telegram MTProto",
+    "disconnect": "Putuskan Sambungan Akun",
+    "channel": {
+      "title": "Saluran Penyimpanan Aktif",
+      "description": "Berkas, folder, dan metadata Anda disimpan dengan aman di saluran pribadi ini.",
+      "name": "Nama Saluran",
+      "id": "ID Saluran Telegram",
+      "loading": "Memuat...",
+      "copyId": "Salin ID Saluran"
+    },
+    "syncing": "Menyinkronkan...",
+    "syncNow": "Sinkronkan Sekarang",
+    "switchChannel": "Ganti Saluran",
+    "architecture": "<strong>Penyimpanan cloud terdesentralisasi:</strong> Berkas Anda diunggah sebagai dokumen pesan langsung ke saluran Telegram pribadi Anda. TeleDrive mempertahankan manifes terindeks yang disematkan di saluran ini agar berkas Anda selalu sinkron.",
+    "switchDialog": {
+      "title": "Ganti Saluran Penyimpanan",
+      "description": "Pilih saluran Telegram pribadi yang berbeda untuk digunakan pada berkas TeleDrive.",
+      "warning": "<strong>Peringatan:</strong> Mengganti saluran penyimpanan akan mengatur ulang cache lokal. TeleDrive akan mencari manifes yang ada atau membuat yang baru.",
+      "cancel": "Batal",
+      "confirm": "Konfirmasi"
+    },
+    "toasts": {
+      "channelIdCopied": "ID Saluran disalin ke papan klip",
+      "syncSuccess": "Berkas berhasil disinkronkan!",
+      "alreadyUpToDate": "Drive Anda sudah yang terbaru.",
+      "syncFailed": "Sinkronisasi gagal",
+      "disconnected": "Berhasil memutuskan sambungan akun Telegram.",
+      "disconnectFailed": "Gagal memutuskan sambungan akun.",
+      "channelReset": "Saluran penyimpanan diatur ulang. Mulai ulang aplikasi.",
+      "channelResetFailed": "Gagal mengatur ulang saluran penyimpanan."
+    }
+  },
+  "backup": {
+    "title": "Pencadangan Perangkat",
+    "description": "Pilih folder di komputer ini untuk dicerminkan secara otomatis ke saluran Telegram pribadi Anda.",
+    "folders": {
+      "title": "Folder sumber",
+      "saving": "menyimpan…",
+      "description": "Folder dicerminkan di bawah root cadangan perangkat Anda dan tetap disinkronkan secara otomatis.",
+      "empty": "Belum ada folder yang ditambahkan. Klik \"Tambah folder\" di bawah.",
+      "add": "Tambah folder",
+      "pickerTitle": "Pilih folder untuk dicadangkan"
+    },
+    "excludes": {
+      "title": "Pola pengecualian",
+      "description": "Pola glob relatif terhadap folder sumber. Mendukung <code>*</code>, <code>**</code>, dan <code>?</code>. Contoh: <code>node_modules</code>, <code>*.tmp</code>.",
+      "empty": "Tidak ada pengecualian. Semua yang ada di folder sumber Anda akan dicadangkan.",
+      "placeholder": "contoh: *.tmp atau node_modules",
+      "add": "Tambah"
+    },
+    "remove": "Hapus {{item}}",
+    "cadence": {
+      "title": "Frekuensi pencadangan",
+      "active": "Aktif",
+      "description": "Seberapa sering TeleDrive harus memindai ulang folder sumber Anda. Hanya berkas yang berubah yang diunggah ulang.",
+      "off": "Nonaktif",
+      "every6h": "Setiap 6 jam",
+      "every12h": "Setiap 12 jam",
+      "every24h": "Setiap 24 jam"
+    },
+    "lastBackup": "Pencadangan terakhir:",
+    "lastBackupAgo": "{{time}} yang lalu",
+    "never": "Tidak pernah",
+    "runNow": "Cadangkan Sekarang",
+    "running": "Sedang mencadangkan…",
+    "toasts": {
+      "folderAdded": "Folder sumber ditambahkan",
+      "folderRemoved": "Folder sumber dihapus",
+      "patternAdded": "Pola pengecualian ditambahkan",
+      "patternRemoved": "Pola pengecualian dihapus",
+      "patternEmpty": "Harap masukkan pola yang tidak kosong.",
+      "cadenceUpdated": "Frekuensi pencadangan diperbarui",
+      "maxFolders_one": "Maksimal {{count}} folder sumber.",
+      "maxFolders_other": "Maksimal {{count}} folder sumber.",
+      "maxExcludes_one": "Maksimal {{count}} pola pengecualian.",
+      "maxExcludes_other": "Maksimal {{count}} pola pengecualian.",
+      "pickerFailed": "Tidak dapat membuka pemilih folder",
+      "noFolders": "Pilih setidaknya satu folder sumber terlebih dahulu"
+    },
+    "lastResult": {
+      "uploaded_one": "{{count}} terunggah, ",
+      "uploaded_other": "{{count}} terunggah, ",
+      "unchanged_one": "{{count}} tidak berubah, ",
+      "unchanged_other": "{{count}} tidak berubah, ",
+      "failed_one": "{{count}} gagal",
+      "failed_other": "{{count}} gagal"
+    },
+    "progressHint": "Lihat panel progres di sudut kanan bawah.",
+    "cancel": "Batal",
+    "howItWorks": "<strong>Cara kerja pencadangan:</strong> TeleDrive memindai folder yang Anda pilih, membandingkannya dengan manifes lokal, dan hanya mengunggah file baru atau yang diubah.",
+    "viewBackups": "Lihat Cadangan"
+  },
+  "appearance": {
+    "title": "Tampilan",
+    "description": "Sesuaikan tampilan visual TeleDrive di perangkat Anda.",
+    "theme": {
+      "title": "Tema Antarmuka",
+      "description": "Pilih antara mode terang dan gelap, atau sesuaikan dengan sistem operasi Anda.",
+      "light": "Terang",
+      "lightDesc": "Antarmuka yang bersih dan cerah",
+      "dark": "Gelap",
+      "darkDesc": "Nyaman di mata saat gelap",
+      "system": "Sistem",
+      "systemDesc": "Mengikuti pengaturan sistem Anda"
+    },
+    "themeMode": {
+      "title": "Mode Tema",
+      "description": "Pilih apakah TeleDrive menggunakan tampilan terang, gelap, atau adaptif sistem."
+    },
+    "themes": {
+      "light": {
+        "label": "Terang",
+        "description": "Tema terang bersih dengan kanvas Google Drive"
+      },
+      "dark": {
+        "label": "Gelap",
+        "description": "Tema gelap ramping yang dioptimalkan untuk lingkungan minim cahaya"
+      },
+      "system": {
+        "label": "Sistem",
+        "description": "Secara otomatis disinkronkan dengan tampilan sistem operasi Anda"
+      }
+    },
+    "callout": "<strong>Sinkronisasi Tema:</strong> TeleDrive menggunakan token warna HSL Google Drive di permukaan terang (`#F8FAFD`) dan gelap (`#131314`), memastikan kontras tinggi dan mengurangi ketegangan mata."
+  },
+  "storage": {
+    "title": "Penyimpanan & Cache",
+    "description": "Kelola penggunaan disk lokal dan data offline.",
+    "cloud": {
+      "title": "Kapasitas Cloud",
+      "unlimited": "Tanpa Batas",
+      "description": "Didukung oleh saluran pribadi Telegram Anda tanpa batas kuota.",
+      "stored": "Tersimpan di Telegram"
+    },
+    "local": {
+      "title": "Penyimpanan Lokal",
+      "description": "Lokasi cache lokal dan database di komputer ini.",
+      "path": "Jalur Data Aplikasi",
+      "openFolder": "Buka Folder",
+      "clearCache": "Hapus Cache Lokal",
+      "clearing": "Sedang membersihkan…",
+      "confirmClearTitle": "Hapus Cache Lokal?",
+      "confirmClearDesc": "Semua pratinjau lokal dan berkas sementara akan dihapus. Berkas Anda di Telegram tidak akan terpengaruh.",
+      "cancel": "Batal",
+      "confirm": "Hapus Cache"
+    },
+    "toasts": {
+      "cacheCleared": "Cache lokal berhasil dibersihkan.",
+      "cacheClearFailed": "Gagal membersihkan cache lokal.",
+      "channelNotInitialised": "Saluran penyimpanan belum diinisialisasi.",
+      "refreshed": "Penyimpanan diperbarui dari Telegram.",
+      "refreshFailed": "Gagal memperbarui data penyimpanan."
+    },
+    "totalUsed": "Total Penyimpanan Digunakan",
+    "calculating": "Menghitung…",
+    "ofUnlimited": "dari Tak Terbatas",
+    "unlimitedBadge": "Penyimpanan Cloud Tak Terbatas",
+    "meterLabel": "Penyimpanan Saluran Telegram (Tak Terbatas)",
+    "stats": {
+      "files": "File Disimpan",
+      "folders": "Folder Dibuat",
+      "trash": "Item di Sampah"
+    },
+    "recalculating": "Menghitung ulang…",
+    "recalculate": "Hitung Ulang Penyimpanan",
+    "info": {
+      "noLimit": "Telegram tidak membatasi volume kumulatif data yang disimpan di saluran pribadi.",
+      "fileLimits": "Batas file individu: hingga <strong>2 GB</strong> per file untuk akun standar, dan hingga <strong>4 GB</strong> untuk pelanggan Telegram Premium."
+    }
+  },
+  "about": {
+    "title": "Tentang TeleDrive",
+    "description": "Informasi aplikasi, lisensi, dan kontributor.",
+    "appTitle": "TeleDrive Desktop",
+    "tagline": "Penyimpanan cloud pribadi tanpa batas didukung oleh saluran Telegram pribadi Anda sendiri.",
+    "version": "Versi {{version}}",
+    "website": "Situs Web Resmi",
+    "github": "Repositori GitHub",
+    "license": "Lisensi GPL-3.0",
+    "checkForUpdates": "Periksa Pembaruan",
+    "checking": "Memeriksa…",
+    "upToDate": "Anda menggunakan versi terbaru.",
+    "newVersionAvailable": "Versi baru tersedia: {{version}}",
+    "downloadUpdate": "Unduh Pembaruan",
+    "disclaimer": {
+      "title": "Penafian",
+      "body": "TeleDrive adalah aplikasi klien sumber terbuka independen dan tidak berafiliasi, diotorisasi, dikelola, disponsori, atau didukung oleh Telegram FZ-LLC atau afiliasinya."
+    },
+    "logoAlt": "Logo TeleDrive",
+    "summary": "TeleDrive adalah klien drive cloud lintas platform sumber terbuka yang didukung oleh Telegram. Ini memetakan penyimpanan file Anda ke saluran Telegram pribadi dan mengatur file Anda ke dalam drive virtual dengan pencarian cepat, pratinjau, dan sinkronisasi waktu nyata.",
+    "githubRepository": "Repositori GitHub",
+    "reportIssue": "Laporkan Masalah",
+    "architecture": "Arsitektur penyimpanan cloud berbasis saluran",
+    "checkingUpdates": "Memeriksa pembaruan...",
+    "checkUpdates": "Periksa Pembaruan",
+    "toasts": {
+      "openLinkFailed": "Gagal membuka tautan.",
+      "upToDate": "Aplikasi sudah versi terbaru!",
+      "latestVersion": "TeleDrive v{{version}} adalah versi terbaru."
+    }
+  }
+}

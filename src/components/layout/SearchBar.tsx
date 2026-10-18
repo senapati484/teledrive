@@ -1,5 +1,6 @@
 import React, { useState, useDeferredValue } from "react";
 import { Search, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useFileStore } from "@/stores/fileStore";
@@ -11,6 +12,7 @@ export default function SearchBar() {
   const [query, setQuery] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const navigate = useNavigate();
+  const { t } = useTranslation("drive");
   
   const files = useFileStore((state) => state.files);
 
@@ -67,7 +69,7 @@ export default function SearchBar() {
         <input
           id="main-search-input"
           type="text"
-          placeholder="Search in Drive"
+          placeholder={t("search.placeholder")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => setIsFocused(true)}
@@ -94,7 +96,7 @@ export default function SearchBar() {
           {quickResults.length > 0 ? (
             <div>
               <div className="px-4 py-2 text-[11px] font-semibold text-[#444746] dark:text-[#c4c7c5] uppercase tracking-wider">
-                Matching Files &amp; Folders
+                {t("search.matchingHeader")}
               </div>
               {quickResults.map((file) => {
                 const isDir = file.mime === "inode/directory" || file.mime === "application/x-directory";
@@ -112,7 +114,7 @@ export default function SearchBar() {
                         {file.name}
                       </div>
                       <div className="text-[10px] text-[#444746] dark:text-[#c4c7c5] truncate">
-                        {isDir ? "Folder" : `File • ${file.folderPath === "/" ? "My Drive" : file.folderPath}`}
+                        {isDir ? t("search.folder") : t("search.fileIn", { location: file.folderPath === "/" ? t("nav.myDrive") : file.folderPath })}
                       </div>
                     </div>
                   </div>
@@ -121,7 +123,7 @@ export default function SearchBar() {
             </div>
           ) : (
             <div className="px-4 py-4 text-xs text-center text-[#444746] dark:text-[#c4c7c5] font-medium">
-              No matching files found
+              {t("search.noResults")}
             </div>
           )}
         </div>

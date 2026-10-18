@@ -1,0 +1,116 @@
+{
+  "logoAlt": "テレドライブのロゴ",
+  "actions": {
+    "close": "近い"
+  },
+  "splash": {
+    "connecting": "テレグラムに接続しています..."
+  },
+  "nav": {
+    "myDrive": "私のドライブ",
+    "recent": "最近の",
+    "starred": "スター付き",
+    "archived": "アーカイブ済み",
+    "trash": "ごみ",
+    "backups": "バックアップ",
+    "settings": "設定"
+  },
+  "header": {
+    "switchToLight": "ライトテーマに切り替える",
+    "switchToDark": "ダークテーマに切り替える",
+    "settings": "設定"
+  },
+  "indexQueue": {
+    "saveFailedTitle": "インデックスの保存に失敗しました - クリックして再試行してください",
+    "liveSyncTitle": "マルチデバイスのライブ同期",
+    "backupSnapshotTitle": "バックアップスナップショットが進行中です",
+    "saveFailed": "保存に失敗しました",
+    "retryingIn": "{{秒}}秒後に再試行します",
+    "synced": "同期済み",
+    "backupInProgress": "バックアップ中です",
+    "syncing": "同期中",
+    "retry": "リトライ"
+  },
+  "dropOverlay": {
+    "title": "ファイルをドロップしてマイドライブにアップロードします",
+    "description": "リリースしてすぐにアップロードを開始します"
+  },
+  "offlineBanner": "現在オフラインです。一部の機能が利用できない場合があります。",
+  "shortcuts": {
+    "title": "キーボードショートカット",
+    "navigationGroup": "ナビゲーションと検索",
+    "focusSearch": "フォーカスサーチ",
+    "focusSearchKeys": "/ または {{modKey}}F",
+    "clearSelection": "選択範囲をクリア/ぼかし",
+    "scrollToTop": "一番上までスクロール",
+    "scrollToBottom": "一番下までスクロール",
+    "showHelp": "ショートカットのヘルプを表示する",
+    "selectionGroup": "選択に対するアクション",
+    "selectAll": "すべての項目を選択",
+    "moveToTrash": "ゴミ箱に移動",
+    "rename": "項目名の変更",
+    "download": "ファイルをダウンロードする"
+  },
+  "sidebar": {
+    "storage": "ストレージ",
+    "usedOfUnlimited": "<strong>{{size}}</strong> 個を無制限に使用",
+    "telegramCloudStorage": "テレグラムクラウドストレージ"
+  },
+  "newMenu": {
+    "ariaLabel": "新しいアイテム",
+    "new": "新しい",
+    "newFolder": "新しいフォルダー",
+    "fileUpload": "ファイルのアップロード",
+    "folderUpload": "フォルダーのアップロード"
+  },
+  "search": {
+    "placeholder": "ドライブ内で検索",
+    "matchingHeader": "一致するファイルとフォルダー",
+    "folder": "フォルダ",
+    "fileIn": "ファイル • {{場所}}",
+    "noResults": "一致するファイルが見つかりませんでした"
+  },
+  "upload": {
+    "failed_one": "{{count}} 個のアップロードに失敗しました",
+    "failed_other": "{{count}} 件のアップロードに失敗しました",
+    "complete_one": "{{count}} 個のアップロードが完了しました",
+    "complete_other": "{{count}} 件のアップロードが完了しました",
+    "uploadingItems_one": "{{count}} 個のアイテムをアップロードしています ({{percent}}%)",
+    "uploadingItems_other": "{{count}} 個のアイテムをアップロードしています ({{percent}}%)",
+    "expand": "拡大する",
+    "collapse": "崩壊",
+    "close": "近い",
+    "queued": "キューに入れられました",
+    "uploading": "アップロード中..."
+  },
+  "backup": {
+    "scanning": "フォルダーをスキャン中…",
+    "backingUp": "バックアップ中 — {{uploaded}} / {{total}}",
+    "completeUploaded_one": "バックアップが完了しました — {{count}} ファイルがアップロードされました",
+    "completeUploaded_other": "バックアップが完了しました - {{count}} ファイルがアップロードされました",
+    "completeNothingChanged": "バックアップが完了しました - 何も変化しませんでした",
+    "cancelled": "バックアップがキャンセルされました",
+    "failed": "バックアップに失敗しました",
+    "retryRateLimit": "再試行中 {{attempt}}/{{maxAttempts}} — テレグラムのレート制限、{{秒}} 秒待機",
+    "retryNetwork": "{{attempt}}/{{maxAttempts}} を再試行しています — ネットワーク ブリップ、{{秒}} 秒待機しています",
+    "readingFolders": "ディスクからフォルダーの内容を読み取る",
+    "summaryUploaded_one": "{{count}} 個がアップロードされました",
+    "summaryUploaded_other": "{{count}} 個がアップロードされました",
+    "summaryUnchanged_one": "{{count}} は変更なし",
+    "summaryUnchanged_other": "{{count}} は変更なし",
+    "summaryFailed_one": "{{count}} 回失敗しました",
+    "summaryFailed_other": "{{count}} 回失敗しました",
+    "resumeAnytime": "いつでも再開できます。",
+    "dismiss": "却下する"
+  },
+  "errorBoundary": {
+    "title": "何か問題が発生しました",
+    "description": "予期しない問題が発生しました。続行するにはアプリケーションをリロードしてください。",
+    "reload": "アプリケーションをリロードする"
+  },
+  "notFound": {
+    "title": "404 - ページが見つかりません",
+    "description": "お探しのページは存在しません。",
+    "goToMyDrive": "マイドライブに移動"
+  }
+}

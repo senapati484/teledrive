@@ -1,0 +1,268 @@
+{
+  "menu": {
+    "preview": "Visualizar",
+    "openInSystemApp": "Abrir no app do sistema",
+    "edit": "Editar",
+    "download": "Baixar",
+    "availableOffline": "Disponível off-line",
+    "rename": "Renomear",
+    "moveTo": "Mover para",
+    "addStar": "Adicionar às estrelas",
+    "removeStar": "Remover das estrelas",
+    "archive": "Arquivar",
+    "unarchive": "Desarquivar",
+    "restore": "Restaurar",
+    "deletePermanently": "Excluir permanentemente",
+    "moveToTrash": "Mover para a lixeira"
+  },
+  "browser": {
+    "fileType": {
+      "folder": "Pasta",
+      "pdf": "Documento PDF",
+      "image": "Imagem",
+      "video": "Vídeo",
+      "audio": "Áudio",
+      "text": "Documento de texto",
+      "archive": "Arquivo compactado",
+      "word": "Documento do Word",
+      "spreadsheet": "Planilha",
+      "presentation": "Apresentação",
+      "sourceCode": "Código-fonte",
+      "generic": "Arquivo {{ext}}",
+      "file": "Arquivo"
+    },
+    "sort": {
+      "label": "Ordenar: {{sort}}",
+      "short": {
+        "nameAsc": "Nome (A-Z)",
+        "nameDesc": "Nome (Z-A)",
+        "newest": "Mais recentes",
+        "oldest": "Mais antigos",
+        "largest": "Maiores",
+        "smallest": "Menores"
+      },
+      "options": {
+        "nameAsc": "Nome (A a Z)",
+        "nameDesc": "Nome (Z a A)",
+        "dateDesc": "Última modificação",
+        "dateAsc": "Modificação mais antiga",
+        "sizeDesc": "Tamanho do arquivo (maior)",
+        "sizeAsc": "Tamanho do arquivo (menor)"
+      }
+    },
+    "header": {
+      "starred": "Com estrela",
+      "recent": "Recentes",
+      "trash": "Lixeira",
+      "archived": "Arquivados",
+      "backups": "Backups",
+      "myDrive": "Meu Drive",
+      "searchResults": "Resultados da pesquisa por \"{{query}}\""
+    },
+    "systemApp": {
+      "preparing": "Preparando \"{{name}}\" para o app do sistema...",
+      "opened": "\"{{name}}\" aberto no visualizador do sistema.",
+      "failed": "Não foi possível abrir no visualizador do sistema: {{error}}",
+      "unknownError": "Erro desconhecido"
+    },
+    "emptyState": {
+      "drive": {
+        "title": "Seu Drive está vazio",
+        "subtitle": "Envie arquivos ou crie pastas para começar."
+      },
+      "starred": {
+        "title": "Nenhum arquivo com estrela",
+        "subtitle": "Adicione estrelas aos arquivos que você quer encontrar com facilidade depois."
+      },
+      "recent": {
+        "title": "Nenhum arquivo recente",
+        "subtitle": "Os arquivos que você visualizou ou enviou recentemente vão aparecer aqui."
+      },
+      "trash": {
+        "title": "A lixeira está vazia",
+        "subtitle": "Os itens movidos para a lixeira vão aparecer aqui."
+      },
+      "archived": {
+        "title": "Nenhum arquivo arquivado",
+        "subtitle": "Arquive os arquivos que você quer guardar, mas não precisa ver no seu Drive principal."
+      },
+      "search": {
+        "title": "Nenhum resultado encontrado",
+        "subtitle": "Não encontramos nenhum item correspondente a \"{{query}}\"."
+      },
+      "backups": {
+        "title": "Nenhum backup ainda",
+        "subtitle": "Escolha uma pasta deste Mac em Configurações → Backup do dispositivo e execute um backup. Os arquivos espelhados vão aparecer aqui."
+      },
+      "folder": {
+        "title": "Esta pasta está vazia",
+        "subtitle": "Envie arquivos ou crie pastas neste diretório."
+      },
+      "uploadFiles": "Enviar arquivos",
+      "newFolder": "Nova pasta"
+    },
+    "emptyTrashButton": "Esvaziar lixeira",
+    "switchToListView": "Mudar para visualização em lista",
+    "switchToGridView": "Mudar para visualização em grade",
+    "backupsBanner": {
+      "title": "Os backups são somente leitura.",
+      "description": "Para mudar quais pastas entram no backup, abra <settingsPath>Configurações → Backup do dispositivo</settingsPath>."
+    },
+    "filters": {
+      "all": "Todos",
+      "documents": "Documentos",
+      "images": "Imagens",
+      "videos": "Vídeos",
+      "audio": "Áudio"
+    },
+    "sections": {
+      "folders": "Pastas",
+      "foldersPartial": "Pastas ({{shown}} de {{total}})",
+      "files": "Arquivos",
+      "filesPartial": "Arquivos ({{shown}} de {{total}})"
+    },
+    "columns": {
+      "name": "Nome",
+      "type": "Tipo",
+      "fileSize": "Tamanho do arquivo",
+      "lastModified": "Última modificação"
+    },
+    "dragPreview": {
+      "items_one": "{{count}} item",
+      "items_other": "{{count}} itens",
+      "items_zero": "{{count}} itens"
+    },
+    "bulkBar": {
+      "selected_one": "selecionado",
+      "selected_other": "selecionados",
+      "restoreSelected": "Restaurar selecionados",
+      "deletePermanently": "Excluir permanentemente",
+      "moveSelectedToTrash": "Mover selecionados para a lixeira",
+      "clearSelection": "Limpar seleção",
+      "selected_zero": "selecionados"
+    },
+    "mobileMenu": {
+      "addToStarred": "Adicionar às estrelas",
+      "removeFromStarred": "Remover das estrelas"
+    },
+    "dialogs": {
+      "cancel": "Cancelar",
+      "deleting": "Excluindo…",
+      "deleteForever": "Excluir permanentemente",
+      "createFolder": {
+        "title": "Nova pasta",
+        "placeholder": "Pasta sem título",
+        "submit": "Criar"
+      },
+      "rename": {
+        "title": "Renomear",
+        "placeholder": "Novo nome",
+        "submit": "OK"
+      },
+      "emptyTrash": {
+        "title": "Esvaziar a lixeira?",
+        "description_one": "Isso vai excluir permanentemente <strong>{{count}} item</strong> do seu canal de armazenamento no Telegram. Essa ação não pode ser desfeita.",
+        "description_other": "Isso vai excluir permanentemente <strong>{{count}} itens</strong> do seu canal de armazenamento no Telegram. Essa ação não pode ser desfeita.",
+        "confirm": "Esvaziar lixeira",
+        "description_zero": "Isso vai excluir permanentemente <strong>{{count}} itens</strong> do seu canal de armazenamento no Telegram. Essa ação não pode ser desfeita."
+      },
+      "deleteItem": {
+        "title": "Excluir permanentemente?",
+        "descriptionFile": "Tem certeza de que quer excluir <strong>{{name}}</strong> permanentemente? O arquivo em si será excluído do seu canal de armazenamento no Telegram. Essa ação não pode ser desfeita.",
+        "descriptionFolder": "Tem certeza de que quer excluir <strong>{{name}}</strong> permanentemente? Essa ação não pode ser desfeita."
+      },
+      "bulkDelete": {
+        "title": "Excluir permanentemente?",
+        "description_one": "Isso vai excluir permanentemente <strong>{{count}} item selecionado</strong> do seu canal de armazenamento no Telegram. Essa ação não pode ser desfeita.",
+        "description_other": "Isso vai excluir permanentemente <strong>{{count}} itens selecionados</strong> do seu canal de armazenamento no Telegram. Essa ação não pode ser desfeita.",
+        "description_zero": "Isso vai excluir permanentemente <strong>{{count}} itens selecionados</strong> do seu canal de armazenamento no Telegram. Essa ação não pode ser desfeita."
+      }
+    }
+  },
+  "actions": {
+    "bootstrapPending": "Seu Drive ainda está carregando. Tente novamente em instantes.",
+    "saveFailed": "Não foi possível salvar e a alteração foi desfeita: {{error}}",
+    "unknownError": "Erro desconhecido",
+    "channelNotInitialized": "O canal de armazenamento do Telegram não foi inicializado",
+    "fileNotFound": "Arquivo não encontrado",
+    "folder": {
+      "alreadyExists": "A pasta \"{{name}}\" já existe",
+      "created": "Pasta \"{{name}}\" criada",
+      "createFailed": "Não foi possível criar a pasta"
+    },
+    "rename": {
+      "success": "Renomeado",
+      "failed": "Não foi possível renomear"
+    },
+    "star": {
+      "added": "Adicionado às estrelas",
+      "removed": "Removido das estrelas",
+      "failed": "Não foi possível atualizar a estrela"
+    },
+    "trash": {
+      "moved": "\"{{name}}\" foi movido para a lixeira",
+      "moveFailed": "Não foi possível mover para a lixeira",
+      "restored": "\"{{name}}\" foi restaurado",
+      "restoreFailed": "Não foi possível restaurar"
+    },
+    "archive": {
+      "archived": "\"{{name}}\" foi arquivado",
+      "archiveFailed": "Não foi possível arquivar",
+      "unarchived": "\"{{name}}\" voltou para o Meu Drive",
+      "unarchiveFailed": "Não foi possível desarquivar"
+    },
+    "delete": {
+      "success": "Excluído permanentemente",
+      "failed": "Não foi possível excluir"
+    },
+    "emptyTrash": {
+      "alreadyEmpty": "A lixeira já está vazia",
+      "success_one": "{{count}} item excluído permanentemente",
+      "success_other": "{{count}} itens excluídos permanentemente",
+      "failed": "Não foi possível esvaziar a lixeira",
+      "success_zero": "{{count}} itens excluídos permanentemente"
+    },
+    "bulk": {
+      "trashed_one": "{{count}} item movido para a lixeira",
+      "trashed_other": "{{count}} itens movidos para a lixeira",
+      "trashFailed": "Não foi possível mover os itens para a lixeira",
+      "restored_one": "{{count}} item restaurado",
+      "restored_other": "{{count}} itens restaurados",
+      "restoreFailed": "Não foi possível restaurar os itens",
+      "deleted_one": "{{count}} item excluído permanentemente",
+      "deleted_other": "{{count}} itens excluídos permanentemente",
+      "deleteFailed": "Não foi possível excluir os itens",
+      "archived_one": "{{count}} item arquivado",
+      "archived_other": "{{count}} itens arquivados",
+      "archiveFailed": "Não foi possível arquivar os itens",
+      "starred_one": "{{count}} item adicionado às estrelas",
+      "starred_other": "{{count}} itens adicionados às estrelas",
+      "starFailed": "Não foi possível adicionar os itens às estrelas",
+      "unarchived_one": "{{count}} item voltou para o Meu Drive",
+      "unarchived_other": "{{count}} itens voltaram para o Meu Drive",
+      "unarchiveFailed": "Não foi possível desarquivar os itens",
+      "trashed_zero": "{{count}} itens movidos para a lixeira",
+      "restored_zero": "{{count}} itens restaurados",
+      "deleted_zero": "{{count}} itens excluídos permanentemente",
+      "archived_zero": "{{count}} itens arquivados",
+      "starred_zero": "{{count}} itens adicionados às estrelas",
+      "unarchived_zero": "{{count}} itens voltaram para o Meu Drive"
+    },
+    "offline": {
+      "downloading": "Baixando \"{{name}}\" para acesso off-line...",
+      "available": "\"{{name}}\" agora está disponível off-line",
+      "unavailable": "\"{{name}}\" não está mais disponível off-line",
+      "failed": "Não foi possível atualizar o status off-line"
+    },
+    "move": {
+      "nothingToMove": "Nada para mover",
+      "destinationMissing": "A pasta de destino não existe mais.",
+      "intoItself": "Não é possível mover a pasta \"{{name}}\" para dentro dela mesma ou de uma subpasta.",
+      "alreadyInFolder": "Os itens já estão nessa pasta",
+      "success_one": "{{count}} item movido",
+      "success_other": "{{count}} itens movidos",
+      "failed": "Não foi possível mover os itens",
+      "success_zero": "{{count}} itens movidos"
+    }
+  }
+}

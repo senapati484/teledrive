@@ -1,0 +1,156 @@
+{
+  "loading": "लोड हो रहा है…",
+  "downloadInstead": "इसके बजाय डाउनलोड करें",
+  "truncatedNotice": "--- [पूर्वावलोकन छोटा किया गया: फ़ाइल 3MB सीमा से अधिक है] ---",
+  "errors": {
+    "offlineUnavailable": "आप वर्तमान में ऑफ़लाइन हैं और यह फ़ाइल 'ऑफ़लाइन उपलब्ध' के रूप में चिह्नित नहीं है। इसे खोलने के लिए इंटरनेट से कनेक्ट करें।",
+    "downloadFailed": "फ़ाइल डाउनलोड करने में विफल।"
+  },
+  "toast": {
+    "preparingSystemViewer": "सिस्टम व्यूअर के लिए दस्तावेज़ तैयार किया जा रहा है...",
+    "openedInSystemViewer": "सिस्टम व्यूअर में दस्तावेज़ खोला गया।",
+    "systemViewerFailed": "सिस्टम व्यूअर नहीं खुल सका। इसके बजाय फ़ाइल डाउनलोड हो रही है...",
+    "saved": "\"{{name}}\" सफलतापूर्वक सहेजा गया!",
+    "saveFailed": "सहेजना विफल: {{message}}",
+    "unknownError": "अज्ञात त्रुटि",
+    "copied": "क्लिपबोर्ड पर कॉपी किया गया",
+    "jsonFormatted": "JSON स्वरूपित",
+    "invalidJson": "अमान्य JSON: {{message}}"
+  },
+  "topbar": {
+    "editing": "संपादन जारी",
+    "saved": "सहेजा गया",
+    "cancel": "रद्द करें",
+    "saving": "सहेजा जा रहा है…",
+    "save": "सहेजें",
+    "formatJsonTitle": "JSON स्वरूपित करें",
+    "format": "फॉर्मेट",
+    "disableWrap": "वर्ड रैप अक्षम करें",
+    "enableWrap": "वर्ड रैप सक्षम करें",
+    "fontSizeTitle": "फ़ॉन्ट आकार: {{size}}px (टॉगल करने के लिए क्लिक करें)",
+    "copyTitle": "सामग्री क्लिपबोर्ड पर कॉपी करें",
+    "runTitle": "O2 कोड संपादक में चलाएं",
+    "run": "चलाएं",
+    "editTitle": "फ़ाइल संपादित करें",
+    "edit": "संपादित करें",
+    "toggleDetails": "विवरण दिखाएं/छुपाएं",
+    "openInSystemViewerTitle": "सिस्टम डिफ़ॉल्ट PDF व्यूअर में खोलें",
+    "openInSystemViewer": "सिस्टम व्यूअर में खोलें",
+    "download": "डाउनलोड",
+    "close": "बंद करें"
+  },
+  "viewMode": {
+    "preview": "पूर्वावलोकन",
+    "source": "स्रोत",
+    "table": "तालिका",
+    "raw": "कच्चा डेटा",
+    "vector": "वेक्टर",
+    "code": "कोड"
+  },
+  "image": {
+    "zoomOut": "ज़ूम आउट",
+    "zoomIn": "ज़ूम इन",
+    "resetZoom": "ज़ूम रीसेट",
+    "rotateCounterClockwise": "वामावर्त घुमाएं",
+    "rotateClockwise": "दक्षिणावर्त घुमाएं",
+    "toggleGrid": "ग्रिड बैकग्राउंड टॉगल करें"
+  },
+  "details": {
+    "title": "फ़ाइल विवरण",
+    "name": "नाम",
+    "dimensions": "आयाम",
+    "loadingDimensions": "लोड हो रहा है...",
+    "fileSize": "फ़ाइल का आकार",
+    "mimeType": "MIME प्रकार",
+    "path": "पथ",
+    "uploadedAt": "अपलोड तिथि"
+  },
+  "media": {
+    "skipBack": "10s पीछे जाएं",
+    "skipForward": "10s आगे जाएं",
+    "audioTrack": "ऑडियो ट्रैक"
+  },
+  "archive": {
+    "badge": "{{ext}} संग्रह",
+    "description": "कंप्रेस किए गए संग्रहों का सीधे पूर्वावलोकन नहीं किया जा सकता। इसकी सामग्री देखने के लिए इस संग्रह को डाउनलोड करें।",
+    "download": "संग्रह डाउनलोड करें"
+  },
+  "unsupported": {
+    "description": "इस प्रकार की फ़ाइल के लिए कोई पूर्वावलोकन उपलब्ध नहीं है। आप इसे डाउनलोड करके संगत एप्लिकेशन में खोल सकते हैं।",
+    "download": "फ़ाइल डाउनलोड करें"
+  },
+  "status": {
+    "words_one": "{{count, number}} शब्द",
+    "words_other": "{{count, number}} शब्द",
+    "readingTime_one": "{{count}} मिनट पठन",
+    "readingTime_other": "{{count}} मिनट पठन",
+    "rows_one": "{{count, number}} पंक्ति",
+    "rows_other": "{{count, number}} पंक्तियां",
+    "lines_one": "{{count, number}} लाइन",
+    "lines_other": "{{count, number}} लाइनें",
+    "wrapOn": "रैप: चालू",
+    "wrapOff": "रैप: बंद",
+    "cursor": "पंक्ति {{line}}, कॉलम {{col}}",
+    "editorInfo": "टैब: 2 स्पेस · UTF-8 · LF"
+  },
+  "pdfErrorBoundary": {
+    "title": "PDF व्यूअर में त्रुटि आई",
+    "description": "PDF रेंडर नहीं किया जा सका। पुनः लोड करने का प्रयास करें।",
+    "retry": "पुनः प्रयास करें"
+  },
+  "pdf": {
+    "loading": "PDF दस्तावेज़ लोड हो रहा है",
+    "preparing": "आपका दस्तावेज़ तैयार किया जा रहा है...",
+    "errorTitle": "दस्तावेज़ का पूर्वावलोकन नहीं किया जा सकता",
+    "openInSystemViewer": "सिस्टम व्यूअर में खोलें",
+    "noDocument": "कोई दस्तावेज़ लोड नहीं हुआ।",
+    "errors": {
+      "noData": "कोई दस्तावेज़ डेटा प्राप्त नहीं हुआ।",
+      "invalid": "यह फ़ाइल दूषित प्रतीत होती है या मान्य PDF नहीं है।",
+      "passwordProtected": "यह PDF पासवर्ड से सुरक्षित है। पासवर्ड से सुरक्षित PDF समर्थित नहीं हैं।",
+      "engineUnavailable": "PDF इंजन उपलब्ध नहीं है। कृपया एप्लिकेशन को पुनः लोड करें।",
+      "loadFailed": "PDF दस्तावेज़ लोड करने में विफल। फ़ाइल दूषित हो सकती है।"
+    },
+    "toolbar": {
+      "previousPage": "पिछला पृष्ठ (↑ / PageUp)",
+      "jumpToPage": "पृष्ठ पर जाने के लिए क्लिक करें",
+      "nextPage": "अगला पृष्ठ (↓ / PageDown)",
+      "zoomOut": "ज़ूम आउट (Ctrl+-)",
+      "resetZoom": "100% पर रीसेट करें (Ctrl+0)",
+      "zoomIn": "ज़ूम इन (Ctrl+=)",
+      "fitWidth": "चौड़ाई में फ़िट करें",
+      "fitPage": "पूरा पृष्ठ फ़िट करें",
+      "fit": "फ़िट करें",
+      "rotate": "दक्षिणावर्त घुमाएं",
+      "print": "दस्तावेज़ प्रिंट करें",
+      "openInSystemAppTitle": "सिस्टम डिफ़ॉल्ट PDF एप्लिकेशन में खोलें",
+      "systemViewer": "सिस्टम व्यूअर"
+    }
+  },
+  "csv": {
+    "toast": {
+      "copied": "सेल मान क्लिपबोर्ड पर कॉपी किया गया"
+    },
+    "filterPlaceholder_one": "{{count}} पंक्ति फ़िल्टर करें…",
+    "filterPlaceholder_other": "{{count}} पंक्तियां फ़िल्टर करें…",
+    "clear": "साफ़ करें",
+    "rowsShown_one": "{{count}} में से {{shown}} पंक्ति",
+    "rowsShown_other": "{{count}} में से {{shown}} पंक्तियां",
+    "columns_one": "{{count}} कॉलम",
+    "columns_other": "{{count}} कॉलम",
+    "emptyFiltered": "आपके फ़िल्टर से कोई पंक्ति मेल नहीं खाती।",
+    "resetFilter": "फ़िल्टर रीसेट करें",
+    "noData": "इस तालिका में कोई डेटा नहीं मिला।",
+    "empty": "खाली डेटासेट",
+    "columnFallback": "कॉलम {{letter}}",
+    "cellTitle": "{{value}} (कॉपी करने के लिए क्लिक करें)"
+  },
+  "codeEditor": {
+    "loading": "संपादक लोड हो रहा है…"
+  },
+  "syntaxHighlighter": {
+    "ariaLabel": "कोड दर्शक",
+    "largeFile_one": "बड़ी फ़ाइल ({{count, number}} पंक्ति) — प्रदर्शन के लिए सिंटैक्स हाइलाइटिंग छोड़ी गई",
+    "largeFile_other": "बड़ी फ़ाइल ({{count, number}} पंक्तियाँ) — प्रदर्शन के लिए सिंटैक्स हाइलाइटिंग छोड़ी गई"
+  }
+}

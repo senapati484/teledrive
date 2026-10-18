@@ -1,0 +1,116 @@
+{
+  "logoAlt": "電信標誌",
+  "actions": {
+    "close": "關閉"
+  },
+  "splash": {
+    "connecting": "正在連線到Telegram..."
+  },
+  "nav": {
+    "myDrive": "我的駕駛",
+    "recent": "最近的",
+    "starred": "已加上星號",
+    "archived": "已存檔",
+    "trash": "垃圾",
+    "backups": "備份",
+    "settings": "設定"
+  },
+  "header": {
+    "switchToLight": "切換到淺色主題",
+    "switchToDark": "切換到黑暗主題",
+    "settings": "設定"
+  },
+  "indexQueue": {
+    "saveFailedTitle": "索引儲存失敗 — 單擊重試",
+    "liveSyncTitle": "即時多裝置同步",
+    "backupSnapshotTitle": "備份快照正在進行中",
+    "saveFailed": "儲存失敗",
+    "retryingIn": "{{秒}}秒後重試",
+    "synced": "已同步",
+    "backupInProgress": "備份正在進行中",
+    "syncing": "正在同步",
+    "retry": "重試"
+  },
+  "dropOverlay": {
+    "title": "拖放要上傳到“我的雲端硬碟”的檔案",
+    "description": "釋放立即開始上傳"
+  },
+  "offlineBanner": "您目前處於離線狀態。某些功能可能不可用。",
+  "shortcuts": {
+    "title": "鍵盤快捷鍵",
+    "navigationGroup": "導航與搜尋",
+    "focusSearch": "焦點搜尋",
+    "focusSearchKeys": "/ 或 {{modKey}}F",
+    "clearSelection": "清晰選擇/模糊",
+    "scrollToTop": "滾動到頂部",
+    "scrollToBottom": "滾動到底部",
+    "showHelp": "顯示快捷方式幫助",
+    "selectionGroup": "選擇行動",
+    "selectAll": "選擇所有專案",
+    "moveToTrash": "移至垃圾桶",
+    "rename": "重新命名專案",
+    "download": "下載檔案"
+  },
+  "sidebar": {
+    "storage": "貯存",
+    "usedOfUnlimited": "<strong>{{size}}</strong> 無限使用",
+    "telegramCloudStorage": "Telegram雲端儲存"
+  },
+  "newMenu": {
+    "ariaLabel": "新商品",
+    "new": "新的",
+    "newFolder": "新建資料夾",
+    "fileUpload": "檔案上傳",
+    "folderUpload": "資料夾上傳"
+  },
+  "search": {
+    "placeholder": "在雲端硬碟中搜索",
+    "matchingHeader": "匹配檔案和資料夾",
+    "folder": "資料夾",
+    "fileIn": "檔案 • {{位置}}",
+    "noResults": "沒有找到匹配的檔案"
+  },
+  "upload": {
+    "failed_one": "{{count}} 上傳失敗",
+    "failed_other": "{{count}} 個上傳失敗",
+    "complete_one": "{{count}} 上傳完成",
+    "complete_other": "{{count}} 個上傳已完成",
+    "uploadingItems_one": "正在上傳 {{count}} 項 ({{percent}}%)",
+    "uploadingItems_other": "正在上傳 {{count}} 項 ({{percent}}%)",
+    "expand": "擴張",
+    "collapse": "坍塌",
+    "close": "關閉",
+    "queued": "排隊",
+    "uploading": "正在上傳..."
+  },
+  "backup": {
+    "scanning": "正在掃描資料夾...",
+    "backingUp": "正在備份 — {{上傳}} / {{總計}}",
+    "completeUploaded_one": "備份完成 — 已上傳 {{count}} 個檔案",
+    "completeUploaded_other": "備份完成 — 已上傳 {{count}} 個檔案",
+    "completeNothingChanged": "備份完成 — 沒有任何變化",
+    "cancelled": "備份已取消",
+    "failed": "備份失敗",
+    "retryRateLimit": "重試 {{attempt}}/{{maxAttempts}} — Telegram 速率限制，等待 {{seconds}} 秒",
+    "retryNetwork": "重試 {{attempt}}/{{maxAttempts}} — 網路故障，等待 {{seconds}} 秒",
+    "readingFolders": "從磁碟讀取資料夾內容",
+    "summaryUploaded_one": "已上傳 {{count}} 個",
+    "summaryUploaded_other": "已上傳 {{count}} 個",
+    "summaryUnchanged_one": "{{count}} 不變",
+    "summaryUnchanged_other": "{{count}} 不變",
+    "summaryFailed_one": "{{count}} 失敗",
+    "summaryFailed_other": "{{count}} 失敗",
+    "resumeAnytime": "您可以隨時恢復。",
+    "dismiss": "解僱"
+  },
+  "errorBoundary": {
+    "title": "出了點問題",
+    "description": "出現意外問題。請重新載入應用程式以繼續。",
+    "reload": "重新載入應用程式"
+  },
+  "notFound": {
+    "title": "404 - 找不到頁面",
+    "description": "您要查詢的頁面不存在。",
+    "goToMyDrive": "前往我的雲端硬碟"
+  }
+}

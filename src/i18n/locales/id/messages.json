@@ -1,0 +1,65 @@
+{
+  "common": {
+    "unknownError": "Kesalahan tidak diketahui"
+  },
+  "bootstrap": {
+    "status": {
+      "connecting": "Menghubungkan ke Telegram...",
+      "verifyingChannel": "Memverifikasi saluran penyimpanan aman...",
+      "loadingIndex": "Memuat indeks metadata berkas...",
+      "recoveryScan": "Memeriksa berkas Anda (pemindaian pemulihan)...",
+      "initializingView": "Menginisialisasi tampilan penyimpanan lokal..."
+    }
+  },
+  "backup": {
+    "errors": {
+      "noFolders": "Pilih setidaknya satu folder di Pengaturan → Pencadangan Perangkat terlebih dahulu.",
+      "channelNotReady": "Saluran penyimpanan belum siap. Silakan selesaikan masuk pertama kali.",
+      "clientUnreachable": "Klien Telegram tidak dapat dijangkau: {{message}}",
+      "walkerFailed": "Pemindai gagal: {{message}}",
+      "manifestCorrupt": "Manifest cadangan rusak — menolak mengunggah sampai ditinjau.",
+      "cancelled": "Dibatalkan oleh pengguna.",
+      "sessionExpired": "Sesi Telegram telah kedaluwarsa. Sambungkan kembali akun Anda di Pengaturan → Akun Telegram, lalu jalankan pencadangan lagi."
+    }
+  },
+  "upload": {
+    "channelNotConfigured": "Saluran penyimpanan Telegram belum dikonfigurasi. Harap periksa pengaturan.",
+    "success": "\"{{name}}\" berhasil diunggah!",
+    "indexSaveFailed": "Gagal menyimpan indeks untuk \"{{name}}\" — segarkan drive.",
+    "failedFallback": "Unggahan gagal",
+    "failed": "Gagal mengunggah \"{{name}}\": {{message}}",
+    "emptyFile": "\"{{name}}\" kosong. Berkas kosong (0 byte) tidak didukung oleh Telegram."
+  },
+  "download": {
+    "cancelled": "Pengunduhan dibatalkan.",
+    "progress": "Mengunduh \"{{name}}\"... {{percent}}%",
+    "success": "\"{{name}}\" berhasil diunduh!",
+    "failed": "Gagal mengunduh berkas. Harap periksa izin dan coba lagi.",
+    "errors": {
+      "mediaNotFound": "Pesan atau media berkas tidak ditemukan di Telegram.",
+      "mediaFailed": "Gagal mengunduh media."
+    }
+  },
+  "indexQueue": {
+    "rateLimitRetrying": "Batas frekuensi Telegram tercapai — mencoba lagi"
+  },
+  "storage": {
+    "saveFailed": "Tidak dapat menyimpan berkas ke {{path}}. Harap periksa izin penyimpanan."
+  },
+  "relativeTime": {
+    "unknown": "tidak diketahui",
+    "justNow": "baru saja",
+    "second_one": "{{count}} detik",
+    "second_other": "{{count}} detik",
+    "minute_one": "{{count}} menit",
+    "minute_other": "{{count}} menit",
+    "hour_one": "{{count}} jam",
+    "hour_other": "{{count}} jam",
+    "day_one": "{{count}} hari",
+    "day_other": "{{count}} hari",
+    "month_one": "{{count}} bulan",
+    "month_other": "{{count}} bulan",
+    "year_one": "{{count}} tahun",
+    "year_other": "{{count}} tahun"
+  }
+}
