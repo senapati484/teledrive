@@ -23,6 +23,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      NDK_HOME: /usr/local/lib/android/sdk/ndk/27.1.12297006
 
     steps:
       - name: Checkout repository
@@ -54,7 +58,6 @@ jobs:
         run: |
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
           $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;27.1.12297006"
-          echo "NDK_HOME=$ANDROID_HOME/ndk/27.1.12297006" >> $GITHUB_ENV
 
       - name: Install npm dependencies
         run: npm ci
@@ -68,17 +71,11 @@ jobs:
 
       - name: Build Android APK (debug)
         if: ${{ github.event.inputs.build_type == 'debug' || github.event_name != 'workflow_dispatch' }}
-        run: npx tauri android build --debug
-        env:
-          NDK_HOME: ${{ env.NDK_HOME }}
-          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+        run: npx tauri android build --apk --ci --debug
 
       - name: Build Android APK (release)
         if: ${{ github.event.inputs.build_type == 'release' }}
-        run: npx tauri android build
-        env:
-          NDK_HOME: ${{ env.NDK_HOME }}
-          ANDROID_HOME: ${{ env.ANDROID_HOME }}
+        run: npx tauri android build --apk --ci
 
       - name: Upload Android APK artifact
         uses: actions/upload-artifact@v4
