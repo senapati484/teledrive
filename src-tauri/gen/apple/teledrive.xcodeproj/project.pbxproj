@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 56;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -188,6 +188,7 @@
 				};
 			};
 			buildConfigurationList = 8CA6F6014C1D16A8E6F69A43 /* Build configuration list for PBXProject "teledrive" */;
+			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -196,7 +197,6 @@
 			);
 			mainGroup = 9EF9A3FD36ED84C04216A015;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
 			productRefGroup = 71B03D2FCAFFA53ED0BA3892 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";

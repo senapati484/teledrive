@@ -1,6 +1,7 @@
 name: teledrive
 options:
   bundleIdPrefix: com.teledrive.app
+  projectFormat: xcode14_0
   deploymentTarget:
     iOS: 14.0
 fileGroups: [../../src]
@@ -61,6 +62,8 @@ targets:
         LSSupportsOpeningDocumentsInPlace: true
         NSPhotoLibraryUsageDescription: "TeleDrive needs access to your photo library to upload pictures and videos to your cloud storage."
         NSPhotoLibraryAddUsageDescription: "TeleDrive needs access to save downloaded photos to your library."
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
     entitlements:
       path: teledrive_iOS/teledrive_iOS.entitlements
     scheme:
