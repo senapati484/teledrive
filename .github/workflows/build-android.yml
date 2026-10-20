@@ -1,0 +1,118 @@
+name: Build Android APK
+
+on:
+  push:
+    branches:
+      - '0.1.2'
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Build type (debug or release)'
+        required: false
+        default: 'debug'
+        type: choice
+        options:
+          - debug
+          - release
+
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android NDK
+        run: |
+          sdkmanager "ndk;27.1.12297006"
+          echo "NDK_HOME=$ANDROID_SDK_ROOT/ndk/27.1.12297006" >> $GITHUB_ENV
+
+      - name: Install npm dependencies
+        run: npm ci
+        working-directory: .
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Initialize Android project
+        run: npm run tauri android init
+
+      - name: Build Android APK (debug)
+        if: ${{ github.event.inputs.build_type == 'debug' || github.event_name != 'workflow_dispatch' }}
+        run: npm run tauri android build -- --debug
+        env:
+          NDK_HOME: ${{ env.NDK_HOME }}
+          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
+
+      - name: Build Android APK (release)
+        if: ${{ github.event.inputs.build_type == 'release' }}
+        run: npm run tauri android build
+        env:
+          NDK_HOME: ${{ env.NDK_HOME }}
+          ANDROID_HOME: ${{ env.ANDROID_SDK_ROOT }}
+
+      - name: Upload Android APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: teledrive-android-apk
+          path: |
+            src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+            src-tauri/gen/android/app/build/outputs/bundle/**/*.aab
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload APK to release (on tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+          draft: true
+          prerelease: false
+          name: 'TeleDrive ${{ github.ref_name }}'
+          body: |
+            ## 📱 Android Build
+
+            This release includes the Android APK for TeleDrive.
+
+            ### Installation
+            1. Download the `.apk` file below
+            2. Enable "Install from unknown sources" on your Android device
+            3. Install the APK
+
+            ### Requirements
+            - Android 7.0 (API 24) or higher
+            - Internet permission for Telegram connectivity
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
