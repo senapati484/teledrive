@@ -80,7 +80,14 @@ jobs:
       - name: Build iOS App (Device - aarch64)
         if: ${{ github.event.inputs.build_target == 'all' || github.event.inputs.build_target == 'device' || github.event_name != 'workflow_dispatch' }}
         run: |
-          npx tauri ios build --target aarch64 --no-sign --archive-only --debug --ci
+          # Build directly for physical iOS device (generic/platform=iOS, arm64) without code signing
+          xcodebuild -project src-tauri/gen/apple/teledrive.xcodeproj \
+            -scheme teledrive_iOS \
+            -configuration debug \
+            -destination "generic/platform=iOS" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build
 
       - name: Build iOS App (Simulator - aarch64-sim)
         if: ${{ github.event.inputs.build_target == 'all' || github.event.inputs.build_target == 'simulator' || github.event_name != 'workflow_dispatch' }}
@@ -91,17 +98,11 @@ jobs:
         run: |
           mkdir -p release-dist/ios
           
-          echo "=== Inspecting built products ==="
-          ls -la src-tauri/gen/apple/build/ || true
-          
           # 1. Package Unsigned IPA for Device (arm64)
-          echo "Looking for built device app in xcarchive..."
-          DEVICE_APP=$(find src-tauri/gen/apple/build/teledrive_iOS.xcarchive -name "*.app" 2>/dev/null | head -n 1)
+          echo "Looking for built device app (iphoneos)..."
+          DEVICE_APP=$(find ~/Library/Developer/Xcode/DerivedData src-tauri/gen/apple -name "TeleDrive.app" -path "*debug-iphoneos*" 2>/dev/null | head -n 1)
           if [ -z "$DEVICE_APP" ]; then
-            DEVICE_APP=$(find src-tauri/gen/apple/build -name "*.app" 2>/dev/null | grep -v "arm64-sim" | head -n 1)
-          fi
-          if [ -z "$DEVICE_APP" ]; then
-            DEVICE_APP=$(find ~/Library/Developer/Xcode/DerivedData -name "TeleDrive.app" -path "*iphoneos*" 2>/dev/null | head -n 1)
+            DEVICE_APP=$(find ~/Library/Developer/Xcode/DerivedData src-tauri/gen/apple -name "*.app" -path "*iphoneos*" 2>/dev/null | head -n 1)
           fi
           
           if [ -n "$DEVICE_APP" ]; then
