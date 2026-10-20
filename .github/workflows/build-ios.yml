@@ -39,11 +39,14 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+      - name: Install macOS build dependencies
+        run: brew install cocoapods xcodegen
+
       - name: Initialize iOS project
-        run: npm run tauri ios init
+        run: npm run tauri ios init -- --ci --skip-targets-install
 
       - name: Build iOS (simulator - no signing required)
-        run: npm run tauri ios build -- --target aarch64-apple-ios-sim
+        run: npx tauri ios build --target aarch64-apple-ios-sim --debug
 
       - name: Upload iOS artifact
         uses: actions/upload-artifact@v4
