@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
-import { Cloud } from "lucide-react";
+import { Cloud, Settings } from "lucide-react";
 import { NewActionButton } from "./NewActionButton";
 import { cn } from "@/lib/utils";
 
@@ -45,13 +45,15 @@ export const DriveSidebar = React.memo(function DriveSidebar({
 
   return (
     <div className="flex flex-col h-full bg-background select-none">
-      {/* Google Drive "+ New" button */}
-      <div className="px-4 pt-3 pb-3">
-        <NewActionButton />
-      </div>
+      {/* Google Drive "+ New" button — Desktop only (Mobile uses the FAB) */}
+      {!isMobile && (
+        <div className="px-4 pt-3 pb-3">
+          <NewActionButton />
+        </div>
+      )}
 
       {/* Navigation items: Google Drive full-rounded pills */}
-      <nav className="flex-1 px-3 space-y-1">
+      <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive =
@@ -79,7 +81,7 @@ export const DriveSidebar = React.memo(function DriveSidebar({
               }}
               data-drop-target={item.dropTarget ?? undefined}
               className={cn(
-                "flex items-center gap-3.5 px-4 h-10 rounded-full text-sm font-medium transition-colors select-none cursor-pointer",
+                "flex items-center gap-3.5 px-4 h-11 sm:h-10 rounded-full text-sm font-medium transition-colors select-none cursor-pointer",
                 isActive
                   ? "bg-[#c2e7ff] text-[#001d35] font-semibold dark:bg-[#004a77] dark:text-[#c2e7ff]"
                   : sidebarDragOverPath === item.path
@@ -89,20 +91,44 @@ export const DriveSidebar = React.memo(function DriveSidebar({
             >
               <Icon
                 className={cn(
-                  "h-4.5 w-4.5 shrink-0",
+                  "h-5 w-5 sm:h-4.5 sm:w-4.5 shrink-0",
                   isActive
                     ? "text-[#001d35] dark:text-[#c2e7ff]"
                     : "text-[#444746] dark:text-[#c4c7c5]"
                 )}
               />
               <span className="flex-1 truncate">{item.label}</span>
+              {typeof item.badge === "number" && item.badge > 0 && (
+                <span className="text-[11px] font-semibold opacity-70 px-1.5 py-0.5 rounded-full">
+                  {item.badge}
+                </span>
+              )}
             </Link>
           );
         })}
+
+        {/* Settings item in mobile drawer */}
+        {isMobile && (
+          <div className="pt-2 mt-2 border-t border-slate-200/50 dark:border-white/[0.04]">
+            <Link
+              to="/settings"
+              onClick={() => setSidebarOpen(false)}
+              className={cn(
+                "flex items-center gap-3.5 px-4 h-11 rounded-full text-sm font-medium transition-colors select-none cursor-pointer",
+                location.pathname === "/settings"
+                  ? "bg-[#c2e7ff] text-[#001d35] font-semibold dark:bg-[#004a77] dark:text-[#c2e7ff]"
+                  : "text-[#444746] dark:text-[#c4c7c5] hover:bg-[#e9eef6] dark:hover:bg-[#161719]"
+              )}
+            >
+              <Settings className="h-5 w-5 shrink-0 text-[#444746] dark:text-[#c4c7c5]" />
+              <span className="flex-1 truncate">{t("nav.settings") ?? "Settings"}</span>
+            </Link>
+          </div>
+        )}
       </nav>
 
       {/* Storage panel: Google Drive Cloud Storage meter */}
-      <div className="px-4 pb-[max(var(--safe-area-bottom,1rem),1rem)] pt-3 space-y-2.5 select-none border-t border-slate-200/50 dark:border-white/[0.04]">
+      <div className="px-5 pb-[max(var(--safe-area-bottom,0px),24px)] pt-3.5 space-y-2.5 select-none border-t border-slate-200/50 dark:border-white/[0.04]">
         <div className="flex items-center gap-2 text-xs font-semibold text-[#444746] dark:text-[#c4c7c5]">
           <Cloud className="h-4.5 w-4.5 text-[#0b57d0] dark:text-[#a8c7fa]" />
           <span>{t("sidebar.storage")}</span>

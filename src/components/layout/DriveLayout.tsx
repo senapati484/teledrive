@@ -17,6 +17,7 @@ import {
   Upload,
   Sun,
   Moon,
+  ChevronLeft,
 } from "lucide-react";
 import { DriveSidebar } from "./DriveSidebar";
 import { NewActionButton } from "./NewActionButton";
@@ -574,7 +575,11 @@ export default function DriveLayout() {
   // Derive the current page label for the mobile header title
   const currentPageTitle = useMemo(() => {
     const path = location.pathname;
-    if (path.startsWith("/drive/folder/") || path === "/drive/my-drive") return t("nav.myDrive");
+    if (path.startsWith("/drive/folder/")) {
+      const parts = path.split("/").filter(Boolean);
+      return decodeURIComponent(parts[parts.length - 1] || t("nav.myDrive"));
+    }
+    if (path === "/drive/my-drive") return t("nav.myDrive");
     if (path === "/drive/starred") return t("nav.starred");
     if (path === "/drive/recent") return t("nav.recent");
     if (path === "/drive/archived") return t("nav.archived");
@@ -608,53 +613,114 @@ export default function DriveLayout() {
         </div>
       )}
       
-      {/* Topbar: compact Google Workspace style — mobile-first */}
-      <header className="relative z-40 flex items-center justify-between px-2 md:px-4 h-[calc(3.5rem+var(--safe-area-top,0px))] md:h-16 pt-[var(--safe-area-top,0px)] md:pt-0 shrink-0 bg-background border-b md:border-b-0 border-slate-200/60 dark:border-white/[0.04] select-none">
-        {/* Left: hamburger + page title (flex-row, no gap overflow on mobile) */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0">
-          {isMobile ? (
-            <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0 rounded-full hover:bg-muted text-muted-foreground cursor-pointer">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-[var(--sidebar-width)] p-0 pt-[max(var(--safe-area-top,0px),2rem)] bg-background">
-                <div className="px-5 py-2 flex items-center gap-2.5 mb-2">
-                  <img
-                    src="/teledrive.png"
-                    alt={t("logoAlt")}
-                    className="h-7 w-7 object-contain rounded-lg shadow-sm"
-                  />
-                  <span className="text-xl font-bold tracking-tight text-foreground">
-                    TeleDrive
-                  </span>
-                </div>
-                <DriveSidebar
-                  navItems={navItems}
-                  formattedUsedSize={formattedUsedSize}
-                  isMobile={isMobile}
-                  setSidebarOpen={setSidebarOpen}
-                  draggedItemIds={draggedItemIds}
-                  actionableSidebarPaths={actionableSidebarPaths}
-                  sidebarDragOverPath={sidebarDragOverPath}
-                  setSidebarDragOverPath={setSidebarDragOverPath}
-                  handleSidebarDragOver={handleSidebarDragOver}
-                  handleSidebarDragEnter={handleSidebarDragEnter}
-                  handleSidebarDragLeave={handleSidebarDragLeave}
-                  handleSidebarDrop={handleSidebarDrop}
-                />
-              </SheetContent>
-            </Sheet>
-          ) : null}
-
-          {/* Mobile: inline page title next to hamburger */}
-          {isMobile ? (
-            <span className="text-base font-semibold tracking-tight text-foreground truncate max-w-[140px]">
-              {currentPageTitle}
-            </span>
+      {/* Topbar: Mobile Google Drive Search Pill & Desktop Workspace App Bar */}
+      {isMobile ? (
+        <header className="relative z-40 flex items-center px-3 h-[calc(3.75rem+max(var(--safe-area-top,0px),24px))] pt-[max(var(--safe-area-top,0px),24px)] pb-1.5 shrink-0 bg-background select-none">
+          {mobileSearchOpen ? (
+            <div className="flex-1 flex items-center gap-2 animate-in fade-in duration-150">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMobileSearchOpen(false)}
+                className="h-10 w-10 shrink-0 rounded-full hover:bg-muted text-muted-foreground cursor-pointer"
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              <div className="flex-1">
+                <SearchBar autoFocus onBlur={() => {}} />
+              </div>
+            </div>
           ) : (
-            /* Desktop: logo + brand name */
+            <div className="w-full flex items-center gap-2">
+              {/* Google Drive Mobile Floating Search Bar */}
+              <div className="flex-1 flex items-center gap-2 h-12 px-2.5 rounded-full bg-[#f0f4f9] dark:bg-[#1a1b1e] border border-slate-200/80 dark:border-white/[0.04] shadow-xs">
+                <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+                  <SheetTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label={t("nav.myDrive") ?? "Menu"}
+                      className="h-9 w-9 rounded-full flex items-center justify-center text-[#444746] dark:text-[#c4c7c5] hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer shrink-0"
+                    >
+                      <Menu className="h-5 w-5" />
+                    </button>
+                  </SheetTrigger>
+                  <SheetContent
+                    side="left"
+                    showCloseButton={false}
+                    className="w-[280px] max-w-[82vw] p-0 pt-[max(var(--safe-area-top,0px),24px)] bg-background flex flex-col border-r border-slate-200/60 dark:border-white/[0.04]"
+                  >
+                    <div className="px-5 py-3.5 flex items-center justify-between border-b border-slate-200/50 dark:border-white/[0.04]">
+                      <div className="flex items-center gap-2.5">
+                        <img
+                          src="/teledrive.png"
+                          alt={t("logoAlt")}
+                          className="h-8 w-8 object-contain rounded-xl shadow-xs"
+                        />
+                        <span className="text-xl font-bold tracking-tight text-foreground">
+                          TeleDrive
+                        </span>
+                      </div>
+                    </div>
+                    <DriveSidebar
+                      navItems={navItems}
+                      formattedUsedSize={formattedUsedSize}
+                      isMobile={isMobile}
+                      setSidebarOpen={setSidebarOpen}
+                      draggedItemIds={draggedItemIds}
+                      actionableSidebarPaths={actionableSidebarPaths}
+                      sidebarDragOverPath={sidebarDragOverPath}
+                      setSidebarDragOverPath={setSidebarDragOverPath}
+                      handleSidebarDragOver={handleSidebarDragOver}
+                      handleSidebarDragEnter={handleSidebarDragEnter}
+                      handleSidebarDragLeave={handleSidebarDragLeave}
+                      handleSidebarDrop={handleSidebarDrop}
+                    />
+                  </SheetContent>
+                </Sheet>
+
+                {/* Search / Page Title Trigger */}
+                <button
+                  type="button"
+                  onClick={() => setMobileSearchOpen(true)}
+                  className="flex-1 flex items-center text-left text-sm text-[#444746] dark:text-[#8e918f] font-normal truncate cursor-pointer select-none"
+                >
+                  <span className="truncate">
+                    {location.pathname.startsWith("/drive/folder/")
+                      ? currentPageTitle
+                      : t("header.searchPlaceholder") ?? "Search in Drive"}
+                  </span>
+                </button>
+
+                {/* Index Queue state pill */}
+                <IndexQueuePill />
+
+                {/* Theme toggle */}
+                <button
+                  type="button"
+                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  className="h-8 w-8 rounded-full flex items-center justify-center text-[#444746] dark:text-[#c4c7c5] hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer shrink-0"
+                  title={theme === "dark" ? t("header.switchToLight") : t("header.switchToDark")}
+                >
+                  {theme === "dark" ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
+                </button>
+
+                {/* User avatar */}
+                <Avatar
+                  className="h-7.5 w-7.5 border border-border cursor-pointer active:scale-95 transition-all shrink-0"
+                  onClick={() => navigate("/settings")}
+                >
+                  <AvatarFallback className="bg-gradient-to-tr from-[#0b57d0] to-[#1a73e8] text-white font-semibold text-[11px] select-none">
+                    {getInitials(phoneNumber)}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+            </div>
+          )}
+        </header>
+      ) : (
+        /* Desktop Topbar */
+        <header className="relative z-40 flex items-center justify-between px-4 h-16 shrink-0 bg-background border-b border-slate-200/60 dark:border-white/[0.04] select-none">
+          <div className="flex items-center gap-2 shrink-0 min-w-0">
             <Link to="/drive/my-drive" className="flex items-center gap-2.5 group ml-1">
               <img
                 src="/teledrive.png"
@@ -665,70 +731,45 @@ export default function DriveLayout() {
                 TeleDrive
               </span>
             </Link>
-          )}
-        </div>
+          </div>
 
-        {/* Search bar wrapper — hidden on mobile (mobile gets icon) */}
-        <div className="hidden md:flex flex-1 min-w-0 max-w-2xl mx-8">
-          <SearchBar />
-        </div>
+          <div className="flex-1 min-w-0 max-w-2xl mx-8">
+            <SearchBar />
+          </div>
 
-        {/* Right side items */}
-        <div className="flex items-center gap-1 md:gap-2.5 shrink-0">
-          {/* Index queue state pill */}
-          <IndexQueuePill />
+          <div className="flex items-center gap-2.5 shrink-0">
+            <IndexQueuePill />
 
-          {/* Mobile: search icon that expands */}
-          {isMobile && (
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setMobileSearchOpen((v) => !v)}
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               className="h-10 w-10 rounded-full hover:bg-muted text-muted-foreground cursor-pointer"
-              title={t("header.search") ?? "Search"}
+              title={theme === "dark" ? t("header.switchToLight") : t("header.switchToDark")}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
+              {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
-          )}
 
-          {/* Quick theme toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="h-10 w-10 rounded-full hover:bg-muted text-muted-foreground cursor-pointer"
-            title={theme === "dark" ? t("header.switchToLight") : t("header.switchToDark")}
-          >
-            {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/settings")}
+              className="h-10 w-10 rounded-full hover:bg-muted text-muted-foreground flex cursor-pointer"
+              title={t("header.settings")}
+            >
+              <Settings className="h-5 w-5" />
+            </Button>
 
-          {/* Settings button — desktop only */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/settings")}
-            className="h-10 w-10 rounded-full hover:bg-muted text-muted-foreground hidden md:flex cursor-pointer"
-            title={t("header.settings")}
-          >
-            <Settings className="h-5 w-5" />
-          </Button>
-
-          {/* Avatar */}
-          <Avatar className="h-8.5 w-8.5 md:h-9 md:w-9 border border-border cursor-pointer hover:opacity-90 transition-opacity" onClick={() => navigate("/settings")}>
-            <AvatarFallback className="bg-gradient-to-tr from-[#0b57d0] to-[#1a73e8] text-white font-semibold text-xs select-none">
-              {getInitials(phoneNumber)}
-            </AvatarFallback>
-          </Avatar>
-        </div>
-      </header>
-
-      {/* Mobile expandable search bar (slides in below topbar) */}
-      {isMobile && mobileSearchOpen && (
-        <div className="z-30 shrink-0 px-3 py-2 bg-background border-b border-border animate-slide-up-fade">
-          <SearchBar autoFocus onBlur={() => setMobileSearchOpen(false)} />
-        </div>
+            <Avatar
+              className="h-9 w-9 border border-border cursor-pointer hover:opacity-90 transition-opacity"
+              onClick={() => navigate("/settings")}
+            >
+              <AvatarFallback className="bg-gradient-to-tr from-[#0b57d0] to-[#1a73e8] text-white font-semibold text-xs select-none">
+                {getInitials(phoneNumber)}
+              </AvatarFallback>
+            </Avatar>
+          </div>
+        </header>
       )}
 
       {/* Offline banner */}
@@ -768,7 +809,7 @@ export default function DriveLayout() {
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          className="flex-1 overflow-y-auto bg-surface dark:bg-surface md:mr-4 md:mb-4 md:rounded-3xl md:border md:border-l-0 md:border-slate-200/80 md:dark:border-white/[0.04] md:dark:border-l-0 md:shadow-xs border-0 pb-[calc(var(--mobile-nav-height)+var(--safe-area-bottom,1rem)+80px)] md:pb-6 relative z-10"
+          className="flex-1 overflow-y-auto bg-surface dark:bg-surface md:mr-4 md:mb-4 md:rounded-3xl md:border md:border-l-0 md:border-slate-200/80 md:dark:border-white/[0.04] md:dark:border-l-0 md:shadow-xs border-0 pb-[calc(3.75rem+max(var(--safe-area-bottom,0px),16px)+80px)] md:pb-6 relative z-10"
         >
           {/* Mobile FAB */}
           {isMobile && <NewActionButton isFab />}
@@ -793,9 +834,9 @@ export default function DriveLayout() {
         </main>
       </div>
 
-      {/* Bottom Nav (Mobile) */}
+      {/* Bottom Nav (Mobile): Material You 3 Google Drive pattern */}
       {isMobile && (
-        <nav className="fixed bottom-0 left-0 right-0 h-[calc(var(--mobile-nav-height)+var(--safe-area-bottom,1rem))] border-t border-border bg-background/95 backdrop-blur-md flex items-center justify-around z-40 pb-[var(--safe-area-bottom,1rem)] select-none">
+        <nav className="fixed bottom-0 left-0 right-0 h-[calc(3.75rem+max(var(--safe-area-bottom,0px),16px))] border-t border-slate-200/80 dark:border-white/[0.06] bg-background/95 backdrop-blur-md flex items-center justify-around z-40 pb-[max(var(--safe-area-bottom,0px),16px)] pt-1 select-none">
           {mobileNavTabs.map((item) => {
             const Icon = item.icon;
             const isActive =
@@ -812,19 +853,17 @@ export default function DriveLayout() {
                     : "text-[#444746] dark:text-[#c4c7c5]"
                 )}
               >
-                <div className={cn(
-                  "px-4 py-1 rounded-full mb-0.5 transition-colors relative flex items-center justify-center",
-                  isActive && "bg-[#c2e7ff] dark:bg-[#004a77]"
-                )}>
-                  <Icon className="h-5 w-5" />
-                </div>
-                <span className="text-[10px] tracking-tight truncate max-w-[72px] text-center">{item.label}</span>
                 <div
                   className={cn(
-                    "w-1 h-1 rounded-full bg-primary mt-0.5 transition-all duration-200",
-                    isActive ? "opacity-100 scale-100" : "opacity-0 scale-50"
+                    "px-4.5 py-1 rounded-full mb-0.5 transition-all duration-200 relative flex items-center justify-center",
+                    isActive && "bg-[#c2e7ff] dark:bg-[#004a77]"
                   )}
-                />
+                >
+                  <Icon className="h-5 w-5" />
+                </div>
+                <span className="text-[11px] font-medium tracking-tight truncate max-w-[72px] text-center">
+                  {item.label}
+                </span>
               </Link>
             );
           })}
