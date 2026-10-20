@@ -1,0 +1,460 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		01B538C683043197AE6E1289 /* libapp.a in Frameworks */ = {isa = PBXBuildFile; fileRef = C406AD5391AE95C1CBBB1E6B /* libapp.a */; };
+		1F1EB652501A19791E7A96B3 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 85CEFE341D04A1FD76DAB2E6 /* UIKit.framework */; };
+		5C6E483B258EA02A62357786 /* assets in Resources */ = {isa = PBXBuildFile; fileRef = 4510204FD1C2226795FA8BA8 /* assets */; };
+		6AC1D9D309515354EA82CA22 /* Security.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5CF3B4A37F835253CEA9F48D /* Security.framework */; };
+		70B025F63A720A8164A16490 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8B9C02ED2228878D32BE6D75 /* CoreGraphics.framework */; };
+		7FB9DABEB90E013DF0A4ABDB /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A6449B59747BF99E882B0AD5 /* QuartzCore.framework */; };
+		8206CB5D23003F3EA6B49C43 /* main.mm in Sources */ = {isa = PBXBuildFile; fileRef = 28D3C45846F9B0D5F675FAC1 /* main.mm */; };
+		CE8812BF86E0AAFD90CEF508 /* MetalKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3AE1DF4855BC8344D3E4B220 /* MetalKit.framework */; };
+		D7B08F053AAB8D1459B63260 /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2300130E33135F75342ED1FD /* WebKit.framework */; };
+		D8167F67ADC3D1C49CEC4185 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6CCE5DFE8B9F9C2DF97A2408 /* Assets.xcassets */; };
+		E1AF2CED0A5F518B711A4065 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 3AFC60F93DA7E21DD7F41734 /* LaunchScreen.storyboard */; };
+		F45D7AF6ED37E13DFCF53677 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 54AC4F3CCCF364D72718E16B /* Metal.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		10B119ED2B994D25FF20D819 /* lib.rs */ = {isa = PBXFileReference; path = lib.rs; sourceTree = "<group>"; };
+		2300130E33135F75342ED1FD /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
+		28D3C45846F9B0D5F675FAC1 /* main.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
+		360A61BCBAAE76C2B9251921 /* teledrive_iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = teledrive_iOS.entitlements; sourceTree = "<group>"; };
+		39AAC722D2244499AEB7F4E8 /* bindings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bindings.h; sourceTree = "<group>"; };
+		3AE1DF4855BC8344D3E4B220 /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
+		3AFC60F93DA7E21DD7F41734 /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = LaunchScreen.storyboard; sourceTree = "<group>"; };
+		4510204FD1C2226795FA8BA8 /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = assets; sourceTree = SOURCE_ROOT; };
+		4E8A01334B82D1B7BE3E48EF /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		54AC4F3CCCF364D72718E16B /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
+		5CF3B4A37F835253CEA9F48D /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
+		6CCE5DFE8B9F9C2DF97A2408 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		8319CF43E300D5CAAFD195D2 /* main.rs */ = {isa = PBXFileReference; path = main.rs; sourceTree = "<group>"; };
+		85CEFE341D04A1FD76DAB2E6 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
+		8B9C02ED2228878D32BE6D75 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
+		A6449B59747BF99E882B0AD5 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = System/Library/Frameworks/QuartzCore.framework; sourceTree = SDKROOT; };
+		C406AD5391AE95C1CBBB1E6B /* libapp.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; path = libapp.a; sourceTree = "<group>"; };
+		F93956F17E792740A6B3740B /* teledrive_iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = teledrive_iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D984358A6205374C858E14E5 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				01B538C683043197AE6E1289 /* libapp.a in Frameworks */,
+				70B025F63A720A8164A16490 /* CoreGraphics.framework in Frameworks */,
+				F45D7AF6ED37E13DFCF53677 /* Metal.framework in Frameworks */,
+				CE8812BF86E0AAFD90CEF508 /* MetalKit.framework in Frameworks */,
+				7FB9DABEB90E013DF0A4ABDB /* QuartzCore.framework in Frameworks */,
+				6AC1D9D309515354EA82CA22 /* Security.framework in Frameworks */,
+				1F1EB652501A19791E7A96B3 /* UIKit.framework in Frameworks */,
+				D7B08F053AAB8D1459B63260 /* WebKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		71B03D2FCAFFA53ED0BA3892 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				F93956F17E792740A6B3740B /* teledrive_iOS.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		9D18F08CCE9EE89FEE70C98E /* teledrive */ = {
+			isa = PBXGroup;
+			children = (
+				28D3C45846F9B0D5F675FAC1 /* main.mm */,
+				BC549FA7754A9B5ED7DFC26C /* bindings */,
+			);
+			path = teledrive;
+			sourceTree = "<group>";
+		};
+		9EF9A3FD36ED84C04216A015 = {
+			isa = PBXGroup;
+			children = (
+				4510204FD1C2226795FA8BA8 /* assets */,
+				6CCE5DFE8B9F9C2DF97A2408 /* Assets.xcassets */,
+				3AFC60F93DA7E21DD7F41734 /* LaunchScreen.storyboard */,
+				C92D7CA352CE05AF6FCDA00B /* Externals */,
+				D0C486FADE2CCD4185797DF3 /* Sources */,
+				C858EF67DB4E19260415A730 /* src */,
+				A7416F5681F6E54866FEF99D /* teledrive_iOS */,
+				FE982C3B3939EAB2F91D7A9E /* Frameworks */,
+				71B03D2FCAFFA53ED0BA3892 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A7416F5681F6E54866FEF99D /* teledrive_iOS */ = {
+			isa = PBXGroup;
+			children = (
+				4E8A01334B82D1B7BE3E48EF /* Info.plist */,
+				360A61BCBAAE76C2B9251921 /* teledrive_iOS.entitlements */,
+			);
+			path = teledrive_iOS;
+			sourceTree = "<group>";
+		};
+		BC549FA7754A9B5ED7DFC26C /* bindings */ = {
+			isa = PBXGroup;
+			children = (
+				39AAC722D2244499AEB7F4E8 /* bindings.h */,
+			);
+			path = bindings;
+			sourceTree = "<group>";
+		};
+		C858EF67DB4E19260415A730 /* src */ = {
+			isa = PBXGroup;
+			children = (
+				10B119ED2B994D25FF20D819 /* lib.rs */,
+				8319CF43E300D5CAAFD195D2 /* main.rs */,
+			);
+			name = src;
+			path = ../../src;
+			sourceTree = "<group>";
+		};
+		C92D7CA352CE05AF6FCDA00B /* Externals */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = Externals;
+			sourceTree = "<group>";
+		};
+		D0C486FADE2CCD4185797DF3 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				9D18F08CCE9EE89FEE70C98E /* teledrive */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		FE982C3B3939EAB2F91D7A9E /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				8B9C02ED2228878D32BE6D75 /* CoreGraphics.framework */,
+				C406AD5391AE95C1CBBB1E6B /* libapp.a */,
+				54AC4F3CCCF364D72718E16B /* Metal.framework */,
+				3AE1DF4855BC8344D3E4B220 /* MetalKit.framework */,
+				A6449B59747BF99E882B0AD5 /* QuartzCore.framework */,
+				5CF3B4A37F835253CEA9F48D /* Security.framework */,
+				85CEFE341D04A1FD76DAB2E6 /* UIKit.framework */,
+				2300130E33135F75342ED1FD /* WebKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		FC2AE3A628B20DD3BF9A4343 /* teledrive_iOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 79431741763F85641CD53342 /* Build configuration list for PBXNativeTarget "teledrive_iOS" */;
+			buildPhases = (
+				330BD9C0F639AFE92E91E156 /* Build Rust Code */,
+				ADF42B2410E97D4AD2A4A1BA /* Sources */,
+				FCDA9642CF31605A9FEAADB5 /* Resources */,
+				D984358A6205374C858E14E5 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = teledrive_iOS;
+			packageProductDependencies = (
+			);
+			productName = teledrive_iOS;
+			productReference = F93956F17E792740A6B3740B /* teledrive_iOS.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		797E6C2A6137A99D9267E3D0 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 8CA6F6014C1D16A8E6F69A43 /* Build configuration list for PBXProject "teledrive" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 9EF9A3FD36ED84C04216A015;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 71B03D2FCAFFA53ED0BA3892 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				FC2AE3A628B20DD3BF9A4343 /* teledrive_iOS */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		FCDA9642CF31605A9FEAADB5 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D8167F67ADC3D1C49CEC4185 /* Assets.xcassets in Resources */,
+				E1AF2CED0A5F518B711A4065 /* LaunchScreen.storyboard in Resources */,
+				5C6E483B258EA02A62357786 /* assets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		330BD9C0F639AFE92E91E156 /* Build Rust Code */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Build Rust Code";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(SRCROOT)/Externals/x86_64/${CONFIGURATION}/libapp.a",
+				"$(SRCROOT)/Externals/arm64/${CONFIGURATION}/libapp.a",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "npm run -- tauri ios xcode-script -v --platform ${PLATFORM_DISPLAY_NAME:?} --sdk-root ${SDKROOT:?} --framework-search-paths \"${FRAMEWORK_SEARCH_PATHS:?}\" --header-search-paths \"${HEADER_SEARCH_PATHS:?}\" --gcc-preprocessor-definitions \"${GCC_PREPROCESSOR_DEFINITIONS:-}\" --configuration ${CONFIGURATION:?} ${FORCE_COLOR} ${ARCHS:?}";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		ADF42B2410E97D4AD2A4A1BA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8206CB5D23003F3EA6B49C43 /* main.mm in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		1395BD884295D57F476B57C5 /* release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = release;
+		};
+		B065DD21866DCB9FA6B3B629 /* debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 14.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = debug;
+		};
+		DB2FEA487D24943C117FABB5 /* debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ARCHS = (
+					arm64,
+				);
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = teledrive_iOS/teledrive_iOS.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_BITCODE = NO;
+				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\".\"",
+				);
+				INFOPLIST_FILE = teledrive_iOS/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				"LIBRARY_SEARCH_PATHS[arch=arm64]" = "$(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
+				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = "$(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.teledrive.app;
+				PRODUCT_NAME = TeleDrive;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALID_ARCHS = arm64;
+			};
+			name = debug;
+		};
+		E454D8A01176DCDC6E23F822 /* release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ARCHS = (
+					arm64,
+				);
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = teledrive_iOS/teledrive_iOS.entitlements;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_BITCODE = NO;
+				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\".\"",
+				);
+				INFOPLIST_FILE = teledrive_iOS/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				"LIBRARY_SEARCH_PATHS[arch=arm64]" = "$(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
+				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = "$(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/$(PLATFORM_NAME) $(DEVELOPER_DIR)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-5.0/$(PLATFORM_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = com.teledrive.app;
+				PRODUCT_NAME = TeleDrive;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALID_ARCHS = arm64;
+			};
+			name = release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		79431741763F85641CD53342 /* Build configuration list for PBXNativeTarget "teledrive_iOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DB2FEA487D24943C117FABB5 /* debug */,
+				E454D8A01176DCDC6E23F822 /* release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = debug;
+		};
+		8CA6F6014C1D16A8E6F69A43 /* Build configuration list for PBXProject "teledrive" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B065DD21866DCB9FA6B3B629 /* debug */,
+				1395BD884295D57F476B57C5 /* release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 797E6C2A6137A99D9267E3D0 /* Project object */;
+}

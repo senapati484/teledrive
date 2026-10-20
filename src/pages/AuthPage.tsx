@@ -537,9 +537,9 @@ export default function AuthPage() {
 
   // ── Main render ──────────────────────────────────────────────────────────
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background relative select-none overflow-hidden">
+    <div className="flex items-center justify-center min-h-screen bg-background relative select-none overflow-y-auto pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] px-3 sm:px-4">
       {/* Language Switcher */}
-      <div className="absolute top-5 right-5 z-20">
+      <div className="absolute top-[calc(1.25rem+env(safe-area-inset-top,0px))] right-4 sm:right-5 z-20">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button

@@ -137,7 +137,7 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background text-foreground select-none">
       {/* Topbar Settings Header */}
-      <header className="flex items-center gap-3 px-4 md:px-6 h-16 shrink-0 bg-background border-b md:border-b-0 border-slate-200/60 dark:border-slate-800/60">
+      <header className="flex items-center gap-3 px-4 md:px-6 h-[calc(3.5rem+env(safe-area-inset-top,0px))] md:h-16 pt-[env(safe-area-inset-top,0px)] shrink-0 bg-background border-b md:border-b-0 border-slate-200/60 dark:border-slate-800/60">
         <Button
           variant="ghost"
           size="icon"
@@ -155,7 +155,11 @@ export default function SettingsPage() {
         </Button>
         <div className="flex items-center gap-2.5">
           <img src="/teledrive.png" alt="TeleDrive" className="h-7 w-7 object-contain" />
-          <h2 className="text-lg font-semibold tracking-tight text-[#1F1F1F] dark:text-[#E3E3E3]">{t("page.title")}</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-[#1F1F1F] dark:text-[#E3E3E3]">
+            {isMobile && mobileShowContent
+              ? sections.find((s) => s.id === activeSection)?.label ?? t("page.title")
+              : t("page.title")}
+          </h2>
         </div>
       </header>
 
@@ -163,7 +167,7 @@ export default function SettingsPage() {
       <div className="flex-1 flex overflow-hidden">
         {/* Desktop Split View: Nav List */}
         {(!isMobile || !mobileShowContent) && (
-          <aside className="w-full md:w-64 shrink-0 overflow-y-auto px-3 py-2 flex flex-col justify-between">
+          <aside className="w-full md:w-64 shrink-0 overflow-y-auto px-3 py-2 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] md:pb-2 flex flex-col justify-between">
             <div className="space-y-1">
               {sections.map((sec) => {
                 const Icon = sec.icon;
@@ -213,7 +217,7 @@ export default function SettingsPage() {
         {/* Settings Panel Content Area */}
         {(!isMobile || mobileShowContent) && (
           <div className="flex-1 overflow-hidden md:mr-4 md:mb-4 md:rounded-3xl bg-surface dark:bg-[#1E1F20] border md:border-slate-200/60 dark:border-slate-800/60 shadow-xs flex flex-col">
-            <div className="flex-1 overflow-y-auto p-6 md:p-8">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] md:pb-8">
               <div key={activeSection} className="max-w-3xl animate-fade-in">
                 <ActiveComponent />
               </div>

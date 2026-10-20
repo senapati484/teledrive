@@ -12,10 +12,15 @@ fn greet(name: &str) -> String {
 }
 
 #[tauri::command]
-fn log_vault_state(state: String) {
+fn log_vault_state(app: tauri::AppHandle, state: String) {
     use std::fs::OpenOptions;
     use std::io::Write;
-    let log_path = std::path::Path::new("vault_state.log");
+    let log_path = if let Ok(data_dir) = app.path().app_data_dir() {
+        let _ = std::fs::create_dir_all(&data_dir);
+        data_dir.join("vault_state.log")
+    } else {
+        std::path::PathBuf::from("vault_state.log")
+    };
     if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(log_path) {
         writeln!(file, "{state}").ok();
     }
@@ -26,9 +31,13 @@ fn log_vault_state(state: String) {
 /// output mirrors the live state of the index pipeline without requiring
 /// any extra instrumentation on the JS side.
 #[tauri::command]
-fn get_vault_state(lines: Option<usize>) -> Result<String, String> {
+fn get_vault_state(app: tauri::AppHandle, lines: Option<usize>) -> Result<String, String> {
     let limit = lines.unwrap_or(200);
-    let log_path = std::path::Path::new("vault_state.log");
+    let log_path = if let Ok(data_dir) = app.path().app_data_dir() {
+        data_dir.join("vault_state.log")
+    } else {
+        std::path::PathBuf::from("vault_state.log")
+    };
     if !log_path.exists() {
         return Ok(String::new());
     }
@@ -262,9 +271,10 @@ async fn start_backup_scheduler(app: AppHandle, interval_minutes: u64) -> Result
 
     let mut guard = handle_slot().lock().await;
     *guard = Some(handle);
-    log_vault_state(format!(
-        "BACKUP_SCHEDULER_START interval_minutes={interval_minutes}"
-    ));
+    log_vault_state(
+        app.clone(),
+        format!("BACKUP_SCHEDULER_START interval_minutes={interval_minutes}"),
+    );
     Ok(())
 }
 
@@ -272,7 +282,7 @@ async fn start_backup_scheduler(app: AppHandle, interval_minutes: u64) -> Result
 #[tauri::command]
 async fn stop_backup_scheduler(app: AppHandle) -> Result<(), String> {
     stop_backup_scheduler_internal(&app).await;
-    log_vault_state("BACKUP_SCHEDULER_STOP".to_string());
+    log_vault_state(app, "BACKUP_SCHEDULER_STOP".to_string());
     Ok(())
 }
 

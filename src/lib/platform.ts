@@ -2,59 +2,73 @@
  * Platform detection utilities for Tauri 2 mobile + desktop.
  *
  * Usage:
- *   import { getPlatform, isMobilePlatform } from '@/lib/platform';
+ *   import { getPlatform, isMobilePlatform, isTouchDevice } from '@/lib/platform';
  *
- *   const p = await getPlatform();   // 'android' | 'ios' | 'desktop'
- *   const mobile = isMobilePlatform(); // true after init
+ *   const p = getPlatform();        // 'android' | 'ios' | 'desktop'
+ *   const mobile = isMobilePlatform(); // true on Android / iOS
  */
 
-type AppPlatform = "desktop" | "android" | "ios";
+export type AppPlatform = "desktop" | "android" | "ios";
 
 let _platform: AppPlatform | null = null;
 
 /**
- * Returns the current Tauri platform asynchronously.
- * Result is cached after the first call.
+ * Detects the runtime platform using Navigator properties and user agent.
  */
-export async function getPlatform(): Promise<AppPlatform> {
-  if (_platform !== null) return _platform;
-
-  try {
-    // Dynamically import to avoid bundling issues when plugin is not installed
-    const { platform } = await import("@tauri-apps/plugin-os");
-    const p = await platform();
-    if (p === "android" || p === "ios") {
-      _platform = p;
-    } else {
-      _platform = "desktop";
-    }
-  } catch {
-    // Fallback: check user agent for mobile WebView
-    const ua = navigator.userAgent.toLowerCase();
-    if (/android/.test(ua)) {
-      _platform = "android";
-    } else if (/iphone|ipad|ipod/.test(ua)) {
-      _platform = "ios";
-    } else {
-      _platform = "desktop";
-    }
+export function detectPlatform(): AppPlatform {
+  if (typeof window === "undefined" || !window.navigator) {
+    return "desktop";
   }
 
+  const ua = window.navigator.userAgent.toLowerCase();
+
+  if (/android/.test(ua)) {
+    return "android";
+  }
+
+  if (/iphone|ipad|ipod/.test(ua)) {
+    return "ios";
+  }
+
+  // iPadOS 13+ desktop mode reporting as Macintosh
+  if (
+    window.navigator.maxTouchPoints &&
+    window.navigator.maxTouchPoints > 2 &&
+    /macintosh/.test(ua)
+  ) {
+    return "ios";
+  }
+
+  return "desktop";
+}
+
+/**
+ * Returns the current platform ('android' | 'ios' | 'desktop').
+ */
+export function getPlatform(): AppPlatform {
+  if (_platform === null) {
+    _platform = detectPlatform();
+  }
   return _platform;
 }
 
 /**
- * Synchronous check — only reliable AFTER getPlatform() has been awaited once.
- * Returns false (desktop) if platform detection hasn't completed yet.
+ * Returns true if running on a mobile OS (Android or iOS/iPadOS).
  */
 export function isMobilePlatform(): boolean {
-  return _platform === "android" || _platform === "ios";
+  const p = getPlatform();
+  return p === "android" || p === "ios";
 }
 
 /**
- * Initialize platform detection. Call this early in the app lifecycle
- * (e.g., in main.tsx before rendering) so synchronous checks work correctly.
+ * Returns true if device supports touch input.
  */
-export async function initPlatform(): Promise<void> {
-  await getPlatform();
+export function isTouchDevice(): boolean {
+  if (typeof window === "undefined" || !window.navigator) return false;
+  return "ontouchstart" in window || window.navigator.maxTouchPoints > 0;
 }
+
+export async function initPlatform(): Promise<void> {
+  getPlatform();
+}
+
