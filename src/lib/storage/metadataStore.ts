@@ -273,7 +273,7 @@ export async function resolveChannelInputPeer(channelId: string) {
     return await client.getInputEntity(channelId);
   } catch (err) {
     console.warn("[metadataStore] getInputEntity failed, falling back to getEntity with timeout:", err);
-    return withTimeout(client.getEntity(channelId), 5000, "client.getEntity");
+    return withTimeout(client.getEntity(channelId), 15000, "client.getEntity");
   }
 }
 
@@ -582,7 +582,7 @@ export async function loadIndex(channelId: string): Promise<TeleFile[]> {
         filter: new Api.InputMessagesFilterPinned(),
         limit: 100,
       }),
-      5000,
+      15000,
       "client.getMessages(pinned)"
     );
     allMsgs = allMsgs.concat(pinned);
@@ -593,7 +593,7 @@ export async function loadIndex(channelId: string): Promise<TeleFile[]> {
   try {
     const recent = await withTimeout(
       client.getMessages(peer, { limit: 200 }),
-      5000,
+      15000,
       "client.getMessages(recent)"
     );
     allMsgs = allMsgs.concat(recent);
@@ -696,7 +696,7 @@ export async function loadIndexIncremental(
         minId: sinceMsgId,
         limit: 200,
       }),
-      5000,
+      15000,
       "client.getMessages(minId)"
     );
   } catch (err) {
@@ -817,7 +817,7 @@ export async function deleteTelegramMessage(
   const peer = await resolveChannelInputPeer(channelId);
   await withTimeout(
     client.deleteMessages(peer, [messageId], { revoke: true }),
-    5000,
+    15000,
     "deleteMessages"
   );
 }

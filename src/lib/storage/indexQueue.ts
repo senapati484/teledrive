@@ -42,10 +42,10 @@ import type { TeleFile } from "../types";
 /** CHUNK_SIZE must stay under Telegram's 4096-char message limit. */
 const CHUNK_SIZE = 10;
 /** Fetch + edit + pin timeouts (ms). */
-const FETCH_TIMEOUT_MS = 5000;
-const EDIT_TIMEOUT_MS = 8000;
-const PIN_TIMEOUT_MS = 4000;
-const DELETE_TIMEOUT_MS = 5000;
+const FETCH_TIMEOUT_MS = 15000;
+const EDIT_TIMEOUT_MS = 15000;
+const PIN_TIMEOUT_MS = 5000;
+const DELETE_TIMEOUT_MS = 15000;
 
 /**
  * Cap on transient (FLOOD_WAIT / timeout / network) retries before the
@@ -375,9 +375,11 @@ class ChannelQueue {
         "client.getMessages(pinned)"
       );
       allMsgs = allMsgs.concat(pinned);
-    } catch (err) {
-      // Fetch failed — treat as transient so we retry.
-      throw err;
+    } catch (err: any) {
+      await invoke("log_vault_state", {
+        state: `INDEX_FETCH_PINNED_FAIL reason=${err?.message ?? err}`,
+      }).catch(() => {});
+      // Non-fatal: fall back to scanning recent messages below.
     }
 
     try {
@@ -391,7 +393,6 @@ class ChannelQueue {
       await invoke("log_vault_state", {
         state: `INDEX_FETCH_RECENT_FAIL reason=${err?.message ?? err}`,
       }).catch(() => {});
-      // Non-fatal: we still have the pinned set above.
     }
 
     // Pick the coherent set of chunks that represents the current state of
@@ -595,27 +596,27 @@ class ChannelQueue {
         throw err;
       }
 
-      // Pin is truly best-effort now. Pin failures NEVER cause a retry
-      // because loadIndex picks by message id, not pin status. The pin
-      // is only a fast-path hint to find the index quickly; if it's
-      // missing, the scan-on-load path still finds the right messages.
-      try {
-        await withTimeout(
-          client.invoke(
-            new Api.messages.UpdatePinnedMessage({
-              peer,
-              id: msgId,
-              unpin: false,
-              silent: true,
-            })
-          ),
-          PIN_TIMEOUT_MS,
-          `UpdatePinnedMessage(chunk ${i})`
-        );
-      } catch (err: any) {
-        await invoke("log_vault_state", {
-          state: `INDEX_PIN_FAIL chunk=${i} reason=${err?.message ?? err}`,
-        }).catch(() => {});
+      // Pin is truly best-effort now. Only pin the first chunk (chunk 0)
+      // to avoid triggering Telegram's FLOOD_WAIT on UpdatePinnedMessage.
+      if (i === 0) {
+        try {
+          await withTimeout(
+            client.invoke(
+              new Api.messages.UpdatePinnedMessage({
+                peer,
+                id: msgId,
+                unpin: false,
+                silent: true,
+              })
+            ),
+            PIN_TIMEOUT_MS,
+            "UpdatePinnedMessage(chunk 0)"
+          );
+        } catch (err: any) {
+          await invoke("log_vault_state", {
+            state: `INDEX_PIN_FAIL chunk=0 reason=${err?.message ?? err}`,
+          }).catch(() => {});
+        }
       }
     }
 
@@ -633,7 +634,7 @@ async function resolvePeerWithTimeout(client: any, channelId: string): Promise<a
   } catch (err) {
     return await withTimeout(
       client.getEntity(channelId),
-      5000,
+      15000,
       "client.getEntity"
     );
   }
