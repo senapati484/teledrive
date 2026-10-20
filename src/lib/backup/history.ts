@@ -110,7 +110,7 @@ export async function loadSnapshotHistory(
             filter: new Api.InputMessagesFilterPinned(),
             limit: 100,
           }),
-          15000,
+          5000,
           "loadSnapshotHistory.getMessages(pinned)",
         );
         allMsgs = allMsgs.concat(pinned);
@@ -124,7 +124,7 @@ export async function loadSnapshotHistory(
       try {
         const recent = await withTimeout(
           client.getMessages(peer, { limit: 200 }),
-          15000,
+          5000,
           "loadSnapshotHistory.getMessages(recent)",
         );
         allMsgs = allMsgs.concat(recent);

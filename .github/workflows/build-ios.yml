@@ -91,48 +91,46 @@ jobs:
         run: |
           mkdir -p release-dist/ios
           
-          echo "=== Discovered apps and archives ==="
-          find src-tauri/gen/apple ~/Library/Developer/Xcode/DerivedData -name "*.app" 2>/dev/null || true
-          find src-tauri/gen/apple ~/Library/Developer/Xcode/DerivedData -name "*.xcarchive" 2>/dev/null || true
+          echo "=== Inspecting built products ==="
+          ls -la src-tauri/gen/apple/build/ || true
           
           # 1. Package Unsigned IPA for Device (arm64)
-          echo "Looking for built device app (iphoneos)..."
-          DEVICE_APP=$(find src-tauri/gen/apple ~/Library/Developer/Xcode/DerivedData -name "TeleDrive.app" -path "*iphoneos*" 2>/dev/null | head -n 1)
+          echo "Looking for built device app in xcarchive..."
+          DEVICE_APP=$(find src-tauri/gen/apple/build/teledrive_iOS.xcarchive -name "*.app" 2>/dev/null | head -n 1)
           if [ -z "$DEVICE_APP" ]; then
-            DEVICE_APP=$(find src-tauri/gen/apple ~/Library/Developer/Xcode/DerivedData -name "TeleDrive.app" -path "*Applications*" 2>/dev/null | head -n 1)
+            DEVICE_APP=$(find src-tauri/gen/apple/build -name "*.app" 2>/dev/null | grep -v "arm64-sim" | head -n 1)
           fi
           if [ -z "$DEVICE_APP" ]; then
-            DEVICE_APP=$(find src-tauri/gen/apple ~/Library/Developer/Xcode/DerivedData -name "*.app" -path "*iphoneos*" 2>/dev/null | head -n 1)
-          fi
-          if [ -z "$DEVICE_APP" ]; then
-            DEVICE_APP=$(find src-tauri/gen/apple ~/Library/Developer/Xcode/DerivedData -name "*.app" -path "*Applications*" 2>/dev/null | head -n 1)
+            DEVICE_APP=$(find ~/Library/Developer/Xcode/DerivedData -name "TeleDrive.app" -path "*iphoneos*" 2>/dev/null | head -n 1)
           fi
           
           if [ -n "$DEVICE_APP" ]; then
             echo "Found device app at: $DEVICE_APP"
-            PAYLOAD_DIR=$(mktemp -d)/Payload
-            mkdir -p "$PAYLOAD_DIR"
-            cp -R "$DEVICE_APP" "$PAYLOAD_DIR/"
-            (cd "$(dirname "$PAYLOAD_DIR")" && zip -r -q teledrive-v0.1.2-ios-arm64-unsigned.ipa Payload)
-            cp "$(dirname "$PAYLOAD_DIR")/teledrive-v0.1.2-ios-arm64-unsigned.ipa" release-dist/ios/
-            cp "$(dirname "$PAYLOAD_DIR")/teledrive-v0.1.2-ios-arm64-unsigned.ipa" release-dist/
+            TMP_DIR=$(mktemp -d)
+            mkdir -p "$TMP_DIR/Payload"
+            cp -R "$DEVICE_APP" "$TMP_DIR/Payload/"
+            /usr/bin/ditto -c -k --keepParent "$TMP_DIR/Payload" release-dist/ios/teledrive-v0.1.2-ios-arm64-unsigned.ipa
+            cp release-dist/ios/teledrive-v0.1.2-ios-arm64-unsigned.ipa release-dist/
+            rm -rf "$TMP_DIR"
             echo "✓ Created teledrive-v0.1.2-ios-arm64-unsigned.ipa"
           else
             echo "::warning::No device app found to package into IPA"
           fi
 
           # 2. Package Simulator App (aarch64-sim)
-          echo "Looking for built simulator app (iphonesimulator)..."
-          SIM_APP=$(find src-tauri/gen/apple ~/Library/Developer/Xcode/DerivedData -name "TeleDrive.app" -path "*iphonesimulator*" 2>/dev/null | head -n 1)
-          if [ -z "$SIM_APP" ]; then
-            SIM_APP=$(find src-tauri/gen/apple ~/Library/Developer/Xcode/DerivedData -name "*.app" -path "*iphonesimulator*" 2>/dev/null | head -n 1)
+          echo "Looking for built simulator app..."
+          SIM_APP="src-tauri/gen/apple/build/arm64-sim/TeleDrive.app"
+          if [ ! -d "$SIM_APP" ]; then
+            SIM_APP=$(find src-tauri/gen/apple/build -name "*.app" -path "*arm64-sim*" 2>/dev/null | head -n 1)
+          fi
+          if [ ! -d "$SIM_APP" ]; then
+            SIM_APP=$(find ~/Library/Developer/Xcode/DerivedData -name "TeleDrive.app" -path "*iphonesimulator*" 2>/dev/null | head -n 1)
           fi
           
-          if [ -n "$SIM_APP" ]; then
+          if [ -d "$SIM_APP" ]; then
             echo "Found simulator app at: $SIM_APP"
-            (cd "$(dirname "$SIM_APP")" && zip -r -q teledrive-v0.1.2-ios-simulator.zip "$(basename "$SIM_APP")")
-            cp "$(dirname "$SIM_APP")/teledrive-v0.1.2-ios-simulator.zip" release-dist/ios/
-            cp "$(dirname "$SIM_APP")/teledrive-v0.1.2-ios-simulator.zip" release-dist/
+            /usr/bin/ditto -c -k --keepParent "$SIM_APP" release-dist/ios/teledrive-v0.1.2-ios-simulator.zip
+            cp release-dist/ios/teledrive-v0.1.2-ios-simulator.zip release-dist/
             echo "✓ Created teledrive-v0.1.2-ios-simulator.zip"
           else
             echo "::warning::No simulator app found"

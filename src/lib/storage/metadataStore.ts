@@ -2,7 +2,7 @@ import { Api } from "telegram";
 import { getClient } from "../telegram/client";
 import { TeleFile } from "../types";
 import { useFileStore } from "../../stores/fileStore";
-import { enqueueSave } from "./indexQueue";
+import { enqueueSave, getIndexQueue } from "./indexQueue";
 import { filterJunkFiles } from "./fileSanitizer";
 
 // ---------------------------------------------------------------------------
@@ -273,7 +273,7 @@ export async function resolveChannelInputPeer(channelId: string) {
     return await client.getInputEntity(channelId);
   } catch (err) {
     console.warn("[metadataStore] getInputEntity failed, falling back to getEntity with timeout:", err);
-    return withTimeout(client.getEntity(channelId), 15000, "client.getEntity");
+    return withTimeout(client.getEntity(channelId), 5000, "client.getEntity");
   }
 }
 
@@ -573,8 +573,7 @@ export async function loadIndex(channelId: string): Promise<TeleFile[]> {
     throw err;
   }
 
-  // Load from BOTH pinned and recent, then let pickCoherentIndexSet pick
-  // the most-recent coherent set across all sources.
+  // 1. Try pinned messages first (fast path)
   let allMsgs: any[] = [];
   try {
     const pinned = await withTimeout(
@@ -582,7 +581,7 @@ export async function loadIndex(channelId: string): Promise<TeleFile[]> {
         filter: new Api.InputMessagesFilterPinned(),
         limit: 100,
       }),
-      15000,
+      5000,
       "client.getMessages(pinned)"
     );
     allMsgs = allMsgs.concat(pinned);
@@ -590,15 +589,20 @@ export async function loadIndex(channelId: string): Promise<TeleFile[]> {
     console.warn("[metadataStore] Failed to load pinned messages, falling back to scan:", pinnedErr);
   }
 
-  try {
-    const recent = await withTimeout(
-      client.getMessages(peer, { limit: 200 }),
-      15000,
-      "client.getMessages(recent)"
-    );
-    allMsgs = allMsgs.concat(recent);
-  } catch (scanErr) {
-    console.warn("[metadataStore] Failed to scan channel messages:", scanErr);
+  // If pinned messages already provide a coherent index set, skip fetching recent messages!
+  let chosenSet = pickCoherentIndexSet(allMsgs);
+  if (!chosenSet) {
+    try {
+      const recent = await withTimeout(
+        client.getMessages(peer, { limit: 100 }),
+        5000,
+        "client.getMessages(recent)"
+      );
+      allMsgs = allMsgs.concat(recent);
+      chosenSet = pickCoherentIndexSet(allMsgs);
+    } catch (scanErr) {
+      console.warn("[metadataStore] Failed to scan channel messages:", scanErr);
+    }
   }
 
   if (allMsgs.length === 0) {
@@ -606,7 +610,6 @@ export async function loadIndex(channelId: string): Promise<TeleFile[]> {
     return [];
   }
 
-  const chosenSet = pickCoherentIndexSet(allMsgs);
   if (!chosenSet) {
     console.warn(
       `[metadataStore] No coherent index set found across ${allMsgs.length} message(s); falling back to best-effort merge.`
@@ -627,6 +630,20 @@ export async function loadIndex(channelId: string): Promise<TeleFile[]> {
   if (maxChosenMsgId > 0) {
     useFileStore.getState().setLastIndexMsgId(maxChosenMsgId);
   }
+
+  // Register coherent set with indexQueue so subsequent user actions (like starring)
+  // have the message IDs in memory and don't need to query Telegram!
+  const chosenMsgIds = chosenSet.map((c) => c.msgId);
+  const chosenPayloads = chosenSet.map((c) =>
+    JSON.stringify({
+      teledrive_index: true,
+      version: 1,
+      chunkIndex: c.chunkIndex,
+      totalChunks: c.totalChunks,
+      files: c.files,
+    })
+  );
+  getIndexQueue(channelId).setKnownIndex(chosenMsgIds, chosenPayloads);
 
   // Merge chosen set into a single TeleFile list, deduping by id.
   const byId = new Map<string, TeleFile>();
@@ -696,7 +713,7 @@ export async function loadIndexIncremental(
         minId: sinceMsgId,
         limit: 200,
       }),
-      15000,
+      5000,
       "client.getMessages(minId)"
     );
   } catch (err) {
@@ -817,7 +834,7 @@ export async function deleteTelegramMessage(
   const peer = await resolveChannelInputPeer(channelId);
   await withTimeout(
     client.deleteMessages(peer, [messageId], { revoke: true }),
-    15000,
+    5000,
     "deleteMessages"
   );
 }
