@@ -1,5 +1,5 @@
 cask "teledrive" do
-  version "0.1.1"
+  version "0.1.2"
   sha256 "921d375267d4897c756d4e7320b056857fb6e343e789dc7aacff261c8ef54080"
 
   url "https://downloads.sourceforge.net/project/teledrive/v#{version}/teledrive.dmg",

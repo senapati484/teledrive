@@ -24,7 +24,7 @@ import { toast } from "sonner";
 
 export default function AboutSection() {
   const { t } = useTranslation("settings");
-  const [version, setVersion] = useState("0.1.1");
+  const [version, setVersion] = useState("0.1.2");
   const [checking, setChecking] = useState(false);
 
   useEffect(() => {
