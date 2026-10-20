@@ -12,10 +12,15 @@ fn greet(name: &str) -> String {
 }
 
 #[tauri::command]
-fn log_vault_state(state: String) {
+fn log_vault_state(app: tauri::AppHandle, state: String) {
     use std::fs::OpenOptions;
     use std::io::Write;
-    let log_path = std::path::Path::new("vault_state.log");
+    let log_path = if let Ok(data_dir) = app.path().app_data_dir() {
+        let _ = std::fs::create_dir_all(&data_dir);
+        data_dir.join("vault_state.log")
+    } else {
+        std::path::PathBuf::from("vault_state.log")
+    };
     if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(log_path) {
         writeln!(file, "{state}").ok();
     }
@@ -26,9 +31,13 @@ fn log_vault_state(state: String) {
 /// output mirrors the live state of the index pipeline without requiring
 /// any extra instrumentation on the JS side.
 #[tauri::command]
-fn get_vault_state(lines: Option<usize>) -> Result<String, String> {
+fn get_vault_state(app: tauri::AppHandle, lines: Option<usize>) -> Result<String, String> {
     let limit = lines.unwrap_or(200);
-    let log_path = std::path::Path::new("vault_state.log");
+    let log_path = if let Ok(data_dir) = app.path().app_data_dir() {
+        data_dir.join("vault_state.log")
+    } else {
+        std::path::PathBuf::from("vault_state.log")
+    };
     if !log_path.exists() {
         return Ok(String::new());
     }
@@ -262,9 +271,10 @@ async fn start_backup_scheduler(app: AppHandle, interval_minutes: u64) -> Result
 
     let mut guard = handle_slot().lock().await;
     *guard = Some(handle);
-    log_vault_state(format!(
-        "BACKUP_SCHEDULER_START interval_minutes={interval_minutes}"
-    ));
+    log_vault_state(
+        app.clone(),
+        format!("BACKUP_SCHEDULER_START interval_minutes={interval_minutes}"),
+    );
     Ok(())
 }
 
@@ -272,7 +282,7 @@ async fn start_backup_scheduler(app: AppHandle, interval_minutes: u64) -> Result
 #[tauri::command]
 async fn stop_backup_scheduler(app: AppHandle) -> Result<(), String> {
     stop_backup_scheduler_internal(&app).await;
-    log_vault_state("BACKUP_SCHEDULER_STOP".to_string());
+    log_vault_state(app, "BACKUP_SCHEDULER_STOP".to_string());
     Ok(())
 }
 
@@ -374,7 +384,27 @@ fn walk_recursive(root: &Path, current: &Path, out: &mut Vec<DirEntry>) {
 }
 
 #[tauri::command]
-async fn read_dir_recursive(path: String) -> Result<Vec<DirEntry>, String> {
+async fn read_dir_recursive(app: tauri::AppHandle, path: String) -> Result<Vec<DirEntry>, String> {
+    // On mobile, restrict directory walking to the app data directory only.
+    // Android scoped storage (API 29+) prevents arbitrary filesystem access;
+    // broad access requires SAF which must go through the dialog file picker.
+    #[cfg(mobile)]
+    {
+        let data_dir = app
+            .path()
+            .app_data_dir()
+            .map_err(|e| format!("Failed to get app data dir: {e}"))?;
+        let requested = Path::new(&path);
+        if !requested.starts_with(&data_dir) {
+            return Err(format!(
+                "Mobile: directory access is restricted to the app data directory. Requested: {path}"
+            ));
+        }
+    }
+    // Suppress unused-variable warning on desktop builds
+    #[cfg(not(mobile))]
+    let _ = &app;
+
     let root = Path::new(&path);
     let meta = std::fs::metadata(root).map_err(|e| format!("stat({path}) failed: {e}"))?;
     if !meta.is_dir() {
@@ -474,43 +504,62 @@ async fn write_file_chunk(path: String, data: Vec<u8>, append: bool) -> Result<(
 }
 
 /// Opens any file with the host system's default viewer application.
-/// Provides an unconstrained, bulletproof fallback across macOS (open),
-/// Windows (cmd /c start), and Linux (xdg-open).
+/// On desktop: uses OS-native commands (open/cmd/xdg-open).
+/// On mobile: delegates to tauri-plugin-opener which maps to
+///   - Android: ACTION_VIEW intent
+///   - iOS: UIDocumentInteractionController
 #[tauri::command]
-fn open_file_in_system_viewer(path: String) -> Result<(), String> {
-    #[cfg(target_os = "windows")]
+fn open_file_in_system_viewer(app: tauri::AppHandle, path: String) -> Result<(), String> {
+    #[cfg(mobile)]
     {
-        std::process::Command::new("cmd")
-            .args(["/C", "start", "", &path])
-            .spawn()
-            .map_err(|e| format!("Failed to open file on Windows: {e}"))?;
-        Ok(())
+        use tauri_plugin_opener::OpenerExt;
+        app.opener()
+            .open_path(&path, None::<&str>)
+            .map_err(|e| format!("Failed to open file on mobile: {e}"))
     }
-    #[cfg(target_os = "macos")]
+    #[cfg(not(mobile))]
     {
-        std::process::Command::new("open")
-            .arg(&path)
-            .spawn()
-            .map_err(|e| format!("Failed to open file on macOS: {e}"))?;
-        Ok(())
-    }
-    #[cfg(target_os = "linux")]
-    {
-        std::process::Command::new("xdg-open")
-            .arg(&path)
-            .spawn()
-            .map_err(|e| format!("Failed to open file on Linux: {e}"))?;
-        Ok(())
-    }
-    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
-    {
-        Err("Unsupported operating system for opening files".to_string())
+        // Suppress unused variable warning on mobile builds
+        let _ = &app;
+        #[cfg(target_os = "windows")]
+        {
+            std::process::Command::new("cmd")
+                .args(["/C", "start", "", &path])
+                .spawn()
+                .map_err(|e| format!("Failed to open file on Windows: {e}"))?;
+            Ok(())
+        }
+        #[cfg(target_os = "macos")]
+        {
+            std::process::Command::new("open")
+                .arg(&path)
+                .spawn()
+                .map_err(|e| format!("Failed to open file on macOS: {e}"))?;
+            Ok(())
+        }
+        #[cfg(target_os = "linux")]
+        {
+            std::process::Command::new("xdg-open")
+                .arg(&path)
+                .spawn()
+                .map_err(|e| format!("Failed to open file on Linux: {e}"))?;
+            Ok(())
+        }
+        #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+        {
+            Err("Unsupported operating system for opening files".to_string())
+        }
     }
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    // Build the Tauri application.
+    // Some plugins are desktop-only (shell, process) because they rely on
+    // system binaries that are not available in Android/iOS sandboxes.
+    // The cfg(mobile) / cfg(not(mobile)) guards below ensure the correct
+    // plugin set is registered at compile time for each target platform.
+    let builder = tauri::Builder::default()
         .plugin(
             tauri_plugin_stronghold::Builder::new(|password| {
                 // Fixed salt for local vault key derivation
@@ -526,9 +575,15 @@ pub fn run() {
         )
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_opener::init());
+
+    // Desktop-only plugins: shell and process are not available on Android/iOS
+    #[cfg(not(mobile))]
+    let builder = builder
         .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_process::init())
-        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_process::init());
+
+    builder
         .invoke_handler(tauri::generate_handler![
             greet,
             log_vault_state,
@@ -551,8 +606,11 @@ pub fn run() {
         ])
         .setup(|app| {
             #[cfg(debug_assertions)]
-            if let Some(window) = app.get_webview_window("TeleDrive") {
-                window.open_devtools();
+            {
+                #[cfg(not(mobile))]
+                if let Some(window) = app.get_webview_window("TeleDrive") {
+                    window.open_devtools();
+                }
             }
             Ok(())
         })

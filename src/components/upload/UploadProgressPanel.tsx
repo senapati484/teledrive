@@ -82,7 +82,7 @@ export function UploadProgressPanel() {
   return (
     <div
       className={cn(
-        "fixed bottom-6 right-6 z-50 w-88 max-w-[calc(100vw-32px)] bg-white dark:bg-[#1e1f20] border border-slate-200/90 dark:border-slate-800 shadow-2xl rounded-2xl overflow-hidden transition-all duration-300 transform select-none",
+        "fixed bottom-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom,0px)+12px)] md:bottom-6 right-3 md:right-6 z-50 w-88 max-w-[calc(100vw-24px)] bg-white dark:bg-[#1e1f20] border border-slate-200/90 dark:border-slate-800 shadow-2xl rounded-2xl overflow-hidden transition-all duration-300 transform select-none",
         isMinimized ? "h-13" : "h-96"
       )}
     >

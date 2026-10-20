@@ -1067,7 +1067,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                   ? t("browser.sections.foldersPartial", { shown: Math.min(folders.length, renderLimit), total: folders.length })
                   : t("browser.sections.folders")}
               </h2>
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-3 px-0.5">
+              <div className="grid grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-2 sm:gap-3 px-0.5">
                 {folders.slice(0, renderLimit).map((folder, index) => {
                   const isSelected = selectedIdsSet.has(folder.id);
                   const isBeingDragged = draggedId !== null && (draggedId === folder.id || (isSelected && selectedIdsSet.has(draggedId)));
@@ -1124,7 +1124,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                             {folder.name}
                           </span>
                         </div>
-                        <div className="shrink-0 ml-auto opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity" data-no-drag onClick={(e) => e.stopPropagation()}>
+                        <div className={cn("shrink-0 ml-auto transition-opacity", isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100")} data-no-drag onClick={(e) => e.stopPropagation()}>
                           <FileActionsMenu
                             file={folder}
                             onPreview={toastPreview}
@@ -1154,7 +1154,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                   ? t("browser.sections.filesPartial", { shown: Math.min(regularFiles.length, renderLimit), total: regularFiles.length })
                   : t("browser.sections.files")}
               </h2>
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-4 px-0.5">
+              <div className="grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-2.5 sm:gap-4 px-0.5">
                 {regularFiles.slice(0, renderLimit).map((file, index) => {
                   const isSelected = selectedIdsSet.has(file.id);
                   return (
@@ -1182,7 +1182,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                         onTouchMove={handleTouchEndItem}
                         style={{ animationDelay: `${Math.min(folders.length + index, 15) * 20}ms` }}
                         className={cn(
-                          "group relative flex flex-col rounded-2xl transition-all duration-150 cursor-pointer overflow-hidden text-left select-none h-52 bg-white dark:bg-[#1e1f20] hover:bg-[#f8fafd] dark:hover:bg-[#282a2c] border border-slate-200/90 dark:border-slate-800/90 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md",
+                          "group relative flex flex-col rounded-2xl transition-all duration-150 cursor-pointer overflow-hidden text-left select-none h-44 sm:h-52 bg-white dark:bg-[#1e1f20] hover:bg-[#f8fafd] dark:hover:bg-[#282a2c] border border-slate-200/90 dark:border-slate-800/90 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md",
                           isSelected
                             ? "bg-[#c2e7ff]/30 dark:bg-[#004a77]/30 ring-2 ring-[#0b57d0] dark:ring-[#a8c7fa] border-transparent shadow-xs"
                             : "",
@@ -1197,7 +1197,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                               {file.name}
                             </p>
                           </div>
-                          <div className="shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity" data-no-drag onClick={(e) => e.stopPropagation()}>
+                          <div className={cn("shrink-0 transition-opacity", isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100")} data-no-drag onClick={(e) => e.stopPropagation()}>
                             <FileActionsMenu
                               file={file}
                               onPreview={toastPreview}
@@ -1337,16 +1337,25 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                           className="h-4 w-4 rounded-sm border-slate-300 dark:border-slate-700 text-[#0b57d0] focus:ring-[#0b57d0]/20 dark:bg-slate-900 transition-colors cursor-pointer"
                         />
                       </td>
-                      <td className="py-3 px-4 font-medium text-[#1f1f1f] dark:text-[#e3e3e3] text-xs md:text-sm">
-                        <div className="flex items-center gap-3 pointer-events-none">
+                      <td className="py-2.5 sm:py-3 px-3 sm:px-4 font-medium text-[#1f1f1f] dark:text-[#e3e3e3] text-xs md:text-sm">
+                        <div className="flex items-center gap-2.5 sm:gap-3 pointer-events-none">
                           <FileIcon name={file.name} mime={file.mime} size="sm" className="shrink-0" />
-                          <span className="truncate max-w-[200px] sm:max-w-xs">{file.name}</span>
-                          {file.starred && (
-                            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 shrink-0 ml-0.5" />
-                          )}
-                          {file.offline && (
-                            <CheckCircle className="h-3.5 w-3.5 text-emerald-500 fill-emerald-500/20 shrink-0 ml-0.5" />
-                          )}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="truncate max-w-[170px] sm:max-w-xs">{file.name}</span>
+                              {file.starred && (
+                                <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 shrink-0 ml-0.5" />
+                              )}
+                              {file.offline && (
+                                <CheckCircle className="h-3.5 w-3.5 text-emerald-500 fill-emerald-500/20 shrink-0 ml-0.5" />
+                              )}
+                            </div>
+                            <div className="sm:hidden text-[10px] text-[#444746] dark:text-[#8e918f] font-normal flex items-center gap-1.5 mt-0.5">
+                              <span>{isDir ? t("browser.fileType.folder") : formatFileSize(file.size)}</span>
+                              <span>•</span>
+                              <span>{new Date(file.uploadedAt).toLocaleDateString(i18n.language, { month: "short", day: "numeric" })}</span>
+                            </div>
+                          </div>
                         </div>
                       </td>
                       <td className="py-3 px-4 hidden sm:table-cell text-xs text-[#444746] dark:text-[#8e918f] pointer-events-none">
@@ -1358,8 +1367,8 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                       <td className="py-3 px-4 hidden lg:table-cell text-xs text-[#444746] dark:text-[#8e918f] pointer-events-none">
                         {new Date(file.uploadedAt).toLocaleDateString(i18n.language)}
                       </td>
-                      <td className="py-3 px-4 text-center" data-no-drag onClick={(e) => e.stopPropagation()}>
-                        <div className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+                      <td className="py-2.5 sm:py-3 px-2 sm:px-4 text-center" data-no-drag onClick={(e) => e.stopPropagation()}>
+                        <div className={cn("transition-opacity", isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100")}>
                           <FileActionsMenu
                             file={file}
                             onPreview={toastPreview}

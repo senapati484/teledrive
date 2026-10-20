@@ -1,0 +1,58 @@
+name: Build iOS IPA
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-ios:
+    name: Build iOS App
+    runs-on: macos-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-ios,x86_64-apple-ios,aarch64-apple-ios-sim
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Install macOS build dependencies
+        run: brew install cocoapods xcodegen
+
+      - name: Initialize iOS project
+        run: npm run tauri ios init -- --ci --skip-targets-install
+
+      - name: Build iOS (simulator - no signing required)
+        run: npx tauri ios build --target aarch64-apple-ios-sim --debug
+
+      - name: Upload iOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: teledrive-ios-simulator
+          path: |
+            src-tauri/gen/apple/build/**/*.app
+          if-no-files-found: warn
+          retention-days: 30

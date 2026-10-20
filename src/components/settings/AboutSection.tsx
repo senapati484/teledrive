@@ -18,13 +18,13 @@ const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => (
   </svg>
 );
 import { getVersion } from "@tauri-apps/api/app";
-import { open as openUrl } from "@tauri-apps/plugin-shell";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 export default function AboutSection() {
   const { t } = useTranslation("settings");
-  const [version, setVersion] = useState("0.1.1");
+  const [version, setVersion] = useState("0.1.2");
   const [checking, setChecking] = useState(false);
 
   useEffect(() => {

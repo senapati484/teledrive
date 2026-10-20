@@ -49,9 +49,7 @@ export async function triggerFilePicker(): Promise<void> {
       { once: true }
     );
 
-    requestAnimationFrame(() => {
-      input.click();
-    });
+    input.click();
   });
 }
 
@@ -106,8 +104,6 @@ export async function triggerFolderPicker(): Promise<void> {
       { once: true }
     );
 
-    requestAnimationFrame(() => {
-      input.click();
-    });
+    input.click();
   });
 }

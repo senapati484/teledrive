@@ -96,7 +96,7 @@ class PdfErrorBoundary extends Component<{ children: ReactNode; onRetry?: () => 
   }
 }
 import DOMPurify from "dompurify";
-import { open as openUrl } from "@tauri-apps/plugin-shell";
+import { openUrl } from "@tauri-apps/plugin-opener";
 
 // ─── O2 Code Editor — runnable language map ────────────────────────────────
 // Maps our hljsLang alias → O2's route value.
@@ -994,9 +994,9 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
     >
       {/* ── Topbar ─────────────────────────────────────────────────────── */}
       <div
-        className="flex items-center justify-between pl-4 pr-3 shrink-0"
+        className="flex items-center justify-between pl-4 pr-3 shrink-0 pt-[var(--safe-area-top,env(safe-area-inset-top,0px))]"
         style={{
-          height: "44px",
+          height: "calc(44px + var(--safe-area-top, env(safe-area-inset-top, 0px)))",
           background: colors.topbar,
           borderBottom: `1px solid ${colors.border}`,
         }}
@@ -2043,9 +2043,9 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
       {/* ── Status bar ───────────────────────────────────────────────────── */}
       {(isCode || isMarkdownFile || isTableData || isEditMode) && !loading && !error && textContent !== null && (
         <div
-          className="flex items-center justify-between px-4 shrink-0 select-none"
+          className="flex items-center justify-between px-4 shrink-0 select-none pb-[env(safe-area-inset-bottom,0px)]"
           style={{
-            height: "26px",
+            height: "calc(26px + env(safe-area-inset-bottom, 0px))",
             background: colors.statusbar,
             borderTop: `1px solid ${colors.border}`,
           }}

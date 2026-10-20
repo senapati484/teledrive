@@ -100,7 +100,7 @@ const IndexQueuePill = React.memo(function IndexQueuePill() {
       ) : (
         <Loader2 className="h-3.5 w-3.5 animate-spin text-[#0b57d0] shrink-0" />
       )}
-      <span className="text-[11px] font-semibold">
+      <span className="text-[11px] font-semibold hidden sm:inline">
         {indexQueueState === "failed"
           ? t("indexQueue.saveFailed")
           : indexQueueState === "retrying" && indexQueueRetryInSec > 0
@@ -563,6 +563,13 @@ export default function DriveLayout() {
     return items;
   }, [archivedCount, starredCount, totalCount, trashCount, backupCount, isPro, t]);
 
+  const mobileNavTabs = useMemo(() => [
+    { label: t("nav.myDrive"), icon: HardDrive, path: "/drive/my-drive" },
+    { label: t("nav.starred"), icon: Star, path: "/drive/starred" },
+    { label: t("nav.recent"), icon: Clock, path: "/drive/recent" },
+    { label: t("nav.settings"), icon: Settings, path: "/settings" },
+  ], [t]);
+
   const theme = useUIStore((state) => state.theme);
   const setTheme = useUIStore((state) => state.setTheme);
 
@@ -588,16 +595,16 @@ export default function DriveLayout() {
       )}
       
       {/* Topbar: Google Workspace styled */}
-      <header className="relative z-40 flex items-center justify-between px-4 h-16 shrink-0 bg-background border-b md:border-b-0 border-slate-200/60 dark:border-slate-800/60 select-none">
-        <div className="flex items-center gap-2 md:gap-3 shrink-0">
+      <header className="relative z-40 flex items-center justify-between px-3 md:px-4 h-[calc(3.5rem+var(--safe-area-top,2.5rem))] md:h-16 pt-[var(--safe-area-top,2.5rem)] md:pt-0 shrink-0 bg-background border-b md:border-b-0 border-slate-200/60 dark:border-slate-800/60 select-none">
+        <div className="flex items-center gap-1.5 md:gap-3 shrink-0">
           {isMobile && (
             <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-[#e9eef6] dark:hover:bg-[#282a2c] text-[#444746] dark:text-[#c4c7c5] cursor-pointer">
+                <Button variant="ghost" size="icon" className="h-9 w-9 md:h-10 md:w-10 rounded-full hover:bg-[#e9eef6] dark:hover:bg-[#282a2c] text-[#444746] dark:text-[#c4c7c5] cursor-pointer">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-[var(--sidebar-width)] p-0 pt-6 bg-background">
+              <SheetContent side="left" className="w-[var(--sidebar-width)] p-0 pt-[max(var(--safe-area-top,2.5rem),2.5rem)] bg-background">
                 <div className="px-5 py-2 flex items-center gap-2.5 mb-2">
                   <img
                     src="/teledrive.png"
@@ -627,7 +634,7 @@ export default function DriveLayout() {
           )}
 
           {/* Logo / Title */}
-          <Link to="/drive/my-drive" className="flex items-center gap-2.5 group">
+          <Link to="/drive/my-drive" className="hidden sm:flex items-center gap-2.5 group">
             <img
               src="/teledrive.png"
               alt={t("logoAlt")}
@@ -640,12 +647,12 @@ export default function DriveLayout() {
         </div>
 
         {/* Search bar wrapper */}
-        <div className="flex-1 max-w-2xl mx-4 md:mx-8">
+        <div className="flex-1 min-w-0 max-w-2xl mx-2 md:mx-8">
           <SearchBar />
         </div>
 
         {/* Right side items */}
-        <div className="flex items-center gap-1.5 md:gap-2.5 shrink-0">
+        <div className="flex items-center gap-1 md:gap-2.5 shrink-0">
           {/* Index queue state pill */}
           <IndexQueuePill />
 
@@ -654,10 +661,10 @@ export default function DriveLayout() {
             variant="ghost"
             size="icon"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="h-10 w-10 rounded-full hover:bg-[#e9eef6] dark:hover:bg-[#282a2c] text-[#444746] dark:text-[#c4c7c5] cursor-pointer"
+            className="h-9 w-9 md:h-10 md:w-10 rounded-full hover:bg-[#e9eef6] dark:hover:bg-[#282a2c] text-[#444746] dark:text-[#c4c7c5] cursor-pointer"
             title={theme === "dark" ? t("header.switchToLight") : t("header.switchToDark")}
           >
-            {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            {theme === "dark" ? <Sun className="h-4.5 w-4.5 md:h-5 md:w-5" /> : <Moon className="h-4.5 w-4.5 md:h-5 md:w-5" />}
           </Button>
 
           {/* Settings button */}
@@ -672,7 +679,7 @@ export default function DriveLayout() {
           </Button>
 
           {/* Avatar */}
-          <Avatar className="h-9 w-9 border border-slate-200 dark:border-slate-800 cursor-pointer hover:opacity-90 transition-opacity" onClick={() => navigate("/settings")}>
+          <Avatar className="h-8 w-8 md:h-9 md:w-9 border border-slate-200 dark:border-slate-800 cursor-pointer hover:opacity-90 transition-opacity" onClick={() => navigate("/settings")}>
             <AvatarFallback className="bg-gradient-to-tr from-[#0b57d0] to-[#1a73e8] text-white font-semibold text-xs select-none">
               {getInitials(phoneNumber)}
             </AvatarFallback>
@@ -717,7 +724,7 @@ export default function DriveLayout() {
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          className="flex-1 overflow-y-auto bg-surface dark:bg-[#1e1f20] md:mr-4 md:mb-4 md:rounded-3xl border border-slate-200/80 dark:border-[#2d2f31] shadow-xs pb-[calc(var(--mobile-nav-height)+16px)] md:pb-6 relative z-10"
+          className="flex-1 overflow-y-auto bg-surface dark:bg-[#1e1f20] md:mr-4 md:mb-4 md:rounded-3xl md:border md:border-slate-200/80 md:dark:border-[#2d2f31] md:shadow-xs border-0 pb-[calc(var(--mobile-nav-height)+var(--safe-area-bottom,1rem)+80px)] md:pb-6 relative z-10"
         >
           {/* Mobile FAB */}
           {isMobile && <NewActionButton isFab />}
@@ -744,53 +751,33 @@ export default function DriveLayout() {
 
       {/* Bottom Nav (Mobile) */}
       {isMobile && (
-        <nav className="fixed bottom-0 left-0 right-0 h-[var(--mobile-nav-height)] border-t border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md flex items-center justify-around z-40 pb-[env(safe-area-inset-bottom)] select-none">
-          {navItems.map((item) => {
+        <nav className="fixed bottom-0 left-0 right-0 h-[calc(var(--mobile-nav-height)+var(--safe-area-bottom,1rem))] border-t border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md flex items-center justify-around z-40 pb-[var(--safe-area-bottom,1rem)] select-none">
+          {mobileNavTabs.map((item) => {
             const Icon = item.icon;
             const isActive =
               location.pathname === item.path ||
-              (item.path === "/drive/my-drive" && location.pathname.startsWith("/drive/folder/")) ||
-              (item.path === "/drive/backups" && location.pathname.startsWith("/drive/backups"));
+              (item.path === "/drive/my-drive" && location.pathname.startsWith("/drive/folder/"));
             return (
               <Link
                 key={item.label}
                 to={item.path}
                 className={cn(
-                  "flex flex-col items-center justify-center w-16 h-full transition-colors cursor-pointer",
+                  "flex flex-col items-center justify-center flex-1 max-w-[80px] h-full transition-colors cursor-pointer",
                   isActive
                     ? "text-[#0b57d0] dark:text-[#a8c7fa] font-semibold"
                     : "text-[#444746] dark:text-[#c4c7c5]"
                 )}
               >
                 <div className={cn(
-                  "px-3.5 py-0.5 rounded-full mb-0.5 transition-colors",
+                  "px-4 py-1 rounded-full mb-0.5 transition-colors",
                   isActive && "bg-[#c2e7ff] dark:bg-[#004a77]"
                 )}>
                   <Icon className="h-5 w-5" />
                 </div>
-                <span className="text-[10px] tracking-tight">{item.label}</span>
+                <span className="text-[10px] tracking-tight truncate max-w-[72px] text-center">{item.label}</span>
               </Link>
             );
           })}
-          
-          {/* Settings tab for mobile bottom nav */}
-          <Link
-            to="/settings"
-            className={cn(
-              "flex flex-col items-center justify-center w-16 h-full transition-colors cursor-pointer",
-              location.pathname === "/settings"
-                ? "text-[#0b57d0] dark:text-[#a8c7fa] font-semibold"
-                : "text-[#444746] dark:text-[#c4c7c5]"
-            )}
-          >
-            <div className={cn(
-              "px-3.5 py-0.5 rounded-full mb-0.5 transition-colors",
-              location.pathname === "/settings" && "bg-[#c2e7ff] dark:bg-[#004a77]"
-            )}>
-              <Settings className="h-5 w-5" />
-            </div>
-            <span className="text-[10px] tracking-tight">{t("nav.settings")}</span>
-          </Link>
         </nav>
       )}
       <FilePreviewModal

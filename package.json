@@ -11,7 +11,13 @@
     "build:dmg": "bash release-dist/build_dmg.sh",
     "build:exe": "node scripts/build-exe.cjs",
     "build:linux": "tauri build --bundles deb,appimage",
-    "postinstall": "node scripts/patch-telegram.cjs"
+    "postinstall": "node scripts/patch-telegram.cjs",
+    "android:dev": "node scripts/android-wrapper.cjs dev",
+    "android:build": "node scripts/android-wrapper.cjs build",
+    "android:init": "tauri android init",
+    "ios:dev": "tauri ios dev",
+    "ios:build": "tauri ios build",
+    "ios:init": "tauri ios init"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.20.3",

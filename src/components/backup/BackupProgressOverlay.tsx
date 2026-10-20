@@ -140,7 +140,7 @@ export function BackupProgressOverlay() {
 
   return (
     <div
-      className="fixed bottom-6 right-6 z-50 w-[360px] max-w-[calc(100vw-3rem)] animate-in slide-in-from-bottom-4 fade-in duration-300 select-none"
+      className="fixed bottom-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom,0px)+12px)] md:bottom-6 right-3 md:right-6 z-50 w-[360px] max-w-[calc(100vw-24px)] animate-in slide-in-from-bottom-4 fade-in duration-300 select-none"
       role="status"
       aria-live="polite"
     >
