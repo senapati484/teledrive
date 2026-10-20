@@ -17,7 +17,7 @@ android {
     compileSdk = 36
     namespace = "com.teledrive.app"
     defaultConfig {
-        manifestPlaceholders["usesCleartextTraffic"] = "false"
+        manifestPlaceholders["usesCleartextTraffic"] = "true"
         applicationId = "com.teledrive.app"
         minSdk = 24
         targetSdk = 36
@@ -32,8 +32,8 @@ android {
             isMinifyEnabled = false
         }
         getByName("release") {
-            manifestPlaceholders["usesCleartextTraffic"] = "false"
-            isMinifyEnabled = true
+            manifestPlaceholders["usesCleartextTraffic"] = "true"
+            isMinifyEnabled = false
             signingConfig = signingConfigs.getByName("debug")
             proguardFiles(
                 *fileTree(".") { include("**/*.pro") }

@@ -35,9 +35,7 @@ argon2 = "0.5.3"
 tokio = { version = "1", features = ["sync", "time"] }
 
 [profile.release]
-opt-level = "z"
-lto = true
+opt-level = 3
 codegen-units = 1
-panic = "abort"
 strip = true
 

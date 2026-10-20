@@ -69,20 +69,34 @@ jobs:
       - name: Initialize Android project
         run: npm run tauri android init -- --ci --skip-targets-install
 
+      - name: Build Android APK (debug)
+        run: npx tauri android build --apk --ci --debug
+
       - name: Build Android APK (release)
-        if: ${{ github.event.inputs.build_type == 'release' || github.event_name != 'workflow_dispatch' }}
         run: npx tauri android build --apk --ci
 
-      - name: Build Android APK (debug)
-        if: ${{ github.event.inputs.build_type == 'debug' }}
-        run: npx tauri android build --apk --ci --debug
+      - name: Organize APK deliverables
+        run: |
+          mkdir -p release-dist/apk
+          for f in $(find src-tauri/gen/android/app/build/outputs/apk -type f -name "*.apk"); do
+            fname=$(basename "$f")
+            echo "Found APK: $f ($fname)"
+            cp "$f" "release-dist/apk/$fname"
+            if [[ "$fname" == *"release"* ]]; then
+              cp "$f" "release-dist/apk/teledrive-v0.1.2-universal-release.apk"
+            fi
+            if [[ "$fname" == *"debug"* ]]; then
+              cp "$f" "release-dist/apk/teledrive-v0.1.2-universal-debug.apk"
+            fi
+          done
+          ls -lh release-dist/apk/
 
       - name: Upload Android APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: teledrive-android-apk
           path: |
-            src-tauri/gen/android/app/build/outputs/apk/**/*.apk
+            release-dist/apk/*.apk
             src-tauri/gen/android/app/build/outputs/bundle/**/*.aab
           if-no-files-found: warn
           retention-days: 30
