@@ -1,15 +1,27 @@
-name: Build iOS IPA
+name: Build iOS IPA & Simulator
 
 on:
   push:
+    branches:
+      - '0.1.2'
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      build_target:
+        description: 'Build target (all, device, simulator)'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - device
+          - simulator
 
 jobs:
   build-ios:
-    name: Build iOS App
-    runs-on: macos-latest
+    name: Build iOS App & IPA
+    runs-on: macos-14
     permissions:
       contents: write
 
@@ -26,7 +38,7 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-apple-ios,x86_64-apple-ios,aarch64-apple-ios-sim
+          targets: aarch64-apple-ios,aarch64-apple-ios-sim
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
@@ -39,20 +51,99 @@ jobs:
       - name: Build frontend
         run: npm run build
 
-      - name: Install macOS build dependencies
-        run: brew install cocoapods xcodegen
+      - name: Ensure Xcode build environment
+        run: |
+          which xcodegen || brew install xcodegen
+          # Make sure node, npm, cargo, and rustc are in standard paths for Xcode script phases
+          sudo ln -sf $(which node) /usr/local/bin/node || true
+          sudo ln -sf $(which npm) /usr/local/bin/npm || true
+          sudo ln -sf $(which cargo) /usr/local/bin/cargo || true
+          sudo ln -sf $(which rustc) /usr/local/bin/rustc || true
 
       - name: Initialize iOS project
         run: npm run tauri ios init -- --ci --skip-targets-install
 
-      - name: Build iOS (simulator - no signing required)
-        run: npx tauri ios build --target aarch64-apple-ios-sim --debug
+      - name: Build iOS App (Device - aarch64)
+        if: ${{ github.event.inputs.build_target == 'all' || github.event.inputs.build_target == 'device' || github.event_name != 'workflow_dispatch' }}
+        run: |
+          npx tauri ios build --target aarch64 --no-sign --debug --ci
 
-      - name: Upload iOS artifact
+      - name: Build iOS App (Simulator - aarch64-sim)
+        if: ${{ github.event.inputs.build_target == 'all' || github.event.inputs.build_target == 'simulator' || github.event_name != 'workflow_dispatch' }}
+        run: |
+          npx tauri ios build --target aarch64-sim --debug --ci
+
+      - name: Package Deliverables (IPA and Simulator App)
+        run: |
+          mkdir -p release-dist/ios
+          
+          # 1. Package Unsigned IPA for Device (arm64)
+          echo "Looking for built device app (iphoneos)..."
+          DEVICE_APP=$(find src-tauri/gen/apple ~/Library/Developer/Xcode/DerivedData -name "TeleDrive.app" -path "*iphoneos*" 2>/dev/null | head -n 1)
+          if [ -z "$DEVICE_APP" ]; then
+            DEVICE_APP=$(find src-tauri/gen/apple ~/Library/Developer/Xcode/DerivedData -name "*.app" -path "*iphoneos*" 2>/dev/null | head -n 1)
+          fi
+          
+          if [ -n "$DEVICE_APP" ]; then
+            echo "Found device app at: $DEVICE_APP"
+            PAYLOAD_DIR=$(mktemp -d)/Payload
+            mkdir -p "$PAYLOAD_DIR"
+            cp -R "$DEVICE_APP" "$PAYLOAD_DIR/"
+            (cd "$(dirname "$PAYLOAD_DIR")" && zip -r -q teledrive-v0.1.2-ios-arm64-unsigned.ipa Payload)
+            cp "$(dirname "$PAYLOAD_DIR")/teledrive-v0.1.2-ios-arm64-unsigned.ipa" release-dist/ios/
+            cp "$(dirname "$PAYLOAD_DIR")/teledrive-v0.1.2-ios-arm64-unsigned.ipa" release-dist/
+            echo "✓ Created teledrive-v0.1.2-ios-arm64-unsigned.ipa"
+          else
+            echo "::warning::No device app found to package into IPA"
+          fi
+
+          # 2. Package Simulator App (aarch64-sim)
+          echo "Looking for built simulator app (iphonesimulator)..."
+          SIM_APP=$(find src-tauri/gen/apple ~/Library/Developer/Xcode/DerivedData -name "TeleDrive.app" -path "*iphonesimulator*" 2>/dev/null | head -n 1)
+          if [ -z "$SIM_APP" ]; then
+            SIM_APP=$(find src-tauri/gen/apple ~/Library/Developer/Xcode/DerivedData -name "*.app" -path "*iphonesimulator*" 2>/dev/null | head -n 1)
+          fi
+          
+          if [ -n "$SIM_APP" ]; then
+            echo "Found simulator app at: $SIM_APP"
+            (cd "$(dirname "$SIM_APP")" && zip -r -q teledrive-v0.1.2-ios-simulator.zip "$(basename "$SIM_APP")")
+            cp "$(dirname "$SIM_APP")/teledrive-v0.1.2-ios-simulator.zip" release-dist/ios/
+            cp "$(dirname "$SIM_APP")/teledrive-v0.1.2-ios-simulator.zip" release-dist/
+            echo "✓ Created teledrive-v0.1.2-ios-simulator.zip"
+          else
+            echo "::warning::No simulator app found"
+          fi
+
+          ls -lh release-dist/ios/
+
+      - name: Upload iOS artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: teledrive-ios-simulator
+          name: teledrive-ios-builds
           path: |
-            src-tauri/gen/apple/build/**/*.app
+            release-dist/ios/*
           if-no-files-found: warn
           retention-days: 30
+
+      - name: Upload iOS builds to release (on tag)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release-dist/ios/*.ipa
+            release-dist/ios/*.zip
+          draft: true
+          prerelease: false
+          name: 'TeleDrive ${{ github.ref_name }}'
+          body: |
+            ## 🍎 iOS Build
+
+            This release includes iOS deliverables for TeleDrive:
+            - **`teledrive-v0.1.2-ios-arm64-unsigned.ipa`**: Standard unsigned IPA for iPhone and iPad (sideloadable via AltStore, Sideloadly, TrollStore, Scarlet, or personal developer cert).
+            - **`teledrive-v0.1.2-ios-simulator.zip`**: iOS Simulator build for testing on Apple Silicon Macs in Xcode.
+
+            ### Installation on iOS Device
+            1. Download `teledrive-v0.1.2-ios-arm64-unsigned.ipa`
+            2. Install using **AltStore**, **Sideloadly**, **TrollStore**, or Xcode.
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
