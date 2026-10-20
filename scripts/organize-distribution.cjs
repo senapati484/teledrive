@@ -183,6 +183,21 @@ const deliverables = [
       // Prefer release over debug
       return lower.includes('release') || !lower.includes('debug');
     }
+  },
+  {
+    type: 'iOS Simulator',
+    canonicalName: 'teledrive-ios-simulator.zip',
+    matcher: (name, full) => {
+      const lower = name.toLowerCase();
+      return lower.includes('simulator') && lower.endsWith('.zip');
+    }
+  },
+  {
+    type: 'iOS IPA',
+    canonicalName: 'teledrive.ipa',
+    matcher: (name, full) => {
+      return name.toLowerCase().endsWith('.ipa');
+    }
   }
 ];
 
