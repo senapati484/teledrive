@@ -776,118 +776,121 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
 
   return (
     <div className={cn("flex flex-col h-full px-3 pt-2 pb-4 md:p-6 lg:p-7 space-y-4", isDraggingActive && "dragging-active")}>
-      {/* File Browser Header Toolbar: Google Drive style */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between border-b border-slate-200/70 dark:border-border pb-3 shrink-0">
-        <div className="space-y-1">
-          {/* Hide h1 on mobile — the DriveLayout topbar already shows the page title inline */}
-          <h1 className="hidden md:block text-2xl font-semibold tracking-tight text-[#1f1f1f] dark:text-[#e3e3e3]">
-            {headerTitle}
-          </h1>
-          {(mode === "drive" || mode === "backups") && breadcrumbs.length > 0 && (
-            <div className="flex items-center gap-1.5 text-xs text-[#444746] dark:text-[#c4c7c5] overflow-x-auto whitespace-nowrap py-0.5">
-              {mode === "drive" ? (
-                <Link
-                  to="/drive/my-drive"
-                  onClick={clearSelection}
-                  onDragOver={(e) => handleDragOverCard(e, "crumb_home")}
-                  onDrop={(e) => handleDrop(e, "/")}
-                  data-drop-path="/"
-                  className={cn(
-                    "flex items-center gap-1 hover:text-[#0b57d0] dark:hover:text-[#a8c7fa] transition-colors font-medium text-[#444746] dark:text-[#c4c7c5] px-1.5 py-0.5 rounded-md",
-                    isDraggingActive && "pointer-events-none-children",
-                    dragOverId === "crumb_home" && "bg-[#c2e7ff] text-[#001d35] dark:bg-[#004a77] dark:text-[#c2e7ff]"
-                  )}
-                >
-                  <Home className="h-3.5 w-3.5 shrink-0" />
-                  <span>{t("browser.header.myDrive")}</span>
-                </Link>
-              ) : (
-                <Link
-                  to="/drive/backups"
-                  onClick={clearSelection}
-                  className={cn(
-                    "flex items-center gap-1 hover:text-[#0b57d0] dark:hover:text-[#a8c7fa] transition-colors font-medium text-[#444746] dark:text-[#c4c7c5] px-1.5 py-0.5 rounded-md",
-                    isDraggingActive && "pointer-events-none-children",
-                  )}
-                >
-                  <Shield className="h-3.5 w-3.5 shrink-0" />
-                  <span>{t("browser.header.backups")}</span>
-                </Link>
-              )}
+      {/* File Browser Header Toolbar: Show on desktop OR when there are breadcrumbs on mobile */}
+      {(!isMobile || breadcrumbs.length > 0) && (
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between border-b border-slate-200/70 dark:border-border pb-2.5 sm:pb-3 shrink-0">
+          <div className="space-y-1">
+            {/* Hide h1 on mobile — the DriveLayout topbar already shows the page title inline */}
+            <h1 className="hidden md:block text-2xl font-semibold tracking-tight text-[#1f1f1f] dark:text-[#e3e3e3]">
+              {headerTitle}
+            </h1>
+            {(mode === "drive" || mode === "backups") && breadcrumbs.length > 0 && (
+              <div className="flex items-center gap-1.5 text-xs text-[#444746] dark:text-[#c4c7c5] overflow-x-auto whitespace-nowrap py-0.5">
+                {mode === "drive" ? (
+                  <Link
+                    to="/drive/my-drive"
+                    onClick={clearSelection}
+                    onDragOver={(e) => handleDragOverCard(e, "crumb_home")}
+                    onDrop={(e) => handleDrop(e, "/")}
+                    data-drop-path="/"
+                    className={cn(
+                      "flex items-center gap-1 hover:text-[#0b57d0] dark:hover:text-[#a8c7fa] transition-colors font-medium text-[#444746] dark:text-[#c4c7c5] px-1.5 py-0.5 rounded-md",
+                      isDraggingActive && "pointer-events-none-children",
+                      dragOverId === "crumb_home" && "bg-[#c2e7ff] text-[#001d35] dark:bg-[#004a77] dark:text-[#c2e7ff]"
+                    )}
+                  >
+                    <Home className="h-3.5 w-3.5 shrink-0" />
+                    <span>{t("browser.header.myDrive")}</span>
+                  </Link>
+                ) : (
+                  <Link
+                    to="/drive/backups"
+                    onClick={clearSelection}
+                    className={cn(
+                      "flex items-center gap-1 hover:text-[#0b57d0] dark:hover:text-[#a8c7fa] transition-colors font-medium text-[#444746] dark:text-[#c4c7c5] px-1.5 py-0.5 rounded-md",
+                      isDraggingActive && "pointer-events-none-children",
+                    )}
+                  >
+                    <Shield className="h-3.5 w-3.5 shrink-0" />
+                    <span>{t("browser.header.backups")}</span>
+                  </Link>
+                )}
 
-              {breadcrumbs.map((crumb, idx) => (
-                <div key={crumb.link} className="flex items-center gap-1 shrink-0">
-                  <ChevronRight className="h-3.5 w-3.5 text-[#747775] dark:text-[#8e918f] shrink-0" />
-                  {idx === breadcrumbs.length - 1 ? (
-                    <span className="font-semibold text-[#1f1f1f] dark:text-[#e3e3e3] px-2 py-0.5 rounded-md bg-[#f0f4f9] dark:bg-[#161719]">
-                      {crumb.name}
-                    </span>
-                  ) : (
-                    <Link
-                      to={crumb.link}
-                      onClick={clearSelection}
-                      onDragOver={mode !== "backups" ? (e) => handleDragOverCard(e, `crumb_${crumb.link}`) : undefined}
-                      onDrop={mode !== "backups" ? (e) => {
-                        const drivePrefix = "/drive/folder";
-                        const backupsPrefix = "/drive/backups/folder";
-                        let targetPath: string;
-                        if (crumb.link.startsWith(backupsPrefix)) {
-                          targetPath = crumb.link.substring(backupsPrefix.length);
-                        } else {
-                          targetPath = crumb.link.substring(drivePrefix.length);
+                {breadcrumbs.map((crumb, idx) => (
+                  <div key={crumb.link} className="flex items-center gap-1 shrink-0">
+                    <ChevronRight className="h-3.5 w-3.5 text-[#747775] dark:text-[#8e918f] shrink-0" />
+                    {idx === breadcrumbs.length - 1 ? (
+                      <span className="font-semibold text-[#1f1f1f] dark:text-[#e3e3e3] px-2 py-0.5 rounded-md bg-[#f0f4f9] dark:bg-[#161719]">
+                        {crumb.name}
+                      </span>
+                    ) : (
+                      <Link
+                        to={crumb.link}
+                        onClick={clearSelection}
+                        onDragOver={mode !== "backups" ? (e) => handleDragOverCard(e, `crumb_${crumb.link}`) : undefined}
+                        onDrop={mode !== "backups" ? (e) => {
+                          const drivePrefix = "/drive/folder";
+                          const backupsPrefix = "/drive/backups/folder";
+                          let targetPath: string;
+                          if (crumb.link.startsWith(backupsPrefix)) {
+                            targetPath = crumb.link.substring(backupsPrefix.length);
+                          } else {
+                            targetPath = crumb.link.substring(drivePrefix.length);
+                          }
+                          handleDrop(e, targetPath);
+                        } : undefined}
+                        data-drop-path={
+                          mode === "backups"
+                            ? undefined
+                            : ((crumb.link.startsWith("/drive/backups/folder")
+                              ? crumb.link.substring("/drive/backups/folder".length)
+                              : crumb.link.substring("/drive/folder".length)) || "/")
                         }
-                        handleDrop(e, targetPath);
-                      } : undefined}
-                      data-drop-path={
-                        mode === "backups"
-                          ? undefined
-                          : ((crumb.link.startsWith("/drive/backups/folder")
-                            ? crumb.link.substring("/drive/backups/folder".length)
-                            : crumb.link.substring("/drive/folder".length)) || "/")
-                      }
-                      className={cn(
-                        "hover:text-[#0b57d0] dark:hover:text-[#a8c7fa] transition-colors font-medium text-[#444746] dark:text-[#c4c7c5] px-1.5 py-0.5 rounded-md",
-                        isDraggingActive && "pointer-events-none-children",
-                        dragOverId === `crumb_${crumb.link}` && "bg-[#c2e7ff] text-[#001d35] dark:bg-[#004a77] dark:text-[#c2e7ff]"
-                      )}
-                    >
-                      {crumb.name}
-                    </Link>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-1.5 self-end sm:self-auto sm:mt-1">
-          {mode === "trash" && displayFiles.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setEmptyTrashDialogOpen(true)}
-              className="h-8.5 rounded-full text-xs border-red-300 text-red-600 dark:border-red-900/60 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 font-medium cursor-pointer mr-1"
-            >
-              <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-              {t("browser.emptyTrashButton")}
-            </Button>
-          )}
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
-            className="h-10 w-10 sm:h-9 sm:w-9 rounded-full hover:bg-[#e9eef6] dark:hover:bg-[#1f2124] text-[#444746] dark:text-[#c4c7c5] cursor-pointer"
-            title={viewMode === "grid" ? t("browser.switchToListView") : t("browser.switchToGridView")}
-          >
-            {viewMode === "grid" ? (
-              <List className="h-4.5 w-4.5" />
-            ) : (
-              <Grid className="h-4.5 w-4.5" />
+                        className={cn(
+                          "hover:text-[#0b57d0] dark:hover:text-[#a8c7fa] transition-colors font-medium text-[#444746] dark:text-[#c4c7c5] px-1.5 py-0.5 rounded-md",
+                          isDraggingActive && "pointer-events-none-children",
+                          dragOverId === `crumb_${crumb.link}` && "bg-[#c2e7ff] text-[#001d35] dark:bg-[#004a77] dark:text-[#c2e7ff]"
+                        )}
+                      >
+                        {crumb.name}
+                      </Link>
+                    )}
+                  </div>
+                ))}
+              </div>
             )}
-          </Button>
+          </div>
+
+          {/* Desktop Toolbar Controls */}
+          <div className="hidden sm:flex items-center gap-1.5 sm:mt-1">
+            {mode === "trash" && displayFiles.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setEmptyTrashDialogOpen(true)}
+                className="h-8.5 rounded-full text-xs border-red-300 text-red-600 dark:border-red-900/60 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 font-medium cursor-pointer mr-1"
+              >
+                <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                {t("browser.emptyTrashButton")}
+              </Button>
+            )}
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
+              className="h-9 w-9 rounded-full hover:bg-[#e9eef6] dark:hover:bg-[#1f2124] text-[#444746] dark:text-[#c4c7c5] cursor-pointer"
+              title={viewMode === "grid" ? t("browser.switchToListView") : t("browser.switchToGridView")}
+            >
+              {viewMode === "grid" ? (
+                <List className="h-4.5 w-4.5" />
+              ) : (
+                <Grid className="h-4.5 w-4.5" />
+              )}
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Read-only banner for Backups */}
       {mode === "backups" && (
@@ -939,14 +942,27 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
           })}
         </div>
 
-        {/* Sort Dropdown */}
+        {/* Sort Dropdown & Mobile Controls */}
         <div className="flex items-center gap-1 shrink-0">
+          {/* Mobile Empty Trash button */}
+          {isMobile && mode === "trash" && displayFiles.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setEmptyTrashDialogOpen(true)}
+              className="h-8.5 rounded-lg text-xs border-red-300 text-red-600 dark:border-red-900/60 dark:text-red-400 px-2 cursor-pointer"
+              title={t("browser.emptyTrashButton")}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-9 sm:h-8 rounded-lg text-xs font-medium text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] border border-slate-300/70 dark:border-white/[0.04] px-2.5 sm:px-3 flex items-center gap-1.5 cursor-pointer shrink-0"
+                className="h-8.5 sm:h-8 rounded-lg text-xs font-medium text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] border border-slate-300/70 dark:border-white/[0.04] px-2.5 sm:px-3 flex items-center gap-1.5 cursor-pointer shrink-0"
               >
                 <ArrowUpDown className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">{t("browser.sort.label", { sort: sortLabel })}</span>
@@ -978,6 +994,23 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* ViewMode toggle button on mobile */}
+          {isMobile && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
+              className="h-8.5 w-8.5 rounded-lg border border-slate-300/70 dark:border-white/[0.04] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] text-[#444746] dark:text-[#c4c7c5] cursor-pointer shrink-0"
+              title={viewMode === "grid" ? t("browser.switchToListView") : t("browser.switchToGridView")}
+            >
+              {viewMode === "grid" ? (
+                <List className="h-4 w-4" />
+              ) : (
+                <Grid className="h-4 w-4" />
+              )}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -1016,7 +1049,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                   ? t("browser.sections.foldersPartial", { shown: Math.min(folders.length, renderLimit), total: folders.length })
                   : t("browser.sections.folders")}
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-2 sm:gap-3 px-0.5">
+              <div className="grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-2 sm:gap-3 px-0.5">
                 {folders.slice(0, renderLimit).map((folder, index) => {
                   const isSelected = selectedIdsSet.has(folder.id);
                   const isBeingDragged = draggedId !== null && (draggedId === folder.id || (isSelected && selectedIdsSet.has(draggedId)));
@@ -1044,7 +1077,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                         data-folder-id={folder.id}
                         style={{ animationDelay: `${Math.min(index, 15) * 20}ms` }}
                         className={cn(
-                          "group relative flex items-center justify-between gap-3 h-12 px-3.5 rounded-xl transition-all duration-150 cursor-pointer select-none border border-transparent hover:border-slate-300/80 dark:hover:border-white/[0.08]",
+                          "group relative flex items-center justify-between gap-2 h-11 sm:h-12 px-2.5 sm:px-3.5 rounded-xl transition-all duration-150 cursor-pointer select-none border border-transparent hover:border-slate-300/80 dark:hover:border-white/[0.08]",
                           isSelected
                             ? "bg-[#c2e7ff] text-[#001d35] dark:bg-[#004a77] dark:text-[#c2e7ff] font-medium shadow-xs border-transparent"
                             : dragOverId === folder.id
@@ -1059,17 +1092,17 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                             <Plus className="h-3.5 w-3.5" />
                           </span>
                         )}
-                        <div className="flex items-center gap-3 min-w-0 flex-1 pointer-events-none">
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 pointer-events-none">
                           <FolderIcon
                             size="sm"
                             className={cn(
-                              "h-5 w-5 shrink-0 transition-transform duration-200 group-hover:scale-105",
+                              "h-4.5 w-4.5 sm:h-5 sm:w-5 shrink-0 transition-transform duration-200 group-hover:scale-105",
                               isSelected
                                 ? "text-[#001d35] dark:text-[#c2e7ff]"
                                 : "text-[#444746] dark:text-[#c4c7c5]"
                             )}
                           />
-                          <span className="text-xs md:text-sm font-medium truncate">
+                          <span className="text-xs sm:text-sm font-medium truncate">
                             {folder.name}
                           </span>
                         </div>
@@ -1527,7 +1560,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       {/* Mobile Context Menu Bottom Sheet */}
       {isMobile && (
         <Sheet open={!!mobileContextFile} onOpenChange={(open) => !open && setMobileContextFile(null)}>
-          <SheetContent side="bottom" className="rounded-t-2xl px-6 py-5 max-h-[420px] bg-white dark:bg-[#141518] border-t dark:border-white/[0.06]">
+          <SheetContent side="bottom" className="rounded-t-2xl px-6 pt-5 pb-[max(var(--safe-area-bottom,0px),24px)] max-h-[80vh] overflow-y-auto bg-white dark:bg-[#141518] border-t dark:border-white/[0.06]">
             {mobileContextFile && (
               <div className="space-y-4 select-none">
                 <div className="flex items-center gap-3 border-b dark:border-white/[0.04] pb-3">
