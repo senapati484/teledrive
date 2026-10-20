@@ -537,18 +537,18 @@ export default function AuthPage() {
 
   // ── Main render ──────────────────────────────────────────────────────────
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background relative select-none overflow-y-auto pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] px-3 sm:px-4">
+    <div className="flex items-center justify-center h-[100dvh] max-h-[100dvh] md:min-h-screen md:h-auto overflow-hidden overscroll-none md:overflow-y-auto bg-background relative select-none pt-[max(env(safe-area-inset-top,0px),var(--safe-area-top,2.5rem))] pb-[max(env(safe-area-inset-bottom,0px),var(--safe-area-bottom,1rem))] px-3 sm:px-4">
       {/* Language Switcher */}
-      <div className="absolute top-[calc(1.25rem+env(safe-area-inset-top,0px))] right-4 sm:right-5 z-20">
+      <div className="absolute top-[calc(var(--safe-area-top,2.5rem)+0.5rem)] right-3 sm:right-5 z-20">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="h-9 px-3.5 rounded-full text-xs font-medium text-[#444746] dark:text-[#C4C7C5] bg-white/80 dark:bg-[#1E1F20]/80 backdrop-blur-md border border-slate-200/90 dark:border-slate-800 shadow-xs hover:bg-slate-100 dark:hover:bg-[#282A2C] transition-all flex items-center gap-2 cursor-pointer"
+              className="h-8 px-2.5 sm:h-9 sm:px-3.5 rounded-full text-[11px] sm:text-xs font-medium text-[#444746] dark:text-[#C4C7C5] bg-white/80 dark:bg-[#1E1F20]/80 backdrop-blur-md border border-slate-200/90 dark:border-slate-800 shadow-xs hover:bg-slate-100 dark:hover:bg-[#282A2C] transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer"
             >
-              <Languages className="h-4 w-4 text-[#0B57D0] dark:text-[#A8C7FA]" />
+              <Languages className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#0B57D0] dark:text-[#A8C7FA]" />
               <span>{SUPPORTED_LANGUAGES.find((l) => l.code === (i18n.resolvedLanguage || i18n.language))?.label ?? "Language"}</span>
             </Button>
           </DropdownMenuTrigger>
@@ -587,43 +587,43 @@ export default function AuthPage() {
       </div>
 
       {/* Card */}
-      <div className="relative z-10 w-full max-w-[400px] mx-4 animate-fade-in">
-        <div className="bg-white dark:bg-[#1E1F20] border border-[#e0e3e7] dark:border-[#2d2f31] rounded-3xl shadow-[0_4px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_32px_rgba(0,0,0,0.3)] p-8 md:p-10">
+      <div className="relative z-10 w-full max-w-[380px] sm:max-w-[400px] mx-auto animate-fade-in my-auto">
+        <div className="bg-white dark:bg-[#1E1F20] border border-[#e0e3e7] dark:border-[#2d2f31] rounded-2xl sm:rounded-3xl shadow-[0_4px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_32px_rgba(0,0,0,0.3)] p-5 sm:p-8 md:p-10">
 
           {/* Logo */}
-          <div className="flex flex-col items-center mb-8">
-            <Link to="/drive/my-drive" className="inline-flex items-center gap-2.5 group mb-1">
+          <div className="flex flex-col items-center mb-3 sm:mb-6 md:mb-8">
+            <Link to="/drive/my-drive" className="inline-flex items-center gap-2 group mb-0.5">
               <div className="relative">
                 <img
                   src="/teledrive.png"
                   alt="TeleDrive"
-                  className="h-10 w-10 object-contain transition-transform duration-300 group-hover:scale-110"
+                  className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 object-contain transition-transform duration-300 group-hover:scale-110"
                 />
               </div>
-              <span className="text-2xl font-semibold tracking-tight text-[#1F1F1F] dark:text-[#E3E3E3]">
+              <span className="text-xl sm:text-2xl font-semibold tracking-tight text-[#1F1F1F] dark:text-[#E3E3E3]">
                 TeleDrive
               </span>
             </Link>
-            <p className="text-[10px] font-medium tracking-widest uppercase text-[#9aa0a6] dark:text-[#747775] mt-1">
+            <p className="text-[9px] sm:text-[10px] font-medium tracking-widest uppercase text-[#9aa0a6] dark:text-[#747775]">
               {t("tagline")}
             </p>
           </div>
 
           {/* Error banner — shown above step content */}
           {error && (
-            <div className="mb-5">
+            <div className="mb-4">
               <ErrorBanner message={error} />
             </div>
           )}
 
           {/* ── STEP 1: Phone ─────────────────────────────────────────── */}
           {step === "phone" && (
-            <form onSubmit={handleSendCode} className="space-y-5 animate-slide-up-fade" noValidate>
-              <div className="text-center space-y-1.5 mb-6">
-                <h1 className="text-[22px] font-normal text-[#1F1F1F] dark:text-[#E3E3E3] leading-tight">
+            <form onSubmit={handleSendCode} className="space-y-4 sm:space-y-5 animate-slide-up-fade" noValidate>
+              <div className="text-center space-y-1 mb-3.5 sm:mb-6">
+                <h1 className="text-lg sm:text-[22px] font-normal text-[#1F1F1F] dark:text-[#E3E3E3] leading-tight">
                   {t("phone.title")}
                 </h1>
-                <p className="text-sm text-[#747775] dark:text-[#9aa0a6] leading-relaxed">
+                <p className="text-xs sm:text-sm text-[#747775] dark:text-[#9aa0a6] leading-relaxed">
                   {t("phone.subtitle")}
                 </p>
               </div>
@@ -640,7 +640,7 @@ export default function AuthPage() {
                 onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.form?.requestSubmit(); }}
               />
 
-              <div className="pt-1">
+              <div className="pt-0.5 sm:pt-1">
                 <PrimaryButton
                   loading={loading}
                   loadingLabel={t("phone.sending")}
@@ -649,7 +649,7 @@ export default function AuthPage() {
                 />
               </div>
 
-              <p className="text-center text-[11px] text-[#9aa0a6] dark:text-[#747775] leading-relaxed pt-1">
+              <p className="text-center text-[10px] sm:text-[11px] text-[#9aa0a6] dark:text-[#747775] leading-relaxed pt-0.5 sm:pt-1">
                 <Trans
                   t={t}
                   i18nKey="phone.terms"
@@ -663,12 +663,12 @@ export default function AuthPage() {
 
           {/* ── STEP 2: OTP ───────────────────────────────────────────── */}
           {step === "otp" && (
-            <form onSubmit={handleVerifyOTP} className="space-y-6 animate-slide-up-fade" noValidate>
-              <div className="text-center space-y-1.5">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#EDF2FC] dark:bg-[#1a2744] mb-3">
-                  <MessageSquare className="h-5 w-5 text-[#0B57D0] dark:text-[#A8C7FA]" />
+            <form onSubmit={handleVerifyOTP} className="space-y-4 sm:space-y-6 animate-slide-up-fade" noValidate>
+              <div className="text-center space-y-1">
+                <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-[#EDF2FC] dark:bg-[#1a2744] mb-2 sm:mb-3">
+                  <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 text-[#0B57D0] dark:text-[#A8C7FA]" />
                 </div>
-                <h1 className="text-[22px] font-normal text-[#1F1F1F] dark:text-[#E3E3E3] leading-tight">
+                <h1 className="text-lg sm:text-[22px] font-normal text-[#1F1F1F] dark:text-[#E3E3E3] leading-tight">
                   {t("otp.title")}
                 </h1>
                 <p className="text-sm text-[#747775] dark:text-[#9aa0a6] leading-relaxed">
@@ -732,7 +732,7 @@ export default function AuthPage() {
                 </button>
               </div>
 
-              <div className="space-y-2.5">
+              <div className="space-y-2 sm:space-y-2.5">
                 <PrimaryButton
                   loading={loading}
                   loadingLabel={t("otp.verifying")}
@@ -755,20 +755,20 @@ export default function AuthPage() {
 
           {/* ── STEP 3: 2FA Password ──────────────────────────────────── */}
           {step === "password" && (
-            <form onSubmit={handleVerifyPassword} className="space-y-5 animate-slide-up-fade" noValidate>
-              <div className="text-center space-y-1.5">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-[#FFF4EC] dark:bg-[#2a1f10] mb-3">
-                  <Lock className="h-5 w-5 text-[#F9AB00] dark:text-[#fdd663]" />
+            <form onSubmit={handleVerifyPassword} className="space-y-4 sm:space-y-5 animate-slide-up-fade" noValidate>
+              <div className="text-center space-y-1">
+                <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-[#FFF4EC] dark:bg-[#2a1f10] mb-2 sm:mb-3">
+                  <Lock className="h-4 w-4 sm:h-5 sm:w-5 text-[#F9AB00] dark:text-[#fdd663]" />
                 </div>
-                <h1 className="text-[22px] font-normal text-[#1F1F1F] dark:text-[#E3E3E3] leading-tight">
+                <h1 className="text-lg sm:text-[22px] font-normal text-[#1F1F1F] dark:text-[#E3E3E3] leading-tight">
                   {t("password.title")}
                 </h1>
-                <p className="text-sm text-[#747775] dark:text-[#9aa0a6] leading-relaxed">
+                <p className="text-xs sm:text-sm text-[#747775] dark:text-[#9aa0a6] leading-relaxed">
                   {t("password.subtitle")}
                 </p>
               </div>
 
-              <div className="mt-2">
+              <div className="mt-1 sm:mt-2">
                 <FloatingInput
                   id="cloud-password"
                   label={t("password.label")}
@@ -792,7 +792,7 @@ export default function AuthPage() {
                 />
               </div>
 
-              <div className="space-y-2.5 pt-1">
+              <div className="space-y-2 sm:space-y-2.5 pt-0.5 sm:pt-1">
                 <PrimaryButton
                   loading={loading}
                   loadingLabel={t("password.signingIn")}
@@ -810,12 +810,12 @@ export default function AuthPage() {
 
           {/* ── STEP 4: Bootstrap ─────────────────────────────────────── */}
           {step === "bootstrap" && (
-            <div className="space-y-6 py-2 text-center animate-slide-up-fade">
+            <div className="space-y-5 sm:space-y-6 py-2 text-center animate-slide-up-fade">
               <div className="flex flex-col items-center gap-1.5 mb-2">
-                <h1 className="text-[22px] font-normal text-[#1F1F1F] dark:text-[#E3E3E3]">
+                <h1 className="text-lg sm:text-[22px] font-normal text-[#1F1F1F] dark:text-[#E3E3E3]">
                   {t("bootstrap.title")}
                 </h1>
-                <p className="text-sm text-[#747775] dark:text-[#9aa0a6]">
+                <p className="text-xs sm:text-sm text-[#747775] dark:text-[#9aa0a6]">
                   {t("bootstrap.subtitle")}
                 </p>
               </div>
@@ -837,9 +837,9 @@ export default function AuthPage() {
                   />
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center gap-5 py-6">
+                <div className="flex flex-col items-center justify-center gap-4 sm:gap-5 py-4 sm:py-6">
                   {/* Animated spinner ring */}
-                  <div className="relative w-16 h-16">
+                  <div className="relative w-14 h-14 sm:w-16 sm:h-16">
                     <div className="absolute inset-0 rounded-full border-2 border-[#e0e3e7] dark:border-[#3c4043]" />
                     <div
                       className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
@@ -850,10 +850,10 @@ export default function AuthPage() {
                       }}
                     />
                     <div className="absolute inset-[6px] flex items-center justify-center">
-                      <img src="/teledrive.png" alt="" className="h-7 w-7 object-contain opacity-80" />
+                      <img src="/teledrive.png" alt="" className="h-6 w-6 sm:h-7 sm:w-7 object-contain opacity-80" />
                     </div>
                   </div>
-                  <span className="text-xs font-medium text-[#747775] dark:text-[#9aa0a6] bg-[#F0F4F9] dark:bg-[#282A2C] px-4 py-1.5 rounded-full border border-[#e0e3e7] dark:border-[#3c4043] transition-all duration-500">
+                  <span className="text-[11px] sm:text-xs font-medium text-[#747775] dark:text-[#9aa0a6] bg-[#F0F4F9] dark:bg-[#282A2C] px-3.5 sm:px-4 py-1.5 rounded-full border border-[#e0e3e7] dark:border-[#3c4043] transition-all duration-500">
                     {bootstrapStatus}
                   </span>
                 </div>
@@ -863,15 +863,15 @@ export default function AuthPage() {
 
           {/* Step dots (phone, otp, password only) */}
           {step !== "bootstrap" && (
-            <div className="mt-8">
+            <div className="mt-3.5 sm:mt-6 md:mt-8">
               <StepDots current={step} />
             </div>
           )}
         </div>
 
         {/* Footer note */}
-        <p className="text-center text-[11px] text-[#9aa0a6] dark:text-[#5f6368] mt-4">
-          {t("footer", { version: "0.1.1" })}
+        <p className="text-center text-[10px] sm:text-[11px] text-[#9aa0a6] dark:text-[#5f6368] mt-2 sm:mt-3 md:mt-4">
+          {t("footer", { version: "0.1.2" })}
         </p>
       </div>
     </div>

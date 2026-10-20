@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Smartphone, Eye, HardDrive, Info, Shield, Languages } from "lucide-react";
+import { ArrowLeft, ChevronRight, Smartphone, Eye, HardDrive, Info, Shield, Languages } from "lucide-react";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { Button } from "@/components/ui/button";
 import TelegramAccountSection from "@/components/settings/TelegramAccountSection";
@@ -137,7 +137,7 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background text-foreground select-none">
       {/* Topbar Settings Header */}
-      <header className="flex items-center gap-3 px-4 md:px-6 h-[calc(3.5rem+env(safe-area-inset-top,0px))] md:h-16 pt-[env(safe-area-inset-top,0px)] shrink-0 bg-background border-b md:border-b-0 border-slate-200/60 dark:border-slate-800/60">
+      <header className="flex items-center gap-3 px-4 md:px-6 h-[calc(3.5rem+var(--safe-area-top,2.5rem))] md:h-16 pt-[var(--safe-area-top,2.5rem)] md:pt-0 shrink-0 bg-background border-b md:border-b-0 border-slate-200/60 dark:border-slate-800/60">
         <Button
           variant="ghost"
           size="icon"
@@ -167,7 +167,7 @@ export default function SettingsPage() {
       <div className="flex-1 flex overflow-hidden">
         {/* Desktop Split View: Nav List */}
         {(!isMobile || !mobileShowContent) && (
-          <aside className="w-full md:w-64 shrink-0 overflow-y-auto px-3 py-2 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] md:pb-2 flex flex-col justify-between">
+          <aside className="w-full md:w-64 shrink-0 overflow-y-auto px-3 py-2 pb-[max(var(--safe-area-bottom,1.5rem),1.5rem)] md:pb-2 flex flex-col justify-between">
             <div className="space-y-1">
               {sections.map((sec) => {
                 const Icon = sec.icon;
@@ -176,14 +176,17 @@ export default function SettingsPage() {
                   <button
                     key={sec.id}
                     onClick={() => (isMobile ? handleMobileSelect(sec.id) : setActiveSection(sec.id))}
-                    className={`w-full flex items-center gap-3.5 px-4 h-10 rounded-full text-sm font-medium transition-colors text-left cursor-pointer ${
+                    className={`w-full flex items-center justify-between gap-3.5 px-4 h-12 md:h-10 rounded-2xl md:rounded-full text-sm font-medium transition-colors text-left cursor-pointer ${
                       isSelected && !isMobile
                         ? "bg-[#C2E7FF] dark:bg-[#004A77] text-[#001D35] dark:text-[#C2E7FF] font-semibold"
-                        : "text-[#444746] dark:text-[#C4C7C5] hover:bg-[#F0F4F9] dark:hover:bg-[#282A2C] hover:text-[#1F1F1F] dark:hover:text-[#E3E3E3]"
+                        : "text-[#444746] dark:text-[#C4C7C5] hover:bg-[#F0F4F9] dark:hover:bg-[#282A2C] active:bg-[#F0F4F9] dark:active:bg-[#282A2C] hover:text-[#1F1F1F] dark:hover:text-[#E3E3E3]"
                     }`}
                   >
-                    <Icon className={`h-4.5 w-4.5 shrink-0 ${isSelected && !isMobile ? "text-[#0B57D0] dark:text-[#A8C7FA]" : "text-[#444746] dark:text-[#C4C7C5]"}`} />
-                    <span>{sec.label}</span>
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <Icon className={`h-5 w-5 md:h-4.5 md:w-4.5 shrink-0 ${isSelected && !isMobile ? "text-[#0B57D0] dark:text-[#A8C7FA]" : "text-[#444746] dark:text-[#C4C7C5]"}`} />
+                      <span className="truncate">{sec.label}</span>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-[#747775]/60 dark:text-[#9aa0a6]/60 shrink-0 md:hidden" />
                   </button>
                 );
               })}
@@ -193,7 +196,7 @@ export default function SettingsPage() {
             <div className="pt-4 border-t border-slate-200/60 dark:border-slate-800/60 mb-2">
               <button
                 onClick={() => setLogoutDialogOpen(true)}
-                className="w-full flex items-center gap-3.5 px-4 h-10 rounded-full text-sm font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors text-left cursor-pointer"
+                className="w-full flex items-center gap-3.5 px-4 h-12 md:h-10 rounded-2xl md:rounded-full text-sm font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors text-left cursor-pointer"
               >
                 <svg
                   className="h-4.5 w-4.5 shrink-0 text-rose-500"
@@ -216,8 +219,8 @@ export default function SettingsPage() {
 
         {/* Settings Panel Content Area */}
         {(!isMobile || mobileShowContent) && (
-          <div className="flex-1 overflow-hidden md:mr-4 md:mb-4 md:rounded-3xl bg-surface dark:bg-[#1E1F20] border md:border-slate-200/60 dark:border-slate-800/60 shadow-xs flex flex-col">
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] md:pb-8">
+          <div className="flex-1 overflow-hidden md:mr-4 md:mb-4 md:rounded-3xl bg-surface dark:bg-[#1E1F20] border-0 md:border md:border-slate-200/60 md:dark:border-slate-800/60 shadow-xs flex flex-col">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 pb-[max(var(--safe-area-bottom,1.5rem),1.5rem)] md:pb-8">
               <div key={activeSection} className="max-w-3xl animate-fade-in">
                 <ActiveComponent />
               </div>

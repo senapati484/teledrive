@@ -58,13 +58,13 @@ export default function SearchBar() {
     <div className="relative w-full">
       <form
         onSubmit={handleSubmit}
-        className={`relative flex items-center w-full h-11 md:h-12 transition-all duration-200 rounded-full px-4.5 border ${
+        className={`relative flex items-center w-full h-10 md:h-12 transition-all duration-200 rounded-full px-3.5 md:px-4.5 border ${
           isFocused
             ? "bg-white dark:bg-[#1e1f20] border-transparent shadow-[0_1px_3px_0_rgba(60,64,67,0.3),0_4px_8px_3px_rgba(60,64,67,0.15)] dark:shadow-[0_1px_3px_0_rgba(0,0,0,0.5)] ring-1 ring-black/5 dark:ring-white/10"
             : "bg-[#edf2fc] hover:bg-[#e1e8f5] dark:bg-[#282a2c] dark:hover:bg-[#333537] border-transparent shadow-xs"
         }`}
       >
-        <Search className="h-5 w-5 text-[#444746] dark:text-[#c4c7c5] mr-3 shrink-0" />
+        <Search className="h-4.5 w-4.5 md:h-5 md:w-5 text-[#444746] dark:text-[#c4c7c5] mr-2 md:mr-3 shrink-0" />
         
         <input
           id="main-search-input"

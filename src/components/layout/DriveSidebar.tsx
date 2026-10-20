@@ -102,7 +102,7 @@ export const DriveSidebar = React.memo(function DriveSidebar({
       </nav>
 
       {/* Storage panel: Google Drive Cloud Storage meter */}
-      <div className="px-4 pb-4 pt-3 space-y-2.5 select-none border-t border-slate-200/50 dark:border-slate-800/40">
+      <div className="px-4 pb-[max(var(--safe-area-bottom,1rem),1rem)] pt-3 space-y-2.5 select-none border-t border-slate-200/50 dark:border-slate-800/40">
         <div className="flex items-center gap-2 text-xs font-semibold text-[#444746] dark:text-[#c4c7c5]">
           <Cloud className="h-4.5 w-4.5 text-[#0b57d0] dark:text-[#a8c7fa]" />
           <span>{t("sidebar.storage")}</span>

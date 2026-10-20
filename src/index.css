@@ -107,6 +107,11 @@
   --safe-area-right: env(safe-area-inset-right, 0px);
 }
 
+.platform-mobile {
+  --safe-area-top: max(env(safe-area-inset-top, 0px), 38px);
+  --safe-area-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
+}
+
 .dark {
   /* Google Drive Dark Theme Tokens */
   --background: #131314;            /* Google Dark Canvas */

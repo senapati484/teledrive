@@ -595,7 +595,7 @@ export default function DriveLayout() {
       )}
       
       {/* Topbar: Google Workspace styled */}
-      <header className="relative z-40 flex items-center justify-between px-3 md:px-4 h-[calc(3.5rem+env(safe-area-inset-top,0px))] md:h-16 pt-[env(safe-area-inset-top,0px)] shrink-0 bg-background border-b md:border-b-0 border-slate-200/60 dark:border-slate-800/60 select-none">
+      <header className="relative z-40 flex items-center justify-between px-3 md:px-4 h-[calc(3.5rem+var(--safe-area-top,2.5rem))] md:h-16 pt-[var(--safe-area-top,2.5rem)] md:pt-0 shrink-0 bg-background border-b md:border-b-0 border-slate-200/60 dark:border-slate-800/60 select-none">
         <div className="flex items-center gap-1.5 md:gap-3 shrink-0">
           {isMobile && (
             <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
@@ -604,7 +604,7 @@ export default function DriveLayout() {
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-[var(--sidebar-width)] p-0 pt-6 bg-background">
+              <SheetContent side="left" className="w-[var(--sidebar-width)] p-0 pt-[max(var(--safe-area-top,2.5rem),2.5rem)] bg-background">
                 <div className="px-5 py-2 flex items-center gap-2.5 mb-2">
                   <img
                     src="/teledrive.png"
@@ -634,7 +634,7 @@ export default function DriveLayout() {
           )}
 
           {/* Logo / Title */}
-          <Link to="/drive/my-drive" className="flex items-center gap-2.5 group">
+          <Link to="/drive/my-drive" className="hidden sm:flex items-center gap-2.5 group">
             <img
               src="/teledrive.png"
               alt={t("logoAlt")}
@@ -724,7 +724,7 @@ export default function DriveLayout() {
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          className="flex-1 overflow-y-auto bg-surface dark:bg-[#1e1f20] md:mr-4 md:mb-4 md:rounded-3xl border border-slate-200/80 dark:border-[#2d2f31] shadow-xs pb-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom,0px)+80px)] md:pb-6 relative z-10"
+          className="flex-1 overflow-y-auto bg-surface dark:bg-[#1e1f20] md:mr-4 md:mb-4 md:rounded-3xl md:border md:border-slate-200/80 md:dark:border-[#2d2f31] md:shadow-xs border-0 pb-[calc(var(--mobile-nav-height)+var(--safe-area-bottom,1rem)+80px)] md:pb-6 relative z-10"
         >
           {/* Mobile FAB */}
           {isMobile && <NewActionButton isFab />}
@@ -751,7 +751,7 @@ export default function DriveLayout() {
 
       {/* Bottom Nav (Mobile) */}
       {isMobile && (
-        <nav className="fixed bottom-0 left-0 right-0 h-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom,0px))] border-t border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md flex items-center justify-around z-40 pb-[env(safe-area-inset-bottom,0px)] select-none">
+        <nav className="fixed bottom-0 left-0 right-0 h-[calc(var(--mobile-nav-height)+var(--safe-area-bottom,1rem))] border-t border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md flex items-center justify-around z-40 pb-[var(--safe-area-bottom,1rem)] select-none">
           {mobileNavTabs.map((item) => {
             const Icon = item.icon;
             const isActive =

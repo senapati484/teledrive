@@ -994,9 +994,9 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
     >
       {/* ── Topbar ─────────────────────────────────────────────────────── */}
       <div
-        className="flex items-center justify-between pl-4 pr-3 shrink-0 pt-[env(safe-area-inset-top,0px)]"
+        className="flex items-center justify-between pl-4 pr-3 shrink-0 pt-[var(--safe-area-top,env(safe-area-inset-top,0px))]"
         style={{
-          height: "calc(44px + env(safe-area-inset-top, 0px))",
+          height: "calc(44px + var(--safe-area-top, env(safe-area-inset-top, 0px)))",
           background: colors.topbar,
           borderBottom: `1px solid ${colors.border}`,
         }}

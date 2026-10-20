@@ -69,6 +69,21 @@ export function isTouchDevice(): boolean {
 }
 
 export async function initPlatform(): Promise<void> {
-  getPlatform();
+  const p = getPlatform();
+  if (typeof document !== "undefined") {
+    const root = document.documentElement;
+    root.classList.add(`platform-${p}`);
+    if (p === "android" || p === "ios") {
+      root.classList.add("platform-mobile");
+      if (p === "android") {
+        root.style.setProperty("--safe-area-top", "max(env(safe-area-inset-top, 0px), 38px)");
+        root.style.setProperty("--safe-area-bottom", "max(env(safe-area-inset-bottom, 0px), 16px)");
+      } else if (p === "ios") {
+        root.style.setProperty("--safe-area-top", "max(env(safe-area-inset-top, 0px), 48px)");
+        root.style.setProperty("--safe-area-bottom", "max(env(safe-area-inset-bottom, 0px), 24px)");
+      }
+    }
+  }
 }
+
 

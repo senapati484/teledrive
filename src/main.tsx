@@ -7,7 +7,10 @@ import "./index.css";
 import { initVault } from "./lib/secure/vault";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 
+import { initPlatform } from "./lib/platform";
+
 console.log("main.tsx: Loaded entrypoint script");
+initPlatform();
 
 // Mount React immediately to prevent blank white screens
 const rootElement = document.getElementById("root");
