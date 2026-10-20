@@ -534,9 +534,9 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
   // ── Loading state ─────────────────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-[#1a1b1e] text-slate-300 gap-4 select-none">
+      <div className="w-full h-full flex flex-col items-center justify-center bg-[#000000] text-slate-300 gap-4 select-none">
         <div className="relative">
-          <div className="w-14 h-14 rounded-2xl bg-[#252629] border border-white/8 flex items-center justify-center">
+          <div className="w-14 h-14 rounded-2xl bg-[#111214] border border-white/[0.04] flex items-center justify-center">
             <FileText className="h-7 w-7 text-red-400" />
           </div>
           <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center">
@@ -556,7 +556,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
   // ── Error state ────────────────────────────────────────────────────────────
   if (error) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-[#1a1b1e] text-white p-6 text-center select-none">
+      <div className="w-full h-full flex flex-col items-center justify-center bg-[#000000] text-white p-6 text-center select-none">
         <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 mb-5">
           <AlertCircle className="h-8 w-8" />
         </div>
@@ -579,11 +579,11 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
 
   // ── Main render ────────────────────────────────────────────────────────────
   return (
-    <div className="relative w-full h-full flex flex-col bg-[#1a1b1e] select-none overflow-hidden">
+    <div className="relative w-full h-full flex flex-col bg-[#000000] select-none overflow-hidden">
       {/* ── Toolbar ── */}
       <div
         ref={toolbarRef}
-        className="flex-none h-11 px-3 bg-[#25272b]/98 backdrop-blur border-b border-white/[0.06] flex items-center justify-between z-20 text-slate-200 text-xs gap-2"
+        className="flex-none h-11 px-3 bg-[#0a0a0a]/98 backdrop-blur border-b border-white/[0.04] flex items-center justify-between z-20 text-slate-200 text-xs gap-2"
       >
         {/* Left: navigation */}
         <div className="flex items-center gap-1.5">
@@ -591,7 +591,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
             onClick={prevPage}
             disabled={currentPage <= 1}
             title={t("pdf.toolbar.previousPage")}
-            className="p-1.5 rounded-md hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            className="p-1.5 rounded-md hover:bg-[#1f2124] disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
             <ChevronLeft className="h-3.5 w-3.5" />
           </button>
@@ -623,7 +623,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
                   setIsEditingPage(true);
                 }}
                 title={t("pdf.toolbar.jumpToPage")}
-                className="px-1.5 py-0.5 rounded text-[12px] bg-black/30 border border-white/10 hover:border-white/25 hover:bg-black/50 transition-colors cursor-pointer tabular-nums"
+                className="px-1.5 py-0.5 rounded text-[12px] bg-[#161719] border border-white/[0.06] hover:border-white/[0.1] hover:bg-[#1f2124] transition-colors cursor-pointer tabular-nums"
               >
                 {currentPage}
               </button>
@@ -636,13 +636,13 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
             onClick={nextPage}
             disabled={currentPage >= totalPages}
             title={t("pdf.toolbar.nextPage")}
-            className="p-1.5 rounded-md hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            className="p-1.5 rounded-md hover:bg-[#1f2124] disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
             <ChevronRight className="h-3.5 w-3.5" />
           </button>
 
           {/* Separator */}
-          <div className="w-px h-4 bg-white/10 mx-1" />
+          <div className="w-px h-4 bg-white/[0.06] mx-1" />
 
           {/* Filename badge */}
           {fileName && (
@@ -659,7 +659,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
             onClick={zoomOut}
             disabled={scale <= MIN_SCALE}
             title={t("pdf.toolbar.zoomOut")}
-            className="p-1.5 rounded-md hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            className="p-1.5 rounded-md hover:bg-[#1f2124] disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
             <Minus className="h-3 w-3" />
           </button>
@@ -667,7 +667,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
           <button
             onClick={() => setScale(1.0)}
             title={t("pdf.toolbar.resetZoom")}
-            className="px-2 py-0.5 font-mono text-[11px] rounded hover:bg-white/10 transition-colors cursor-pointer min-w-[46px] text-center tabular-nums"
+            className="px-2 py-0.5 font-mono text-[11px] rounded hover:bg-[#1f2124] transition-colors cursor-pointer min-w-[46px] text-center tabular-nums"
           >
             {Math.round(scale * 100)}%
           </button>
@@ -676,17 +676,17 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
             onClick={zoomIn}
             disabled={scale >= MAX_SCALE}
             title={t("pdf.toolbar.zoomIn")}
-            className="p-1.5 rounded-md hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            className="p-1.5 rounded-md hover:bg-[#1f2124] disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
           >
             <Plus className="h-3 w-3" />
           </button>
 
-          <div className="w-px h-4 bg-white/10 mx-0.5" />
+          <div className="w-px h-4 bg-white/[0.06] mx-0.5" />
 
           <button
             onClick={fitWidth}
             title={t("pdf.toolbar.fitWidth")}
-            className="p-1.5 rounded-md hover:bg-white/10 transition-colors cursor-pointer"
+            className="p-1.5 rounded-md hover:bg-[#1f2124] transition-colors cursor-pointer"
           >
             <Maximize2 className="h-3 w-3" />
           </button>
@@ -694,7 +694,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
           <button
             onClick={fitPage}
             title={t("pdf.toolbar.fitPage")}
-            className="px-2 py-0.5 rounded text-[10px] font-semibold hover:bg-white/10 transition-colors cursor-pointer text-slate-400 hover:text-slate-200"
+            className="px-2 py-0.5 rounded text-[10px] font-semibold hover:bg-[#1f2124] transition-colors cursor-pointer text-slate-400 hover:text-slate-200"
           >
             {t("pdf.toolbar.fit")}
           </button>
@@ -702,7 +702,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
           <button
             onClick={rotate}
             title={t("pdf.toolbar.rotate")}
-            className="p-1.5 rounded-md hover:bg-white/10 transition-colors cursor-pointer"
+            className="p-1.5 rounded-md hover:bg-[#1f2124] transition-colors cursor-pointer"
           >
             <RotateCw className="h-3 w-3" />
           </button>
@@ -713,7 +713,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
           <button
             onClick={handlePrint}
             title={t("pdf.toolbar.print")}
-            className="p-1.5 rounded-md hover:bg-white/10 transition-colors cursor-pointer text-slate-400 hover:text-slate-200"
+            className="p-1.5 rounded-md hover:bg-[#1f2124] transition-colors cursor-pointer text-slate-400 hover:text-slate-200"
           >
             <Printer className="h-3.5 w-3.5" />
           </button>
@@ -734,8 +734,8 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
       {/* ── Scroll Canvas Area ── */}
       <div
         ref={scrollContainerRef}
-        className="flex-1 overflow-auto bg-[#141517]"
-        style={{ scrollBehavior: "auto" }}
+        className="flex-1 overflow-auto bg-[#000000]"
+        style={{ scrollBehavior: "auto", touchAction: "pinch-zoom" }}
       >
         <div
           className="flex flex-col items-center py-6 gap-4 px-6"

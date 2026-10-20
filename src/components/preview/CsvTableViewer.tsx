@@ -156,7 +156,7 @@ export const CsvTableViewer = memo(function CsvTableViewer({
     <div
       className={`h-full w-full flex flex-col select-text ${className}`}
       style={{
-        background: isDark ? "#131314" : "#f8fafd",
+        background: isDark ? "#000000" : "#f8fafd",
         color: isDark ? "#e3e3e3" : "#1f1f1f",
       }}
     >
@@ -164,16 +164,16 @@ export const CsvTableViewer = memo(function CsvTableViewer({
       <div
         className="flex items-center justify-between px-4 py-2 border-b gap-3 shrink-0"
         style={{
-          background: isDark ? "#1e1f20" : "#ffffff",
-          borderColor: isDark ? "#333537" : "#e0e2e7",
+          background: isDark ? "#0a0a0a" : "#ffffff",
+          borderColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#e0e2e7",
         }}
       >
         <div className="flex items-center gap-2 max-w-sm flex-1">
           <div
             className="flex items-center gap-2 px-3 py-1.5 rounded-xl border flex-1 text-xs"
             style={{
-              background: isDark ? "#282a2c" : "#f0f4f9",
-              borderColor: isDark ? "#3c4043" : "#e0e2e7",
+              background: isDark ? "#161719" : "#f0f4f9",
+              borderColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#e0e2e7",
             }}
           >
             <Search className="h-3.5 w-3.5 shrink-0 opacity-60" />
@@ -210,7 +210,7 @@ export const CsvTableViewer = memo(function CsvTableViewer({
         className="flex-1 overflow-auto relative"
         style={{
           scrollbarWidth: "thin",
-          scrollbarColor: isDark ? "#334155 transparent" : "#cbd5e1 transparent",
+          scrollbarColor: isDark ? "#202225 transparent" : "#cbd5e1 transparent",
         }}
       >
         {allRows.length === 0 ? (
@@ -226,7 +226,7 @@ export const CsvTableViewer = memo(function CsvTableViewer({
             <thead
               className="sticky top-0 z-20 shadow-xs"
               style={{
-                background: isDark ? "#1e1f20" : "#f0f4f9",
+                background: isDark ? "#111214" : "#f0f4f9",
               }}
             >
               <tr>
@@ -234,8 +234,8 @@ export const CsvTableViewer = memo(function CsvTableViewer({
                 <th
                   className="sticky left-0 z-30 p-2 text-center text-[10px] font-bold border-b border-r select-none w-14"
                   style={{
-                    background: isDark ? "#282a2c" : "#e9eef6",
-                    borderColor: isDark ? "#3c4043" : "#d3d7de",
+                    background: isDark ? "#141518" : "#e9eef6",
+                    borderColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#d3d7de",
                     color: isDark ? "#9aa0a6" : "#5f6368",
                   }}
                 >
@@ -246,7 +246,7 @@ export const CsvTableViewer = memo(function CsvTableViewer({
                     key={i}
                     className="p-2.5 text-left font-semibold border-b border-r truncate max-w-[300px]"
                     style={{
-                      borderColor: isDark ? "#3c4043" : "#d3d7de",
+                      borderColor: isDark ? "rgba(255, 255, 255, 0.04)" : "#d3d7de",
                       color: isDark ? "#e3e3e3" : "#1f1f1f",
                     }}
                     title={h}
@@ -255,7 +255,7 @@ export const CsvTableViewer = memo(function CsvTableViewer({
                       <span className="truncate">{h || t("csv.columnFallback", { letter: getColLetter(i) })}</span>
                       <span
                         className="text-[9px] font-normal px-1 py-0.5 rounded opacity-60"
-                        style={{ background: isDark ? "#333537" : "#dfe3eb" }}
+                        style={{ background: isDark ? "#1f2124" : "#dfe3eb" }}
                       >
                         {getColLetter(i)}
                       </span>
@@ -276,10 +276,10 @@ export const CsvTableViewer = memo(function CsvTableViewer({
                     style={{
                       background: isEven
                         ? isDark
-                          ? "#131314"
+                          ? "#000000"
                           : "#ffffff"
                         : isDark
-                        ? "#18191a"
+                        ? "#0a0a0a"
                         : "#f8fafd",
                     }}
                   >
@@ -289,12 +289,12 @@ export const CsvTableViewer = memo(function CsvTableViewer({
                       style={{
                         background: isEven
                           ? isDark
-                            ? "#1e1f20"
+                            ? "#0a0a0a"
                             : "#f0f4f9"
                           : isDark
-                          ? "#242527"
+                          ? "#111214"
                           : "#e9eef6",
-                        borderColor: isDark ? "#2e3134" : "#e0e3e7",
+                        borderColor: isDark ? "rgba(255, 255, 255, 0.03)" : "#e0e3e7",
                         color: isDark ? "#80868b" : "#5f6368",
                       }}
                     >
@@ -314,7 +314,7 @@ export const CsvTableViewer = memo(function CsvTableViewer({
                           title={t("csv.cellTitle", { value: cellVal })}
                           className="p-2.5 border-b border-r truncate max-w-[320px] cursor-pointer hover:bg-blue-500/15 relative"
                           style={{
-                            borderColor: isDark ? "#2e3134" : "#e0e3e7",
+                            borderColor: isDark ? "rgba(255, 255, 255, 0.03)" : "#e0e3e7",
                           }}
                         >
                           <span className="truncate block">{cellVal}</span>

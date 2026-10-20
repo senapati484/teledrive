@@ -82,13 +82,13 @@ export function UploadProgressPanel() {
   return (
     <div
       className={cn(
-        "fixed bottom-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom,0px)+12px)] md:bottom-6 right-3 md:right-6 z-50 w-88 max-w-[calc(100vw-24px)] bg-white dark:bg-[#1e1f20] border border-slate-200/90 dark:border-slate-800 shadow-2xl rounded-2xl overflow-hidden transition-all duration-300 transform select-none",
+        "fixed bottom-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom,0px)+12px)] md:bottom-6 right-3 md:right-6 z-50 w-88 max-w-[calc(100vw-24px)] bg-white dark:bg-[#111214] border border-slate-200/90 dark:border-white/[0.06] shadow-2xl rounded-2xl overflow-hidden transition-all duration-300 transform select-none",
         isMinimized ? "h-13" : "h-96"
       )}
     >
       {/* Header */}
       <div 
-        className="flex items-center justify-between px-4 py-3 bg-[#f0f4f9] dark:bg-[#282a2c] text-[#1f1f1f] dark:text-[#e3e3e3] select-none cursor-pointer border-b border-slate-200/80 dark:border-slate-800" 
+        className="flex items-center justify-between px-4 py-3 bg-[#f0f4f9] dark:bg-[#161719] text-[#1f1f1f] dark:text-[#e3e3e3] select-none cursor-pointer border-b border-slate-200/80 dark:border-white/[0.04]" 
         onClick={() => setIsMinimized(!isMinimized)}
       >
         <div className="flex items-center gap-2.5 min-w-0">
@@ -118,7 +118,7 @@ export function UploadProgressPanel() {
           <button
             type="button"
             onClick={() => setIsMinimized(!isMinimized)}
-            className="h-7 w-7 flex items-center justify-center text-[#444746] hover:text-[#1f1f1f] dark:text-[#c4c7c5] dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-700/60 rounded-full transition-colors cursor-pointer border-0 bg-transparent outline-none"
+            className="h-8 w-8 sm:h-7 sm:w-7 flex items-center justify-center text-[#444746] hover:text-[#1f1f1f] dark:text-[#c4c7c5] dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-[#1f2124] rounded-full transition-colors cursor-pointer border-0 bg-transparent outline-none"
             title={isMinimized ? t("upload.expand") : t("upload.collapse")}
           >
             {isMinimized ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -126,7 +126,7 @@ export function UploadProgressPanel() {
           <button
             type="button"
             onClick={handleClose}
-            className="h-7 w-7 flex items-center justify-center text-[#444746] hover:text-[#1f1f1f] dark:text-[#c4c7c5] dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-700/60 rounded-full transition-colors cursor-pointer border-0 bg-transparent outline-none"
+            className="h-8 w-8 sm:h-7 sm:w-7 flex items-center justify-center text-[#444746] hover:text-[#1f1f1f] dark:text-[#c4c7c5] dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-[#1f2124] rounded-full transition-colors cursor-pointer border-0 bg-transparent outline-none"
             title={t("upload.close")}
           >
             <X className="h-4 w-4" />
@@ -136,9 +136,9 @@ export function UploadProgressPanel() {
 
       {/* Upload Item List */}
       {!isMinimized && (
-        <div className="flex flex-col h-[calc(100%-48px)] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800/60 bg-white dark:bg-[#1e1f20]">
+        <div className="flex flex-col h-[calc(100%-48px)] overflow-y-auto divide-y divide-slate-100 dark:divide-white/[0.03] bg-white dark:bg-[#111214]">
           {uploadQueue.map((item) => (
-            <div key={item.id} className="relative flex flex-col gap-1.5 p-3.5 hover:bg-[#f0f4f9]/50 dark:hover:bg-[#282a2c]/50 transition-colors">
+            <div key={item.id} className="relative flex flex-col gap-1.5 p-3.5 hover:bg-[#f0f4f9]/50 dark:hover:bg-[#1f2124]/50 transition-colors">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <Upload className="h-3.5 w-3.5 text-[#0b57d0] dark:text-[#a8c7fa] shrink-0" />
@@ -162,7 +162,7 @@ export function UploadProgressPanel() {
                     </span>
                   )}
                   {item.status === "pending" && (
-                    <span className="text-[10px] text-[#444746] dark:text-[#c4c7c5] font-medium bg-[#f0f4f9] dark:bg-[#282a2c] px-2 py-0.5 rounded-full">
+                    <span className="text-[10px] text-[#444746] dark:text-[#c4c7c5] font-medium bg-[#f0f4f9] dark:bg-[#161719] border dark:border-white/[0.04] px-2 py-0.5 rounded-full">
                       {t("upload.queued")}
                     </span>
                   )}
@@ -171,7 +171,8 @@ export function UploadProgressPanel() {
                   {item.status !== "uploading" && (
                     <button
                       onClick={() => removeFromQueue(item.id)}
-                      className="text-[#747775] hover:text-[#1f1f1f] dark:hover:text-white p-0.5 rounded cursor-pointer"
+                      className="text-[#747775] hover:text-[#1f1f1f] dark:hover:text-white p-1 rounded cursor-pointer min-h-[28px] min-w-[28px] flex items-center justify-center"
+                      title={t("upload.remove") || "Remove"}
                     >
                       <X className="h-3.5 w-3.5" />
                     </button>
@@ -190,7 +191,7 @@ export function UploadProgressPanel() {
               {item.status === "uploading" && (
                 <Progress 
                   value={item.progress} 
-                  className="h-1 bg-slate-100 dark:bg-slate-800 text-[#0b57d0] [&>div]:bg-[#0b57d0] dark:[&>div]:bg-[#a8c7fa] rounded-full" 
+                  className="h-1 bg-slate-100 dark:bg-[#161719] text-[#0b57d0] [&>div]:bg-[#0b57d0] dark:[&>div]:bg-[#a8c7fa] rounded-full" 
                 />
               )}
             </div>

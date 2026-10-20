@@ -54,6 +54,9 @@
         "languages": ["English"],
         "displayLanguageSelector": false
       },
+      "wix": {
+        "language": "en-US"
+      },
       "webviewInstallMode": {
         "type": "downloadBootstrapper",
         "silent": true
@@ -61,6 +64,9 @@
     },
     "linux": {
       "deb": {
+        "depends": []
+      },
+      "rpm": {
         "depends": []
       },
       "appimage": {

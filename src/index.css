@@ -108,30 +108,30 @@
 }
 
 .platform-mobile {
-  --safe-area-top: max(env(safe-area-inset-top, 0px), 38px);
-  --safe-area-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .dark {
-  /* Google Drive Dark Theme Tokens */
-  --background: #131314;            /* Google Dark Canvas */
+  /* AMOLED Black Dark Theme — true pitch black canvas with elevated dark shades */
+  --background: #000000;            /* True AMOLED black canvas */
   --foreground: #e3e3e3;            /* Google Dark on-surface */
-  --surface: #1e1f20;               /* File list container dark sheet */
-  --card: #1e1f20;
+  --surface: #0a0a0a;               /* File list container — barely elevated */
+  --card: #111214;                  /* Card surface */
   --card-foreground: #e3e3e3;
-  --popover: #282a2c;
+  --popover: #141518;               /* Popover / dropdown */
   --popover-foreground: #e3e3e3;
   --primary: #a8c7fa;               /* Google Blue Dark variant */
   --primary-foreground: #003258;
-  --secondary: #282a2c;
+  --secondary: #141414;             /* Secondary surface (search pills, tags) */
   --secondary-foreground: #c4c7c5;
-  --muted: #282a2c;
-  --muted-foreground: #c4c7c5;
+  --muted: #141414;                 /* Muted containers */
+  --muted-foreground: #8e918f;
   --accent: #004a77;                /* Google active dark blue pill */
   --accent-foreground: #c2e7ff;
   --destructive: #f2b8b5;
-  --border: #2d2f31;
-  --input: #282a2c;
+  --border: rgba(255, 255, 255, 0.04);  /* Almost vanishing borders */
+  --input: #161719;
   --ring: #a8c7fa;
   --chart-1: #a8c7fa;
   --chart-2: #81c995;
@@ -139,7 +139,7 @@
   --chart-4: #f28b82;
   --chart-5: #d7aefb;
 
-  --sidebar: #131314;
+  --sidebar: #000000;               /* Sidebar matches true black canvas */
   --sidebar-foreground: #e3e3e3;
   --sidebar-primary: #a8c7fa;
   --sidebar-primary-foreground: #003258;
@@ -176,10 +176,10 @@
     background: #bdc1c6;
   }
   .dark ::-webkit-scrollbar-thumb {
-    background: #3c4043;
+    background: #25272a;
   }
   .dark ::-webkit-scrollbar-thumb:hover {
-    background: #5f6368;
+    background: #333539;
   }
 
   ::selection {
@@ -189,6 +189,11 @@
   .dark ::selection {
     background: #004a77;
     color: #c2e7ff;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
   }
 }
 
@@ -363,8 +368,8 @@ img, svg {
   border: 1px solid var(--border);
 }
 :is(.dark) .teledrive-markdown-body pre {
-  background: #18191a;
-  border-color: #333537;
+  background: #111214;
+  border-color: rgba(255, 255, 255, 0.04);
 }
 
 .teledrive-markdown-body pre code {

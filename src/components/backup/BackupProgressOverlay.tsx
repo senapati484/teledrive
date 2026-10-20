@@ -124,10 +124,10 @@ export function BackupProgressOverlay() {
     state.status === "failed"
       ? "border-rose-300 dark:border-rose-800 bg-rose-50/95 dark:bg-rose-950/70"
       : state.status === "cancelled"
-        ? "border-slate-200 dark:border-slate-700 bg-white dark:bg-[#282A2C]"
+        ? "border-slate-200 dark:border-white/[0.06] bg-white dark:bg-[#141518]"
         : state.status === "done"
           ? "border-emerald-300 dark:border-emerald-800 bg-emerald-50/95 dark:bg-emerald-950/70"
-          : "border-slate-200 dark:border-slate-700 bg-white dark:bg-[#282A2C]";
+          : "border-slate-200 dark:border-white/[0.06] bg-white dark:bg-[#141518]";
 
   const iconColor =
     state.status === "failed"
@@ -191,7 +191,7 @@ export function BackupProgressOverlay() {
           <button
             type="button"
             onClick={() => state.clear()}
-            className="h-7 w-7 rounded-full hover:bg-[#F0F4F9] dark:hover:bg-[#333537] flex items-center justify-center text-[#444746] dark:text-[#C4C7C5] hover:text-[#1F1F1F] dark:hover:text-[#E3E3E3] shrink-0 transition-colors cursor-pointer"
+            className="h-7 w-7 rounded-full hover:bg-[#F0F4F9] dark:hover:bg-[#1f2124] flex items-center justify-center text-[#444746] dark:text-[#C4C7C5] hover:text-[#1F1F1F] dark:hover:text-[#E3E3E3] shrink-0 transition-colors cursor-pointer"
             aria-label={t("backup.dismiss")}
           >
             <X className="h-4 w-4" />
@@ -201,7 +201,7 @@ export function BackupProgressOverlay() {
         {/* Progress bar (only while active) */}
         {isActive && (
           <div className="px-4 pb-3">
-            <div className="h-1.5 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden">
+            <div className="h-1.5 rounded-full bg-slate-200 dark:bg-[#161719] overflow-hidden">
               {state.total > 0 ? (
                 <div
                   className="h-full bg-[#0B57D0] dark:bg-[#A8C7FA] transition-all duration-300 ease-out"

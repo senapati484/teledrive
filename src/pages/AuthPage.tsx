@@ -95,11 +95,11 @@ function FloatingInput({ label, id, suffix, inputRef, className, ...props }: Flo
         className={`
           h-14 pt-5 pb-1 px-4 rounded-2xl text-sm
           border-2 transition-all duration-200 outline-none
-          bg-white dark:bg-[#282A2C]
+          bg-white dark:bg-[#161719]
           text-[#1f1f1f] dark:text-[#E3E3E3]
           ${focused
             ? "border-[#0B57D0] dark:border-[#A8C7FA] shadow-[0_0_0_3px_rgba(11,87,208,0.12)]"
-            : "border-[#e0e3e7] dark:border-[#3c4043] hover:border-[#bdc1c6] dark:hover:border-[#5f6368]"}
+            : "border-[#e0e3e7] dark:border-white/[0.06] hover:border-[#bdc1c6] dark:hover:border-white/[0.1]"}
           ${props.disabled ? "opacity-60 cursor-not-allowed" : "cursor-text"}
           focus-visible:ring-0 focus-visible:border-[#0B57D0] dark:focus-visible:border-[#A8C7FA]
           ${suffix ? "pr-12" : "pr-4"}
@@ -141,6 +141,8 @@ function OtpBox({ value, onChange, onKeyDown, onPaste, inputRef, disabled, index
         inputMode="numeric"
         pattern="[0-9]*"
         maxLength={1}
+        autoComplete={index === 0 ? "one-time-code" : "off"}
+        enterKeyHint={index === totalDigits - 1 ? "done" : "next"}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={onKeyDown}
@@ -153,13 +155,13 @@ function OtpBox({ value, onChange, onKeyDown, onPaste, inputRef, disabled, index
           ${totalDigits >= 6 ? "w-10 sm:w-12 h-13 sm:h-14 text-lg sm:text-xl" : "w-12 h-14 text-xl"}
           text-center font-bold rounded-2xl
           border-2 outline-none transition-all duration-200
-          bg-white dark:bg-[#282A2C]
+          bg-white dark:bg-[#161719]
           text-[#1f1f1f] dark:text-[#E3E3E3]
           ${focused
             ? "border-[#0B57D0] dark:border-[#A8C7FA] shadow-[0_0_0_3px_rgba(11,87,208,0.12)]"
             : isFilled
             ? "border-[#1e8e3e] dark:border-[#81c995] bg-[#f0fdf4] dark:bg-[#1a2f1a]"
-            : "border-[#e0e3e7] dark:border-[#3c4043]"}
+            : "border-[#e0e3e7] dark:border-white/[0.06]"}
           ${disabled ? "opacity-60 cursor-not-allowed" : "cursor-text"}
           caret-transparent
         `}
@@ -237,7 +239,7 @@ function BackButton({ onClick, disabled, label }: { onClick: () => void; disable
       variant="ghost"
       disabled={disabled}
       onClick={onClick}
-      className="w-full h-10 rounded-full hover:bg-[#EDF2FC] dark:hover:bg-[#282A2C] flex gap-2 justify-center items-center text-xs font-medium text-[#0B57D0] dark:text-[#A8C7FA] transition-all duration-200 cursor-pointer"
+      className="w-full h-10 rounded-full hover:bg-[#EDF2FC] dark:hover:bg-[#1f2124] flex gap-2 justify-center items-center text-xs font-medium text-[#0B57D0] dark:text-[#A8C7FA] transition-all duration-200 cursor-pointer"
     >
       <ArrowLeft className="h-3.5 w-3.5" />
       {label}
@@ -524,7 +526,7 @@ export default function AuthPage() {
       <div className="flex h-screen w-screen items-center justify-center bg-background select-none">
         <div className="flex flex-col items-center gap-3">
           <div className="relative">
-            <div className="h-12 w-12 rounded-full border-2 border-[#e0e3e7] dark:border-[#3c4043]" />
+            <div className="h-12 w-12 rounded-full border-2 border-[#e0e3e7] dark:border-white/[0.06]" />
             <Loader2 className="h-12 w-12 animate-spin text-[#0B57D0] dark:text-[#A8C7FA] absolute inset-0" />
           </div>
           <span className="text-xs font-medium text-[#747775] dark:text-[#9aa0a6] mt-1">
@@ -537,7 +539,7 @@ export default function AuthPage() {
 
   // ── Main render ──────────────────────────────────────────────────────────
   return (
-    <div className="flex items-center justify-center h-[100dvh] max-h-[100dvh] md:min-h-screen md:h-auto overflow-hidden overscroll-none md:overflow-y-auto bg-background relative select-none pt-[max(env(safe-area-inset-top,0px),var(--safe-area-top,2.5rem))] pb-[max(env(safe-area-inset-bottom,0px),var(--safe-area-bottom,1rem))] px-3 sm:px-4">
+    <div className="flex items-center justify-center min-h-[100dvh] h-auto overflow-y-auto bg-background relative select-none pt-[max(env(safe-area-inset-top,0px),var(--safe-area-top,2.5rem))] pb-[max(env(safe-area-inset-bottom,0px),var(--safe-area-bottom,1rem))] px-3 sm:px-4">
       {/* Language Switcher */}
       <div className="absolute top-[calc(var(--safe-area-top,2.5rem)+0.5rem)] right-3 sm:right-5 z-20">
         <DropdownMenu>
@@ -546,13 +548,13 @@ export default function AuthPage() {
               type="button"
               variant="ghost"
               size="sm"
-              className="h-8 px-2.5 sm:h-9 sm:px-3.5 rounded-full text-[11px] sm:text-xs font-medium text-[#444746] dark:text-[#C4C7C5] bg-white/80 dark:bg-[#1E1F20]/80 backdrop-blur-md border border-slate-200/90 dark:border-slate-800 shadow-xs hover:bg-slate-100 dark:hover:bg-[#282A2C] transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer"
+              className="h-8 px-2.5 sm:h-9 sm:px-3.5 rounded-full text-[11px] sm:text-xs font-medium text-[#444746] dark:text-[#C4C7C5] bg-white/80 dark:bg-[#141518]/90 backdrop-blur-md border border-slate-200/90 dark:border-white/[0.06] shadow-xs hover:bg-slate-100 dark:hover:bg-[#1f2124] transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer"
             >
               <Languages className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#0B57D0] dark:text-[#A8C7FA]" />
               <span>{SUPPORTED_LANGUAGES.find((l) => l.code === (i18n.resolvedLanguage || i18n.language))?.label ?? "Language"}</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48 p-1.5 rounded-2xl bg-white dark:bg-[#1E1F20] border border-slate-200 dark:border-slate-800 shadow-xl">
+          <DropdownMenuContent align="end" className="w-48 p-1.5 rounded-2xl bg-white dark:bg-[#141518] border border-slate-200 dark:border-white/[0.06] shadow-xl">
             {SUPPORTED_LANGUAGES.map((lang) => {
               const currentLng = i18n.resolvedLanguage || i18n.language;
               const isSelected = currentLng === lang.code;
@@ -564,7 +566,7 @@ export default function AuthPage() {
                     "flex items-center justify-between px-3 py-2 text-xs rounded-xl cursor-pointer transition-colors",
                     isSelected
                       ? "bg-[#C2E7FF]/40 dark:bg-[#004A77]/50 text-[#0B57D0] dark:text-[#A8C7FA] font-semibold"
-                      : "text-[#1F1F1F] dark:text-[#E3E3E3] hover:bg-slate-100 dark:hover:bg-[#282A2C]"
+                      : "text-[#1F1F1F] dark:text-[#E3E3E3] hover:bg-slate-100 dark:hover:bg-[#1f2124]"
                   )}
                 >
                   <span>{lang.label}</span>
@@ -588,7 +590,7 @@ export default function AuthPage() {
 
       {/* Card */}
       <div className="relative z-10 w-full max-w-[380px] sm:max-w-[400px] mx-auto animate-fade-in my-auto">
-        <div className="bg-white dark:bg-[#1E1F20] border border-[#e0e3e7] dark:border-[#2d2f31] rounded-2xl sm:rounded-3xl shadow-[0_4px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_32px_rgba(0,0,0,0.3)] p-5 sm:p-8 md:p-10">
+        <div className="bg-white dark:bg-[#111214] border border-[#e0e3e7] dark:border-white/[0.04] rounded-2xl sm:rounded-3xl shadow-[0_4px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_32px_rgba(0,0,0,0.4)] p-5 sm:p-8 md:p-10">
 
           {/* Logo */}
           <div className="flex flex-col items-center mb-3 sm:mb-6 md:mb-8">
@@ -632,6 +634,8 @@ export default function AuthPage() {
                 id="phone-number"
                 label={t("phone.label")}
                 type="tel"
+                inputMode="tel"
+                enterKeyHint="next"
                 value={phone}
                 onChange={(e) => { setPhone(e.target.value); setError(null); }}
                 disabled={loading}
@@ -778,6 +782,7 @@ export default function AuthPage() {
                   disabled={loading}
                   autoFocus
                   autoComplete="current-password"
+                  enterKeyHint="done"
                   suffix={
                     <button
                       type="button"
@@ -840,7 +845,7 @@ export default function AuthPage() {
                 <div className="flex flex-col items-center justify-center gap-4 sm:gap-5 py-4 sm:py-6">
                   {/* Animated spinner ring */}
                   <div className="relative w-14 h-14 sm:w-16 sm:h-16">
-                    <div className="absolute inset-0 rounded-full border-2 border-[#e0e3e7] dark:border-[#3c4043]" />
+                    <div className="absolute inset-0 rounded-full border-2 border-[#e0e3e7] dark:border-white/[0.06]" />
                     <div
                       className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
                       style={{
@@ -853,7 +858,7 @@ export default function AuthPage() {
                       <img src="/teledrive.png" alt="" className="h-6 w-6 sm:h-7 sm:w-7 object-contain opacity-80" />
                     </div>
                   </div>
-                  <span className="text-[11px] sm:text-xs font-medium text-[#747775] dark:text-[#9aa0a6] bg-[#F0F4F9] dark:bg-[#282A2C] px-3.5 sm:px-4 py-1.5 rounded-full border border-[#e0e3e7] dark:border-[#3c4043] transition-all duration-500">
+                  <span className="text-[11px] sm:text-xs font-medium text-[#747775] dark:text-[#9aa0a6] bg-[#F0F4F9] dark:bg-[#161719] px-3.5 sm:px-4 py-1.5 rounded-full border border-[#e0e3e7] dark:border-white/[0.04] transition-all duration-500">
                     {bootstrapStatus}
                   </span>
                 </div>

@@ -84,7 +84,7 @@ export const DriveSidebar = React.memo(function DriveSidebar({
                   ? "bg-[#c2e7ff] text-[#001d35] font-semibold dark:bg-[#004a77] dark:text-[#c2e7ff]"
                   : sidebarDragOverPath === item.path
                   ? "bg-[#c2e7ff]/70 text-[#001d35] dark:bg-[#004a77]/70 dark:text-[#c2e7ff]"
-                  : "text-[#444746] dark:text-[#c4c7c5] hover:bg-[#e9eef6] dark:hover:bg-[#282a2c] hover:text-[#1f1f1f] dark:hover:text-[#e3e3e3]"
+                  : "text-[#444746] dark:text-[#c4c7c5] hover:bg-[#e9eef6] dark:hover:bg-[#161719] hover:text-[#1f1f1f] dark:hover:text-[#e3e3e3]"
               )}
             >
               <Icon
@@ -102,14 +102,14 @@ export const DriveSidebar = React.memo(function DriveSidebar({
       </nav>
 
       {/* Storage panel: Google Drive Cloud Storage meter */}
-      <div className="px-4 pb-[max(var(--safe-area-bottom,1rem),1rem)] pt-3 space-y-2.5 select-none border-t border-slate-200/50 dark:border-slate-800/40">
+      <div className="px-4 pb-[max(var(--safe-area-bottom,1rem),1rem)] pt-3 space-y-2.5 select-none border-t border-slate-200/50 dark:border-white/[0.04]">
         <div className="flex items-center gap-2 text-xs font-semibold text-[#444746] dark:text-[#c4c7c5]">
           <Cloud className="h-4.5 w-4.5 text-[#0b57d0] dark:text-[#a8c7fa]" />
           <span>{t("sidebar.storage")}</span>
         </div>
 
         {/* Google style linear progress bar */}
-        <div className="w-full h-1 bg-[#e0e2ec] dark:bg-[#36373a] rounded-full overflow-hidden">
+        <div className="w-full h-1 bg-[#e0e2ec] dark:bg-[#161719] rounded-full overflow-hidden">
           <div className="h-full bg-[#0b57d0] dark:bg-[#a8c7fa] rounded-full w-2" />
         </div>
 

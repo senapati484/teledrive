@@ -28,9 +28,9 @@ export default function AppearanceSection() {
       icon: Moon,
       description: t("appearance.themes.dark.description"),
       preview: {
-        bg: "bg-[#131314]",
-        surface: "bg-[#1E1F20] border-slate-800",
-        sidebar: "bg-[#131314] border-slate-800",
+        bg: "bg-[#000000]",
+        surface: "bg-[#111214] border-white/[0.04]",
+        sidebar: "bg-[#0a0a0a] border-white/[0.04]",
         accent: "bg-[#A8C7FA]",
       },
     },
@@ -40,9 +40,9 @@ export default function AppearanceSection() {
       icon: Laptop,
       description: t("appearance.themes.system.description"),
       preview: {
-        bg: "bg-gradient-to-r from-[#F8FAFD] to-[#131314]",
-        surface: "bg-gradient-to-r from-white to-[#1E1F20] border-slate-300 dark:border-slate-700",
-        sidebar: "bg-gradient-to-r from-[#F8FAFD] to-[#131314]",
+        bg: "bg-gradient-to-r from-[#F8FAFD] to-[#000000]",
+        surface: "bg-gradient-to-r from-white to-[#111214] border-slate-300 dark:border-white/[0.04]",
+        sidebar: "bg-gradient-to-r from-[#F8FAFD] to-[#0a0a0a]",
         accent: "bg-[#0B57D0]",
       },
     },
@@ -59,7 +59,7 @@ export default function AppearanceSection() {
         </p>
       </div>
 
-      <div className="p-6 border border-slate-200/90 dark:border-slate-800 rounded-2xl bg-white dark:bg-[#1E1F20] shadow-xs space-y-5">
+      <div className="p-6 border border-slate-200/90 dark:border-white/[0.04] rounded-2xl bg-white dark:bg-[#111214] shadow-xs space-y-5">
         <div>
           <h3 className="text-sm font-semibold text-[#1F1F1F] dark:text-[#E3E3E3]">
             {t("appearance.themeMode.title")}
@@ -81,7 +81,7 @@ export default function AppearanceSection() {
                   "p-4 rounded-xl flex flex-col items-start gap-3 border text-left transition-all duration-200 cursor-pointer relative group",
                   isSelected
                     ? "bg-[#C2E7FF]/25 dark:bg-[#004A77]/30 border-[#0B57D0] dark:border-[#A8C7FA] shadow-xs"
-                    : "bg-[#F0F4F9]/60 dark:bg-[#282A2C]/60 border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-[#F0F4F9] dark:hover:bg-[#282A2C]"
+                    : "bg-[#F0F4F9]/60 dark:bg-[#161719]/60 border-slate-200/80 dark:border-white/[0.04] hover:border-slate-300 dark:hover:border-white/[0.08] hover:bg-[#F0F4F9] dark:hover:bg-[#1f2124]"
                 )}
                 onClick={() => setTheme(opt.value)}
               >
@@ -115,7 +115,7 @@ export default function AppearanceSection() {
 
                   <div className={cn(
                     "h-4 w-4 rounded-full flex items-center justify-center transition-all",
-                    isSelected ? "bg-[#0B57D0] text-white dark:bg-[#A8C7FA] dark:text-[#003258]" : "border border-slate-300 dark:border-slate-600"
+                    isSelected ? "bg-[#0B57D0] text-white dark:bg-[#A8C7FA] dark:text-[#003258]" : "border border-slate-300 dark:border-white/[0.1]"
                   )}>
                     {isSelected && <Check className="h-2.5 w-2.5 stroke-[3]" />}
                   </div>
@@ -130,7 +130,7 @@ export default function AppearanceSection() {
         </div>
       </div>
 
-      <div className="p-6 border border-slate-200/90 dark:border-slate-800 rounded-2xl bg-white dark:bg-[#1E1F20] shadow-xs space-y-5">
+      <div className="p-6 border border-slate-200/90 dark:border-white/[0.04] rounded-2xl bg-white dark:bg-[#111214] shadow-xs space-y-5">
         <div>
           <h3 className="text-sm font-semibold text-[#1F1F1F] dark:text-[#E3E3E3]">
             {t("common:language.title")}
@@ -152,7 +152,7 @@ export default function AppearanceSection() {
                   "p-4 rounded-xl flex items-center justify-between gap-3 border text-left transition-all duration-200 cursor-pointer",
                   isSelected
                     ? "bg-[#C2E7FF]/25 dark:bg-[#004A77]/30 border-[#0B57D0] dark:border-[#A8C7FA] shadow-xs"
-                    : "bg-[#F0F4F9]/60 dark:bg-[#282A2C]/60 border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-[#F0F4F9] dark:hover:bg-[#282A2C]"
+                    : "bg-[#F0F4F9]/60 dark:bg-[#161719]/60 border-slate-200/80 dark:border-white/[0.04] hover:border-slate-300 dark:hover:border-white/[0.08] hover:bg-[#F0F4F9] dark:hover:bg-[#1f2124]"
                 )}
                 onClick={() => i18n.changeLanguage(lang.code)}
               >
@@ -165,7 +165,7 @@ export default function AppearanceSection() {
 
                 <div className={cn(
                   "h-4 w-4 shrink-0 rounded-full flex items-center justify-center transition-all",
-                  isSelected ? "bg-[#0B57D0] text-white dark:bg-[#A8C7FA] dark:text-[#003258]" : "border border-slate-300 dark:border-slate-600"
+                  isSelected ? "bg-[#0B57D0] text-white dark:bg-[#A8C7FA] dark:text-[#003258]" : "border border-slate-300 dark:border-white/[0.1]"
                 )}>
                   {isSelected && <Check className="h-2.5 w-2.5 stroke-[3]" />}
                 </div>
@@ -176,7 +176,7 @@ export default function AppearanceSection() {
       </div>
 
       {/* Info Callout */}
-      <div className="p-4 rounded-2xl bg-[#F0F4F9] dark:bg-[#282A2C] border border-slate-200/60 dark:border-slate-700/60 text-xs text-[#444746] dark:text-[#C4C7C5] leading-relaxed">
+      <div className="p-4 rounded-2xl bg-[#F0F4F9] dark:bg-[#161719] border border-slate-200/60 dark:border-white/[0.04] text-xs text-[#444746] dark:text-[#C4C7C5] leading-relaxed">
         💡 <Trans t={t} i18nKey="appearance.callout" components={{ strong: <strong /> }} />
       </div>
     </div>

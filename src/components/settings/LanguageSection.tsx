@@ -19,7 +19,7 @@ export default function LanguageSection() {
         </p>
       </div>
 
-      <div className="p-6 border border-slate-200/90 dark:border-slate-800 rounded-2xl bg-white dark:bg-[#1E1F20] shadow-xs space-y-5">
+      <div className="p-6 border border-slate-200/90 dark:border-white/[0.04] rounded-2xl bg-white dark:bg-[#111214] shadow-xs space-y-5">
         <div>
           <h3 className="text-sm font-semibold text-[#1F1F1F] dark:text-[#E3E3E3]">
             {t("language.activeLanguage")}
@@ -41,7 +41,7 @@ export default function LanguageSection() {
                   "p-4 rounded-xl flex items-center justify-between gap-3 border text-left transition-all duration-200 cursor-pointer",
                   isSelected
                     ? "bg-[#C2E7FF]/25 dark:bg-[#004A77]/30 border-[#0B57D0] dark:border-[#A8C7FA] shadow-xs ring-1 ring-[#0B57D0]/20 dark:ring-[#A8C7FA]/20"
-                    : "bg-[#F0F4F9]/60 dark:bg-[#282A2C]/60 border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-[#F0F4F9] dark:hover:bg-[#282A2C]"
+                    : "bg-[#F0F4F9]/60 dark:bg-[#161719]/60 border-slate-200/80 dark:border-white/[0.04] hover:border-slate-300 dark:hover:border-white/[0.08] hover:bg-[#F0F4F9] dark:hover:bg-[#1f2124]"
                 )}
                 onClick={() => i18n.changeLanguage(lang.code)}
               >
@@ -51,7 +51,7 @@ export default function LanguageSection() {
                       "h-9 w-9 rounded-xl flex items-center justify-center shrink-0 transition-colors",
                       isSelected
                         ? "bg-[#0B57D0]/10 dark:bg-[#A8C7FA]/20 text-[#0B57D0] dark:text-[#A8C7FA]"
-                        : "bg-slate-200/60 dark:bg-slate-800/80 text-[#444746] dark:text-[#C4C7C5]"
+                        : "bg-slate-200/60 dark:bg-[#161719] text-[#444746] dark:text-[#C4C7C5]"
                     )}
                   >
                     <Languages className="h-4.5 w-4.5" />
@@ -76,7 +76,7 @@ export default function LanguageSection() {
                     "h-5 w-5 shrink-0 rounded-full flex items-center justify-center transition-all",
                     isSelected
                       ? "bg-[#0B57D0] text-white dark:bg-[#A8C7FA] dark:text-[#003258]"
-                      : "border border-slate-300 dark:border-slate-600"
+                      : "border border-slate-300 dark:border-white/[0.1]"
                   )}
                 >
                   {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
@@ -88,7 +88,7 @@ export default function LanguageSection() {
       </div>
 
       {/* Info Callout */}
-      <div className="p-4 rounded-2xl bg-[#F0F4F9] dark:bg-[#282A2C] border border-slate-200/60 dark:border-slate-700/60 text-xs text-[#444746] dark:text-[#C4C7C5] leading-relaxed">
+      <div className="p-4 rounded-2xl bg-[#F0F4F9] dark:bg-[#161719] border border-slate-200/60 dark:border-white/[0.04] text-xs text-[#444746] dark:text-[#C4C7C5] leading-relaxed">
         💡 <Trans t={t} i18nKey="language.callout" components={{ strong: <strong /> }} />
       </div>
     </div>

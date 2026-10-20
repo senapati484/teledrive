@@ -73,14 +73,49 @@ export function chunkFiles(files: TeleFile[]): TeleFile[][] {
   return chunks;
 }
 
+/**
+ * Stable re-chunking: when we already have `existingCount` chunks on Telegram,
+ * distribute `files` into exactly `existingCount` chunks (as long as none overflows
+ * Telegram's 4096-char limit). This ensures starring, renaming, etc. always
+ * produces the same chunk count as what's stored, so we can use the fast
+ * in-place editMessage path and avoid the expensive delete+resend fallback.
+ *
+ * Falls back to `chunkFiles()` if stable distribution would overflow any chunk.
+ */
+export function chunkFilesStable(files: TeleFile[], existingCount: number): TeleFile[][] {
+  if (existingCount <= 1 || files.length === 0) return chunkFiles(files);
+
+  // Distribute round-robin by index, like we're splitting an array into N slices
+  const perChunk = Math.ceil(files.length / existingCount);
+  const chunks: TeleFile[][] = [];
+  for (let i = 0; i < existingCount; i++) {
+    const slice = files.slice(i * perChunk, (i + 1) * perChunk);
+    if (slice.length > 0) chunks.push(slice);
+  }
+
+  // Safety: verify no chunk exceeds Telegram's message limit (~3900 chars with wrapper JSON)
+  const LIMIT = 3900;
+  const OVERHEAD = 120;
+  for (const chunk of chunks) {
+    let chars = OVERHEAD;
+    for (const f of chunk) chars += JSON.stringify(f).length + 2;
+    if (chars > LIMIT) {
+      // Overflow — fall back to dynamic chunking (will change chunk count)
+      return chunkFiles(files);
+    }
+  }
+
+  // Pad to exactly existingCount if some trailing slices were empty
+  while (chunks.length < existingCount) chunks.push([]);
+  return chunks;
+}
+
 /** Legacy constant kept for external imports if any. */
 export const CHUNK_SIZE = 25;
 
-/** Fetch + edit + pin timeouts (ms). Standard 5000ms bounds. */
+/** Fetch + edit timeouts (ms). */
 const FETCH_TIMEOUT_MS = 5000;
 const EDIT_TIMEOUT_MS = 5000;
-const PIN_TIMEOUT_MS = 4000;
-const DELETE_TIMEOUT_MS = 5000;
 
 /**
  * Cap on transient (FLOOD_WAIT / timeout / network) retries before the
@@ -334,7 +369,13 @@ class ChannelQueue {
       throw err;
     }
 
-    const chunks = chunkFiles(state);
+    // If we have a known existing chunk count, try to preserve that distribution
+    // so minor changes (star, rename) always use the fast in-place editMessage path.
+    const existingCount = this.cachedExistingMsgIds?.length ?? 0;
+    const chunks = existingCount > 0
+      ? chunkFilesStable(state, existingCount)
+      : chunkFiles(state);
+
     const newChunkTexts: string[] = chunks.map((c, i) =>
       JSON.stringify({
         teledrive_index: true,
@@ -388,6 +429,52 @@ class ChannelQueue {
       if (coherentSet && coherentSet.length > 0) {
         existingMsgIds = coherentSet.map((c) => c.msgId);
         this.cachedExistingMsgIds = existingMsgIds;
+        // Re-chunk stably now that we know the actual existing count
+        if (existingMsgIds.length !== chunks.length) {
+          const stableChunks = chunkFilesStable(state, existingMsgIds.length);
+          // Only use stable chunks if count matches; otherwise keep dynamic chunks
+          if (stableChunks.length === existingMsgIds.length) {
+            // Re-derive texts with the stable chunk distribution
+            const stableTexts = stableChunks.map((c, i) =>
+              JSON.stringify({
+                teledrive_index: true,
+                version: 1,
+                chunkIndex: i,
+                totalChunks: stableChunks.length,
+                files: c,
+              })
+            );
+            // Recurse-avoid: inline the in-place edit check with stable chunks
+            let allEditsOk = true;
+            for (let i = 0; i < stableChunks.length; i++) {
+              const text = stableTexts[i];
+              if (this.cachedChunkTexts && this.cachedChunkTexts[i] === text) continue;
+              try {
+                await withTimeout(
+                  client.editMessage(peer, { message: existingMsgIds[i], text }),
+                  EDIT_TIMEOUT_MS,
+                  `editMessage(stable-chunk ${i})`
+                );
+              } catch (err: any) {
+                const errMsg = err?.message ?? String(err);
+                if (errMsg.includes("MESSAGE_NOT_MODIFIED")) continue;
+                allEditsOk = false;
+                break;
+              }
+            }
+            if (allEditsOk) {
+              this.cachedExistingMsgIds = existingMsgIds;
+              this.cachedChunkTexts = stableTexts;
+              await invoke("log_vault_state", {
+                state: `INDEX_STABLE_EDIT_OK chunks=${stableChunks.length} files=${state.length}`,
+              }).catch(() => {});
+              return;
+            }
+            // Stable edit failed — fall through to full fallback below
+            this.cachedExistingMsgIds = null;
+            this.cachedChunkTexts = null;
+          }
+        }
       } else {
         existingMsgIds = null;
       }
@@ -440,22 +527,15 @@ class ChannelQueue {
       this.cachedChunkTexts = null;
     }
 
-    // 3. Fallback path: delete old messages, send fresh chunks, pin chunk 0
+    // 3. Fallback path: fire-and-forget deletion of old messages, send fresh chunks, pin chunk 0
+    // Deletions are best-effort and run in background — a timeout here must NEVER block the save.
     if (existingMsgIds && existingMsgIds.length > 0) {
-      try {
-        await withTimeout(
-          client.deleteMessages(peer, existingMsgIds, { revoke: true }),
-          DELETE_TIMEOUT_MS,
-          "deleteMessages(old index)"
-        );
-        await invoke("log_vault_state", {
-          state: `INDEX_DELETE_OLD_OK count=${existingMsgIds.length}`,
-        }).catch(() => {});
-      } catch (err: any) {
-        await invoke("log_vault_state", {
-          state: `INDEX_DELETE_OLD_FAIL reason=${err?.message ?? err}`,
-        }).catch(() => {});
-      }
+      const idsToDelete = existingMsgIds;
+      // Fire-and-forget: do NOT await. Deletion failure is harmless — Telegram
+      // will serve the newer messages once we send them.
+      client.deleteMessages(peer, idsToDelete, { revoke: true })
+        .then(() => invoke("log_vault_state", { state: `INDEX_DELETE_OLD_OK count=${idsToDelete.length}` }).catch(() => {}))
+        .catch((err: any) => invoke("log_vault_state", { state: `INDEX_DELETE_OLD_FAIL reason=${err?.message ?? err}` }).catch(() => {}));
     }
 
     const newMsgIds: number[] = [];
@@ -469,26 +549,20 @@ class ChannelQueue {
       const msgId = Number((result as any).id);
       newMsgIds.push(msgId);
 
-      // Best-effort pin ONLY chunk 0 (avoiding Telegram FLOOD_WAIT on pins)
+      // Best-effort pin ONLY chunk 0 (fire-and-forget — pin timeout must never block the save)
       if (i === 0) {
-        try {
-          await withTimeout(
-            client.invoke(
-              new Api.messages.UpdatePinnedMessage({
-                peer,
-                id: msgId,
-                unpin: false,
-                silent: true,
-              })
-            ),
-            PIN_TIMEOUT_MS,
-            "UpdatePinnedMessage(chunk 0)"
-          );
-        } catch (err: any) {
-          await invoke("log_vault_state", {
+        client.invoke(
+          new Api.messages.UpdatePinnedMessage({
+            peer,
+            id: msgId,
+            unpin: false,
+            silent: true,
+          })
+        ).catch((err: any) => {
+          invoke("log_vault_state", {
             state: `INDEX_PIN_FAIL chunk=0 reason=${err?.message ?? err}`,
           }).catch(() => {});
-        }
+        });
       }
     }
 

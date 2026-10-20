@@ -66,7 +66,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 rounded-full shrink-0 hover:bg-[#e9eef6] dark:hover:bg-[#333537] data-[state=open]:bg-[#c2e7ff]/60 dark:data-[state=open]:bg-[#004a77]/60 cursor-pointer transition-colors"
+          className="h-9 w-9 sm:h-8 sm:w-8 rounded-full shrink-0 hover:bg-[#e9eef6] dark:hover:bg-[#1f2124] data-[state=open]:bg-[#c2e7ff]/60 dark:data-[state=open]:bg-[#004a77]/60 cursor-pointer transition-colors"
           onClick={(e) => e.stopPropagation()} // Prevent trigger select/click row
         >
           <MoreVertical className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5]" />
@@ -74,7 +74,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="w-52 rounded-2xl p-1.5 bg-white dark:bg-[#282a2c] border border-slate-200/80 dark:border-slate-800 shadow-xl ring-0 z-50"
+        className="w-52 rounded-2xl p-1.5 bg-white dark:bg-[#141518] border border-slate-200/80 dark:border-white/[0.06] shadow-xl ring-0 z-50"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Group 1: Retrieve Actions (Preview, Edit & Download) */}
@@ -82,7 +82,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
           <>
             <DropdownMenuItem
               onClick={() => onPreview(file)}
-              className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
+              className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
             >
               <Eye className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
               <span>{t("menu.preview")}</span>
@@ -90,7 +90,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
             {onEdit && isEditableFile(file) && (
               <DropdownMenuItem
                 onClick={() => onEdit(file)}
-                className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
+                className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
               >
                 <Pencil className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
                 <span>{t("menu.edit")}</span>
@@ -98,7 +98,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
             )}
             <DropdownMenuItem
               onClick={() => onDownload(file)}
-              className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
+              className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
             >
               <Download className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
               <span>{t("menu.download")}</span>
@@ -106,7 +106,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
             {onOfflineToggle && (
               <DropdownMenuItem
                 onClick={() => onOfflineToggle(file)}
-                className="flex items-center justify-between px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
+                className="flex items-center justify-between px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
               >
                 <div className="flex items-center gap-2.5">
                   <CheckCircle className={cn(
@@ -118,7 +118,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
                 {file.offline && <Check className="h-3.5 w-3.5 text-emerald-500 shrink-0" />}
               </DropdownMenuItem>
             )}
-            <DropdownMenuSeparator className="-mx-1.5 my-1 bg-slate-200/70 dark:bg-slate-800/80" />
+            <DropdownMenuSeparator className="-mx-1.5 my-1 bg-slate-200/70 dark:bg-white/[0.06]" />
           </>
         )}
 
@@ -127,7 +127,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
           <>
             <DropdownMenuItem
               onClick={() => onRename(file)}
-              className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
+              className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
             >
               <Edit2 className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
               <span>{t("menu.rename")}</span>
@@ -135,7 +135,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
             {onMoveTo && (
               <DropdownMenuItem
                 onClick={() => onMoveTo(file)}
-                className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
+                className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
               >
                 <FolderInput className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
                 <span>{t("menu.moveTo")}</span>
@@ -143,7 +143,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
             )}
             <DropdownMenuItem
               onClick={() => onStarToggle(file)}
-              className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
+              className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
             >
               <Star
                 className={cn(
@@ -156,7 +156,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
               />
               <span>{file.starred ? t("menu.removeStar") : t("menu.addStar")}</span>
             </DropdownMenuItem>
-            <DropdownMenuSeparator className="-mx-1.5 my-1 bg-slate-200/70 dark:bg-slate-800/80" />
+            <DropdownMenuSeparator className="-mx-1.5 my-1 bg-slate-200/70 dark:bg-white/[0.06]" />
           </>
         )}
 
@@ -165,24 +165,24 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
           <>
             <DropdownMenuItem
               onClick={() => onArchive(file)}
-              className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
+              className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
             >
               <Archive className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
               <span>{t("menu.archive")}</span>
             </DropdownMenuItem>
-            <DropdownMenuSeparator className="-mx-1.5 my-1 bg-slate-200/70 dark:bg-slate-800/80" />
+            <DropdownMenuSeparator className="-mx-1.5 my-1 bg-slate-200/70 dark:bg-white/[0.06]" />
           </>
         )}
         {file.archived && onUnarchive && (
           <>
             <DropdownMenuItem
               onClick={() => onUnarchive(file)}
-              className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
+              className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
             >
               <ArchiveRestore className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
               <span>{t("menu.unarchive")}</span>
             </DropdownMenuItem>
-            <DropdownMenuSeparator className="-mx-1.5 my-1 bg-slate-200/70 dark:bg-slate-800/80" />
+            <DropdownMenuSeparator className="-mx-1.5 my-1 bg-slate-200/70 dark:bg-white/[0.06]" />
           </>
         )}
 
@@ -191,17 +191,17 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
           <>
             <DropdownMenuItem
               onClick={() => onTrash(file)}
-              className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
+              className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
             >
               <RotateCcw className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
               <span>{t("menu.restore")}</span>
             </DropdownMenuItem>
             {onDeletePermanently && (
               <>
-                <DropdownMenuSeparator className="-mx-1.5 my-1 bg-slate-200/70 dark:bg-slate-800/80" />
+                <DropdownMenuSeparator className="-mx-1.5 my-1 bg-slate-200/70 dark:bg-white/[0.06]" />
                 <DropdownMenuItem
                   onClick={() => onDeletePermanently(file)}
-                  className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
+                  className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
                 >
                   <Trash2 className="h-4 w-4 shrink-0" strokeWidth={1.75} />
                   <span>{t("menu.deletePermanently")}</span>
@@ -213,7 +213,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
           !file.archived && (
             <DropdownMenuItem
               onClick={() => onTrash(file)}
-              className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
+              className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
             >
               <Trash2 className="h-4 w-4 shrink-0" strokeWidth={1.75} />
               <span>{t("menu.moveToTrash")}</span>

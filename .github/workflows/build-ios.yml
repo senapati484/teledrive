@@ -3,7 +3,10 @@ name: Build iOS IPA & Simulator
 on:
   push:
     branches:
-      - '0.1.2'
+      - main
+      - pro
+      - '0.*'
+      - '[0-9]+.[0-9]+.[0-9]+'
     tags:
       - 'v*'
   workflow_dispatch:
@@ -22,8 +25,6 @@ jobs:
   build-ios:
     name: Build iOS App & IPA
     runs-on: macos-14
-    permissions:
-      contents: write
 
     steps:
       - name: Checkout repository
@@ -155,25 +156,3 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
 
-      - name: Upload iOS builds to release (on tag)
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            release-dist/ios/*.ipa
-            release-dist/ios/*.zip
-          draft: true
-          prerelease: false
-          name: 'TeleDrive ${{ github.ref_name }}'
-          body: |
-            ## 🍎 iOS Build
-
-            This release includes iOS deliverables for TeleDrive:
-            - **`teledrive-v0.1.2-ios-arm64-unsigned.ipa`**: Standard unsigned IPA for iPhone and iPad (sideloadable via AltStore, Sideloadly, TrollStore, Scarlet, or personal developer cert).
-            - **`teledrive-v0.1.2-ios-simulator.zip`**: iOS Simulator build for testing on Apple Silicon Macs in Xcode.
-
-            ### Installation on iOS Device
-            1. Download `teledrive-v0.1.2-ios-arm64-unsigned.ipa`
-            2. Install using **AltStore**, **Sideloadly**, **TrollStore**, or Xcode.
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

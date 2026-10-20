@@ -80,7 +80,7 @@ export default function StorageSection() {
       </div>
 
       {/* Main Storage Meter Card */}
-      <div className="p-6 border border-slate-200/90 dark:border-slate-800 rounded-2xl bg-white dark:bg-[#1E1F20] shadow-xs space-y-6 animate-fade-in">
+      <div className="p-6 border border-slate-200/90 dark:border-white/[0.04] rounded-2xl bg-white dark:bg-[#111214] shadow-xs space-y-6 animate-fade-in">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div className="h-11 w-11 rounded-full bg-[#C2E7FF]/60 dark:bg-[#004A77]/50 border border-[#0B57D0]/20 flex items-center justify-center text-[#0B57D0] dark:text-[#A8C7FA] shrink-0">
@@ -116,7 +116,7 @@ export default function StorageSection() {
 
         {/* Google Drive style linear progress meter */}
         <div className="space-y-1.5">
-          <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
+          <div className="h-2 rounded-full bg-slate-100 dark:bg-[#161719] overflow-hidden">
             <div className="h-full bg-[#0B57D0] dark:bg-[#A8C7FA] w-3 rounded-full" />
           </div>
           <div className="flex justify-between text-[11px] text-[#747775] dark:text-[#8E918F] font-medium">
@@ -126,8 +126,8 @@ export default function StorageSection() {
         </div>
 
         {/* 3-Column Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-100 dark:border-slate-800">
-          <div className="p-3.5 rounded-xl bg-[#F0F4F9] dark:bg-[#282A2C] border border-slate-200/60 dark:border-slate-700/60 flex items-center gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-100 dark:border-white/[0.04]">
+          <div className="p-3.5 rounded-xl bg-[#F0F4F9] dark:bg-[#161719] border border-slate-200/60 dark:border-white/[0.04] flex items-center gap-3">
             <div className="h-9 w-9 rounded-lg bg-blue-500/10 dark:bg-blue-500/20 text-[#0B57D0] dark:text-[#A8C7FA] flex items-center justify-center shrink-0">
               <Files className="h-4 w-4" />
             </div>
@@ -141,7 +141,7 @@ export default function StorageSection() {
             </div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-[#F0F4F9] dark:bg-[#282A2C] border border-slate-200/60 dark:border-slate-700/60 flex items-center gap-3">
+          <div className="p-3.5 rounded-xl bg-[#F0F4F9] dark:bg-[#161719] border border-slate-200/60 dark:border-white/[0.04] flex items-center gap-3">
             <div className="h-9 w-9 rounded-lg bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
               <Folder className="h-4 w-4" />
             </div>
@@ -155,7 +155,7 @@ export default function StorageSection() {
             </div>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-[#F0F4F9] dark:bg-[#282A2C] border border-slate-200/60 dark:border-slate-700/60 flex items-center gap-3">
+          <div className="p-3.5 rounded-xl bg-[#F0F4F9] dark:bg-[#161719] border border-slate-200/60 dark:border-white/[0.04] flex items-center gap-3">
             <div className="h-9 w-9 rounded-lg bg-rose-500/10 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
               <Trash2 className="h-4 w-4" />
             </div>
@@ -176,7 +176,7 @@ export default function StorageSection() {
             size="sm"
             disabled={isRefreshing}
             onClick={handleRecalculate}
-            className="rounded-full text-xs font-medium gap-2 h-9 px-4 border-slate-300 dark:border-slate-700 hover:bg-[#F0F4F9] dark:hover:bg-[#282A2C] cursor-pointer"
+            className="rounded-full text-xs font-medium gap-2 h-9 px-4 border-slate-300 dark:border-white/[0.06] hover:bg-[#F0F4F9] dark:hover:bg-[#1f2124] cursor-pointer"
           >
             {isRefreshing ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin text-[#0B57D0] dark:text-[#A8C7FA]" />
@@ -189,7 +189,7 @@ export default function StorageSection() {
       </div>
 
       {/* Storage Guidelines Info Box */}
-      <div className="p-4 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 bg-[#F0F4F9] dark:bg-[#282A2C] text-xs text-[#444746] dark:text-[#C4C7C5] leading-relaxed flex items-start gap-3">
+      <div className="p-4 rounded-2xl border border-slate-200/60 dark:border-white/[0.04] bg-[#F0F4F9] dark:bg-[#161719] text-xs text-[#444746] dark:text-[#C4C7C5] leading-relaxed flex items-start gap-3">
         <Info className="h-4.5 w-4.5 text-[#0B57D0] dark:text-[#A8C7FA] shrink-0 mt-0.5" />
         <div className="space-y-1">
           <p>

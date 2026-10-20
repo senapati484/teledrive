@@ -6,19 +6,20 @@ set -e
 # Produces a clean, production-ready, Universal (Apple Silicon + Intel) DMG
 # ==============================================================================
 
-PROJECT_DIR="/Volumes/MacSSD/Opensource/teledrvie/teledrive"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+APP_VERSION=$(node -p "require('$PROJECT_DIR/package.json').version" 2>/dev/null || echo "0.1.2")
 SRC_APP="$PROJECT_DIR/src-tauri/target/release/bundle/macos/TeleDrive.app"
-DIST_DIR="$PROJECT_DIR/release-dist"
-OUTPUT_DMG="$DIST_DIR/teledrive.dmg"
+DIST_VER_DIR="$PROJECT_DIR/distribution/v$APP_VERSION"
+OUTPUT_DMG="$DIST_VER_DIR/teledrive.dmg"
 BUNDLE_DMG="$PROJECT_DIR/src-tauri/target/release/bundle/dmg/teledrive.dmg"
 ICON_ICNS="$PROJECT_DIR/src-tauri/icons/icon.icns"
 STAGE_DIR="/tmp/teledrive_dmg_staging_$$"
 
 echo "=== [1/6] Cleaning up previous artifacts ==="
 rm -rf "$STAGE_DIR"
-rm -f "$OUTPUT_DMG" "$BUNDLE_DMG"
 mkdir -p "$STAGE_DIR"
-mkdir -p "$DIST_DIR"
+mkdir -p "$DIST_VER_DIR"
 mkdir -p "$(dirname "$BUNDLE_DMG")"
 
 # Prefer freshly compiled app from target/release/bundle/macos
@@ -67,8 +68,6 @@ hdiutil create -volname "TeleDrive" \
                "$OUTPUT_DMG"
 
 cp "$OUTPUT_DMG" "$BUNDLE_DMG" 2>/dev/null || true
-mkdir -p "$PROJECT_DIR/distribution"
-cp "$OUTPUT_DMG" "$PROJECT_DIR/distribution/teledrive.dmg"
 
 # If /Applications/TeleDrive.app exists, update it with the freshly signed app
 if [ -d "/Applications/TeleDrive.app" ]; then
