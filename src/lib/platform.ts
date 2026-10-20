@@ -75,13 +75,8 @@ export async function initPlatform(): Promise<void> {
     root.classList.add(`platform-${p}`);
     if (p === "android" || p === "ios") {
       root.classList.add("platform-mobile");
-      if (p === "android") {
-        root.style.setProperty("--safe-area-top", "max(env(safe-area-inset-top, 0px), 38px)");
-        root.style.setProperty("--safe-area-bottom", "max(env(safe-area-inset-bottom, 0px), 16px)");
-      } else if (p === "ios") {
-        root.style.setProperty("--safe-area-top", "max(env(safe-area-inset-top, 0px), 48px)");
-        root.style.setProperty("--safe-area-bottom", "max(env(safe-area-inset-bottom, 0px), 24px)");
-      }
+      root.style.setProperty("--safe-area-top", "env(safe-area-inset-top, 0px)");
+      root.style.setProperty("--safe-area-bottom", "env(safe-area-inset-bottom, 0px)");
     }
   }
 }

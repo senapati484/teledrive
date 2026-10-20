@@ -1,0 +1,138 @@
+name: Build Linux Packages (DEB, RPM, AppImage)
+
+on:
+  push:
+    branches:
+      - main
+      - pro
+      - '0.*'
+      - '[0-9]+.[0-9]+.[0-9]+'
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      bundle_type:
+        description: 'Bundle type (all, deb, rpm, appimage)'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - deb
+          - rpm
+          - appimage
+
+jobs:
+  build-linux:
+    name: Build Linux Packages
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Linux system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libfuse2 \
+            rpm
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Build Tauri Linux Bundles
+        run: |
+          BUNDLE_FLAG="--bundles deb,appimage,rpm"
+          if [ "${{ github.event.inputs.bundle_type }}" != "" ] && [ "${{ github.event.inputs.bundle_type }}" != "all" ]; then
+            BUNDLE_FLAG="--bundles ${{ github.event.inputs.bundle_type }}"
+          fi
+          echo "Building with $BUNDLE_FLAG..."
+          npx tauri build $BUNDLE_FLAG
+
+      - name: Organize deliverables into distribution/v<version>/
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          DIST_DIR="distribution/v${VERSION}"
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "DIST_DIR=${DIST_DIR}" >> $GITHUB_ENV
+          mkdir -p "$DIST_DIR"
+
+          echo "Looking for built Linux packages..."
+          DEB_FILE=$(find src-tauri/target -name "*.deb" 2>/dev/null | head -n 1)
+          RPM_FILE=$(find src-tauri/target -name "*.rpm" 2>/dev/null | head -n 1)
+          APPIMG_FILE=$(find src-tauri/target -name "*.AppImage" 2>/dev/null | head -n 1)
+
+          if [ -n "$DEB_FILE" ]; then
+            echo "Found DEB: $DEB_FILE"
+            cp "$DEB_FILE" "$DIST_DIR/teledrive.deb"
+            echo "✓ Staged $DIST_DIR/teledrive.deb"
+          fi
+
+          if [ -n "$RPM_FILE" ]; then
+            echo "Found RPM: $RPM_FILE"
+            cp "$RPM_FILE" "$DIST_DIR/teledrive.rpm"
+            echo "✓ Staged $DIST_DIR/teledrive.rpm"
+          fi
+
+          if [ -n "$APPIMG_FILE" ]; then
+            echo "Found AppImage: $APPIMG_FILE"
+            cp "$APPIMG_FILE" "$DIST_DIR/teledrive.AppImage"
+            chmod +x "$DIST_DIR/teledrive.AppImage"
+            echo "✓ Staged $DIST_DIR/teledrive.AppImage"
+          fi
+
+          if [ -z "$DEB_FILE" ] && [ -z "$RPM_FILE" ] && [ -z "$APPIMG_FILE" ]; then
+            echo "::error::No Linux package was generated!"
+            exit 1
+          fi
+
+          # Clean any old duplicate files from distribution root
+          rm -f distribution/TeleDrive_* distribution/teledrive.deb distribution/teledrive.rpm distribution/teledrive.AppImage 2>/dev/null || true
+
+          # Generate checksums
+          cd "$DIST_DIR"
+          sha256sum teledrive* > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          cd -
+
+          ls -lh "$DIST_DIR"
+
+      - name: Upload Linux packages artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: teledrive-linux-v${{ env.VERSION }}
+          path: |
+            ${{ env.DIST_DIR }}/teledrive.deb
+            ${{ env.DIST_DIR }}/teledrive.rpm
+            ${{ env.DIST_DIR }}/teledrive.AppImage
+            ${{ env.DIST_DIR }}/SHA256SUMS.txt
+          if-no-files-found: warn
+          retention-days: 30
+

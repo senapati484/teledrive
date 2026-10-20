@@ -3,11 +3,14 @@ const fs = require('fs');
 const path = require('path');
 
 const rootDir = path.resolve(__dirname, '..');
-const distDir = path.join(rootDir, 'release-dist');
+const pkg = JSON.parse(fs.readFileSync(path.join(rootDir, 'package.json'), 'utf8'));
+const versionTag = `v${pkg.version}`;
+const distDir = path.join(rootDir, 'distribution', versionTag);
 const isWindows = process.platform === 'win32';
 
 console.log('======================================================');
-console.log('   TeleDrive Windows Executable & Installer Builder   ');
+console.log(`   TeleDrive Windows Executable & Installer Builder   `);
+console.log(`   Target Version: ${versionTag}                     `);
 console.log('======================================================\n');
 
 if (!fs.existsSync(distDir)) {
@@ -22,8 +25,8 @@ execSync('npm run build', { cwd: rootDir, stdio: 'inherit' });
 console.log('\n[2/3] Building Windows binaries with Tauri...');
 
 if (isWindows) {
-  // On native Windows: build both the exe and NSIS installer
-  execSync('npx tauri build --bundles nsis', { cwd: rootDir, stdio: 'inherit' });
+  // On native Windows: build both NSIS and MSI installers
+  execSync('npx tauri build --bundles nsis,msi', { cwd: rootDir, stdio: 'inherit' });
 } else {
   // On macOS / Linux:
   console.log(`\nℹ️  Detected current OS: ${process.platform}`);
@@ -44,21 +47,24 @@ if (isWindows) {
   }
 }
 
-// 3. Locate generated exe in target release directories
-console.log('\n[3/3] Locating and packaging Windows executables into release-dist/ ...');
+// 3. Locate generated exe and msi in target release directories
+console.log(`\n[3/3] Locating and packaging Windows executables into distribution/${versionTag}/ ...`);
 
-// Search paths for NSIS installers and standalone binaries
+// Search paths for NSIS installers, MSI installers, and standalone binaries
 const searchRoots = [
   path.join(rootDir, 'src-tauri', 'target', 'release', 'bundle', 'nsis'),
   path.join(rootDir, 'src-tauri', 'target', 'x86_64-pc-windows-msvc', 'release', 'bundle', 'nsis'),
   path.join(rootDir, 'src-tauri', 'target', 'x86_64-pc-windows-gnu', 'release', 'bundle', 'nsis'),
+  path.join(rootDir, 'src-tauri', 'target', 'release', 'bundle', 'msi'),
+  path.join(rootDir, 'src-tauri', 'target', 'x86_64-pc-windows-msvc', 'release', 'bundle', 'msi'),
+  path.join(rootDir, 'src-tauri', 'target', 'x86_64-pc-windows-gnu', 'release', 'bundle', 'msi'),
   path.join(rootDir, 'src-tauri', 'target', 'release'),
   path.join(rootDir, 'src-tauri', 'target', 'x86_64-pc-windows-msvc', 'release'),
   path.join(rootDir, 'src-tauri', 'target', 'x86_64-pc-windows-gnu', 'release')
 ];
 
 let installerCopied = false;
-let standaloneCopied = false;
+let msiCopied = false;
 
 for (const dir of searchRoots) {
   if (!fs.existsSync(dir)) continue;
@@ -74,21 +80,21 @@ for (const dir of searchRoots) {
       const sizeMb = (fs.statSync(targetPath).size / (1024 * 1024)).toFixed(2);
       console.log(`✅ Copied NSIS installer -> ${targetPath} (${sizeMb} MB)`);
       installerCopied = true;
-    } else if (file.toLowerCase() === 'teledrive.exe' && !file.toLowerCase().includes('setup')) {
-      const targetPath = path.join(distDir, 'teledrive.exe');
+    } else if (file.toLowerCase().endsWith('.msi')) {
+      const targetPath = path.join(distDir, 'teledrive.msi');
       fs.copyFileSync(fullPath, targetPath);
       const sizeMb = (fs.statSync(targetPath).size / (1024 * 1024)).toFixed(2);
-      console.log(`✅ Copied standalone binary -> ${targetPath} (${sizeMb} MB)`);
-      standaloneCopied = true;
+      console.log(`✅ Copied MSI installer  -> ${targetPath} (${sizeMb} MB)`);
+      msiCopied = true;
     }
   }
 }
 
-if (!installerCopied && !standaloneCopied) {
-  console.log('⚠️ Could not find generated .exe in standard bundle directories.');
+if (!installerCopied && !msiCopied) {
+  console.log('⚠️ Could not find generated .exe or .msi in standard bundle directories.');
 } else {
   console.log('\n======================================================');
   console.log('🎉 Windows build packaging complete!');
-  console.log('📁 Check output files in `release-dist/`');
+  console.log(`📁 Check output files in \`distribution/${versionTag}/\``);
   console.log('======================================================');
 }

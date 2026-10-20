@@ -348,7 +348,14 @@ export function useFileActions() {
       );
 
       toast.success(nextStarred ? t("actions.star.added") : t("actions.star.removed"));
-      await applyOptimistic(channelId, updatedFiles, { eventType: nextStarred ? "file.starred" : "file.unstarred", eventPayload: { name: file.name } });
+      // skipRollbackOnHardError: star is a low-stakes metadata toggle. If the index
+      // queue hits a transient error it retries automatically; we never want the
+      // star to snap back on a timeout — the queue will eventually persist it.
+      await applyOptimistic(channelId, updatedFiles, {
+        eventType: nextStarred ? "file.starred" : "file.unstarred",
+        eventPayload: { name: file.name },
+        skipRollbackOnHardError: true,
+      });
     } catch (err: any) {
       console.error("Failed to toggle star:", err);
       toast.error(err.message || t("actions.star.failed"));
@@ -716,7 +723,12 @@ export function useFileActions() {
       });
 
       toast.success(t("actions.bulk.starred", { count: fileIds.length }));
-      await applyOptimistic(channelId, updatedFiles, { eventType: "files.starred", eventPayload: { count: fileIds.length } });
+      // skipRollbackOnHardError: same rationale as toggleStar — queue retries automatically.
+      await applyOptimistic(channelId, updatedFiles, {
+        eventType: "files.starred",
+        eventPayload: { count: fileIds.length },
+        skipRollbackOnHardError: true,
+      });
     } catch (err: any) {
       console.error("Failed to star multiple:", err);
       toast.error(err.message || t("actions.bulk.starFailed"));

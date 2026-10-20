@@ -1,17 +1,30 @@
-name: Build iOS IPA
+name: Build iOS IPA & Simulator
 
 on:
   push:
+    branches:
+      - main
+      - pro
+      - '0.*'
+      - '[0-9]+.[0-9]+.[0-9]+'
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      build_target:
+        description: 'Build target (all, device, simulator)'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - device
+          - simulator
 
 jobs:
   build-ios:
-    name: Build iOS App
-    runs-on: macos-latest
-    permissions:
-      contents: write
+    name: Build iOS App & IPA
+    runs-on: macos-14
 
     steps:
       - name: Checkout repository
@@ -26,7 +39,7 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-apple-ios,x86_64-apple-ios,aarch64-apple-ios-sim
+          targets: aarch64-apple-ios,aarch64-apple-ios-sim
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
@@ -39,20 +52,107 @@ jobs:
       - name: Build frontend
         run: npm run build
 
-      - name: Install macOS build dependencies
-        run: brew install cocoapods xcodegen
+      - name: Ensure Xcode build environment
+        run: |
+          echo "=== Xcode version ==="
+          xcodebuild -version
+          
+          which xcodegen || brew install xcodegen
+          
+          # Make sure node, npm, cargo, and rustc are in standard paths for Xcode script phases
+          sudo mkdir -p /usr/local/bin
+          sudo ln -sf $(which node) /usr/local/bin/node || true
+          sudo ln -sf $(which npm) /usr/local/bin/npm || true
+          sudo ln -sf $(which cargo) /usr/local/bin/cargo || true
+          sudo ln -sf $(which rustc) /usr/local/bin/rustc || true
+          sudo ln -sf $(which xcodegen) /usr/local/bin/xcodegen || true
+          
+          # Ensure subshells inherit Homebrew and Cargo bin paths
+          echo "/opt/homebrew/bin" | sudo tee -a /etc/paths >/dev/null || true
+          echo "$HOME/.cargo/bin" | sudo tee -a /etc/paths >/dev/null || true
 
-      - name: Initialize iOS project
-        run: npm run tauri ios init -- --ci --skip-targets-install
+      - name: Initialize and regenerate iOS project
+        run: |
+          npm run tauri ios init -- --ci --skip-targets-install
+          # Force Xcode project to adhere to projectFormat: xcode14_0 (objectVersion 56)
+          xcodegen generate --spec src-tauri/gen/apple/project.yml
+          grep "objectVersion" src-tauri/gen/apple/teledrive.xcodeproj/project.pbxproj
 
-      - name: Build iOS (simulator - no signing required)
-        run: npx tauri ios build --target aarch64-apple-ios-sim --debug
+      - name: Build iOS App (Device - aarch64)
+        if: ${{ github.event.inputs.build_target == 'all' || github.event.inputs.build_target == 'device' }}
+        continue-on-error: true
+        run: |
+          # Build directly for physical iOS device (generic/platform=iOS, arm64) without code signing
+          xcodebuild -project src-tauri/gen/apple/teledrive.xcodeproj \
+            -scheme teledrive_iOS \
+            -configuration debug \
+            -destination "generic/platform=iOS" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            build
 
-      - name: Upload iOS artifact
+      - name: Build iOS App (Simulator - aarch64-sim)
+        if: ${{ github.event.inputs.build_target == 'all' || github.event.inputs.build_target == 'simulator' || github.event_name != 'workflow_dispatch' }}
+        run: |
+          npx tauri ios build --target aarch64-sim --debug --ci
+
+      - name: Package Deliverables (IPA and Simulator App)
+        run: |
+          mkdir -p release-dist/ios
+          
+          # 1. Package Unsigned IPA for Device (arm64)
+          echo "Looking for built device app (iphoneos)..."
+          DEVICE_APP=$(find ~/Library/Developer/Xcode/DerivedData src-tauri/gen/apple -name "TeleDrive.app" -path "*debug-iphoneos*" 2>/dev/null | head -n 1)
+          if [ -z "$DEVICE_APP" ]; then
+            DEVICE_APP=$(find ~/Library/Developer/Xcode/DerivedData src-tauri/gen/apple -name "*.app" -path "*iphoneos*" 2>/dev/null | head -n 1)
+          fi
+          
+          if [ -n "$DEVICE_APP" ]; then
+            echo "Found device app at: $DEVICE_APP"
+            TMP_DIR=$(mktemp -d)
+            mkdir -p "$TMP_DIR/Payload"
+            cp -R "$DEVICE_APP" "$TMP_DIR/Payload/"
+            /usr/bin/ditto -c -k --keepParent "$TMP_DIR/Payload" release-dist/ios/teledrive-v0.1.2-ios-arm64-unsigned.ipa
+            cp release-dist/ios/teledrive-v0.1.2-ios-arm64-unsigned.ipa release-dist/
+            rm -rf "$TMP_DIR"
+            echo "✓ Created teledrive-v0.1.2-ios-arm64-unsigned.ipa"
+          else
+            echo "::warning::No device app found to package into IPA"
+          fi
+
+          # 2. Package Simulator App (aarch64-sim)
+          echo "Looking for built simulator app..."
+          SIM_APP="src-tauri/gen/apple/build/arm64-sim/TeleDrive.app"
+          if [ ! -d "$SIM_APP" ]; then
+            SIM_APP=$(find src-tauri/gen/apple/build -name "*.app" -path "*arm64-sim*" 2>/dev/null | head -n 1)
+          fi
+          if [ ! -d "$SIM_APP" ]; then
+            SIM_APP=$(find ~/Library/Developer/Xcode/DerivedData -name "TeleDrive.app" -path "*iphonesimulator*" 2>/dev/null | head -n 1)
+          fi
+          
+          if [ -d "$SIM_APP" ]; then
+            echo "Found simulator app at: $SIM_APP"
+            /usr/bin/ditto -c -k --keepParent "$SIM_APP" release-dist/ios/teledrive-v0.1.2-ios-simulator.zip
+            cp release-dist/ios/teledrive-v0.1.2-ios-simulator.zip release-dist/
+            echo "✓ Created teledrive-v0.1.2-ios-simulator.zip"
+          else
+            echo "::warning::No simulator app found"
+          fi
+
+          echo "=== Release distribution contents ==="
+          ls -lh release-dist/ios/
+
+          if [ ! -f release-dist/ios/teledrive-v0.1.2-ios-arm64-unsigned.ipa ] && [ ! -f release-dist/ios/teledrive-v0.1.2-ios-simulator.zip ]; then
+            echo "::error::Neither device IPA nor simulator ZIP was found!"
+            exit 1
+          fi
+
+      - name: Upload iOS artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: teledrive-ios-simulator
+          name: teledrive-ios-builds
           path: |
-            src-tauri/gen/apple/build/**/*.app
+            release-dist/ios/*
           if-no-files-found: warn
           retention-days: 30
+

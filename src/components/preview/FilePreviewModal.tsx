@@ -527,26 +527,26 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
 
   // ── Theme-derived surface colors (Google Drive Material 3) ───────────────
   const colors = useMemo(() => isDark ? {
-    bg:         "#131314",
-    topbar:     "#1e1f20",
-    statusbar:  "#1e1f20",
-    border:     "#333537",
+    bg:         "#000000",
+    topbar:     "#0a0a0a",
+    statusbar:  "#0a0a0a",
+    border:     "rgba(255, 255, 255, 0.04)",
     text:       "#e3e3e3",
     muted:      "#8e918f",
-    hover:      "#282a2c",
-    badgeBg:    "#282a2c",
+    hover:      "#1f2124",
+    badgeBg:    "#161719",
     badgeText:  "#c4c7c5",
-    badgeBdr:   "#333537",
+    badgeBdr:   "rgba(255, 255, 255, 0.04)",
     editBadgeBg:"rgba(168,199,250,0.15)",
     editBadgeText:"#a8c7fa",
     editBadgeBdr:"rgba(168,199,250,0.3)",
-    progressTrack:"#282a2c",
+    progressTrack:"#161719",
     errorBg:    "rgba(239,68,68,0.08)",
     errorBdr:   "rgba(239,68,68,0.2)",
     errorText:  "#f87171",
-    fallbackBg: "#1e1f20",
-    fallbackBdr:"#333537",
-    dotGrid:    "#282a2c",
+    fallbackBg: "#111214",
+    fallbackBdr:"rgba(255, 255, 255, 0.04)",
+    dotGrid:    "#161719",
   } : {
     bg:         "#f8fafd",
     topbar:     "#ffffff",
@@ -1086,7 +1086,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     onClick={() => setMdViewMode("preview")}
                     className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
                       mdViewMode === "preview"
-                        ? "bg-white dark:bg-[#333537] text-blue-600 dark:text-blue-400 shadow-xs"
+                        ? "bg-white dark:bg-[#1f2124] text-blue-600 dark:text-blue-400 shadow-xs"
                         : "text-[#444746] dark:text-[#8e918f] hover:text-black dark:hover:text-white"
                     }`}
                   >
@@ -1097,7 +1097,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     onClick={() => setMdViewMode("source")}
                     className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
                       mdViewMode === "source"
-                        ? "bg-white dark:bg-[#333537] text-blue-600 dark:text-blue-400 shadow-xs"
+                        ? "bg-white dark:bg-[#1f2124] text-blue-600 dark:text-blue-400 shadow-xs"
                         : "text-[#444746] dark:text-[#8e918f] hover:text-black dark:hover:text-white"
                     }`}
                   >
@@ -1116,7 +1116,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     onClick={() => setCsvViewMode("table")}
                     className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
                       csvViewMode === "table"
-                        ? "bg-white dark:bg-[#333537] text-emerald-600 dark:text-emerald-400 shadow-xs"
+                        ? "bg-white dark:bg-[#1f2124] text-emerald-600 dark:text-emerald-400 shadow-xs"
                         : "text-[#444746] dark:text-[#8e918f] hover:text-black dark:hover:text-white"
                     }`}
                   >
@@ -1127,7 +1127,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     onClick={() => setCsvViewMode("source")}
                     className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
                       csvViewMode === "source"
-                        ? "bg-white dark:bg-[#333537] text-emerald-600 dark:text-emerald-400 shadow-xs"
+                        ? "bg-white dark:bg-[#1f2124] text-emerald-600 dark:text-emerald-400 shadow-xs"
                         : "text-[#444746] dark:text-[#8e918f] hover:text-black dark:hover:text-white"
                     }`}
                   >
@@ -1146,7 +1146,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     onClick={() => setSvgViewMode("image")}
                     className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
                       svgViewMode === "image"
-                        ? "bg-white dark:bg-[#333537] text-purple-600 dark:text-purple-400 shadow-xs"
+                        ? "bg-white dark:bg-[#1f2124] text-purple-600 dark:text-purple-400 shadow-xs"
                         : "text-[#444746] dark:text-[#8e918f]"
                     }`}
                   >
@@ -1157,7 +1157,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     onClick={() => setSvgViewMode("code")}
                     className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
                       svgViewMode === "code"
-                        ? "bg-white dark:bg-[#333537] text-purple-600 dark:text-purple-400 shadow-xs"
+                        ? "bg-white dark:bg-[#1f2124] text-purple-600 dark:text-purple-400 shadow-xs"
                         : "text-[#444746] dark:text-[#8e918f]"
                     }`}
                   >
@@ -1297,12 +1297,12 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
           <button
             onClick={onClose}
             title={t("topbar.close")}
-            className="flex items-center justify-center h-7 w-8 rounded-lg cursor-pointer transition-colors duration-150 ml-0.5 hover:text-red-500"
+            className="flex items-center justify-center h-9 w-9 sm:h-7 sm:w-8 rounded-lg cursor-pointer transition-colors duration-150 ml-0.5 hover:text-red-500"
             style={{ color: colors.muted }}
             onMouseEnter={e => (e.currentTarget.style.background = colors.hover)}
             onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5 sm:h-4 sm:w-4" />
           </button>
         </div>
       </div>
@@ -1378,6 +1378,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                   onMouseLeave={handleMouseUp}
                   onWheel={handleWheel}
                   style={{
+                    touchAction: "pinch-zoom",
                     backgroundImage: showGrid
                       ? `radial-gradient(circle at center, ${colors.dotGrid} 1px, transparent 1px)`
                       : "none",
@@ -1407,11 +1408,11 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                   </div>
 
                   {/* Floating bottom controls bar (glassmorphic pill) */}
-                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-2.5 px-4 py-2 rounded-full border shadow-xl backdrop-blur-md bg-white/75 dark:bg-slate-900/70 border-slate-200/50 dark:border-slate-800/40 text-slate-700 dark:text-slate-250 z-20">
+                  <div className="absolute bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] left-1/2 -translate-x-1/2 flex items-center gap-2.5 px-4 py-2 rounded-full border shadow-xl backdrop-blur-md bg-white/75 dark:bg-[#141518]/90 border-slate-200/50 dark:border-white/[0.06] text-slate-700 dark:text-slate-200 z-20">
                     <button
                       onClick={zoomOut}
                       title={t("image.zoomOut")}
-                      className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                      className="p-1 hover:bg-slate-100 dark:hover:bg-[#1f2124] rounded-lg transition-colors cursor-pointer"
                     >
                       <ZoomOut className="h-4 w-4" />
                     </button>
@@ -1421,34 +1422,34 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     <button
                       onClick={zoomIn}
                       title={t("image.zoomIn")}
-                      className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                      className="p-1 hover:bg-slate-100 dark:hover:bg-[#1f2124] rounded-lg transition-colors cursor-pointer"
                     >
                       <ZoomIn className="h-4 w-4" />
                     </button>
-                    <div className="h-4 w-px bg-slate-200 dark:bg-slate-800" />
+                    <div className="h-4 w-px bg-slate-200 dark:bg-white/[0.06]" />
                     <button
                       onClick={resetZoom}
                       title={t("image.resetZoom")}
-                      className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                      className="p-1 hover:bg-slate-100 dark:hover:bg-[#1f2124] rounded-lg transition-colors cursor-pointer"
                     >
                       <RotateCcw className="h-4 w-4" />
                     </button>
-                    <div className="h-4 w-px bg-slate-200 dark:bg-slate-800" />
+                    <div className="h-4 w-px bg-slate-200 dark:bg-white/[0.06]" />
                     <button
                       onClick={rotateCounterClockwise}
                       title={t("image.rotateCounterClockwise")}
-                      className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                      className="p-1 hover:bg-slate-100 dark:hover:bg-[#1f2124] rounded-lg transition-colors cursor-pointer"
                     >
                       <RotateCw className="h-4 w-4 -scale-x-100" />
                     </button>
                     <button
                       onClick={rotateClockwise}
                       title={t("image.rotateClockwise")}
-                      className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                      className="p-1 hover:bg-slate-100 dark:hover:bg-[#1f2124] rounded-lg transition-colors cursor-pointer"
                     >
                       <RotateCw className="h-4 w-4" />
                     </button>
-                    <div className="h-4 w-px bg-slate-200 dark:bg-slate-800" />
+                    <div className="h-4 w-px bg-slate-200 dark:bg-white/[0.06]" />
                     <button
                       onClick={() => setShowGrid(!showGrid)}
                       title={t("image.toggleGrid")}
@@ -1464,7 +1465,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                   <div
                     className="w-64 border-l flex flex-col shrink-0 animate-in slide-in-from-right duration-250"
                     style={{
-                      background: isDark ? "#0f131a" : "#fafafa",
+                      background: isDark ? "#111214" : "#fafafa",
                       borderColor: colors.border,
                     }}
                   >
@@ -1472,7 +1473,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                       <span className="text-[12px] font-bold uppercase tracking-wider text-slate-400">{t("details.title")}</span>
                       <button
                         onClick={() => setShowDetails(false)}
-                        className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-250 cursor-pointer"
+                        className="p-1 hover:bg-slate-100 dark:hover:bg-[#1f2124] rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
                       >
                         <X className="h-4 w-4" />
                       </button>
@@ -1498,7 +1499,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                       </div>
                       <div>
                         <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">{t("details.path")}</div>
-                        <div className="font-semibold text-slate-700 dark:text-slate-300 font-mono text-[11px] bg-slate-100 dark:bg-slate-900 px-1.5 py-0.5 rounded border border-slate-200/50 dark:border-slate-800/50 inline-block">{file.folderPath}</div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-300 font-mono text-[11px] bg-slate-100 dark:bg-[#161719] px-1.5 py-0.5 rounded border border-slate-200/50 dark:border-white/[0.04] inline-block">{file.folderPath}</div>
                       </div>
                       <div>
                         <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">{t("details.uploadedAt")}</div>
@@ -1777,7 +1778,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                       step={0.1}
                       value={audioCurrentTime}
                       onChange={handleAudioSeek}
-                      className="w-full h-1 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-teal-500 dark:accent-teal-400 focus:outline-none"
+                      className="w-full h-1 bg-slate-200 dark:bg-[#161719] rounded-lg appearance-none cursor-pointer accent-teal-500 dark:accent-teal-400 focus:outline-none"
                     />
                     <div className="flex items-center justify-between text-[10px] font-mono" style={{ color: colors.muted }}>
                       <span>{formatTime(audioCurrentTime)}</span>
@@ -1790,7 +1791,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     <button
                       onClick={() => skipAudio(-10)}
                       title={t("media.skipBack")}
-                      className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800/60 rounded-xl transition-colors cursor-pointer"
+                      className="p-2 hover:bg-slate-100 dark:hover:bg-[#1f2124] rounded-xl transition-colors cursor-pointer"
                       style={{ color: colors.muted }}
                     >
                       <SkipBack className="h-5 w-5" />
@@ -1810,7 +1811,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     <button
                       onClick={() => skipAudio(10)}
                       title={t("media.skipForward")}
-                      className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800/60 rounded-xl transition-colors cursor-pointer"
+                      className="p-2 hover:bg-slate-100 dark:hover:bg-[#1f2124] rounded-xl transition-colors cursor-pointer"
                       style={{ color: colors.muted }}
                     >
                       <SkipForward className="h-5 w-5" />
@@ -1823,7 +1824,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     <div className="flex items-center gap-1.5">
                       <button
                         onClick={toggleAudioMute}
-                        className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+                        className="p-1 hover:bg-slate-100 dark:hover:bg-[#1f2124] rounded-lg transition-colors cursor-pointer"
                         style={{ color: colors.muted }}
                       >
                         {isAudioMuted || audioVolume === 0 ? (
@@ -1839,7 +1840,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                         step={0.05}
                         value={isAudioMuted ? 0 : audioVolume}
                         onChange={handleAudioVolumeChange}
-                        className="w-16 h-1 bg-slate-200 dark:bg-slate-800 rounded-lg appearance-none cursor-pointer accent-teal-500 dark:accent-teal-400 focus:outline-none"
+                        className="w-16 h-1 bg-slate-200 dark:bg-[#161719] rounded-lg appearance-none cursor-pointer accent-teal-500 dark:accent-teal-400 focus:outline-none"
                       />
                     </div>
 
@@ -1847,7 +1848,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     <div className="relative">
                       <button
                         onClick={() => setShowAudioSpeedMenu(!showAudioSpeedMenu)}
-                        className="text-[10px] font-mono font-bold px-2.5 py-1 bg-slate-100 dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/30 rounded-lg cursor-pointer transition-colors"
+                        className="text-[10px] font-mono font-bold px-2.5 py-1 bg-slate-100 dark:bg-[#161719] border border-slate-200/50 dark:border-white/[0.06] rounded-lg cursor-pointer transition-colors hover:dark:bg-[#1f2124]"
                         style={{ color: colors.text }}
                       >
                         {audioSpeed === 1 ? "1.0x" : `${audioSpeed}x`}
@@ -1857,7 +1858,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                         <div
                           className={`absolute bottom-full right-0 mb-2 py-1 w-20 rounded-xl border shadow-xl flex flex-col z-35 animate-in fade-in slide-in-from-bottom-2 duration-150 ${
                             isDark
-                              ? "bg-slate-900 border-slate-800 text-white"
+                              ? "bg-[#141518] border-white/[0.06] text-white"
                               : "bg-white border-slate-200 text-slate-800"
                           }`}
                         >
@@ -1865,7 +1866,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                             <button
                               key={sp}
                               onClick={() => handleAudioSpeedChange(sp)}
-                              className={`px-3 py-1 text-left text-[11px] font-mono hover:bg-slate-100 dark:hover:bg-white/10 transition-colors w-full cursor-pointer ${
+                              className={`px-3 py-1 text-left text-[11px] font-mono hover:bg-slate-100 dark:hover:bg-[#1f2124] transition-colors w-full cursor-pointer ${
                                 audioSpeed === sp
                                   ? "text-teal-500 font-bold"
                                   : isDark
@@ -1903,12 +1904,12 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                 className="absolute inset-0 overflow-y-auto px-4 py-8 md:py-12 pointer-events-auto select-text flex justify-center"
                 style={{
                   scrollbarWidth: "thin",
-                  scrollbarColor: isDark ? "#333537 transparent" : "#e0e2e7 transparent",
-                  background: isDark ? "#131314" : "#f0f4f9",
+                  scrollbarColor: isDark ? "#202225 transparent" : "#e0e2e7 transparent",
+                  background: isDark ? "#000000" : "#f0f4f9",
                 }}
               >
                 <div
-                  className="w-full max-w-4xl bg-white dark:bg-[#1e1f20] border border-[#e0e2e7] dark:border-[#333537] rounded-2xl shadow-sm p-8 md:p-14 my-auto min-h-full teledrive-markdown-body"
+                  className="w-full max-w-4xl bg-white dark:bg-[#111214] border border-[#e0e2e7] dark:border-white/[0.04] rounded-2xl shadow-sm p-8 md:p-14 my-auto min-h-full teledrive-markdown-body"
                   onClick={(e) => {
                     const target = (e.target as HTMLElement).closest("a");
                     if (target && target.href) {
@@ -1967,7 +1968,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                 <div
                   className="flex flex-col items-center max-w-md w-full p-8 rounded-3xl text-center shadow-sm"
                   style={{
-                    background: isDark ? "#1e1f20" : "#ffffff",
+                    background: isDark ? "#111214" : "#ffffff",
                     border: `1px solid ${colors.border}`,
                   }}
                 >
@@ -2005,11 +2006,11 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                 <div
                   className="flex flex-col items-center max-w-md w-full p-8 rounded-3xl text-center shadow-sm"
                   style={{
-                    background: isDark ? "#1e1f20" : "#ffffff",
+                    background: isDark ? "#111214" : "#ffffff",
                     border: `1px solid ${colors.border}`,
                   }}
                 >
-                  <div className="h-16 w-16 rounded-2xl bg-slate-100 dark:bg-[#282a2c] text-slate-500 dark:text-slate-400 flex items-center justify-center mb-4">
+                  <div className="h-16 w-16 rounded-2xl bg-slate-100 dark:bg-[#161719] text-slate-500 dark:text-slate-400 flex items-center justify-center mb-4">
                     <FallbackIcon className="h-8 w-8" strokeWidth={1.5} />
                   </div>
                   <h3 className="text-base font-bold mb-1 truncate max-w-full" style={{ color: colors.text }}>
@@ -2041,7 +2042,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
       </div>
 
       {/* ── Status bar ───────────────────────────────────────────────────── */}
-      {(isCode || isMarkdownFile || isTableData || isEditMode) && !loading && !error && textContent !== null && (
+      {(isCode || isMarkdownFile || isTableData || isEditMode) && !loading && !error && textContent !== null ? (
         <div
           className="flex items-center justify-between px-4 shrink-0 select-none pb-[env(safe-area-inset-bottom,0px)]"
           style={{
@@ -2063,6 +2064,8 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
             </span>
           )}
         </div>
+      ) : (
+        <div className="h-[env(safe-area-inset-bottom,0px)] shrink-0" />
       )}
     </div>
   );

@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 77;
+	objectVersion = 56;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -182,9 +182,13 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					FC2AE3A628B20DD3BF9A4343 = {
+						ProvisioningStyle = Manual;
+					};
 				};
 			};
 			buildConfigurationList = 8CA6F6014C1D16A8E6F69A43 /* Build configuration list for PBXProject "teledrive" */;
+			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -193,7 +197,6 @@
 			);
 			mainGroup = 9EF9A3FD36ED84C04216A015;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
 			productRefGroup = 71B03D2FCAFFA53ED0BA3892 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -379,8 +382,11 @@
 					arm64,
 				);
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
 				CODE_SIGN_ENTITLEMENTS = teledrive_iOS/teledrive_iOS.entitlements;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Manual;
 				ENABLE_BITCODE = NO;
 				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -410,8 +416,11 @@
 					arm64,
 				);
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
 				CODE_SIGN_ENTITLEMENTS = teledrive_iOS/teledrive_iOS.entitlements;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Manual;
 				ENABLE_BITCODE = NO;
 				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
 				FRAMEWORK_SEARCH_PATHS = (

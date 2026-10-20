@@ -1,0 +1,116 @@
+name: Build Windows Installer & MSI
+
+on:
+  push:
+    branches:
+      - main
+      - pro
+      - '0.*'
+      - '[0-9]+.[0-9]+.[0-9]+'
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      bundle_type:
+        description: 'Bundle type (all, nsis, msi)'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - nsis
+          - msi
+
+jobs:
+  build-windows:
+    name: Build Windows Installers
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Build Tauri Windows Installers
+        shell: bash
+        run: |
+          BUNDLE_FLAG="--bundles nsis,msi"
+          if [ "${{ github.event.inputs.bundle_type }}" = "nsis" ]; then
+            BUNDLE_FLAG="--bundles nsis"
+          elif [ "${{ github.event.inputs.bundle_type }}" = "msi" ]; then
+            BUNDLE_FLAG="--bundles msi"
+          fi
+          echo "Building with $BUNDLE_FLAG..."
+          npx tauri build $BUNDLE_FLAG
+
+      - name: Organize deliverables into distribution/v<version>/
+        shell: bash
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          DIST_DIR="distribution/v${VERSION}"
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          echo "DIST_DIR=${DIST_DIR}" >> $GITHUB_ENV
+          mkdir -p "$DIST_DIR"
+
+          echo "Looking for built NSIS & MSI installers..."
+          SETUP_FILE=$(find src-tauri/target -name "*setup.exe" -o -name "*Setup.exe" 2>/dev/null | head -n 1)
+          MSI_FILE=$(find src-tauri/target -name "*.msi" 2>/dev/null | head -n 1)
+
+          if [ -n "$SETUP_FILE" ]; then
+            echo "Found NSIS Setup: $SETUP_FILE"
+            cp "$SETUP_FILE" "$DIST_DIR/teledrive-setup.exe"
+            echo "✓ Staged $DIST_DIR/teledrive-setup.exe"
+          fi
+
+          if [ -n "$MSI_FILE" ]; then
+            echo "Found MSI: $MSI_FILE"
+            cp "$MSI_FILE" "$DIST_DIR/teledrive.msi"
+            echo "✓ Staged $DIST_DIR/teledrive.msi"
+          fi
+
+          if [ -z "$SETUP_FILE" ] && [ -z "$MSI_FILE" ]; then
+            echo "::error::Neither NSIS nor MSI installer was generated!"
+            exit 1
+          fi
+
+          # Clean any old duplicate files from distribution root
+          rm -f distribution/TeleDrive_* distribution/teledrive-setup.exe distribution/teledrive.msi 2>/dev/null || true
+
+          # Generate checksums
+          cd "$DIST_DIR"
+          sha256sum teledrive* > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          cd -
+
+          ls -lh "$DIST_DIR"
+
+      - name: Upload Windows installers artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: teledrive-windows-v${{ env.VERSION }}
+          path: |
+            ${{ env.DIST_DIR }}/teledrive-setup.exe
+            ${{ env.DIST_DIR }}/teledrive.msi
+            ${{ env.DIST_DIR }}/SHA256SUMS.txt
+          if-no-files-found: warn
+          retention-days: 30
+

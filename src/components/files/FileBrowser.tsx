@@ -4,22 +4,17 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   Grid,
   List,
-  FolderPlus,
-  Upload,
   ChevronRight,
   Home,
   Star,
   Trash2,
   X,
-  FolderOpen,
   Folder,
-  FileCheck,
   RotateCcw,
   ArrowUpDown,
   Eye,
   Download,
   Edit2,
-  Archive,
   CheckCircle,
   Check,
   Plus,
@@ -56,6 +51,7 @@ import { fuzzySearch } from "@/lib/search/searchEngine";
 import { getFileCategory } from "@/lib/files/fileUtils";
 import { isEditableFile } from "@/lib/files/editableTypes";
 import { useFileBrowserDragAndDrop } from "@/hooks/useFileBrowserDragAndDrop";
+import { EmptyState } from "./EmptyState";
 import { collapseDuplicateFolders, dedupeByContentKey, dedupeByMessageId, folderIdForPath } from "@/lib/storage/metadataStore";
 import { isBackupItem, BACKUP_ROOT, BACKUP_ROOT_PREFIX } from "@/lib/backup/visibility";
 import { toast } from "sonner";
@@ -165,6 +161,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
   const selectedIds = useFileStore((state) => state.selectedIds);
   const selectedIdsSet = useFileStore((state) => state.selectedIdsSet);
   const isLoading = useFileStore((state) => state.isLoading);
+  const bootstrapComplete = useFileStore((state) => state.bootstrapComplete);
   const setFolder = useFileStore((state) => state.setFolder);
   const toggleSelect = useFileStore((state) => state.toggleSelect);
   const setSelectedIds = useFileStore((state) => state.setSelectedIds);
@@ -234,13 +231,25 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
   // Progressive render limit for memory & DOM performance on large directories
   const INITIAL_RENDER_LIMIT = 80;
   const [renderLimit, setRenderLimit] = useState(INITIAL_RENDER_LIMIT);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Restore scroll position for current folder/mode
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      const saved = sessionStorage.getItem(`teledrive_scroll_${mode}_${folderPath}`);
+      if (saved) {
+        scrollContainerRef.current.scrollTop = Number(saved);
+      }
+    }
+  }, [folderPath, mode]);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
     if (target.scrollTop + target.clientHeight >= target.scrollHeight - 300) {
       setRenderLimit((prev) => prev + 50);
     }
-  }, []);
+    sessionStorage.setItem(`teledrive_scroll_${mode}_${folderPath}`, String(target.scrollTop));
+  }, [mode, folderPath]);
 
   // Update current folder path in store on mount/change
   useEffect(() => {
@@ -755,85 +764,23 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
 
   // Render helpers (headerTitle is now memoized above)
 
-  const renderEmptyState = () => {
-    let title = t("browser.emptyState.drive.title");
-    let subtitle = t("browser.emptyState.drive.subtitle");
-    let Icon = FolderOpen;
-
-    if (mode === "starred") {
-      title = t("browser.emptyState.starred.title");
-      subtitle = t("browser.emptyState.starred.subtitle");
-      Icon = Star;
-    } else if (mode === "recent") {
-      title = t("browser.emptyState.recent.title");
-      subtitle = t("browser.emptyState.recent.subtitle");
-      Icon = FileCheck;
-    } else if (mode === "trash") {
-      title = t("browser.emptyState.trash.title");
-      subtitle = t("browser.emptyState.trash.subtitle");
-      Icon = Trash2;
-    } else if (mode === "archived") {
-      title = t("browser.emptyState.archived.title");
-      subtitle = t("browser.emptyState.archived.subtitle");
-      Icon = Archive;
-    } else if (mode === "search") {
-      title = t("browser.emptyState.search.title");
-      subtitle = t("browser.emptyState.search.subtitle", { query: searchQuery });
-      Icon = FolderOpen;
-    } else if (mode === "backups") {
-      title = t("browser.emptyState.backups.title");
-      subtitle = t("browser.emptyState.backups.subtitle");
-      Icon = Shield;
-    } else if (folderPath !== "/") {
-      title = t("browser.emptyState.folder.title");
-      subtitle = t("browser.emptyState.folder.subtitle");
-      Icon = Folder;
-    }
-
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center p-8 text-center max-w-md mx-auto animate-slide-up-fade">
-        <div className="relative mb-6">
-          <div className="absolute inset-0 bg-brand-100/40 dark:bg-brand-950/20 blur-xl rounded-full scale-150 animate-pulse" />
-          <Icon className="relative h-16 w-16 text-brand-500/80 stroke-[1.5]" />
-        </div>
-
-        <h3 className="text-base font-bold text-slate-800 dark:text-slate-200 mb-1">
-          {title}
-        </h3>
-
-        <p className="text-xs text-muted-foreground mb-6 leading-relaxed">
-          {subtitle}
-        </p>
-
-        {mode === "drive" && (
-          <div className="flex gap-3 justify-center">
-            <Button
-              onClick={triggerUpload}
-              className="rounded-xl bg-brand-500 hover:bg-brand-600 font-semibold px-5 text-sm shadow-sm"
-            >
-              <Upload className="mr-2 h-4 w-4" />
-              {t("browser.emptyState.uploadFiles")}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setCreateDialogOpen(true)}
-              className="rounded-xl font-semibold px-5 text-sm border-slate-200 dark:border-slate-800"
-            >
-              <FolderPlus className="mr-2 h-4 w-4" />
-              {t("browser.emptyState.newFolder")}
-            </Button>
-          </div>
-        )}
-      </div>
-    );
-  };
+  const renderEmptyState = () => (
+    <EmptyState
+      mode={mode}
+      folderPath={folderPath}
+      searchQuery={searchQuery}
+      onUploadFiles={mode === "drive" ? triggerUpload : undefined}
+      onCreateFolder={mode === "drive" ? () => setCreateDialogOpen(true) : undefined}
+    />
+  );
 
   return (
-    <div className={cn("flex flex-col h-full p-4 md:p-6 lg:p-7 space-y-4", isDraggingActive && "dragging-active")}>
+    <div className={cn("flex flex-col h-full px-3 pt-2 pb-4 md:p-6 lg:p-7 space-y-4", isDraggingActive && "dragging-active")}>
       {/* File Browser Header Toolbar: Google Drive style */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between border-b border-slate-200/70 dark:border-slate-800/60 pb-3 shrink-0">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between border-b border-slate-200/70 dark:border-border pb-3 shrink-0">
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-[#1f1f1f] dark:text-[#e3e3e3]">
+          {/* Hide h1 on mobile — the DriveLayout topbar already shows the page title inline */}
+          <h1 className="hidden md:block text-2xl font-semibold tracking-tight text-[#1f1f1f] dark:text-[#e3e3e3]">
             {headerTitle}
           </h1>
           {(mode === "drive" || mode === "backups") && breadcrumbs.length > 0 && (
@@ -872,7 +819,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                 <div key={crumb.link} className="flex items-center gap-1 shrink-0">
                   <ChevronRight className="h-3.5 w-3.5 text-[#747775] dark:text-[#8e918f] shrink-0" />
                   {idx === breadcrumbs.length - 1 ? (
-                    <span className="font-semibold text-[#1f1f1f] dark:text-[#e3e3e3] px-2 py-0.5 rounded-md bg-[#f0f4f9] dark:bg-[#282a2c]">
+                    <span className="font-semibold text-[#1f1f1f] dark:text-[#e3e3e3] px-2 py-0.5 rounded-md bg-[#f0f4f9] dark:bg-[#161719]">
                       {crumb.name}
                     </span>
                   ) : (
@@ -930,7 +877,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
             variant="ghost"
             size="icon"
             onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
-            className="h-9 w-9 rounded-full hover:bg-[#e9eef6] dark:hover:bg-[#282a2c] text-[#444746] dark:text-[#c4c7c5] cursor-pointer"
+            className="h-10 w-10 sm:h-9 sm:w-9 rounded-full hover:bg-[#e9eef6] dark:hover:bg-[#1f2124] text-[#444746] dark:text-[#c4c7c5] cursor-pointer"
             title={viewMode === "grid" ? t("browser.switchToListView") : t("browser.switchToGridView")}
           >
             {viewMode === "grid" ? (
@@ -962,9 +909,9 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       )}
 
       {/* Filters and Sorting: Google Drive filter chips & sort */}
-      <div className="flex flex-wrap items-center justify-between gap-3 py-0.5 shrink-0 select-none">
+      <div className="flex items-center justify-between gap-2 py-0.5 shrink-0 select-none">
         {/* Category Filter Chips */}
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth py-0.5 max-w-full">
+        <div className="flex-1 min-w-0 flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar scroll-smooth py-0.5">
           {[
             { value: "All", labelKey: "browser.filters.all" },
             { value: "Documents", labelKey: "browser.filters.documents" },
@@ -979,10 +926,10 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                 type="button"
                 onClick={() => setFilterType(filter)}
                 className={cn(
-                  "px-3.5 py-1.5 text-xs font-medium rounded-lg border transition-all duration-150 cursor-pointer whitespace-nowrap active:scale-95 inline-flex items-center gap-1.5",
+                  "px-3 py-1.5 sm:px-3.5 text-xs font-medium rounded-lg border transition-all duration-150 cursor-pointer whitespace-nowrap active:scale-95 inline-flex items-center gap-1.5 shrink-0",
                   isActive
                     ? "bg-[#c2e7ff] text-[#001d35] border-transparent font-semibold dark:bg-[#004a77] dark:text-[#c2e7ff] shadow-xs"
-                    : "bg-white dark:bg-[#1e1f20] border-slate-300/70 dark:border-slate-700/70 text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-[#282a2c] hover:text-[#1f1f1f] dark:hover:text-[#e3e3e3]"
+                    : "bg-white dark:bg-[#161719] border-slate-300/70 dark:border-white/[0.04] text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] hover:text-[#1f1f1f] dark:hover:text-[#e3e3e3]"
                 )}
               >
                 {isActive && <Check className="h-3.5 w-3.5 text-[#001d35] dark:text-[#c2e7ff]" />}
@@ -993,21 +940,22 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
         </div>
 
         {/* Sort Dropdown */}
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 rounded-lg text-xs font-medium text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-[#282a2c] border border-slate-300/70 dark:border-slate-700/70 px-3 flex items-center gap-1.5 cursor-pointer"
+                className="h-9 sm:h-8 rounded-lg text-xs font-medium text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] border border-slate-300/70 dark:border-white/[0.04] px-2.5 sm:px-3 flex items-center gap-1.5 cursor-pointer shrink-0"
               >
                 <ArrowUpDown className="h-3.5 w-3.5" />
-                <span>{t("browser.sort.label", { sort: sortLabel })}</span>
+                <span className="hidden sm:inline">{t("browser.sort.label", { sort: sortLabel })}</span>
+                <span className="sm:hidden font-medium">{sortLabel}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              className="w-48 rounded-xl p-1 bg-white dark:bg-[#282a2c] border border-slate-200 dark:border-slate-800 shadow-xl z-50"
+              className="w-48 rounded-xl p-1 bg-white dark:bg-[#141518] border border-slate-200 dark:border-white/[0.06] shadow-xl z-50"
             >
               {[
                 { value: "name_asc", labelKey: "browser.sort.options.nameAsc" },
@@ -1021,7 +969,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                   key={opt.value}
                   onClick={() => setSortBy(opt.value)}
                   className={cn(
-                    "flex items-center justify-between px-3 py-2 text-xs rounded-lg cursor-pointer hover:bg-[#f0f4f9] dark:hover:bg-[#333537] text-[#1f1f1f] dark:text-[#e3e3e3]",
+                    "flex items-center justify-between px-3 py-2 text-xs rounded-lg cursor-pointer hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] text-[#1f1f1f] dark:text-[#e3e3e3]",
                     sortBy === opt.value && "font-bold text-[#0b57d0] dark:text-[#a8c7fa] bg-[#c2e7ff]/30 dark:bg-[#004a77]/30"
                   )}
                 >
@@ -1034,17 +982,17 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       </div>
 
       {/* Main Files Display Area */}
-      {isLoading ? (
+      {(isLoading || !bootstrapComplete) ? (
         <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4 overflow-y-auto">
           {Array.from({ length: 12 }).map((_, i) => (
             <div
               key={i}
-              className="h-28 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 p-3 animate-pulse space-y-3"
+              className="h-28 rounded-2xl border border-slate-200 dark:border-white/[0.04] bg-white dark:bg-[#111214] p-3 animate-pulse space-y-3"
             >
-              <div className="h-10 w-10 bg-slate-200 dark:bg-slate-800 rounded-xl" />
+              <div className="h-10 w-10 bg-slate-200 dark:bg-[#161719] rounded-xl" />
               <div className="space-y-1.5">
-                <div className="h-3 w-3/4 bg-slate-200 dark:bg-slate-800 rounded" />
-                <div className="h-2 w-1/2 bg-slate-200 dark:bg-slate-800 rounded" />
+                <div className="h-3 w-3/4 bg-slate-200 dark:bg-[#161719] rounded" />
+                <div className="h-2 w-1/2 bg-slate-200 dark:bg-[#161719] rounded" />
               </div>
             </div>
           ))}
@@ -1054,6 +1002,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       ) : viewMode === "grid" ? (
         /* GRID VIEW */
         <div
+          ref={scrollContainerRef}
           className="flex-1 overflow-y-auto min-h-0 select-none pb-20 pr-1 space-y-8"
           onDragOver={handleGlobalDragOver}
           onDrop={handleGlobalDrop}
@@ -1095,18 +1044,18 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                         data-folder-id={folder.id}
                         style={{ animationDelay: `${Math.min(index, 15) * 20}ms` }}
                         className={cn(
-                          "group relative flex items-center justify-between gap-3 h-12 px-3.5 rounded-xl transition-all duration-150 cursor-pointer select-none border border-transparent hover:border-slate-300/80 dark:hover:border-slate-700/80",
+                          "group relative flex items-center justify-between gap-3 h-12 px-3.5 rounded-xl transition-all duration-150 cursor-pointer select-none border border-transparent hover:border-slate-300/80 dark:hover:border-white/[0.08]",
                           isSelected
                             ? "bg-[#c2e7ff] text-[#001d35] dark:bg-[#004a77] dark:text-[#c2e7ff] font-medium shadow-xs border-transparent"
                             : dragOverId === folder.id
                             ? "bg-[#c2e7ff]/60 dark:bg-[#004a77]/60 ring-2 ring-[#0b57d0]"
-                            : "bg-[#f0f4f9] dark:bg-[#282a2c] hover:bg-[#e1e7ef] dark:hover:bg-[#333537] text-[#1f1f1f] dark:text-[#e3e3e3]",
+                            : "bg-[#f0f4f9] dark:bg-[#161719] hover:bg-[#e1e7ef] dark:hover:bg-[#1f2124] text-[#1f1f1f] dark:text-[#e3e3e3]",
                           isBeingDragged && "opacity-40"
                         )}
                       >
                         {/* Drop-target "+" badge */}
                         {dragOverId === folder.id && isDraggingActive && (
-                          <span className="absolute -right-2 -top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-[#0b57d0] text-white shadow-md ring-2 ring-white dark:ring-[#1e1f20] pointer-events-none animate-folder-drop-badge">
+                          <span className="absolute -right-2 -top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-[#0b57d0] text-white shadow-md ring-2 ring-white dark:ring-[#161719] pointer-events-none animate-folder-drop-badge">
                             <Plus className="h-3.5 w-3.5" />
                           </span>
                         )}
@@ -1182,7 +1131,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                         onTouchMove={handleTouchEndItem}
                         style={{ animationDelay: `${Math.min(folders.length + index, 15) * 20}ms` }}
                         className={cn(
-                          "group relative flex flex-col rounded-2xl transition-all duration-150 cursor-pointer overflow-hidden text-left select-none h-44 sm:h-52 bg-white dark:bg-[#1e1f20] hover:bg-[#f8fafd] dark:hover:bg-[#282a2c] border border-slate-200/90 dark:border-slate-800/90 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md",
+                          "group relative flex flex-col rounded-2xl transition-all duration-150 cursor-pointer overflow-hidden text-left select-none h-40 sm:h-52 bg-white dark:bg-[#111214] hover:bg-[#f8fafd] dark:hover:bg-[#161719] border border-slate-200/90 dark:border-white/[0.04] hover:border-slate-300 dark:hover:border-white/[0.08] hover:shadow-md",
                           isSelected
                             ? "bg-[#c2e7ff]/30 dark:bg-[#004a77]/30 ring-2 ring-[#0b57d0] dark:ring-[#a8c7fa] border-transparent shadow-xs"
                             : "",
@@ -1190,10 +1139,10 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                         )}
                       >
                         {/* Top bar with mini typed icon, title, and action menu */}
-                        <div className="flex items-center justify-between gap-1.5 px-3.5 pt-3 pb-1 shrink-0">
-                          <div className="flex items-center gap-2 min-w-0 flex-1 pointer-events-none">
+                        <div className="flex items-center justify-between gap-1.5 px-2.5 sm:px-3.5 pt-2 sm:pt-3 pb-1 shrink-0">
+                          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 pointer-events-none">
                             <FileIcon name={file.name} mime={file.mime} size="sm" bare className="shrink-0" />
-                            <p className="text-xs font-medium text-[#1f1f1f] dark:text-[#e3e3e3] truncate">
+                            <p className="text-[11px] sm:text-xs font-medium text-[#1f1f1f] dark:text-[#e3e3e3] truncate">
                               {file.name}
                             </p>
                           </div>
@@ -1215,7 +1164,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                         </div>
 
                         {/* Centered Preview Canvas */}
-                        <div className="flex-1 bg-[#f8fafd] dark:bg-[#131314]/80 mx-2.5 my-1 rounded-xl border border-slate-100 dark:border-slate-800/80 flex items-center justify-center relative overflow-hidden pointer-events-none">
+                        <div className="flex-1 bg-[#f8fafd] dark:bg-[#0a0a0a] mx-2.5 my-1 rounded-xl border border-slate-100 dark:border-white/[0.04] flex items-center justify-center relative overflow-hidden pointer-events-none">
                           {file.thumbnailUrl ? (
                             <img
                               src={file.thumbnailUrl}
@@ -1223,7 +1172,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <div className="w-16 h-20 bg-white dark:bg-[#202124] rounded-md shadow-xs border border-slate-200/80 dark:border-slate-700/80 p-2 flex flex-col items-center justify-between pointer-events-none select-none">
+                            <div className="w-16 h-20 bg-white dark:bg-[#161719] rounded-md shadow-xs border border-slate-200/80 dark:border-white/[0.04] p-2 flex flex-col items-center justify-between pointer-events-none select-none">
                               <div className="w-full space-y-1 mt-0.5 opacity-40">
                                 <div className="h-0.5 bg-slate-300 dark:bg-slate-600 rounded-full w-full" />
                                 <div className="h-0.5 bg-slate-300 dark:bg-slate-600 rounded-full w-4/5" />
@@ -1263,14 +1212,15 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       ) : (
         /* LIST VIEW */
         <div
-          className="flex-1 overflow-y-auto min-h-0 select-none pb-20 border border-slate-200/80 dark:border-slate-800/80 rounded-2xl bg-white dark:bg-[#1e1f20] shadow-xs"
+          ref={scrollContainerRef}
+          className="flex-1 overflow-y-auto min-h-0 select-none pb-20 border border-slate-200/80 dark:border-white/[0.04] rounded-2xl bg-white dark:bg-[#0a0a0a] shadow-xs"
           onDragOver={handleGlobalDragOver}
           onDrop={handleGlobalDrop}
           onScroll={handleScroll}
         >
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-[#444746] dark:text-[#8e918f] select-none bg-slate-50/70 dark:bg-[#202124]/50">
+              <tr className="border-b border-slate-200 dark:border-white/[0.04] text-[11px] font-semibold text-[#444746] dark:text-[#8e918f] select-none bg-slate-50/70 dark:bg-[#111214]/60">
                 <th className="py-3 px-4 w-12 text-center">
                   <input
                     type="checkbox"
@@ -1282,7 +1232,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                         clearSelection();
                       }
                     }}
-                    className="h-4 w-4 rounded-sm border-slate-300 dark:border-slate-700 text-[#0b57d0] focus:ring-[#0b57d0]/20 dark:bg-slate-900 transition-colors cursor-pointer"
+                    className="h-4 w-4 rounded-sm border-slate-300 dark:border-white/[0.1] text-[#0b57d0] focus:ring-[#0b57d0]/20 dark:bg-[#161719] transition-colors cursor-pointer"
                   />
                 </th>
                 <th className="py-3 px-4 font-semibold">{t("browser.columns.name")}</th>
@@ -1323,21 +1273,21 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                       {...(isDir ? { 'data-folder-id': file.id } : {})}
                       style={{ animationDelay: `${Math.min(index, 15) * 20}ms` }}
                       className={cn(
-                        "group border-b border-slate-100 dark:border-slate-800/50 hover:bg-[#f0f4f9] dark:hover:bg-[#282a2c] cursor-pointer transition-colors duration-100 h-12",
+                        "group border-b border-slate-100 dark:border-white/[0.03] hover:bg-[#f0f4f9] dark:hover:bg-[#161719] cursor-pointer transition-colors duration-100 h-11 sm:h-12",
                         isSelected && "bg-[#c2e7ff]/40 dark:bg-[#004a77]/35 text-[#001d35] dark:text-[#c2e7ff]",
                         dragOverId === file.id && isDir && "bg-[#c2e7ff]/70 dark:bg-[#004a77]/70 ring-2 ring-[#0b57d0]",
                         (draggedId !== null && (draggedId === file.id || (isSelected && selectedIdsSet.has(draggedId)))) && "opacity-40"
                       )}
                     >
-                      <td className="py-3 px-4 text-center" data-no-drag onClick={(e) => e.stopPropagation()}>
+                      <td className="py-2 sm:py-3 px-3 sm:px-4 text-center" data-no-drag onClick={(e) => e.stopPropagation()}>
                         <input
                           type="checkbox"
                           checked={isSelected}
                           onChange={() => toggleSelect(file.id)}
-                          className="h-4 w-4 rounded-sm border-slate-300 dark:border-slate-700 text-[#0b57d0] focus:ring-[#0b57d0]/20 dark:bg-slate-900 transition-colors cursor-pointer"
+                          className="h-4 w-4 rounded-sm border-slate-300 dark:border-white/[0.1] text-[#0b57d0] focus:ring-[#0b57d0]/20 dark:bg-[#161719] transition-colors cursor-pointer"
                         />
                       </td>
-                      <td className="py-2.5 sm:py-3 px-3 sm:px-4 font-medium text-[#1f1f1f] dark:text-[#e3e3e3] text-xs md:text-sm">
+                      <td className="py-2 sm:py-3 px-2.5 sm:px-4 font-medium text-[#1f1f1f] dark:text-[#e3e3e3] text-xs md:text-sm">
                         <div className="flex items-center gap-2.5 sm:gap-3 pointer-events-none">
                           <FileIcon name={file.name} mime={file.mime} size="sm" className="shrink-0" />
                           <div className="min-w-0 flex-1">
@@ -1404,7 +1354,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
           }}
         >
           {internalDrag.previewVariant === "folder-grid" ? (
-            <div className="h-full rounded-xl border border-brand-200/90 bg-white/96 dark:border-slate-700/90 dark:bg-slate-900/96 backdrop-blur-md px-3.5 pr-3.5 flex items-center justify-between gap-3 shadow-[0_16px_32px_-20px_rgba(15,23,42,0.45)]">
+            <div className="h-full rounded-xl border border-brand-200/90 bg-white/96 dark:border-white/[0.06] dark:bg-[#141518]/96 backdrop-blur-md px-3.5 pr-3.5 flex items-center justify-between gap-3 shadow-[0_16px_32px_-20px_rgba(15,23,42,0.45)]">
               <div className="flex items-center gap-3 min-w-0 flex-1">
                 <Folder className="h-5 w-5 text-brand-500 fill-brand-500/10 shrink-0 stroke-[1.5]" />
                 <span className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
@@ -1414,7 +1364,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
               <MoreHorizontal className="h-4 w-4 text-slate-400 shrink-0" />
             </div>
           ) : internalDrag.previewVariant === "list-row" ? (
-            <div className="h-full rounded-xl border border-slate-200/90 dark:border-slate-800/90 bg-white/96 dark:bg-slate-900/96 backdrop-blur-md flex items-center gap-3 px-4 shadow-[0_16px_32px_-20px_rgba(15,23,42,0.45)]">
+            <div className="h-full rounded-xl border border-slate-200/90 dark:border-white/[0.06] bg-white/96 dark:bg-[#141518]/96 backdrop-blur-md flex items-center gap-3 px-4 shadow-[0_16px_32px_-20px_rgba(15,23,42,0.45)]">
               <FileIcon
                 name={internalDrag.previewFile.name}
                 mime={internalDrag.previewFile.mime}
@@ -1432,11 +1382,11 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
               <MoreHorizontal className="h-4 w-4 text-slate-400 shrink-0" />
             </div>
           ) : (
-            <div className="h-full rounded-2xl border border-slate-200/80 dark:border-slate-800/80 bg-white/96 dark:bg-slate-950/96 backdrop-blur-md overflow-hidden shadow-[0_20px_40px_-24px_rgba(15,23,42,0.5)]">
-              <div className="flex-1 h-[calc(100%-51px)] min-h-0 bg-slate-50/70 dark:bg-slate-900/40 flex items-center justify-center p-4 border-b border-slate-100 dark:border-slate-800/50">
+            <div className="h-full rounded-2xl border border-slate-200/80 dark:border-white/[0.06] bg-white/96 dark:bg-[#111214]/96 backdrop-blur-md overflow-hidden shadow-[0_20px_40px_-24px_rgba(15,23,42,0.5)]">
+              <div className="flex-1 h-[calc(100%-51px)] min-h-0 bg-slate-50/70 dark:bg-[#0a0a0a] flex items-center justify-center p-4 border-b border-slate-100 dark:border-white/[0.04]">
                 <FileIcon name={internalDrag.previewFile.name} mime={internalDrag.previewFile.mime} size="lg" />
               </div>
-              <div className="h-[51px] px-3 py-2.5 bg-white/96 dark:bg-slate-950/96">
+              <div className="h-[51px] px-3 py-2.5 bg-white/96 dark:bg-[#111214]/96">
                 <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
                   {internalDrag.previewFile.name}
                 </p>
@@ -1452,12 +1402,12 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
 
       {/* Floating Bulk Action Bar */}
       {selectedIds.length > 0 && (
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-4 bg-white/95 dark:bg-[#282a2c]/95 text-[#1f1f1f] dark:text-[#e3e3e3] px-5 py-2.5 rounded-full shadow-2xl border border-slate-300/80 dark:border-slate-700/80 backdrop-blur-md animate-slide-up select-none">
+        <div className="fixed bottom-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom,0px)+16px)] md:bottom-6 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-3 sm:gap-4 bg-white/95 dark:bg-[#141518]/95 text-[#1f1f1f] dark:text-[#e3e3e3] px-4 sm:px-5 py-2.5 rounded-full shadow-2xl border border-slate-300/80 dark:border-white/[0.06] backdrop-blur-md animate-slide-up select-none">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold bg-[#0b57d0] dark:bg-[#a8c7fa] px-2.5 py-0.5 rounded-full text-white dark:text-[#003258]">{selectedIds.length}</span>
             <span className="text-xs font-medium whitespace-nowrap text-[#1f1f1f] dark:text-[#e3e3e3]">{t("browser.bulkBar.selected", { count: selectedIds.length })}</span>
           </div>
-          <div className="h-4 w-px bg-slate-300/80 dark:bg-slate-700/80" />
+          <div className="h-4 w-px bg-slate-300/80 dark:bg-white/[0.06]" />
           
           <div className="flex items-center gap-1.5">
             {mode === "trash" ? (
@@ -1465,7 +1415,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                 <button
                   type="button"
                   onClick={handleBulkRestore}
-                  className="h-8.5 w-8.5 rounded-full flex items-center justify-center text-[#444746] dark:text-[#c4c7c5] hover:text-[#0b57d0] dark:hover:text-[#a8c7fa] hover:bg-[#f0f4f9] dark:hover:bg-[#333537] transition-colors cursor-pointer border-0 bg-transparent outline-none"
+                  className="h-8.5 w-8.5 rounded-full flex items-center justify-center text-[#444746] dark:text-[#c4c7c5] hover:text-[#0b57d0] dark:hover:text-[#a8c7fa] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] transition-colors cursor-pointer border-0 bg-transparent outline-none"
                   title={t("browser.bulkBar.restoreSelected")}
                 >
                   <RotateCcw className="h-4.5 w-4.5" />
@@ -1484,7 +1434,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                 <button
                   type="button"
                   onClick={handleBulkTrash}
-                  className="h-8.5 w-8.5 rounded-full flex items-center justify-center text-[#444746] dark:text-[#c4c7c5] hover:text-red-600 dark:hover:text-red-400 hover:bg-[#f0f4f9] dark:hover:bg-[#333537] transition-colors cursor-pointer border-0 bg-transparent outline-none"
+                  className="h-8.5 w-8.5 rounded-full flex items-center justify-center text-[#444746] dark:text-[#c4c7c5] hover:text-red-600 dark:hover:text-red-400 hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] transition-colors cursor-pointer border-0 bg-transparent outline-none"
                   title={t("browser.bulkBar.moveSelectedToTrash")}
                 >
                   <Trash2 className="h-4.5 w-4.5" />
@@ -1495,7 +1445,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
             <button
               type="button"
               onClick={clearSelection}
-              className="h-8.5 w-8.5 rounded-full flex items-center justify-center text-[#747775] dark:text-[#8e918f] hover:text-[#1f1f1f] dark:hover:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537] transition-colors cursor-pointer border-0 bg-transparent outline-none"
+              className="h-8.5 w-8.5 rounded-full flex items-center justify-center text-[#747775] dark:text-[#8e918f] hover:text-[#1f1f1f] dark:hover:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] transition-colors cursor-pointer border-0 bg-transparent outline-none"
               title={t("browser.bulkBar.clearSelection")}
             >
               <X className="h-4.5 w-4.5" />
@@ -1506,7 +1456,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
 
       {/* dialog for creating folder */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="rounded-3xl max-w-sm p-6 bg-white dark:bg-[#1e1f20] border border-slate-200/80 dark:border-slate-800 shadow-2xl">
+        <DialogContent className="rounded-3xl max-w-sm p-6 bg-white dark:bg-[#141518] border border-slate-200/80 dark:border-white/[0.06] shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">{t("browser.dialogs.createFolder.title")}</DialogTitle>
           </DialogHeader>
@@ -1516,14 +1466,14 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
               onChange={(e) => setNewFolderName(e.target.value)}
               placeholder={t("browser.dialogs.createFolder.placeholder")}
               autoFocus
-              className="rounded-xl h-11 px-3.5 border-slate-300 dark:border-slate-700 bg-white dark:bg-[#131314] text-[#1f1f1f] dark:text-[#e3e3e3] focus-visible:ring-2 focus-visible:ring-[#0b57d0]/30"
+              className="rounded-xl h-11 px-3.5 border-slate-300 dark:border-white/[0.06] bg-white dark:bg-[#161719] text-[#1f1f1f] dark:text-[#e3e3e3] focus-visible:ring-2 focus-visible:ring-[#0b57d0]/30"
             />
             <DialogFooter className="gap-2 sm:gap-2 justify-end">
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => setCreateDialogOpen(false)}
-                className="rounded-full h-9.5 px-4 text-xs font-medium text-[#0b57d0] dark:text-[#a8c7fa] hover:bg-[#f0f4f9] dark:hover:bg-[#282a2c] cursor-pointer"
+                className="rounded-full h-9.5 px-4 text-xs font-medium text-[#0b57d0] dark:text-[#a8c7fa] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] cursor-pointer"
               >
                 {t("browser.dialogs.cancel")}
               </Button>
@@ -1541,7 +1491,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
 
       {/* dialog for renaming file */}
       <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
-        <DialogContent className="rounded-3xl max-w-sm p-6 bg-white dark:bg-[#1e1f20] border border-slate-200/80 dark:border-slate-800 shadow-2xl">
+        <DialogContent className="rounded-3xl max-w-sm p-6 bg-white dark:bg-[#141518] border border-slate-200/80 dark:border-white/[0.06] shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">{t("browser.dialogs.rename.title")}</DialogTitle>
           </DialogHeader>
@@ -1551,14 +1501,14 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
               onChange={(e) => setNewFileName(e.target.value)}
               placeholder={t("browser.dialogs.rename.placeholder")}
               autoFocus
-              className="rounded-xl h-11 px-3.5 border-slate-300 dark:border-slate-700 bg-white dark:bg-[#131314] text-[#1f1f1f] dark:text-[#e3e3e3] focus-visible:ring-2 focus-visible:ring-[#0b57d0]/30"
+              className="rounded-xl h-11 px-3.5 border-slate-300 dark:border-white/[0.06] bg-white dark:bg-[#161719] text-[#1f1f1f] dark:text-[#e3e3e3] focus-visible:ring-2 focus-visible:ring-[#0b57d0]/30"
             />
             <DialogFooter className="gap-2 sm:gap-2 justify-end">
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => setRenameDialogOpen(false)}
-                className="rounded-full h-9.5 px-4 text-xs font-medium text-[#0b57d0] dark:text-[#a8c7fa] hover:bg-[#f0f4f9] dark:hover:bg-[#282a2c] cursor-pointer"
+                className="rounded-full h-9.5 px-4 text-xs font-medium text-[#0b57d0] dark:text-[#a8c7fa] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] cursor-pointer"
               >
                 {t("browser.dialogs.cancel")}
               </Button>
@@ -1577,10 +1527,10 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       {/* Mobile Context Menu Bottom Sheet */}
       {isMobile && (
         <Sheet open={!!mobileContextFile} onOpenChange={(open) => !open && setMobileContextFile(null)}>
-          <SheetContent side="bottom" className="rounded-t-2xl px-6 py-5 max-h-[420px] bg-white dark:bg-slate-900 border-t dark:border-slate-800">
+          <SheetContent side="bottom" className="rounded-t-2xl px-6 py-5 max-h-[420px] bg-white dark:bg-[#141518] border-t dark:border-white/[0.06]">
             {mobileContextFile && (
               <div className="space-y-4 select-none">
-                <div className="flex items-center gap-3 border-b pb-3">
+                <div className="flex items-center gap-3 border-b dark:border-white/[0.04] pb-3">
                   <FileIcon name={mobileContextFile.name} mime={mobileContextFile.mime} size="sm" />
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-slate-800 dark:text-slate-100 truncate">
@@ -1601,7 +1551,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                         setMobileContextFile(null);
                         toastPreview(mobileContextFile);
                       }}
-                      className="flex items-center gap-3 px-3 py-3 text-sm rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-left font-semibold text-slate-700 dark:text-slate-200 border-0 cursor-pointer w-full bg-transparent"
+                      className="flex items-center gap-3 px-3 py-3 text-sm rounded-xl hover:bg-slate-100 dark:hover:bg-[#1f2124] text-left font-semibold text-slate-700 dark:text-slate-200 border-0 cursor-pointer w-full bg-transparent"
                     >
                       <Eye className="h-4 w-4 text-slate-500" />
                       <span>{t("menu.preview")}</span>
@@ -1614,7 +1564,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                         setMobileContextFile(null);
                         handleEdit(f);
                       }}
-                      className="flex items-center gap-3 px-3 py-3 text-sm rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-left font-semibold text-slate-700 dark:text-slate-200 border-0 cursor-pointer w-full bg-transparent"
+                      className="flex items-center gap-3 px-3 py-3 text-sm rounded-xl hover:bg-slate-100 dark:hover:bg-[#1f2124] text-left font-semibold text-slate-700 dark:text-slate-200 border-0 cursor-pointer w-full bg-transparent"
                     >
                       <Edit2 className="h-4 w-4 text-slate-500" />
                       <span>{t("menu.edit")}</span>
@@ -1626,7 +1576,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                         setMobileContextFile(null);
                         handleDownload(mobileContextFile);
                       }}
-                      className="flex items-center gap-3 px-3 py-3 text-sm rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-left font-semibold text-slate-700 dark:text-slate-200 border-0 cursor-pointer w-full bg-transparent"
+                      className="flex items-center gap-3 px-3 py-3 text-sm rounded-xl hover:bg-slate-100 dark:hover:bg-[#1f2124] text-left font-semibold text-slate-700 dark:text-slate-200 border-0 cursor-pointer w-full bg-transparent"
                     >
                       <Download className="h-4 w-4 text-slate-500" />
                       <span>{t("menu.download")}</span>
@@ -1639,7 +1589,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                         setMobileContextFile(null);
                         toggleOffline(f);
                       }}
-                      className="flex items-center justify-between px-3 py-3 text-sm rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-left font-semibold text-slate-700 dark:text-slate-200 border-0 cursor-pointer w-full bg-transparent"
+                      className="flex items-center justify-between px-3 py-3 text-sm rounded-xl hover:bg-slate-100 dark:hover:bg-[#1f2124] text-left font-semibold text-slate-700 dark:text-slate-200 border-0 cursor-pointer w-full bg-transparent"
                     >
                       <div className="flex items-center gap-3">
                         <CheckCircle className={`h-4 w-4 ${mobileContextFile.offline ? "text-green-500 fill-green-500/20" : "text-slate-500"}`} />
@@ -1654,7 +1604,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                         setMobileContextFile(null);
                         openRenameDialog(mobileContextFile);
                       }}
-                      className="flex items-center gap-3 px-3 py-3 text-sm rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-left font-semibold text-slate-700 dark:text-slate-200 border-0 cursor-pointer w-full bg-transparent"
+                      className="flex items-center gap-3 px-3 py-3 text-sm rounded-xl hover:bg-slate-100 dark:hover:bg-[#1f2124] text-left font-semibold text-slate-700 dark:text-slate-200 border-0 cursor-pointer w-full bg-transparent"
                     >
                       <Edit2 className="h-4 w-4 text-slate-500" />
                       <span>{t("menu.rename")}</span>
@@ -1666,7 +1616,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                         setMobileContextFile(null);
                         toggleStar(mobileContextFile);
                       }}
-                      className="flex items-center gap-3 px-3 py-3 text-sm rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-left font-semibold text-slate-700 dark:text-slate-200 border-0 cursor-pointer w-full bg-transparent"
+                      className="flex items-center gap-3 px-3 py-3 text-sm rounded-xl hover:bg-slate-100 dark:hover:bg-[#1f2124] text-left font-semibold text-slate-700 dark:text-slate-200 border-0 cursor-pointer w-full bg-transparent"
                     >
                       <Star className={`h-4 w-4 ${mobileContextFile.starred ? "fill-amber-400 text-amber-400" : "text-slate-500"}`} />
                       <span>{mobileContextFile.starred ? t("browser.mobileMenu.removeFromStarred") : t("browser.mobileMenu.addToStarred")}</span>
@@ -1678,7 +1628,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                         setMobileContextFile(null);
                         await restoreFromTrash(mobileContextFile);
                       }}
-                      className="flex items-center gap-3 px-3 py-3 text-sm rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-left font-semibold text-slate-700 dark:text-slate-200 border-0 cursor-pointer w-full bg-transparent"
+                      className="flex items-center gap-3 px-3 py-3 text-sm rounded-xl hover:bg-slate-100 dark:hover:bg-[#1f2124] text-left font-semibold text-slate-700 dark:text-slate-200 border-0 cursor-pointer w-full bg-transparent"
                     >
                       <RotateCcw className="h-4 w-4 text-slate-500" />
                       <span>{t("menu.restore")}</span>
@@ -1719,7 +1669,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       {/* Empty Trash confirmation dialog (replaces window.confirm)           */}
       {/* ------------------------------------------------------------------ */}
       <Dialog open={emptyTrashDialogOpen} onOpenChange={setEmptyTrashDialogOpen}>
-        <DialogContent className="rounded-3xl max-w-sm p-6 bg-white dark:bg-[#1e1f20] border border-slate-200/80 dark:border-slate-800 shadow-2xl">
+        <DialogContent className="rounded-3xl max-w-sm p-6 bg-white dark:bg-[#141518] border border-slate-200/80 dark:border-white/[0.06] shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-[#1f1f1f] dark:text-[#e3e3e3] flex items-center gap-2">
               <Trash2 className="h-4.5 w-4.5 text-red-600" />
@@ -1738,7 +1688,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
             <Button
               variant="ghost"
               size="sm"
-              className="rounded-full h-9 px-4 text-xs font-medium text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-[#282a2c] cursor-pointer"
+              className="rounded-full h-9 px-4 text-xs font-medium text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] cursor-pointer"
               onClick={() => setEmptyTrashDialogOpen(false)}
             >
               {t("browser.dialogs.cancel")}
@@ -1763,7 +1713,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       {/* Individual item permanent delete confirmation dialog               */}
       {/* ------------------------------------------------------------------ */}
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <DialogContent className="rounded-3xl max-w-sm p-6 bg-white dark:bg-[#1e1f20] border border-slate-200/80 dark:border-slate-800 shadow-2xl">
+        <DialogContent className="rounded-3xl max-w-sm p-6 bg-white dark:bg-[#141518] border border-slate-200/80 dark:border-white/[0.06] shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-[#1f1f1f] dark:text-[#e3e3e3] flex items-center gap-2">
               <Trash2 className="h-4.5 w-4.5 text-red-600" />
@@ -1788,7 +1738,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
             <Button
               variant="ghost"
               size="sm"
-              className="rounded-full h-9 px-4 text-xs font-medium text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-[#282a2c] cursor-pointer"
+              className="rounded-full h-9 px-4 text-xs font-medium text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] cursor-pointer"
               onClick={() => setDeleteTarget(null)}
             >
               {t("browser.dialogs.cancel")}
@@ -1814,7 +1764,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       {/* Bulk permanent delete confirmation dialog                           */}
       {/* ------------------------------------------------------------------ */}
       <Dialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
-        <DialogContent className="rounded-3xl max-w-sm p-6 bg-white dark:bg-[#1e1f20] border border-slate-200/80 dark:border-slate-800 shadow-2xl">
+        <DialogContent className="rounded-3xl max-w-sm p-6 bg-white dark:bg-[#141518] border border-slate-200/80 dark:border-white/[0.06] shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-[#1f1f1f] dark:text-[#e3e3e3] flex items-center gap-2">
               <Trash2 className="h-4.5 w-4.5 text-red-600" />
@@ -1833,7 +1783,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
             <Button
               variant="ghost"
               size="sm"
-              className="rounded-full h-9 px-4 text-xs font-medium text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-[#282a2c] cursor-pointer"
+              className="rounded-full h-9 px-4 text-xs font-medium text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] cursor-pointer"
               onClick={() => setBulkDeleteDialogOpen(false)}
             >
               {t("browser.dialogs.cancel")}

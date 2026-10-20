@@ -43,7 +43,7 @@ function SplashLoader({ status }: { status: string }) {
           alt={t("logoAlt")}
           className="h-16 w-16 object-contain shrink-0"
         />
-        <div className="flex items-center gap-2.5 text-[#444746] dark:text-[#C4C7C5] font-medium bg-surface dark:bg-[#1E1F20] border border-slate-200/80 dark:border-slate-800/80 px-5 py-2 rounded-full shadow-xs">
+        <div className="flex items-center gap-2.5 text-[#444746] dark:text-[#C4C7C5] font-medium bg-surface dark:bg-[#111214] border border-slate-200/80 dark:border-white/[0.04] px-5 py-2 rounded-full shadow-xs">
           <Loader2 className="h-4 w-4 animate-spin text-[#0B57D0] dark:text-[#A8C7FA]" />
           <span className="text-xs">{status}</span>
         </div>

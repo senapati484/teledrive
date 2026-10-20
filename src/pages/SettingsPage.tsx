@@ -137,11 +137,11 @@ export default function SettingsPage() {
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background text-foreground select-none">
       {/* Topbar Settings Header */}
-      <header className="flex items-center gap-3 px-4 md:px-6 h-[calc(3.5rem+var(--safe-area-top,2.5rem))] md:h-16 pt-[var(--safe-area-top,2.5rem)] md:pt-0 shrink-0 bg-background border-b md:border-b-0 border-slate-200/60 dark:border-slate-800/60">
+      <header className="flex items-center gap-3 px-4 md:px-6 h-[calc(3.5rem+var(--safe-area-top,2.5rem))] md:h-16 pt-[var(--safe-area-top,2.5rem)] md:pt-0 shrink-0 bg-background border-b md:border-b-0 border-slate-200/60 dark:border-white/[0.04]">
         <Button
           variant="ghost"
           size="icon"
-          className="rounded-full h-10 w-10 hover:bg-[#EDF2FC] dark:hover:bg-[#282A2C] text-[#444746] dark:text-[#C4C7C5] hover:text-[#1F1F1F] dark:hover:text-[#E3E3E3] cursor-pointer transition-colors"
+          className="rounded-full h-10 w-10 hover:bg-[#EDF2FC] dark:hover:bg-[#1f2124] text-[#444746] dark:text-[#C4C7C5] hover:text-[#1F1F1F] dark:hover:text-[#E3E3E3] cursor-pointer transition-colors"
           onClick={() => {
             if (isMobile && mobileShowContent) {
               setMobileShowContent(false);
@@ -179,7 +179,7 @@ export default function SettingsPage() {
                     className={`w-full flex items-center justify-between gap-3.5 px-4 h-12 md:h-10 rounded-2xl md:rounded-full text-sm font-medium transition-colors text-left cursor-pointer ${
                       isSelected && !isMobile
                         ? "bg-[#C2E7FF] dark:bg-[#004A77] text-[#001D35] dark:text-[#C2E7FF] font-semibold"
-                        : "text-[#444746] dark:text-[#C4C7C5] hover:bg-[#F0F4F9] dark:hover:bg-[#282A2C] active:bg-[#F0F4F9] dark:active:bg-[#282A2C] hover:text-[#1F1F1F] dark:hover:text-[#E3E3E3]"
+                        : "text-[#444746] dark:text-[#C4C7C5] hover:bg-[#F0F4F9] dark:hover:bg-[#161719] active:bg-[#F0F4F9] dark:active:bg-[#1c1d20] hover:text-[#1F1F1F] dark:hover:text-[#E3E3E3]"
                     }`}
                   >
                     <div className="flex items-center gap-3.5 min-w-0">
@@ -193,7 +193,7 @@ export default function SettingsPage() {
             </div>
 
             {/* Logout button pinned to bottom of sidebar */}
-            <div className="pt-4 border-t border-slate-200/60 dark:border-slate-800/60 mb-2">
+            <div className="pt-4 border-t border-slate-200/60 dark:border-white/[0.04] mb-2">
               <button
                 onClick={() => setLogoutDialogOpen(true)}
                 className="w-full flex items-center gap-3.5 px-4 h-12 md:h-10 rounded-2xl md:rounded-full text-sm font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors text-left cursor-pointer"
@@ -219,7 +219,7 @@ export default function SettingsPage() {
 
         {/* Settings Panel Content Area */}
         {(!isMobile || mobileShowContent) && (
-          <div className="flex-1 overflow-hidden md:mr-4 md:mb-4 md:rounded-3xl bg-surface dark:bg-[#1E1F20] border-0 md:border md:border-slate-200/60 md:dark:border-slate-800/60 shadow-xs flex flex-col">
+          <div className="flex-1 overflow-hidden md:mr-4 md:mb-4 md:rounded-3xl bg-surface dark:bg-surface border-0 md:border md:border-slate-200/60 md:dark:border-white/[0.04] shadow-xs flex flex-col">
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 pb-[max(var(--safe-area-bottom,1.5rem),1.5rem)] md:pb-8">
               <div key={activeSection} className="max-w-3xl animate-fade-in">
                 <ActiveComponent />
@@ -238,7 +238,7 @@ export default function SettingsPage() {
             onClick={() => !isLoggingOut && setLogoutDialogOpen(false)}
           />
           {/* Dialog card */}
-          <div className="relative z-10 w-full max-w-sm bg-surface dark:bg-[#282A2C] border border-slate-200 dark:border-slate-700 rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-200">
+          <div className="relative z-10 w-full max-w-sm bg-surface dark:bg-[#141518] border border-slate-200 dark:border-white/[0.06] rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-200">
             {/* Icon */}
             <div className="flex items-center justify-center w-12 h-12 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 mx-auto mb-4">
               <svg
@@ -266,7 +266,7 @@ export default function SettingsPage() {
             <div className="flex gap-3">
               <Button
                 variant="outline"
-                className="flex-1 rounded-full h-10 text-sm font-medium border-slate-300 dark:border-slate-600 hover:bg-[#F0F4F9] dark:hover:bg-[#333537]"
+                className="flex-1 rounded-full h-10 text-sm font-medium border-slate-300 dark:border-white/[0.06] hover:bg-[#F0F4F9] dark:hover:bg-[#1f2124]"
                 disabled={isLoggingOut}
                 onClick={() => setLogoutDialogOpen(false)}
               >

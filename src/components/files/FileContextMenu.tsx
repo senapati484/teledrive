@@ -64,11 +64,11 @@ export const FileContextMenu = React.memo(function FileContextMenu({
   return (
     <ContextMenu>
       <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
-      <ContextMenuContent className="w-52 rounded-2xl p-1.5 bg-white dark:bg-[#282a2c] border border-slate-200/80 dark:border-slate-800 shadow-xl z-50">
+      <ContextMenuContent className="w-52 rounded-2xl p-1.5 bg-white dark:bg-[#141518] border border-slate-200/80 dark:border-white/[0.06] shadow-xl z-50">
         {!isDirectory && !file.trashed && !file.archived && (
           <ContextMenuItem
             onClick={() => onPreview(file)}
-            className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
+            className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
           >
             <Eye className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
             <span>{t("menu.preview")}</span>
@@ -77,7 +77,7 @@ export const FileContextMenu = React.memo(function FileContextMenu({
         {!isDirectory && !file.trashed && !file.archived && onOpenInSystemApp && (
           <ContextMenuItem
             onClick={() => onOpenInSystemApp(file)}
-            className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
+            className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
           >
             <ExternalLink className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
             <span>{t("menu.openInSystemApp")}</span>
@@ -86,7 +86,7 @@ export const FileContextMenu = React.memo(function FileContextMenu({
         {!isDirectory && !file.trashed && !file.archived && onEdit && isEditableFile(file) && (
           <ContextMenuItem
             onClick={() => onEdit(file)}
-            className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
+            className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
           >
             <Pencil className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
             <span>{t("menu.edit")}</span>
@@ -95,7 +95,7 @@ export const FileContextMenu = React.memo(function FileContextMenu({
         {!isDirectory && !file.trashed && !file.archived && (
           <ContextMenuItem
             onClick={() => onDownload(file)}
-            className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
+            className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
           >
             <Download className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
             <span>{t("menu.download")}</span>
@@ -104,7 +104,7 @@ export const FileContextMenu = React.memo(function FileContextMenu({
         {!isDirectory && !file.trashed && !file.archived && onOfflineToggle && (
           <ContextMenuItem
             onClick={() => onOfflineToggle(file)}
-            className="flex items-center justify-between px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
+            className="flex items-center justify-between px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
           >
             <div className="flex items-center gap-2.5">
               <CheckCircle className={`h-4 w-4 shrink-0 ${file.offline ? "text-emerald-500 fill-emerald-500/20" : "text-[#444746] dark:text-[#c4c7c5]"}`} strokeWidth={1.75} />
@@ -117,7 +117,7 @@ export const FileContextMenu = React.memo(function FileContextMenu({
         {!file.trashed && !file.archived && (
           <ContextMenuItem
             onClick={() => onRename(file)}
-            className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
+            className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
           >
             <Edit2 className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
             <span>{t("menu.rename")}</span>
@@ -127,7 +127,7 @@ export const FileContextMenu = React.memo(function FileContextMenu({
         {onMoveTo && !file.trashed && !file.archived && (
           <ContextMenuItem
             onClick={() => onMoveTo(file)}
-            className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
+            className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
           >
             <FolderInput className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
             <span>{t("menu.moveTo")}</span>
@@ -137,7 +137,7 @@ export const FileContextMenu = React.memo(function FileContextMenu({
         {!file.trashed && !file.archived && (
           <ContextMenuItem
             onClick={() => onStarToggle(file)}
-            className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
+            className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
           >
             <Star className={`h-4 w-4 shrink-0 ${file.starred ? "fill-amber-400 text-amber-400" : "text-[#444746] dark:text-[#c4c7c5]"}`} strokeWidth={1.75} />
             <span>{file.starred ? t("menu.removeStar") : t("menu.addStar")}</span>
@@ -147,10 +147,10 @@ export const FileContextMenu = React.memo(function FileContextMenu({
         {/* Archive / Unarchive */}
         {!file.trashed && !file.archived && onArchive && (
           <>
-            <ContextMenuSeparator className="-mx-1.5 my-1 bg-slate-200/70 dark:bg-slate-800/80" />
+            <ContextMenuSeparator className="-mx-1.5 my-1 bg-slate-200/70 dark:bg-white/[0.06]" />
             <ContextMenuItem
               onClick={() => onArchive(file)}
-              className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
+              className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
             >
               <Archive className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
               <span>{t("menu.archive")}</span>
@@ -160,7 +160,7 @@ export const FileContextMenu = React.memo(function FileContextMenu({
         {file.archived && onUnarchive && (
           <ContextMenuItem
             onClick={() => onUnarchive(file)}
-            className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
+            className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
           >
             <ArchiveRestore className="h-4 w-4 text-[#0b57d0] dark:text-[#a8c7fa] shrink-0" strokeWidth={1.75} />
             <span>{t("menu.unarchive")}</span>
@@ -170,20 +170,20 @@ export const FileContextMenu = React.memo(function FileContextMenu({
         {/* Trash / Restore / Delete Permanently */}
         {file.trashed ? (
           <>
-            <ContextMenuSeparator className="-mx-1.5 my-1 bg-slate-200/70 dark:bg-slate-800/80" />
+            <ContextMenuSeparator className="-mx-1.5 my-1 bg-slate-200/70 dark:bg-white/[0.06]" />
             <ContextMenuItem
               onClick={() => onTrash(file)}
-              className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#333537]"
+              className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
             >
               <RotateCcw className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
               <span>{t("menu.restore")}</span>
             </ContextMenuItem>
             {onDeletePermanently && (
               <>
-                <ContextMenuSeparator className="-mx-1.5 my-1 bg-slate-200/70 dark:bg-slate-800/80" />
+                <ContextMenuSeparator className="-mx-1.5 my-1 bg-slate-200/70 dark:bg-white/[0.06]" />
                 <ContextMenuItem
                   onClick={() => onDeletePermanently(file)}
-                  className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
+                  className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
                 >
                   <Trash2 className="h-4 w-4 shrink-0" strokeWidth={1.75} />
                   <span>{t("menu.deletePermanently")}</span>
@@ -193,10 +193,10 @@ export const FileContextMenu = React.memo(function FileContextMenu({
           </>
         ) : !file.archived ? (
           <>
-            <ContextMenuSeparator className="-mx-1.5 my-1 bg-slate-200/70 dark:bg-slate-800/80" />
+            <ContextMenuSeparator className="-mx-1.5 my-1 bg-slate-200/70 dark:bg-white/[0.06]" />
             <ContextMenuItem
               onClick={() => onTrash(file)}
-              className="flex items-center gap-2.5 px-3 py-2 text-xs font-medium cursor-pointer rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
+              className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20"
             >
               <Trash2 className="h-4 w-4 shrink-0" strokeWidth={1.75} />
               <span>{t("menu.moveToTrash")}</span>

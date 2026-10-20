@@ -88,7 +88,7 @@ const IndexQueuePill = React.memo(function IndexQueuePill() {
           ? "bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700/50 text-amber-800 dark:text-amber-200"
           : indexQueueState === "syncing-remote" || indexQueueState === "backup-running"
           ? "bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800/50 text-emerald-800 dark:text-emerald-200"
-          : "bg-[#edf2fc] dark:bg-[#282a2c] border-transparent text-[#444746] dark:text-[#c4c7c5]"
+          : "bg-[#edf2fc] dark:bg-[#161719] border-transparent text-[#444746] dark:text-[#c4c7c5]"
       )}
     >
       {indexQueueState === "failed" ? (
@@ -156,6 +156,7 @@ export default function DriveLayout() {
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   
   const [isDragging, setIsDragging] = useState(false);
   const [sidebarDragOverPath, setSidebarDragOverPath] = useState<string | null>(null);
@@ -570,6 +571,19 @@ export default function DriveLayout() {
     { label: t("nav.settings"), icon: Settings, path: "/settings" },
   ], [t]);
 
+  // Derive the current page label for the mobile header title
+  const currentPageTitle = useMemo(() => {
+    const path = location.pathname;
+    if (path.startsWith("/drive/folder/") || path === "/drive/my-drive") return t("nav.myDrive");
+    if (path === "/drive/starred") return t("nav.starred");
+    if (path === "/drive/recent") return t("nav.recent");
+    if (path === "/drive/archived") return t("nav.archived");
+    if (path === "/drive/trash") return t("nav.trash");
+    if (path.startsWith("/drive/backups")) return t("nav.backups");
+    if (path.startsWith("/settings")) return t("nav.settings");
+    return "TeleDrive";
+  }, [location.pathname, t]);
+
   const theme = useUIStore((state) => state.theme);
   const setTheme = useUIStore((state) => state.setTheme);
 
@@ -583,9 +597,9 @@ export default function DriveLayout() {
     >
       {/* Drag & Drop full screen overlay: Google Drive styled */}
       {isDragging && (
-        <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#edf2fc]/90 dark:bg-[#1e1f20]/90 backdrop-blur-sm border-2 border-dashed border-[#0b57d0] m-4 rounded-3xl animate-in fade-in zoom-in-95 duration-200 select-none pointer-events-none">
+      <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-[#edf2fc]/90 dark:bg-surface/90 backdrop-blur-sm border-2 border-dashed border-[#0b57d0] m-4 rounded-3xl animate-in fade-in zoom-in-95 duration-200 select-none pointer-events-none">
           <div className="flex flex-col items-center gap-4 text-[#0b57d0] dark:text-[#a8c7fa]">
-            <div className="p-5 rounded-full bg-white dark:bg-[#282a2c] shadow-lg border border-slate-200/80 dark:border-slate-700 transition-transform duration-300 scale-105">
+            <div className="p-5 rounded-full bg-white dark:bg-card shadow-lg border border-slate-200/80 dark:border-white/[0.04] transition-transform duration-300 scale-105">
               <Upload className="h-10 w-10 text-[#0b57d0] dark:text-[#a8c7fa]" />
             </div>
             <h2 className="text-2xl font-bold tracking-tight text-[#1f1f1f] dark:text-[#e3e3e3]">{t("dropOverlay.title")}</h2>
@@ -594,24 +608,25 @@ export default function DriveLayout() {
         </div>
       )}
       
-      {/* Topbar: Google Workspace styled */}
-      <header className="relative z-40 flex items-center justify-between px-3 md:px-4 h-[calc(3.5rem+var(--safe-area-top,2.5rem))] md:h-16 pt-[var(--safe-area-top,2.5rem)] md:pt-0 shrink-0 bg-background border-b md:border-b-0 border-slate-200/60 dark:border-slate-800/60 select-none">
-        <div className="flex items-center gap-1.5 md:gap-3 shrink-0">
-          {isMobile && (
+      {/* Topbar: compact Google Workspace style — mobile-first */}
+      <header className="relative z-40 flex items-center justify-between px-2 md:px-4 h-[calc(3.5rem+var(--safe-area-top,0px))] md:h-16 pt-[var(--safe-area-top,0px)] md:pt-0 shrink-0 bg-background border-b md:border-b-0 border-slate-200/60 dark:border-white/[0.04] select-none">
+        {/* Left: hamburger + page title (flex-row, no gap overflow on mobile) */}
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0">
+          {isMobile ? (
             <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9 md:h-10 md:w-10 rounded-full hover:bg-[#e9eef6] dark:hover:bg-[#282a2c] text-[#444746] dark:text-[#c4c7c5] cursor-pointer">
+                <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0 rounded-full hover:bg-muted text-muted-foreground cursor-pointer">
                   <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-[var(--sidebar-width)] p-0 pt-[max(var(--safe-area-top,2.5rem),2.5rem)] bg-background">
+              <SheetContent side="left" className="w-[var(--sidebar-width)] p-0 pt-[max(var(--safe-area-top,0px),2rem)] bg-background">
                 <div className="px-5 py-2 flex items-center gap-2.5 mb-2">
                   <img
                     src="/teledrive.png"
                     alt={t("logoAlt")}
                     className="h-7 w-7 object-contain rounded-lg shadow-sm"
                   />
-                  <span className="text-xl font-bold tracking-tight text-[#1f1f1f] dark:text-[#e3e3e3]">
+                  <span className="text-xl font-bold tracking-tight text-foreground">
                     TeleDrive
                   </span>
                 </div>
@@ -631,23 +646,30 @@ export default function DriveLayout() {
                 />
               </SheetContent>
             </Sheet>
-          )}
+          ) : null}
 
-          {/* Logo / Title */}
-          <Link to="/drive/my-drive" className="hidden sm:flex items-center gap-2.5 group">
-            <img
-              src="/teledrive.png"
-              alt={t("logoAlt")}
-              className="h-8 w-8 object-contain rounded-lg shadow-xs shrink-0 transition-transform duration-200 group-hover:scale-105"
-            />
-            <span className="hidden sm:inline-block text-xl font-semibold tracking-tight text-[#1f1f1f] dark:text-[#e3e3e3]">
-              TeleDrive
+          {/* Mobile: inline page title next to hamburger */}
+          {isMobile ? (
+            <span className="text-base font-semibold tracking-tight text-foreground truncate max-w-[140px]">
+              {currentPageTitle}
             </span>
-          </Link>
+          ) : (
+            /* Desktop: logo + brand name */
+            <Link to="/drive/my-drive" className="flex items-center gap-2.5 group ml-1">
+              <img
+                src="/teledrive.png"
+                alt={t("logoAlt")}
+                className="h-8 w-8 object-contain rounded-lg shadow-xs shrink-0 transition-transform duration-200 group-hover:scale-105"
+              />
+              <span className="hidden sm:inline-block text-xl font-semibold tracking-tight text-foreground">
+                TeleDrive
+              </span>
+            </Link>
+          )}
         </div>
 
-        {/* Search bar wrapper */}
-        <div className="flex-1 min-w-0 max-w-2xl mx-2 md:mx-8">
+        {/* Search bar wrapper — hidden on mobile (mobile gets icon) */}
+        <div className="hidden md:flex flex-1 min-w-0 max-w-2xl mx-8">
           <SearchBar />
         </div>
 
@@ -656,36 +678,58 @@ export default function DriveLayout() {
           {/* Index queue state pill */}
           <IndexQueuePill />
 
+          {/* Mobile: search icon that expands */}
+          {isMobile && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMobileSearchOpen((v) => !v)}
+              className="h-10 w-10 rounded-full hover:bg-muted text-muted-foreground cursor-pointer"
+              title={t("header.search") ?? "Search"}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+              </svg>
+            </Button>
+          )}
+
           {/* Quick theme toggle */}
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="h-9 w-9 md:h-10 md:w-10 rounded-full hover:bg-[#e9eef6] dark:hover:bg-[#282a2c] text-[#444746] dark:text-[#c4c7c5] cursor-pointer"
+            className="h-10 w-10 rounded-full hover:bg-muted text-muted-foreground cursor-pointer"
             title={theme === "dark" ? t("header.switchToLight") : t("header.switchToDark")}
           >
-            {theme === "dark" ? <Sun className="h-4.5 w-4.5 md:h-5 md:w-5" /> : <Moon className="h-4.5 w-4.5 md:h-5 md:w-5" />}
+            {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
 
-          {/* Settings button */}
+          {/* Settings button — desktop only */}
           <Button
             variant="ghost"
             size="icon"
             onClick={() => navigate("/settings")}
-            className="h-10 w-10 rounded-full hover:bg-[#e9eef6] dark:hover:bg-[#282a2c] text-[#444746] dark:text-[#c4c7c5] hidden md:flex cursor-pointer"
+            className="h-10 w-10 rounded-full hover:bg-muted text-muted-foreground hidden md:flex cursor-pointer"
             title={t("header.settings")}
           >
             <Settings className="h-5 w-5" />
           </Button>
 
           {/* Avatar */}
-          <Avatar className="h-8 w-8 md:h-9 md:w-9 border border-slate-200 dark:border-slate-800 cursor-pointer hover:opacity-90 transition-opacity" onClick={() => navigate("/settings")}>
+          <Avatar className="h-8.5 w-8.5 md:h-9 md:w-9 border border-border cursor-pointer hover:opacity-90 transition-opacity" onClick={() => navigate("/settings")}>
             <AvatarFallback className="bg-gradient-to-tr from-[#0b57d0] to-[#1a73e8] text-white font-semibold text-xs select-none">
               {getInitials(phoneNumber)}
             </AvatarFallback>
           </Avatar>
         </div>
       </header>
+
+      {/* Mobile expandable search bar (slides in below topbar) */}
+      {isMobile && mobileSearchOpen && (
+        <div className="z-30 shrink-0 px-3 py-2 bg-background border-b border-border animate-slide-up-fade">
+          <SearchBar autoFocus onBlur={() => setMobileSearchOpen(false)} />
+        </div>
+      )}
 
       {/* Offline banner */}
       {!isOnline && (
@@ -724,14 +768,14 @@ export default function DriveLayout() {
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          className="flex-1 overflow-y-auto bg-surface dark:bg-[#1e1f20] md:mr-4 md:mb-4 md:rounded-3xl md:border md:border-slate-200/80 md:dark:border-[#2d2f31] md:shadow-xs border-0 pb-[calc(var(--mobile-nav-height)+var(--safe-area-bottom,1rem)+80px)] md:pb-6 relative z-10"
+          className="flex-1 overflow-y-auto bg-surface dark:bg-surface md:mr-4 md:mb-4 md:rounded-3xl md:border md:border-l-0 md:border-slate-200/80 md:dark:border-white/[0.04] md:dark:border-l-0 md:shadow-xs border-0 pb-[calc(var(--mobile-nav-height)+var(--safe-area-bottom,1rem)+80px)] md:pb-6 relative z-10"
         >
           {/* Mobile FAB */}
           {isMobile && <NewActionButton isFab />}
           {/* Pull to refresh spinner */}
           {(pullProgress > 0 || isRefreshing) && (
             <div
-              className="absolute left-1/2 -translate-x-1/2 z-50 flex items-center justify-center bg-white dark:bg-slate-900 border dark:border-slate-800 shadow-md rounded-full transition-all"
+              className="absolute left-1/2 -translate-x-1/2 z-50 flex items-center justify-center bg-white dark:bg-[#141518] border border-slate-200 dark:border-white/[0.06] shadow-md rounded-full transition-all"
               style={{
                 top: `${12 + (pullProgress / 100) * 32}px`,
                 width: "36px",
@@ -751,7 +795,7 @@ export default function DriveLayout() {
 
       {/* Bottom Nav (Mobile) */}
       {isMobile && (
-        <nav className="fixed bottom-0 left-0 right-0 h-[calc(var(--mobile-nav-height)+var(--safe-area-bottom,1rem))] border-t border-slate-200/80 dark:border-slate-800/80 bg-white/95 dark:bg-[#1e1f20]/95 backdrop-blur-md flex items-center justify-around z-40 pb-[var(--safe-area-bottom,1rem)] select-none">
+        <nav className="fixed bottom-0 left-0 right-0 h-[calc(var(--mobile-nav-height)+var(--safe-area-bottom,1rem))] border-t border-border bg-background/95 backdrop-blur-md flex items-center justify-around z-40 pb-[var(--safe-area-bottom,1rem)] select-none">
           {mobileNavTabs.map((item) => {
             const Icon = item.icon;
             const isActive =
@@ -769,12 +813,18 @@ export default function DriveLayout() {
                 )}
               >
                 <div className={cn(
-                  "px-4 py-1 rounded-full mb-0.5 transition-colors",
+                  "px-4 py-1 rounded-full mb-0.5 transition-colors relative flex items-center justify-center",
                   isActive && "bg-[#c2e7ff] dark:bg-[#004a77]"
                 )}>
                   <Icon className="h-5 w-5" />
                 </div>
                 <span className="text-[10px] tracking-tight truncate max-w-[72px] text-center">{item.label}</span>
+                <div
+                  className={cn(
+                    "w-1 h-1 rounded-full bg-primary mt-0.5 transition-all duration-200",
+                    isActive ? "opacity-100 scale-100" : "opacity-0 scale-50"
+                  )}
+                />
               </Link>
             );
           })}
@@ -801,7 +851,7 @@ export default function DriveLayout() {
           window.history.back();
         }
       }}>
-        <DialogContent className="rounded-3xl max-w-lg p-6 bg-white dark:bg-[#1e1f20] border border-slate-200/80 dark:border-slate-800 shadow-2xl">
+        <DialogContent className="rounded-3xl max-w-lg p-6 bg-white dark:bg-[#141518] border border-slate-200/80 dark:border-white/[0.06] shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">
               {t("shortcuts.title")}
@@ -813,23 +863,23 @@ export default function DriveLayout() {
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.focusSearch")}</span>
-                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#282a2c] border border-slate-300/70 dark:border-slate-700 rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">{t("shortcuts.focusSearchKeys", { modKey })}</kbd>
+                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#161719] border border-slate-300/70 dark:border-white/[0.04] rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">{t("shortcuts.focusSearchKeys", { modKey })}</kbd>
                 </div>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.clearSelection")}</span>
-                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#282a2c] border border-slate-300/70 dark:border-slate-700 rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">Esc</kbd>
+                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#161719] border border-slate-300/70 dark:border-white/[0.04] rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">Esc</kbd>
                 </div>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.scrollToTop")}</span>
-                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#282a2c] border border-slate-300/70 dark:border-slate-700 rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">g g</kbd>
+                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#161719] border border-slate-300/70 dark:border-white/[0.04] rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">g g</kbd>
                 </div>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.scrollToBottom")}</span>
-                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#282a2c] border border-slate-300/70 dark:border-slate-700 rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">g l</kbd>
+                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#161719] border border-slate-300/70 dark:border-white/[0.04] rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">g l</kbd>
                 </div>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.showHelp")}</span>
-                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#282a2c] border border-slate-300/70 dark:border-slate-700 rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">?</kbd>
+                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#161719] border border-slate-300/70 dark:border-white/[0.04] rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">?</kbd>
                 </div>
               </div>
             </div>
@@ -839,19 +889,19 @@ export default function DriveLayout() {
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.selectAll")}</span>
-                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#282a2c] border border-slate-300/70 dark:border-slate-700 rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">{modKey}A</kbd>
+                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#161719] border border-slate-300/70 dark:border-white/[0.04] rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">{modKey}A</kbd>
                 </div>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.moveToTrash")}</span>
-                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#282a2c] border border-slate-300/70 dark:border-slate-700 rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">Del / Backspace</kbd>
+                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#161719] border border-slate-300/70 dark:border-white/[0.04] rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">Del / Backspace</kbd>
                 </div>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.rename")}</span>
-                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#282a2c] border border-slate-300/70 dark:border-slate-700 rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">F2</kbd>
+                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#161719] border border-slate-300/70 dark:border-white/[0.04] rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">F2</kbd>
                 </div>
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.download")}</span>
-                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#282a2c] border border-slate-300/70 dark:border-slate-700 rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">{modKey}D</kbd>
+                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#161719] border border-slate-300/70 dark:border-white/[0.04] rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">{modKey}D</kbd>
                 </div>
               </div>
             </div>

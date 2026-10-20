@@ -49,7 +49,7 @@ export const FileIcon = React.memo(function FileIcon({
         return {
           Icon: FolderIcon,
           textColor: "text-[#444746] dark:text-[#c4c7c5]",
-          bgColor: "bg-slate-100 dark:bg-slate-800",
+          bgColor: "bg-slate-100 dark:bg-[#161719]",
         };
 
       case "image":
@@ -120,7 +120,7 @@ export const FileIcon = React.memo(function FileIcon({
         return {
           Icon: File,
           textColor: "text-[#5f6368] dark:text-[#9aa0a6]",
-          bgColor: "bg-slate-100 dark:bg-slate-800",
+          bgColor: "bg-slate-100 dark:bg-[#161719]",
         };
     }
   };
