@@ -76,7 +76,9 @@ function parseTelegramError(err: any, t: any): string {
     const seconds = msg.match(/\d+/)?.[0];
     return seconds ? t("errors.floodWait", { count: Number(seconds) }) : t("errors.floodWaitFewSeconds");
   }
-  if (msg.includes("PHONE_NUMBER_FLOOD") || msg.includes("PHONE_PASSWORD_FLOOD")) return t("errors.phoneFlood");
+  if (msg.includes("FLOOD") || msg.includes("PHONE_NUMBER_FLOOD") || msg.includes("PHONE_PASSWORD_FLOOD")) {
+    return t("errors.phoneFlood");
+  }
   if (msg.includes("SEND_CODE_UNAVAILABLE")) return t("errors.sendCodeUnavailable");
   if (msg.includes("PHONE_CODE_EMPTY") || msg.includes("PHONE_CODE_INVALID")) return t("errors.invalidCode");
   if (msg.includes("PHONE_CODE_EXPIRED")) return t("errors.codeExpired");
