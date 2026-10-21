@@ -1,0 +1,65 @@
+name: Bug Report
+description: Create a report to help us fix a defect or unexpected behavior in TeleDrive
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report an issue! Please fill in the details below to help us resolve it quickly.
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the Bug
+      description: A clear and concise description of what the bug is.
+      placeholder: When I try to upload a file...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Reproduce
+      description: What steps did you take before experiencing the issue?
+      placeholder: |
+        1. Open TeleDrive
+        2. Click on 'Upload'
+        3. Select file 'test.pdf'
+        4. See error message
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: A clear and concise description of what you expected to happen.
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System / Platform
+      description: On which operating system does this happen?
+      options:
+        - macOS (Apple Silicon - M1/M2/M3)
+        - macOS (Intel - x64)
+        - Windows 11
+        - Windows 10
+        - Linux (Ubuntu / Debian)
+        - Linux (Arch / Fedora)
+        - Android
+        - iOS
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: TeleDrive Version
+      description: What version of TeleDrive are you running? (e.g. v0.1.2)
+      placeholder: v0.1.2
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Logs or Screenshots
+      description: Please paste any console logs, terminal output, or attach screenshots if applicable.
