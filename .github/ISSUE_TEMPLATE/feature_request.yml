@@ -1,49 +1,51 @@
 name: Feature Request
-description: Suggest an idea or enhancement for TeleDrive
+description: Suggest an enhancement, improvement, or new capability for TeleDrive
 title: "[Feature]: "
 labels: ["enhancement"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thank you for suggesting a feature! Please provide as much detail as possible.
+        Thank you for suggesting a feature! Please provide as much detail as possible to help us evaluate and prioritize it.
   - type: textarea
     id: problem
     attributes:
-      label: Problem Statement
-      description: Is your feature request related to a problem or limitation?
-      placeholder: I'm always frustrated when...
+      label: Problem Statement / Motivation
+      description: Is this feature request related to a problem or limitation you encountered?
+      placeholder: Currently, when managing files in TeleDrive, I cannot...
     validations:
       required: true
   - type: textarea
     id: solution
     attributes:
-      label: Proposed Solution
-      description: A clear and concise description of what you want to happen.
-      placeholder: I'd like TeleDrive to support...
+      label: Proposed Solution & Expected Behavior
+      description: Describe what you would like to happen and how you envision this feature working.
+      placeholder: I would like TeleDrive to provide an option to...
     validations:
       required: true
+  - type: checkboxes
+    id: target_platforms
+    attributes:
+      label: Target Platform(s)
+      description: Which platforms should this feature apply to?
+      options:
+        - label: macOS
+        - label: Windows
+        - label: Linux
+        - label: Android
+        - label: iOS
+  - type: textarea
+    id: mockups
+    attributes:
+      label: UI / UX Mockup & Visuals
+      description: Describe any layout ideas, or drag & drop screenshots/mockups here if applicable.
   - type: textarea
     id: alternatives
     attributes:
       label: Alternative Solutions Considered
-      description: Have you considered any alternative solutions or features?
-  - type: dropdown
-    id: target_platform
-    attributes:
-      label: Target Platform(s)
-      description: Which platforms would benefit from this enhancement?
-      options:
-        - All Platforms (Cross-platform)
-        - Desktop (macOS, Windows, Linux)
-        - Mobile (Android & iOS)
-        - macOS only
-        - Windows only
-        - Linux only
-        - Android only
-        - iOS only
+      description: What other workarounds or tools have you tried?
   - type: textarea
-    id: context
+    id: additional_context
     attributes:
-      label: Additional Context or Mockups
-      description: Add any other context, mockups, or screenshots about the feature request here.
+      label: Additional Context
+      description: Any extra references, API documentation, or links.

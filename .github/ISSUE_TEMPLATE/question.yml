@@ -1,0 +1,28 @@
+name: Question & Support
+description: Ask a question about setting up TeleDrive, Telegram channels, or configuration
+title: "[Question]: "
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have a question about TeleDrive? You can also check our [Discussions](https://github.com/senapati484/teledrive/discussions) tab.
+  - type: textarea
+    id: question
+    attributes:
+      label: Your Question
+      description: What would you like help with or what information are you looking for?
+      placeholder: How can I configure my custom Telegram API ID or proxy...
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: TeleDrive version and operating system (if relevant).
+      placeholder: v0.1.2 on macOS / Windows
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Include any relevant channel details, error messages, or screenshots.
