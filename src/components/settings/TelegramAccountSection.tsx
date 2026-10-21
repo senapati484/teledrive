@@ -275,7 +275,7 @@ export default function TelegramAccountSection() {
 
       {/* Change storage channel dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="rounded-3xl max-w-md bg-white dark:bg-[#141518] border border-slate-200 dark:border-white/[0.06] p-6 shadow-2xl">
+        <DialogContent className="rounded-3xl max-w-md bg-white dark:bg-[#0d0e11] border border-slate-200 dark:border-white/[0.08] p-6 shadow-2xl">
           <DialogHeader>
             <DialogTitle className="font-semibold text-[#1F1F1F] dark:text-[#E3E3E3]">
               {t("account.switchDialog.title")}
@@ -290,13 +290,13 @@ export default function TelegramAccountSection() {
           <DialogFooter className="gap-2 sm:gap-0 mt-4">
             <Button
               variant="outline"
-              className="rounded-full text-xs font-medium border-slate-300 dark:border-white/[0.06] hover:bg-[#F0F4F9] dark:hover:bg-[#1f2124]"
+              className="rounded-full text-xs font-medium border-slate-300 dark:border-white/[0.08] hover:bg-[#F0F4F9] dark:hover:bg-white/[0.06]"
               onClick={() => setIsDialogOpen(false)}
             >
               {t("account.switchDialog.cancel")}
             </Button>
             <Button
-              className="rounded-full bg-[#0B57D0] hover:bg-[#0842A0] text-white dark:bg-[#A8C7FA] dark:hover:bg-[#D3E3FD] dark:text-[#062E6F] font-medium text-xs ml-2 cursor-pointer"
+              className="rounded-full bg-[#0B57D0] hover:bg-[#0842A0] text-white dark:bg-[#1a73e8] dark:hover:bg-[#1558b0] font-medium text-xs ml-2 cursor-pointer"
               onClick={async () => {
                 setIsDialogOpen(false);
                 try {

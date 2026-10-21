@@ -234,11 +234,11 @@ export default function SettingsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-xs"
+            className="absolute inset-0 bg-black/50 dark:bg-black/75 backdrop-blur-xs"
             onClick={() => !isLoggingOut && setLogoutDialogOpen(false)}
           />
           {/* Dialog card */}
-          <div className="relative z-10 w-full max-w-sm bg-surface dark:bg-[#141518] border border-slate-200 dark:border-white/[0.06] rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-200">
+          <div className="relative z-10 w-full max-w-sm bg-surface dark:bg-[#0d0e11] border border-slate-200 dark:border-white/[0.08] rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-200">
             {/* Icon */}
             <div className="flex items-center justify-center w-12 h-12 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 mx-auto mb-4">
               <svg
@@ -266,7 +266,7 @@ export default function SettingsPage() {
             <div className="flex gap-3">
               <Button
                 variant="outline"
-                className="flex-1 rounded-full h-10 text-sm font-medium border-slate-300 dark:border-white/[0.06] hover:bg-[#F0F4F9] dark:hover:bg-[#1f2124]"
+                className="flex-1 rounded-full h-10 text-sm font-medium border-slate-300 dark:border-white/[0.08] hover:bg-[#F0F4F9] dark:hover:bg-white/[0.06]"
                 disabled={isLoggingOut}
                 onClick={() => setLogoutDialogOpen(false)}
               >
