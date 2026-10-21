@@ -1,65 +1,109 @@
 name: Bug Report
-description: Create a report to help us fix a defect or unexpected behavior in TeleDrive
+description: Create a report to help us fix a defect, error, or unexpected behavior in TeleDrive
 title: "[Bug]: "
 labels: ["bug"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to report an issue! Please fill in the details below to help us resolve it quickly.
+        Thanks for reporting an issue! Please fill out the sections below so we can diagnose and resolve the issue quickly.
   - type: textarea
     id: description
     attributes:
       label: Describe the Bug
       description: A clear and concise description of what the bug is.
-      placeholder: When I try to upload a file...
+      placeholder: When I try to upload a large folder to TeleDrive...
     validations:
       required: true
   - type: textarea
     id: reproduction
     attributes:
       label: Steps to Reproduce
-      description: What steps did you take before experiencing the issue?
+      description: Exactly what steps did you take before encountering the issue?
       placeholder: |
         1. Open TeleDrive
-        2. Click on 'Upload'
-        3. Select file 'test.pdf'
-        4. See error message
+        2. Go to 'My Drive'
+        3. Click 'Upload' and pick a file
+        4. See error notification
     validations:
       required: true
   - type: textarea
     id: expected
     attributes:
       label: Expected Behavior
-      description: A clear and concise description of what you expected to happen.
+      description: What did you expect to happen instead?
+      placeholder: The file should upload smoothly and show up in the file list.
     validations:
       required: true
   - type: dropdown
     id: os
     attributes:
       label: Operating System / Platform
-      description: On which operating system does this happen?
+      description: Which operating system and architecture are you using?
       options:
-        - macOS (Apple Silicon - M1/M2/M3)
+        - macOS (Apple Silicon - M1 / M2 / M3 / M4)
         - macOS (Intel - x64)
-        - Windows 11
-        - Windows 10
+        - Windows 11 (x64)
+        - Windows 10 (x64)
         - Linux (Ubuntu / Debian)
         - Linux (Arch / Fedora)
-        - Android
-        - iOS
+        - Android (APK)
+        - iOS (TestFlight / IPA)
+    validations:
+      required: true
+  - type: dropdown
+    id: install_method
+    attributes:
+      label: Installation Method
+      description: How did you install TeleDrive?
+      options:
+        - macOS DMG installer
+        - Windows Setup .exe
+        - Windows MSI installer
+        - Linux AppImage
+        - Linux .deb package
+        - Linux .rpm package
+        - Android APK
+        - iOS IPA / Simulator
+        - Built from source (npm run tauri dev)
     validations:
       required: true
   - type: input
     id: version
     attributes:
       label: TeleDrive Version
-      description: What version of TeleDrive are you running? (e.g. v0.1.2)
+      description: What version of TeleDrive is running? (Check Settings → About)
       placeholder: v0.1.2
+    validations:
+      required: true
+  - type: dropdown
+    id: feature_area
+    attributes:
+      label: Feature Area
+      description: Which part of the application does this bug relate to?
+      options:
+        - Authentication & Login (OTP / QR code)
+        - File Uploads & Chunking
+        - File Downloads & Offline Cache
+        - File Preview (PDF, Audio, Video, Images, Code)
+        - Telegram Channel Sync & Indexing
+        - Device Backup (Pro Feature)
+        - Settings, Theming, or Localization (i18n)
+        - Other / Unsure
     validations:
       required: true
   - type: textarea
     id: logs
     attributes:
-      label: Relevant Logs or Screenshots
-      description: Please paste any console logs, terminal output, or attach screenshots if applicable.
+      label: Relevant Logs & Error Messages
+      description: Please paste any console logs from DevTools (F12 or Cmd+Opt+I) or terminal outputs.
+      render: shell
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Checklist
+      options:
+        - label: I have searched existing issues to ensure this is not a duplicate.
+          required: true
+        - label: I am using the latest available version of TeleDrive.
+          required: false
