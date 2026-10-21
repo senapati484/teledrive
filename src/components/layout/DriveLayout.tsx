@@ -687,7 +687,7 @@ export default function DriveLayout() {
                   <span className="truncate">
                     {location.pathname.startsWith("/drive/folder/")
                       ? currentPageTitle
-                      : t("header.searchPlaceholder") ?? "Search in Drive"}
+                      : t("search.placeholder", "Search in Drive")}
                   </span>
                 </button>
 

@@ -31,36 +31,35 @@ export function getFileExtension(fileName: string): string {
 // getFileIconType stay in sync automatically.
 // ---------------------------------------------------------------------------
 
-const IMAGE_EXTS = new Set([
+export const IMAGE_EXTS = new Set([
   "jpg","jpeg","png","gif","bmp","webp","svg","tiff","tif",
   "heic","heif","ico","psd","ai","raw","cr2","nef","orf","arw",
   "dng","avif","jxl","xbm","ppm","pgm","pbm","tga",
 ]);
 
-const VIDEO_EXTS = new Set([
+export const VIDEO_EXTS = new Set([
   "mp4","mkv","avi","mov","wmv","flv","webm","m4v","3gp","mpeg","mpg",
   "ogv","ts","mts","m2ts","vob","divx","xvid","rmvb","rm","asf","amv",
 ]);
 
-const AUDIO_EXTS = new Set([
+export const AUDIO_EXTS = new Set([
   "mp3","wav","ogg","m4a","flac","aac","wma","opus","amr","mpga",
   "aiff","aif","mid","midi","ra","au","voc","oga","spx","caf","mka",
 ]);
 
-const ARCHIVE_EXTS = new Set([
+export const ARCHIVE_EXTS = new Set([
   "zip","rar","7z","tar","gz","bz2","xz","zipx","iso","dmg",
   "cab","pkg","deb","rpm","apk","ipa","jar","war","ear","tgz",
 ]);
 
-// Document-type extensions: classic docs, spreadsheets, presentations, eBooks
-const DOC_EXTS = new Set([
+export const DOC_EXTS = new Set([
   "pdf","txt","md","doc","docx","xls","xlsx","ppt","pptx","csv",
   "rtf","odt","ods","odp","epub","pages","numbers","key","abw",
   "wpd","wps","tex","latex","bib","ris","enl","djvu","xps","oxps",
 ]);
 
 // Code / scripting / config extensions
-const CODE_EXTS = new Set([
+export const CODE_EXTS = new Set([
   // Web
   "js","ts","jsx","tsx","html","htm","css","scss","sass","less","vue","svelte",
   // Data / Config

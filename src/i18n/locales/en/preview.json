@@ -53,7 +53,9 @@
     "resetZoom": "Zoom Fit / Reset",
     "rotateCounterClockwise": "Rotate Counter-Clockwise",
     "rotateClockwise": "Rotate Clockwise",
-    "toggleGrid": "Toggle Grid Background"
+    "toggleGrid": "Toggle Grid Background",
+    "convertingHeic": "Converting image preview…",
+    "decodeErrorDescription": "This image format cannot be previewed directly in the browser. You can open it in your system photo viewer or download it."
   },
   "details": {
     "title": "File Details",
@@ -72,11 +74,13 @@
   },
   "archive": {
     "badge": "{{ext}} ARCHIVE",
-    "description": "Compressed archives cannot be previewed directly in-browser. Download this archive to extract and view its contents on your computer.",
+    "description": "Compressed archives cannot be previewed directly in-browser. You can open it directly in your system archive tool or download it.",
+    "openInSystem": "Open in System App",
     "download": "Download Archive"
   },
   "unsupported": {
-    "description": "No preview is available for this file type. You can download and open it in a compatible application on your system.",
+    "description": "No in-app preview is available for this file type. You can open it directly in your default system application or download it.",
+    "openInSystem": "Open in System App",
     "download": "Download File"
   },
   "status": {

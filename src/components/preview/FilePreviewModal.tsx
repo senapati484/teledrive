@@ -59,6 +59,7 @@ import { useFileStore } from "@/stores/fileStore";
 import { Button } from "@/components/ui/button";
 import { marked } from "marked";
 import { isEditableFile } from "@/lib/files/editableTypes";
+import { IMAGE_EXTS, VIDEO_EXTS, AUDIO_EXTS, ARCHIVE_EXTS } from "@/lib/files/fileUtils";
 import { detectLang } from "@/lib/files/langDetect";
 import { useDarkMode } from "@/hooks/useDarkMode";
 import { SyntaxHighlighter } from "./SyntaxHighlighter";
@@ -122,11 +123,11 @@ function FileTypeIcon({ mime, name }: { mime: string; name: string }) {
   const ext = name.split(".").pop()?.toLowerCase() ?? "";
   const isPdf = ext === "pdf" || mime === "application/pdf" || (mime && mime.toLowerCase().includes("pdf"));
   if (isPdf) return <FileText className="h-4 w-4 text-red-500 shrink-0" />;
-  if (mime.startsWith("image/") || ext === "svg") return <ImageIcon className="h-4 w-4 text-purple-500 shrink-0" />;
-  if (mime.startsWith("video/")) return <Film className="h-4 w-4 text-pink-500 shrink-0" />;
-  if (mime.startsWith("audio/")) return <Music className="h-4 w-4 text-teal-500 shrink-0" />;
+  if (mime.startsWith("image/") || ext === "svg" || IMAGE_EXTS.has(ext)) return <ImageIcon className="h-4 w-4 text-purple-500 shrink-0" />;
+  if (mime.startsWith("video/") || VIDEO_EXTS.has(ext)) return <Film className="h-4 w-4 text-pink-500 shrink-0" />;
+  if (mime.startsWith("audio/") || AUDIO_EXTS.has(ext)) return <Music className="h-4 w-4 text-teal-500 shrink-0" />;
   if (["csv", "tsv", "xls", "xlsx"].includes(ext)) return <FileSpreadsheet className="h-4 w-4 text-emerald-500 shrink-0" />;
-  if (["zip", "tar", "gz", "tgz", "rar", "7z", "bz2", "xz"].includes(ext)) return <FolderArchive className="h-4 w-4 text-amber-500 shrink-0" />;
+  if (ARCHIVE_EXTS.has(ext)) return <FolderArchive className="h-4 w-4 text-amber-500 shrink-0" />;
   if (["json", "jsonc", "json5"].includes(ext)) return <FileJson className="h-4 w-4 text-yellow-500 shrink-0" />;
   if (["md", "markdown"].includes(ext)) return <FileText className="h-4 w-4 text-blue-500 shrink-0" />;
   if (isEditableFile({ mime, name } as TeleFile)) return <FileCode2 className="h-4 w-4 text-blue-500 shrink-0" />;
@@ -216,8 +217,11 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
   const [dimensions, setDimensions]   = useState<{ width: number; height: number } | null>(null);
   const [isDragging, setIsDragging]   = useState(false);
   const [dragStart, setDragStart]     = useState({ x: 0, y: 0 });
-  const pdfBufferRef                  = useRef<Uint8Array | null>(null);
-  const [pdfData, setPdfData]         = useState<Uint8Array | null>(null);
+  const [isConvertingHeic, setIsConvertingHeic] = useState(false);
+  const [imageError, setImageError]             = useState(false);
+  const pdfBufferRef                            = useRef<Uint8Array | null>(null);
+  const fileBufferRef                           = useRef<Uint8Array | null>(null);
+  const [pdfData, setPdfData]                   = useState<Uint8Array | null>(null);
 
   // ── Video preview states & refs ──────────────────────────────────────────
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -585,7 +589,10 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
       setContentUrl(null); setTextContent(null); setMarkdownHtml(null);
       setError(null); setIsEditMode(false); setEditContent(""); setSaveStatus("idle");
       pdfBufferRef.current = null;
+      fileBufferRef.current = null;
       setPdfData(null);
+      setImageError(false);
+      setIsConvertingHeic(false);
       return;
     }
 
@@ -597,7 +604,10 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
       setMdViewMode("preview"); setCsvViewMode("table"); setSvgViewMode("image");
       setWrapLines(false); setCopiedCode(false);
       pdfBufferRef.current = null;
+      fileBufferRef.current = null;
       setPdfData(null);
+      setImageError(false);
+      setIsConvertingHeic(false);
 
       try {
         let buffer: Uint8Array;
@@ -622,25 +632,70 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
         }
         if (!current) return;
 
+        fileBufferRef.current = buffer;
+
         const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
         const mimeLower = (file.mime || "").toLowerCase();
-        const isSvgFile = file.name.toLowerCase().endsWith(".svg") || mimeLower === "image/svg+xml";
+        const isSvgFile = ext === "svg" || file.name.toLowerCase().endsWith(".svg") || mimeLower === "image/svg+xml";
         const isPdfFile = ext === "pdf" || mimeLower === "application/pdf" || mimeLower.includes("pdf");
+        const isHeicFile = ext === "heic" || ext === "heif" || mimeLower === "image/heic" || mimeLower === "image/heif";
+        const isImageFile = (mimeLower.startsWith("image/") || IMAGE_EXTS.has(ext)) && !isSvgFile;
+        const isVideoFile = mimeLower.startsWith("video/") || VIDEO_EXTS.has(ext);
+        const isAudioFile = mimeLower.startsWith("audio/") || AUDIO_EXTS.has(ext);
 
         if (isPdfFile) {
           pdfBufferRef.current = buffer;
           setPdfData(buffer);
         }
 
-        // Always create Blob URL for media, pdf, and SVG visual rendering
-        if (
-          file.mime.startsWith("image/") ||
-          file.mime.startsWith("video/") ||
-          file.mime.startsWith("audio/") ||
+        // HEIC image conversion for seamless in-app preview
+        if (isHeicFile) {
+          setIsConvertingHeic(true);
+          try {
+            const rawBlob = new Blob([buffer as any], { type: "image/heic" });
+            const heic2anyModule = await import("heic2any");
+            const heic2any = heic2anyModule.default || heic2anyModule;
+            const conversionResult = await (heic2any as any)({
+              blob: rawBlob,
+              toType: "image/jpeg",
+              quality: 0.9,
+            });
+            const jpegBlob = Array.isArray(conversionResult) ? conversionResult[0] : conversionResult;
+            if (current) {
+              setContentUrl((prev) => {
+                if (prev) URL.revokeObjectURL(prev);
+                return URL.createObjectURL(jpegBlob);
+              });
+            }
+          } catch (heicErr) {
+            console.warn("[FilePreviewModal] heic2any conversion failed, falling back to direct blob:", heicErr);
+            const fallbackBlob = new Blob([buffer as any], { type: "image/heic" });
+            if (current) {
+              setContentUrl((prev) => {
+                if (prev) URL.revokeObjectURL(prev);
+                return URL.createObjectURL(fallbackBlob);
+              });
+            }
+          } finally {
+            if (current) setIsConvertingHeic(false);
+          }
+        } else if (
+          isImageFile ||
+          isVideoFile ||
+          isAudioFile ||
           isPdfFile ||
           isSvgFile
         ) {
-          const blobMime = isPdfFile ? "application/pdf" : isSvgFile ? "image/svg+xml" : file.mime;
+          let blobMime = file.mime || "application/octet-stream";
+          if (isPdfFile) blobMime = "application/pdf";
+          else if (isSvgFile) blobMime = "image/svg+xml";
+          else if (isImageFile && !file.mime.startsWith("image/")) {
+            blobMime = `image/${ext === "jpg" ? "jpeg" : ext}`;
+          } else if (isVideoFile && !file.mime.startsWith("video/")) {
+            blobMime = `video/${ext === "mov" ? "quicktime" : ext}`;
+          } else if (isAudioFile && !file.mime.startsWith("audio/")) {
+            blobMime = `audio/${ext}`;
+          }
           const blob = new Blob([buffer as any], { type: blobMime });
           if (current) {
             setContentUrl((prev) => {
@@ -671,7 +726,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
         const shouldDecodeText = (
           isTextMime ||
           isEditableFile(file) ||
-          (!hasNullByte && !mimeLower.startsWith("image/") && !mimeLower.startsWith("video/") && !mimeLower.startsWith("audio/") && !isPdfFile) ||
+          (!hasNullByte && !isImageFile && !isVideoFile && !isAudioFile && !isPdfFile) ||
           isSvgFile
         );
 
@@ -703,7 +758,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
             setEditContent(text);
             setIsEditMode(true);
           }
-        } else if (!contentUrl && !file.mime.startsWith("image/") && !file.mime.startsWith("video/") && !file.mime.startsWith("audio/") && !isPdfFile) {
+        } else if (!contentUrl && !isImageFile && !isVideoFile && !isAudioFile && !isPdfFile) {
           const blob = new Blob([buffer as any], { type: file.mime || "application/octet-stream" });
           if (current) {
             setContentUrl((prev) => {
@@ -756,7 +811,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
       const { readOfflineCache, isCachedOffline } = await import("@/lib/storage/offlineStorage");
 
       const cacheDir = await appLocalDataDir();
-      const safeName = file.name.replace(/[/\\?%*:|"<>]/g, "_").trim() || "document.pdf";
+      const safeName = file.name.replace(/[/\\?%*:|"<>]/g, "_").trim() || "document.bin";
       const tempFilePath = await join(cacheDir, `temp_${file.id}_${safeName}`);
 
       let fileReady = false;
@@ -767,7 +822,9 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
       }
 
       if (!fileReady) {
-        if (pdfBufferRef.current) {
+        if (fileBufferRef.current) {
+          await saveBinaryFile(tempFilePath, fileBufferRef.current);
+        } else if (pdfBufferRef.current) {
           await saveBinaryFile(tempFilePath, pdfBufferRef.current);
         } else if (file.offline && (await isCachedOffline(file.id))) {
           const offlineBuf = await readOfflineCache(file.id);
@@ -944,17 +1001,18 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
   // ── Derived state ─────────────────────────────────────────────────────────
   const langInfo        = detectLang(file?.name ?? "");
   const ext             = file?.name.split(".").pop()?.toLowerCase() ?? "";
-  const isSvg           = ext === "svg" || (file?.mime?.toLowerCase() === "image/svg+xml");
-  const isImage         = (file?.mime?.startsWith("image/") ?? false) && !isSvg;
-  const isVideo         = file?.mime?.startsWith("video/") ?? false;
-  const isAudio         = file?.mime?.startsWith("audio/") ?? false;
-  const isPdf           = ext === "pdf" || file?.mime === "application/pdf" || (file?.mime?.toLowerCase().includes("pdf") ?? false);
-  const isMarkdownFile  = ext === "md" || ext === "markdown" || (file?.mime?.toLowerCase() === "text/markdown");
-  const isCsvFile       = ext === "csv" || (file?.mime?.toLowerCase() === "text/csv");
-  const isTsvFile       = ext === "tsv" || (file?.mime?.toLowerCase() === "text/tab-separated-values");
+  const mimeLower       = (file?.mime || "").toLowerCase();
+  const isSvg           = ext === "svg" || (mimeLower === "image/svg+xml");
+  const isImage         = (mimeLower.startsWith("image/") || IMAGE_EXTS.has(ext)) && !isSvg;
+  const isVideo         = mimeLower.startsWith("video/") || VIDEO_EXTS.has(ext);
+  const isAudio         = mimeLower.startsWith("audio/") || AUDIO_EXTS.has(ext);
+  const isPdf           = ext === "pdf" || mimeLower === "application/pdf" || mimeLower.includes("pdf");
+  const isMarkdownFile  = ext === "md" || ext === "markdown" || (mimeLower === "text/markdown");
+  const isCsvFile       = ext === "csv" || (mimeLower === "text/csv");
+  const isTsvFile       = ext === "tsv" || (mimeLower === "text/tab-separated-values");
   const isTableData     = (isCsvFile || isTsvFile) && textContent !== null;
-  const isJsonFile      = ext === "json" || ext === "jsonc" || ext === "json5" || (file?.mime?.toLowerCase().includes("json") ?? false);
-  const isArchive       = ["zip", "tar", "gz", "tgz", "bz2", "xz", "7z", "rar", "iso", "dmg"].includes(ext);
+  const isJsonFile      = ext === "json" || ext === "jsonc" || ext === "json5" || mimeLower.includes("json");
+  const isArchive       = ARCHIVE_EXTS.has(ext);
 
   const isMarkdownPreview = isMarkdownFile && mdViewMode === "preview" && !isEditMode;
   const isTableView       = isTableData && csvViewMode === "table" && !isEditMode;
@@ -1265,10 +1323,10 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                   <Info className="h-4 w-4" />
                 </button>
               )}
-              {isPdf && (
+              {!loading && !error && (
                 <button
                   onClick={handleOpenInSystemApp}
-                  title={t("topbar.openInSystemViewerTitle")}
+                  title={t("topbar.openInSystemViewerTitle", "Open in System App")}
                   className="flex items-center gap-1.5 h-7 px-2.5 text-[12px] font-semibold rounded-lg cursor-pointer transition-colors duration-150 mr-1"
                   style={{
                     color: colors.text,
@@ -1279,7 +1337,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                   onMouseLeave={e => (e.currentTarget.style.background = colors.badgeBg)}
                 >
                   <ExternalLink className="h-3.5 w-3.5 text-blue-500" />
-                  <span className="hidden sm:inline">{t("topbar.openInSystemViewer")}</span>
+                  <span className="hidden sm:inline">{t("topbar.openInSystemViewer", "Open in System App")}</span>
                 </button>
               )}
               <button
@@ -1367,45 +1425,107 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
           <div className="absolute inset-0">
 
             {/* IMAGE / SVG VECTOR */}
-            {(isImage || isSvgImageView) && contentUrl && (
-              <div className="w-full h-full flex relative overflow-hidden">
-                {/* Main Viewport */}
-                <div
-                  className="flex-1 h-full flex items-center justify-center p-6 relative overflow-hidden select-none cursor-grab active:cursor-grabbing"
-                  onMouseDown={handleMouseDown}
-                  onMouseMove={handleMouseMove}
-                  onMouseUp={handleMouseUp}
-                  onMouseLeave={handleMouseUp}
-                  onWheel={handleWheel}
-                  style={{
-                    touchAction: "pinch-zoom",
-                    backgroundImage: showGrid
-                      ? `radial-gradient(circle at center, ${colors.dotGrid} 1px, transparent 1px)`
-                      : "none",
-                    backgroundSize: "20px 20px",
-                    backgroundColor: showGrid ? (isDark ? "#080c10" : "#fafafa") : colors.bg,
-                  }}
-                >
+            {(isImage || isSvgImageView) && (
+              imageError && !isConvertingHeic ? (
+                <div className="w-full h-full flex items-center justify-center p-6">
                   <div
+                    className="flex flex-col items-center max-w-md w-full p-8 rounded-3xl text-center shadow-sm"
                     style={{
-                      transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom}) rotate(${rotation}deg)`,
-                      transition: isDragging ? "none" : "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+                      background: isDark ? "#111214" : "#ffffff",
+                      border: `1px solid ${colors.border}`,
                     }}
                   >
-                    <img
-                      src={contentUrl}
-                      alt={file.name}
-                      onLoad={(e) => {
-                        const img = e.currentTarget;
-                        setDimensions({ width: img.naturalWidth, height: img.naturalHeight });
-                      }}
-                      className="max-w-[85vw] max-h-[80vh] object-contain pointer-events-none"
-                      style={{
-                        boxShadow: "0 25px 60px rgba(0,0,0,0.35)",
-                        borderRadius: "4px",
-                      }}
-                    />
+                    <div className="h-16 w-16 rounded-2xl bg-purple-500/10 text-purple-500 flex items-center justify-center mb-4">
+                      <ImageIcon className="h-8 w-8" strokeWidth={1.5} />
+                    </div>
+                    <h3 className="text-base font-bold mb-1 truncate max-w-full" style={{ color: colors.text }}>
+                      {file.name}
+                    </h3>
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className="text-[11px] font-mono px-2 py-0.5 rounded-md font-semibold bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                        {(ext || "image").toUpperCase()}
+                      </span>
+                      <span className="text-[11px] font-mono" style={{ color: colors.muted }}>
+                        {formatSize(file.size)}
+                      </span>
+                    </div>
+                    <p className="text-xs leading-relaxed mb-6" style={{ color: colors.muted }}>
+                      {t("image.decodeErrorDescription", "This image format cannot be previewed directly in the browser. You can open it in your system photo viewer or download it.")}
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={handleOpenInSystemApp}
+                        className="flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-semibold bg-[#0b57d0] hover:bg-[#0842a0] text-white shadow-xs transition-colors cursor-pointer"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                        {t("unsupported.openInSystem", "Open in System App")}
+                      </button>
+                      <button
+                        onClick={handleDownload}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
+                      >
+                        <Download className="h-4 w-4" />
+                        {t("archive.download", "Download")}
+                      </button>
+                    </div>
                   </div>
+                </div>
+              ) : (
+                <div className="w-full h-full flex relative overflow-hidden">
+                  {/* HEIC Conversion overlay */}
+                  {isConvertingHeic && (
+                    <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-black/60 backdrop-blur-xs text-white">
+                      <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
+                      <span className="text-xs font-semibold">
+                        {t("image.convertingHeic", "Converting image preview…")}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Main Viewport */}
+                  <div
+                    className="flex-1 h-full flex items-center justify-center p-6 relative overflow-hidden select-none cursor-grab active:cursor-grabbing"
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                    onWheel={handleWheel}
+                    style={{
+                      touchAction: "pinch-zoom",
+                      backgroundImage: showGrid
+                        ? `radial-gradient(circle at center, ${colors.dotGrid} 1px, transparent 1px)`
+                        : "none",
+                      backgroundSize: "20px 20px",
+                      backgroundColor: showGrid ? (isDark ? "#080c10" : "#fafafa") : colors.bg,
+                    }}
+                  >
+                    <div
+                      style={{
+                        transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom}) rotate(${rotation}deg)`,
+                        transition: isDragging ? "none" : "transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)",
+                      }}
+                    >
+                      {contentUrl && (
+                        <img
+                          src={contentUrl}
+                          alt={file.name}
+                          onLoad={(e) => {
+                            const img = e.currentTarget;
+                            setDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+                            setImageError(false);
+                          }}
+                          onError={() => {
+                            console.warn(`[FilePreviewModal] Image failed to render: ${file.name}`);
+                            setImageError(true);
+                          }}
+                          className="max-w-[85vw] max-h-[80vh] object-contain pointer-events-none"
+                          style={{
+                            boxShadow: "0 25px 60px rgba(0,0,0,0.35)",
+                            borderRadius: "4px",
+                          }}
+                        />
+                      )}
+                    </div>
 
                   {/* Floating bottom controls bar (glassmorphic pill) */}
                   <div className="absolute bottom-[calc(1.5rem+env(safe-area-inset-bottom,0px))] left-1/2 -translate-x-1/2 flex items-center gap-2.5 px-4 py-2 rounded-full border shadow-xl backdrop-blur-md bg-white/75 dark:bg-[#141518]/90 border-slate-200/50 dark:border-white/[0.06] text-slate-700 dark:text-slate-200 z-20">
@@ -1511,7 +1631,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                   </div>
                 )}
               </div>
-            )}
+            ))}
 
             {/* VIDEO */}
             {isVideo && contentUrl && (
@@ -1989,13 +2109,22 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                   <p className="text-xs leading-relaxed mb-6" style={{ color: colors.muted }}>
                     {t("archive.description")}
                   </p>
-                  <button
-                    onClick={handleDownload}
-                    className="flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-semibold bg-[#0b57d0] hover:bg-[#0842a0] text-white shadow-xs transition-colors cursor-pointer"
-                  >
-                    <Download className="h-4 w-4" />
-                    {t("archive.download")}
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={handleOpenInSystemApp}
+                      className="flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-semibold bg-[#0b57d0] hover:bg-[#0842a0] text-white shadow-xs transition-colors cursor-pointer"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      {t("archive.openInSystem", "Open in System App")}
+                    </button>
+                    <button
+                      onClick={handleDownload}
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
+                    >
+                      <Download className="h-4 w-4" />
+                      {t("archive.download")}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -2027,13 +2156,22 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                   <p className="text-xs leading-relaxed mb-6" style={{ color: colors.muted }}>
                     {t("unsupported.description")}
                   </p>
-                  <button
-                    onClick={handleDownload}
-                    className="flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-semibold bg-[#0b57d0] hover:bg-[#0842a0] text-white shadow-xs transition-colors cursor-pointer"
-                  >
-                    <Download className="h-4 w-4" />
-                    {t("unsupported.download")}
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={handleOpenInSystemApp}
+                      className="flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-semibold bg-[#0b57d0] hover:bg-[#0842a0] text-white shadow-xs transition-colors cursor-pointer"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      {t("unsupported.openInSystem", "Open in System App")}
+                    </button>
+                    <button
+                      onClick={handleDownload}
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
+                    >
+                      <Download className="h-4 w-4" />
+                      {t("unsupported.download")}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
