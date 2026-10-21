@@ -17,10 +17,11 @@ import {
   Send,
   Clock,
   Info,
+  ExternalLink,
 } from "lucide-react";
-import { Api } from "telegram";
+import { Api, TelegramClient } from "telegram";
 import { useAuthStore } from "@/stores/authStore";
-import { initClient, getClient, resetClient } from "@/lib/telegram/client";
+import { initClient, getClient } from "@/lib/telegram/client";
 import { saveSecret, getSecret, VAULT_KEY_SESSION, VAULT_KEY_PHONE, VAULT_KEY_API_ID, VAULT_KEY_API_HASH } from "@/lib/secure/vault";
 import { bootstrapTeleDrive } from "@/lib/telegram/bootstrap";
 import { DEFAULT_API_ID, DEFAULT_API_HASH } from "@/lib/telegram/config";
@@ -45,11 +46,26 @@ type DeliveryType = "app" | "sms" | "email" | "call" | "unknown";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function sanitizePhone(raw: string): string {
-  const clean = raw.trim().replace(/[^\d+]/g, "");
+  let clean = raw.trim().replace(/[^\d+]/g, "");
   if (clean.startsWith("00")) {
-    return `+${clean.slice(2)}`;
+    clean = `+${clean.slice(2)}`;
   }
-  return clean.startsWith("+") ? clean : `+${clean}`;
+  if (clean.startsWith("+")) {
+    return clean;
+  }
+  // Strip leading 0 if 11 digits (e.g. 09876543210 -> 9876543210)
+  if (clean.startsWith("0") && clean.length === 11) {
+    clean = clean.slice(1);
+  }
+  // 10 digits starting with 6, 7, 8, 9 (standard Indian mobile numbers)
+  if (clean.length === 10 && /^[6-9]/.test(clean)) {
+    return `+91${clean}`;
+  }
+  // 12 digits starting with 91 (India without +)
+  if (clean.length === 12 && clean.startsWith("91")) {
+    return `+${clean}`;
+  }
+  return `+${clean}`;
 }
 
 function parseTelegramError(err: any, t: any): string {
@@ -60,7 +76,9 @@ function parseTelegramError(err: any, t: any): string {
     const seconds = msg.match(/\d+/)?.[0];
     return seconds ? t("errors.floodWait", { count: Number(seconds) }) : t("errors.floodWaitFewSeconds");
   }
-  if (msg.includes("PHONE_NUMBER_FLOOD") || msg.includes("PHONE_PASSWORD_FLOOD")) return t("errors.phoneFlood");
+  if (msg.includes("FLOOD") || msg.includes("PHONE_NUMBER_FLOOD") || msg.includes("PHONE_PASSWORD_FLOOD")) {
+    return t("errors.phoneFlood");
+  }
   if (msg.includes("SEND_CODE_UNAVAILABLE")) return t("errors.sendCodeUnavailable");
   if (msg.includes("PHONE_CODE_EMPTY") || msg.includes("PHONE_CODE_INVALID")) return t("errors.invalidCode");
   if (msg.includes("PHONE_CODE_EXPIRED")) return t("errors.codeExpired");
@@ -118,7 +136,7 @@ function FloatingInput({ label, id, suffix, inputRef, className, ...props }: Flo
     <div className="relative group w-full text-left">
       <label
         htmlFor={id}
-        className="absolute left-3.5 transition-all duration-200 ease-out pointer-events-none z-10 select-none"
+        className="absolute left-3.5 transition-all duration-200 ease-out pointer-events-none z-10 select-none whitespace-nowrap overflow-hidden text-ellipsis max-w-[calc(100%-20px)]"
         style={{
           top: lifted ? "6px" : "50%",
           transform: lifted ? "none" : "translateY(-50%)",
@@ -310,6 +328,7 @@ export default function AuthPage() {
 
   // QR Code login state
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [qrTgUrl, setQrTgUrl] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
   const qrCleanupRef = useRef<(() => void) | null>(null);
 
@@ -366,9 +385,7 @@ export default function AuthPage() {
         qrCleanupRef.current = null;
       }
       setQrDataUrl(null);
-      // Reset the client so phone login always gets a fresh connection.
-      // Without this, the QR login client lingers and can break SendCode.
-      resetClient();
+      setQrTgUrl(null);
       return;
     }
 
@@ -385,9 +402,10 @@ export default function AuthPage() {
         if (!isSubscribed) return;
 
         const cleanup = startQrLogin(client, configApiId, configApiHash, {
-          onQrUrl: (url) => {
+          onQrUrl: (url, _expires, tgUrl) => {
             if (isSubscribed) {
               setQrDataUrl(url);
+              if (tgUrl) setQrTgUrl(tgUrl);
               setQrLoading(false);
             }
           },
@@ -460,9 +478,13 @@ export default function AuthPage() {
               phoneNumber: formattedPhone,
               apiId: configApiId,
               apiHash: configApiHash,
-              settings: new Api.CodeSettings({}),
+              settings: new Api.CodeSettings({
+                allowAppHash: true,
+                currentNumber: true,
+              }),
             })
           );
+          console.log("Telegram SendCode result:", result);
           break;
         } catch (err: any) {
           const errMsg = err?.errorMessage || err?.message || "";
@@ -549,6 +571,23 @@ export default function AuthPage() {
     }
   };
 
+  // ── Client Resilience Helper ─────────────────────────────────────────────
+  const getOrInitClient = async (): Promise<TelegramClient> => {
+    try {
+      const client = getClient();
+      if (!client.connected) {
+        await client.connect();
+      }
+      return client;
+    } catch {
+      if (!configApiId || !configApiHash) {
+        throw new Error("Telegram API credentials missing. Please check settings.");
+      }
+      await initClient(configApiId, configApiHash);
+      return getClient();
+    }
+  };
+
   // ── Resend Code ──────────────────────────────────────────────────────────
   const handleResendCode = async () => {
     if (resending || countdown > 0 || !configApiId || !configApiHash) return;
@@ -556,9 +595,7 @@ export default function AuthPage() {
     setError(null);
 
     try {
-      // Ensure client is ready (it may have been reset after QR attempt)
-      await initClient(configApiId, configApiHash);
-      const client = getClient();
+      const client = await getOrInitClient();
       const formattedPhone = sanitizePhone(phone);
 
       const resendResult: any = await client.invoke(
@@ -609,7 +646,7 @@ export default function AuthPage() {
     setError(null);
 
     try {
-      const client = getClient();
+      const client = await getOrInitClient();
       const formattedPhone = sanitizePhone(phone);
 
       try {
@@ -733,7 +770,7 @@ export default function AuthPage() {
     setError(null);
 
     try {
-      const client = getClient();
+      const client = await getOrInitClient();
       const pwdInfo = await client.invoke(new Api.account.GetPassword());
       const srpResult = await safeComputeCheck(pwdInfo as any, password);
       const passwordParam =
@@ -813,8 +850,8 @@ export default function AuthPage() {
   // ── Main render (Minimal, refined, zero-scroll mobile & desktop) ───────────
   return (
     <div className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-background select-none flex flex-col justify-between items-center py-3 sm:py-6 px-4 relative">
-      {/* Language switcher — unobtrusive top-right placement */}
-      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-30">
+      {/* Language switcher — top-right placement with comfortable mobile padding and safe-area support */}
+      <div className="absolute top-[max(calc(var(--safe-area-top,0px)+0.75rem),1.5rem)] sm:top-4 right-4 sm:right-4 z-30">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -937,10 +974,16 @@ export default function AuthPage() {
                       autoFocus
                       onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.form?.requestSubmit(); }}
                     />
+                    {phone.trim().length >= 5 && (
+                      <div className="flex items-center gap-1.5 px-1 text-xs text-[#0B57D0] dark:text-[#A8C7FA] font-medium animate-in fade-in duration-150">
+                        <span>Will send code to:</span>
+                        <span className="font-mono font-semibold">{sanitizePhone(phone)}</span>
+                      </div>
+                    )}
                     {/* Clear, gentle delivery tip */}
                     <div className="flex items-start gap-1.5 px-1 text-[11px] text-muted-foreground leading-tight">
                       <Info className="h-3.5 w-3.5 text-[#0B57D0] dark:text-[#A8C7FA] shrink-0 mt-0.5" />
-                      <span>Telegram delivers codes to your <strong>Telegram app</strong>, not SMS.</span>
+                      <span>Telegram delivers codes to your <strong>Telegram app</strong> first. SMS available as fallback.</span>
                     </div>
                   </div>
 
@@ -974,6 +1017,17 @@ export default function AuthPage() {
                       {t("qr.subtitle")}
                     </p>
                   </div>
+
+                  {qrTgUrl && (
+                    <a
+                      href={qrTgUrl}
+                      className="flex items-center justify-center gap-2 w-full py-2.5 px-3 rounded-xl bg-[#0B57D0] hover:bg-[#0B57D0]/90 text-white font-medium text-xs sm:text-sm shadow-sm transition-all"
+                    >
+                      <Send className="h-3.5 w-3.5" />
+                      <span>Log in with Telegram App (1-Tap)</span>
+                      <ExternalLink className="h-3 w-3 opacity-75" />
+                    </a>
+                  )}
 
                   <div className="flex flex-col items-center py-1">
                     <div className="p-2.5 bg-white rounded-2xl shadow-xs border border-black/5">
@@ -1037,28 +1091,36 @@ export default function AuthPage() {
 
               {/* Delivery notification callout */}
               {deliveryType === "app" ? (
-                <div className="p-2.5 rounded-xl bg-amber-500/[0.08] dark:bg-amber-400/[0.08] text-left animate-in fade-in duration-200">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
-                      <Send className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                <div className="p-3 rounded-2xl bg-sky-500/[0.08] dark:bg-sky-400/[0.08] text-left border border-sky-500/20 animate-in fade-in duration-200 space-y-2">
+                  <div className="flex items-start gap-2.5">
+                    <div className="w-7 h-7 rounded-xl bg-sky-500/20 dark:bg-sky-400/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <Send className="h-3.5 w-3.5 text-sky-600 dark:text-sky-400" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[11px] font-bold text-amber-900 dark:text-amber-200">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="text-xs font-bold text-sky-950 dark:text-sky-100">
                           {t("otp.delivery.appTitle")}
                         </span>
-                        <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300">
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-800 dark:text-sky-300">
                           {t("otp.delivery.appBadge")}
                         </span>
                       </div>
-                      <p className="text-[10px] text-amber-800/90 dark:text-amber-300/90 leading-tight mt-0.5">
+                      <p className="text-[11px] text-sky-800/90 dark:text-sky-200/80 leading-relaxed mt-0.5">
                         {t("otp.delivery.appDesc")}
                       </p>
                     </div>
                   </div>
+                  <a
+                    href="tg://resolve?domain=telegram"
+                    className="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-xl bg-[#0B57D0] hover:bg-[#0842A0] active:bg-[#063177] dark:bg-[#A8C7FA] dark:hover:bg-[#c2d8fb] dark:text-[#062E6F] text-white text-xs font-medium shadow-xs transition-all cursor-pointer"
+                  >
+                    <Send className="h-3.5 w-3.5" />
+                    <span>Open Telegram App</span>
+                    <ExternalLink className="h-3 w-3 opacity-75" />
+                  </a>
                 </div>
               ) : deliveryType === "sms" ? (
-                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-left animate-in fade-in duration-200">
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-left border border-emerald-500/20 animate-in fade-in duration-200">
                   <div className="flex items-center gap-2.5">
                     <Smartphone className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <div className="flex-1 min-w-0">
@@ -1106,23 +1168,23 @@ export default function AuthPage() {
               </div>
 
               {/* Countdown / Resend + code-length toggle on same row */}
-              <div className="flex items-center justify-between px-1">
+              <div className="flex items-center justify-between px-1 text-[11px]">
                 {countdown > 0 ? (
-                  <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                  <div className="flex items-center gap-1 text-muted-foreground">
                     <Clock className="h-3 w-3" />
-                    <span>{t("otp.resend.countdown", { seconds: countdown })}</span>
+                    <span>Send via SMS in {countdown}s</span>
                   </div>
                 ) : (
                   <button
                     type="button"
                     disabled={resending || loading}
                     onClick={handleResendCode}
-                    className="flex items-center gap-1 text-[11px] font-medium text-[#0B57D0] dark:text-[#A8C7FA] hover:underline cursor-pointer transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1 font-medium text-[#0B57D0] dark:text-[#A8C7FA] hover:underline cursor-pointer transition-colors disabled:opacity-50"
                   >
                     {resending ? (
-                      <><Loader2 className="h-3 w-3 animate-spin" /><span>{t("otp.resend.sending")}</span></>
+                      <><Loader2 className="h-3 w-3 animate-spin" /><span>Sending via SMS...</span></>
                     ) : (
-                      <span>{t("otp.resend.button")}</span>
+                      <span>Didn't get code? Send via SMS</span>
                     )}
                   </button>
                 )}

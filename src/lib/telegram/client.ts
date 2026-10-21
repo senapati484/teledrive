@@ -11,8 +11,20 @@ export async function initClient(
   sessionString: string = "",
   forceNew: boolean = false
 ): Promise<void> {
-  // If already connected with the SAME credentials and no force-new requested, reuse the client
-  if (!forceNew && clientInstance && isConnectedStatus && activeApiId === apiId) return;
+  // If already instantiated with the SAME credentials and no force-new requested, reuse or reconnect
+  if (!forceNew && clientInstance && activeApiId === apiId) {
+    if (!clientInstance.connected) {
+      try {
+        await clientInstance.connect();
+        isConnectedStatus = true;
+      } catch (err) {
+        console.warn("Reconnection failed, creating fresh client:", err);
+      }
+    }
+    if (isConnectedStatus && clientInstance?.connected) {
+      return;
+    }
+  }
 
   // Tear down any existing client
   if (clientInstance) {
