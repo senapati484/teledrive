@@ -17,6 +17,7 @@ import {
   Send,
   Clock,
   Info,
+  ExternalLink,
 } from "lucide-react";
 import { Api } from "telegram";
 import { useAuthStore } from "@/stores/authStore";
@@ -45,11 +46,26 @@ type DeliveryType = "app" | "sms" | "email" | "call" | "unknown";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function sanitizePhone(raw: string): string {
-  const clean = raw.trim().replace(/[^\d+]/g, "");
+  let clean = raw.trim().replace(/[^\d+]/g, "");
   if (clean.startsWith("00")) {
-    return `+${clean.slice(2)}`;
+    clean = `+${clean.slice(2)}`;
   }
-  return clean.startsWith("+") ? clean : `+${clean}`;
+  if (clean.startsWith("+")) {
+    return clean;
+  }
+  // Strip leading 0 if 11 digits (e.g. 09876543210 -> 9876543210)
+  if (clean.startsWith("0") && clean.length === 11) {
+    clean = clean.slice(1);
+  }
+  // 10 digits starting with 6, 7, 8, 9 (standard Indian mobile numbers)
+  if (clean.length === 10 && /^[6-9]/.test(clean)) {
+    return `+91${clean}`;
+  }
+  // 12 digits starting with 91 (India without +)
+  if (clean.length === 12 && clean.startsWith("91")) {
+    return `+${clean}`;
+  }
+  return `+${clean}`;
 }
 
 function parseTelegramError(err: any, t: any): string {
@@ -118,7 +134,7 @@ function FloatingInput({ label, id, suffix, inputRef, className, ...props }: Flo
     <div className="relative group w-full text-left">
       <label
         htmlFor={id}
-        className="absolute left-3.5 transition-all duration-200 ease-out pointer-events-none z-10 select-none"
+        className="absolute left-3.5 transition-all duration-200 ease-out pointer-events-none z-10 select-none whitespace-nowrap overflow-hidden text-ellipsis max-w-[calc(100%-20px)]"
         style={{
           top: lifted ? "6px" : "50%",
           transform: lifted ? "none" : "translateY(-50%)",
@@ -310,6 +326,7 @@ export default function AuthPage() {
 
   // QR Code login state
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [qrTgUrl, setQrTgUrl] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
   const qrCleanupRef = useRef<(() => void) | null>(null);
 
@@ -366,6 +383,7 @@ export default function AuthPage() {
         qrCleanupRef.current = null;
       }
       setQrDataUrl(null);
+      setQrTgUrl(null);
       // Reset the client so phone login always gets a fresh connection.
       // Without this, the QR login client lingers and can break SendCode.
       resetClient();
@@ -385,9 +403,10 @@ export default function AuthPage() {
         if (!isSubscribed) return;
 
         const cleanup = startQrLogin(client, configApiId, configApiHash, {
-          onQrUrl: (url) => {
+          onQrUrl: (url, _expires, tgUrl) => {
             if (isSubscribed) {
               setQrDataUrl(url);
+              if (tgUrl) setQrTgUrl(tgUrl);
               setQrLoading(false);
             }
           },
@@ -460,9 +479,13 @@ export default function AuthPage() {
               phoneNumber: formattedPhone,
               apiId: configApiId,
               apiHash: configApiHash,
-              settings: new Api.CodeSettings({}),
+              settings: new Api.CodeSettings({
+                allowAppHash: true,
+                currentNumber: true,
+              }),
             })
           );
+          console.log("Telegram SendCode result:", result);
           break;
         } catch (err: any) {
           const errMsg = err?.errorMessage || err?.message || "";
@@ -937,10 +960,16 @@ export default function AuthPage() {
                       autoFocus
                       onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.form?.requestSubmit(); }}
                     />
+                    {phone.trim().length >= 5 && (
+                      <div className="flex items-center gap-1.5 px-1 text-xs text-[#0B57D0] dark:text-[#A8C7FA] font-medium animate-in fade-in duration-150">
+                        <span>Will send code to:</span>
+                        <span className="font-mono font-semibold">{sanitizePhone(phone)}</span>
+                      </div>
+                    )}
                     {/* Clear, gentle delivery tip */}
                     <div className="flex items-start gap-1.5 px-1 text-[11px] text-muted-foreground leading-tight">
                       <Info className="h-3.5 w-3.5 text-[#0B57D0] dark:text-[#A8C7FA] shrink-0 mt-0.5" />
-                      <span>Telegram delivers codes to your <strong>Telegram app</strong>, not SMS.</span>
+                      <span>Telegram delivers codes to your <strong>Telegram app</strong> first. SMS available as fallback.</span>
                     </div>
                   </div>
 
@@ -974,6 +1003,17 @@ export default function AuthPage() {
                       {t("qr.subtitle")}
                     </p>
                   </div>
+
+                  {qrTgUrl && (
+                    <a
+                      href={qrTgUrl}
+                      className="flex items-center justify-center gap-2 w-full py-2.5 px-3 rounded-xl bg-[#0B57D0] hover:bg-[#0B57D0]/90 text-white font-medium text-xs sm:text-sm shadow-sm transition-all"
+                    >
+                      <Send className="h-3.5 w-3.5" />
+                      <span>Log in with Telegram App (1-Tap)</span>
+                      <ExternalLink className="h-3 w-3 opacity-75" />
+                    </a>
+                  )}
 
                   <div className="flex flex-col items-center py-1">
                     <div className="p-2.5 bg-white rounded-2xl shadow-xs border border-black/5">
@@ -1037,7 +1077,7 @@ export default function AuthPage() {
 
               {/* Delivery notification callout */}
               {deliveryType === "app" ? (
-                <div className="p-2.5 rounded-xl bg-amber-500/[0.08] dark:bg-amber-400/[0.08] text-left animate-in fade-in duration-200">
+                <div className="p-2.5 rounded-xl bg-amber-500/[0.08] dark:bg-amber-400/[0.08] text-left border border-amber-500/20 animate-in fade-in duration-200 space-y-2">
                   <div className="flex items-center gap-2.5">
                     <div className="w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
                       <Send className="h-3 w-3 text-amber-600 dark:text-amber-400" />
@@ -1056,9 +1096,16 @@ export default function AuthPage() {
                       </p>
                     </div>
                   </div>
+                  <a
+                    href="tg://resolve?domain=telegram"
+                    className="inline-flex items-center justify-center gap-1.5 w-full py-1.5 px-3 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-900 dark:text-amber-200 text-xs font-medium transition-colors"
+                  >
+                    <span>Open Telegram App</span>
+                    <ExternalLink className="h-3 w-3 opacity-75" />
+                  </a>
                 </div>
               ) : deliveryType === "sms" ? (
-                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-left animate-in fade-in duration-200">
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-left border border-emerald-500/20 animate-in fade-in duration-200">
                   <div className="flex items-center gap-2.5">
                     <Smartphone className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                     <div className="flex-1 min-w-0">
@@ -1110,7 +1157,7 @@ export default function AuthPage() {
                 {countdown > 0 ? (
                   <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
                     <Clock className="h-3 w-3" />
-                    <span>{t("otp.resend.countdown", { seconds: countdown })}</span>
+                    <span>Send via SMS in {countdown}s</span>
                   </div>
                 ) : (
                   <button
@@ -1120,9 +1167,9 @@ export default function AuthPage() {
                     className="flex items-center gap-1 text-[11px] font-medium text-[#0B57D0] dark:text-[#A8C7FA] hover:underline cursor-pointer transition-colors disabled:opacity-50"
                   >
                     {resending ? (
-                      <><Loader2 className="h-3 w-3 animate-spin" /><span>{t("otp.resend.sending")}</span></>
+                      <><Loader2 className="h-3 w-3 animate-spin" /><span>Sending via SMS...</span></>
                     ) : (
-                      <span>{t("otp.resend.button")}</span>
+                      <span>Didn't get code? Send via SMS</span>
                     )}
                   </button>
                 )}

@@ -2,7 +2,7 @@ import { TelegramClient, Api } from "telegram";
 import QRCode from "qrcode";
 
 export interface QrLoginCallbacks {
-  onQrUrl: (qrDataUrl: string, expires: number) => void;
+  onQrUrl: (qrDataUrl: string, expires: number, tgUrl?: string) => void;
   onSuccess: () => void;
   onPasswordNeeded: () => void;
   onError: (err: any) => void;
@@ -115,7 +115,7 @@ export function startQrLogin(
         });
 
         if (!isCancelled) {
-          callbacks.onQrUrl(dataUrl, result.expires);
+          callbacks.onQrUrl(dataUrl, result.expires, tgUrl);
 
           // Calculate time until expiration with a safety margin (refresh 2 seconds early)
           const nowSec = Math.floor(Date.now() / 1000);
