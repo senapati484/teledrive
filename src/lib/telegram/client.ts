@@ -26,6 +26,11 @@ export async function initClient(
   clientInstance = new TelegramClient(stringSession, apiId, apiHash, {
     connectionRetries: 5,
     useWSS: true,
+    deviceModel: "TeleDrive Desktop",
+    systemVersion: "1.0.0",
+    appVersion: "0.1.2",
+    langCode: "en",
+    systemLangCode: "en",
   });
 
   // Set the log level to warn

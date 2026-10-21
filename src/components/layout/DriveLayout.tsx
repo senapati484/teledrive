@@ -719,7 +719,7 @@ export default function DriveLayout() {
         </header>
       ) : (
         /* Desktop Topbar */
-        <header className="relative z-40 flex items-center justify-between px-4 h-16 shrink-0 bg-background border-b border-slate-200/60 dark:border-white/[0.04] select-none">
+        <header className="relative z-40 flex items-center justify-between px-4 h-16 shrink-0 bg-background border-b md:border-b-0 border-slate-200/60 dark:border-white/[0.04] select-none">
           <div className="flex items-center gap-2 shrink-0 min-w-0">
             <Link to="/drive/my-drive" className="flex items-center gap-2.5 group ml-1">
               <img
@@ -809,7 +809,7 @@ export default function DriveLayout() {
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          className="flex-1 overflow-y-auto bg-surface dark:bg-surface md:mr-4 md:mb-4 md:rounded-3xl md:border md:border-l-0 md:border-slate-200/80 md:dark:border-white/[0.04] md:dark:border-l-0 md:shadow-xs border-0 pb-[calc(3.75rem+max(var(--safe-area-bottom,0px),16px)+80px)] md:pb-6 relative z-10"
+          className="flex-1 overflow-y-auto bg-surface dark:bg-surface md:mr-4 md:mb-4 md:rounded-3xl md:border md:border-slate-200/60 md:dark:border-white/[0.03] md:shadow-xs border-0 pb-[calc(3.75rem+max(var(--safe-area-bottom,0px),16px)+80px)] md:pb-6 relative z-10"
         >
           {/* Mobile FAB */}
           {isMobile && <NewActionButton isFab />}

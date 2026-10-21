@@ -1,7 +1,23 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
-import { AlertTriangle, Eye, EyeOff, Loader2, ArrowLeft, MessageSquare, Lock, Languages, Check } from "lucide-react";
+import {
+  AlertTriangle,
+  Eye,
+  EyeOff,
+  Loader2,
+  ArrowLeft,
+  MessageSquare,
+  Lock,
+  Languages,
+  Check,
+  QrCode,
+  Smartphone,
+  Mail,
+  Send,
+  Clock,
+  Info,
+} from "lucide-react";
 import { Api } from "telegram";
 import { useAuthStore } from "@/stores/authStore";
 import { initClient, getClient } from "@/lib/telegram/client";
@@ -9,6 +25,7 @@ import { saveSecret, getSecret, VAULT_KEY_SESSION, VAULT_KEY_PHONE, VAULT_KEY_AP
 import { bootstrapTeleDrive } from "@/lib/telegram/bootstrap";
 import { DEFAULT_API_ID, DEFAULT_API_HASH } from "@/lib/telegram/config";
 import { safeComputeCheck } from "@/lib/telegram/srp-helper";
+import { startQrLogin } from "@/lib/telegram/qr-helper";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -23,30 +40,55 @@ import { toast } from "sonner";
 import { invoke } from "@tauri-apps/api/core";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type Step = "phone" | "otp" | "password" | "bootstrap";
+type Step = "phone" | "qr" | "otp" | "password" | "bootstrap";
+type DeliveryType = "app" | "sms" | "email" | "call" | "unknown";
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function sanitizePhone(raw: string): string {
+  const clean = raw.trim().replace(/[^\d+]/g, "");
+  if (clean.startsWith("00")) {
+    return `+${clean.slice(2)}`;
+  }
+  return clean.startsWith("+") ? clean : `+${clean}`;
+}
+
+function parseTelegramError(err: any, t: any): string {
+  const msg = err?.errorMessage || err?.message || "";
+  if (msg.includes("PHONE_NUMBER_INVALID")) return t("errors.phoneNumberInvalid");
+  if (msg.includes("PHONE_NUMBER_BANNED")) return t("errors.phoneNumberBanned");
+  if (msg.includes("FLOOD_WAIT")) {
+    const seconds = msg.match(/\d+/)?.[0];
+    return seconds ? t("errors.floodWait", { count: Number(seconds) }) : t("errors.floodWaitFewSeconds");
+  }
+  if (msg.includes("PHONE_NUMBER_FLOOD") || msg.includes("PHONE_PASSWORD_FLOOD")) return t("errors.phoneFlood");
+  if (msg.includes("SEND_CODE_UNAVAILABLE")) return t("errors.sendCodeUnavailable");
+  if (msg.includes("PHONE_CODE_EMPTY") || msg.includes("PHONE_CODE_INVALID")) return t("errors.invalidCode");
+  if (msg.includes("PHONE_CODE_EXPIRED")) return t("errors.codeExpired");
+  if (msg.includes("PASSWORD_HASH_INVALID") || msg.includes("Incorrect password")) return t("errors.incorrectPassword");
+  if (msg.includes("PASSWORD_EMPTY")) return t("errors.passwordEmpty");
+  if (msg.includes("AUTH_RESTART")) return "Authentication restarted by Telegram. Please try again.";
+  return msg || t("errors.sendCodeFailed");
+}
 
 // ─── Animated step indicator ──────────────────────────────────────────────────
 function StepDots({ current }: { current: Step }) {
   const visibleSteps: Step[] = ["phone", "otp", "password"];
-  const currentIndex = visibleSteps.indexOf(current as any);
+  const stepToMap = current === "qr" ? "phone" : current;
+  const currentIndex = visibleSteps.indexOf(stepToMap as any);
   if (currentIndex === -1) return null;
   return (
-    <div className="flex items-center justify-center gap-2 mb-7">
+    <div className="flex items-center justify-center gap-1.5" aria-hidden="true">
       {visibleSteps.map((s, i) => (
         <div
           key={s}
-          className="transition-all duration-500 ease-out rounded-full"
-          style={{
-            width: i === currentIndex ? "24px" : "6px",
-            height: "6px",
-            background:
-              i < currentIndex
-                ? "var(--color-brand-500)"
-                : i === currentIndex
-                ? "var(--color-brand-500)"
-                : "#dadce0",
-            opacity: i > currentIndex ? 0.4 : 1,
-          }}
+          className={cn(
+            "transition-all duration-300 ease-out rounded-full",
+            i === currentIndex
+              ? "w-4.5 h-1 bg-[#0B57D0] dark:bg-[#A8C7FA]"
+              : i < currentIndex
+              ? "w-1.5 h-1 bg-[#0B57D0]/60 dark:bg-[#A8C7FA]/60"
+              : "w-1.5 h-1 bg-slate-200 dark:bg-white/15"
+          )}
         />
       ))}
     </div>
@@ -67,21 +109,17 @@ function FloatingInput({ label, id, suffix, inputRef, className, ...props }: Flo
   const lifted = focused || hasValue;
 
   return (
-    <div className="relative group">
+    <div className="relative group w-full text-left">
       <label
         htmlFor={id}
-        className="absolute left-4 transition-all duration-200 ease-out pointer-events-none z-10 select-none"
+        className="absolute left-3.5 transition-all duration-200 ease-out pointer-events-none z-10 select-none"
         style={{
-          top: lifted ? "7px" : "50%",
+          top: lifted ? "6px" : "50%",
           transform: lifted ? "none" : "translateY(-50%)",
-          fontSize: lifted ? "10px" : "14px",
-          color: focused
-            ? "var(--color-brand-500)"
-            : lifted
-            ? "#747775"
-            : "#9aa0a6",
-          fontWeight: lifted ? 500 : 400,
-          letterSpacing: lifted ? "0.025em" : "normal",
+          fontSize: lifted ? "10px" : "13px",
+          color: focused ? "var(--color-brand-500)" : lifted ? "#747775" : "#9aa0a6",
+          fontWeight: lifted ? 600 : 400,
+          letterSpacing: lifted ? "0.02em" : "normal",
         }}
       >
         {label}
@@ -93,21 +131,21 @@ function FloatingInput({ label, id, suffix, inputRef, className, ...props }: Flo
         onFocus={(e) => { setFocused(true); props.onFocus?.(e); }}
         onBlur={(e) => { setFocused(false); props.onBlur?.(e); }}
         className={`
-          h-14 pt-5 pb-1 px-4 rounded-2xl text-sm
-          border-2 transition-all duration-200 outline-none
-          bg-white dark:bg-[#161719]
+          h-11 sm:h-11.5 pt-4 pb-1 px-3.5 rounded-xl text-base sm:text-sm
+          border transition-all duration-200 outline-none
+          bg-white dark:bg-[#18191B]
           text-[#1f1f1f] dark:text-[#E3E3E3]
           ${focused
             ? "border-[#0B57D0] dark:border-[#A8C7FA] shadow-[0_0_0_3px_rgba(11,87,208,0.12)]"
-            : "border-[#e0e3e7] dark:border-white/[0.06] hover:border-[#bdc1c6] dark:hover:border-white/[0.1]"}
+            : "border-slate-200 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.12]"}
           ${props.disabled ? "opacity-60 cursor-not-allowed" : "cursor-text"}
           focus-visible:ring-0 focus-visible:border-[#0B57D0] dark:focus-visible:border-[#A8C7FA]
-          ${suffix ? "pr-12" : "pr-4"}
+          ${suffix ? "pr-10" : "pr-3.5"}
           ${className ?? ""}
         `}
       />
       {suffix && (
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center">{suffix}</div>
+        <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center">{suffix}</div>
       )}
     </div>
   );
@@ -132,8 +170,8 @@ function OtpBox({ value, onChange, onKeyDown, onPaste, inputRef, disabled, index
 
   return (
     <div
-      className="relative transition-all duration-200"
-      style={{ transform: isFilled ? "scale(1.05)" : "scale(1)" }}
+      className="relative transition-all duration-150"
+      style={{ transform: isFilled ? "scale(1.02)" : "scale(1)" }}
     >
       <input
         ref={inputRef}
@@ -152,25 +190,20 @@ function OtpBox({ value, onChange, onKeyDown, onPaste, inputRef, disabled, index
         disabled={disabled}
         aria-label={t("otp.digit", { number: index + 1 })}
         className={`
-          ${totalDigits >= 6 ? "w-10 sm:w-12 h-13 sm:h-14 text-lg sm:text-xl" : "w-12 h-14 text-xl"}
-          text-center font-bold rounded-2xl
-          border-2 outline-none transition-all duration-200
-          bg-white dark:bg-[#161719]
+          ${totalDigits >= 6 ? "w-8.5 h-10.5 sm:w-10 sm:h-11.5 text-base sm:text-lg" : "w-9.5 h-11 sm:w-11 sm:h-12 text-lg sm:text-xl"}
+          text-center font-bold rounded-xl
+          border transition-all duration-200 outline-none
+          bg-white dark:bg-[#18191B]
           text-[#1f1f1f] dark:text-[#E3E3E3]
           ${focused
             ? "border-[#0B57D0] dark:border-[#A8C7FA] shadow-[0_0_0_3px_rgba(11,87,208,0.12)]"
             : isFilled
             ? "border-[#1e8e3e] dark:border-[#81c995] bg-[#f0fdf4] dark:bg-[#1a2f1a]"
-            : "border-[#e0e3e7] dark:border-white/[0.06]"}
+            : "border-slate-200 dark:border-white/[0.08]"}
           ${disabled ? "opacity-60 cursor-not-allowed" : "cursor-text"}
           caret-transparent
         `}
       />
-      {isFilled && !focused && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          {/* subtle dot indicator already shown by the value */}
-        </div>
-      )}
     </div>
   );
 }
@@ -178,9 +211,9 @@ function OtpBox({ value, onChange, onKeyDown, onPaste, inputRef, disabled, index
 // ─── Error banner ─────────────────────────────────────────────────────────────
 function ErrorBanner({ message }: { message: string }) {
   return (
-    <div className="w-full flex gap-2.5 p-3.5 rounded-2xl border border-rose-200 bg-rose-50 dark:border-rose-900/40 dark:bg-rose-950/20 text-rose-700 dark:text-rose-300 text-xs animate-slide-up-fade">
-      <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-rose-500 dark:text-rose-400" />
-      <span className="leading-relaxed font-medium">{message}</span>
+    <div className="w-full flex items-start gap-2 p-2.5 rounded-xl bg-rose-500/[0.08] dark:bg-rose-500/[0.12] text-rose-700 dark:text-rose-300 text-xs animate-in fade-in duration-200 text-left">
+      <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5 text-rose-500 dark:text-rose-400" />
+      <span className="leading-tight font-medium text-[11px]">{message}</span>
     </div>
   );
 }
@@ -207,11 +240,11 @@ function PrimaryButton({
       disabled={disabled ?? loading}
       onClick={onClick}
       className={`
-        w-full h-12 rounded-full text-sm font-medium
+        w-full h-10 sm:h-11 rounded-full text-xs sm:text-sm font-medium
         bg-[#0B57D0] hover:bg-[#0842A0] active:bg-[#063177]
         dark:bg-[#A8C7FA] dark:hover:bg-[#c2d8fb] dark:active:bg-[#d3e3fd]
         dark:text-[#062E6F]
-        text-white shadow-sm
+        text-white shadow-xs
         transition-all duration-200
         cursor-pointer
         disabled:opacity-60 disabled:cursor-not-allowed
@@ -224,7 +257,7 @@ function PrimaryButton({
       {loading && (
         <span className="absolute inset-0 flex items-center justify-center">
           <Loader2 className="h-4 w-4 animate-spin" />
-          <span className="ml-2">{loadingLabel}</span>
+          <span className="ml-2 text-xs">{loadingLabel}</span>
         </span>
       )}
     </Button>
@@ -239,9 +272,9 @@ function BackButton({ onClick, disabled, label }: { onClick: () => void; disable
       variant="ghost"
       disabled={disabled}
       onClick={onClick}
-      className="w-full h-10 rounded-full hover:bg-[#EDF2FC] dark:hover:bg-[#1f2124] flex gap-2 justify-center items-center text-xs font-medium text-[#0B57D0] dark:text-[#A8C7FA] transition-all duration-200 cursor-pointer"
+      className="w-full h-9 rounded-full hover:bg-slate-100 dark:hover:bg-white/[0.05] flex gap-1.5 justify-center items-center text-xs font-medium text-[#0B57D0] dark:text-[#A8C7FA] transition-all duration-200 cursor-pointer"
     >
-      <ArrowLeft className="h-3.5 w-3.5" />
+      <ArrowLeft className="h-3 w-3" />
       {label}
     </Button>
   );
@@ -264,6 +297,17 @@ export default function AuthPage() {
   const [phoneCodeHash, setPhoneCodeHash] = useState("");
   const [codeLength, setCodeLength] = useState<number>(5);
   const [otp, setOtp] = useState<string[]>(["", "", "", "", ""]);
+  const [deliveryType, setDeliveryType] = useState<DeliveryType>("unknown");
+  const [emailPattern, setEmailPattern] = useState("");
+  const [countdown, setCountdown] = useState<number>(0);
+  const [resending, setResending] = useState(false);
+
+  // QR Code login state
+  const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
+  const qrCleanupRef = useRef<(() => void) | null>(null);
+
+  // Password & bootstrap state
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -299,10 +343,94 @@ export default function AuthPage() {
     }
   }, [step]);
 
+  // Countdown timer for resending OTP
+  useEffect(() => {
+    if (step !== "otp" || countdown <= 0) return;
+    const timer = setInterval(() => {
+      setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [step, countdown]);
+
+  // Start QR login when step === "qr"
+  useEffect(() => {
+    if (step !== "qr") {
+      if (qrCleanupRef.current) {
+        qrCleanupRef.current();
+        qrCleanupRef.current = null;
+      }
+      setQrDataUrl(null);
+      return;
+    }
+
+    if (!configApiId || !configApiHash) return;
+
+    let isSubscribed = true;
+    setQrLoading(true);
+    setError(null);
+
+    (async () => {
+      try {
+        await initClient(configApiId, configApiHash);
+        const client = getClient();
+        if (!isSubscribed) return;
+
+        const cleanup = startQrLogin(client, configApiId, configApiHash, {
+          onQrUrl: (url) => {
+            if (isSubscribed) {
+              setQrDataUrl(url);
+              setQrLoading(false);
+            }
+          },
+          onSuccess: async () => {
+            if (isSubscribed) {
+              await completeAuthentication(client);
+            }
+          },
+          onPasswordNeeded: () => {
+            if (isSubscribed) {
+              setStep("password");
+            }
+          },
+          onError: (err) => {
+            if (isSubscribed) {
+              console.error("QR Login error:", err);
+              setError(parseTelegramError(err, t));
+              setQrLoading(false);
+            }
+          },
+        });
+
+        if (cleanup && typeof cleanup === "function") {
+          qrCleanupRef.current = cleanup;
+        }
+      } catch (err: any) {
+        if (isSubscribed) {
+          console.error("QR setup error:", err);
+          setError(parseTelegramError(err, t));
+          setQrLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      isSubscribed = false;
+      if (qrCleanupRef.current) {
+        qrCleanupRef.current();
+        qrCleanupRef.current = null;
+      }
+    };
+  }, [step, configApiId, configApiHash]);
+
   // ── Step 1: Send code ────────────────────────────────────────────────────
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
+    const formattedPhone = sanitizePhone(phone);
     if (!phone.trim()) { setError(t("errors.phoneRequired")); return; }
+    if (formattedPhone.length < 7 || !/^\+[0-9]{6,16}$/.test(formattedPhone)) {
+      setError(t("errors.phoneNumberInvalid"));
+      return;
+    }
     if (!configApiId || !configApiHash) { setError(t("errors.apiCredentialsMissing")); return; }
 
     setLoading(true);
@@ -312,41 +440,198 @@ export default function AuthPage() {
       await initClient(configApiId, configApiHash);
       const client = getClient();
 
-      const result = await client.invoke(
-        new Api.auth.SendCode({
-          phoneNumber: phone.trim(),
-          apiId: configApiId,
-          apiHash: configApiHash,
-          settings: new Api.CodeSettings({}),
-        })
-      );
+      // Retry loop handling Telegram DC migration or AUTH_RESTART
+      let result: any = null;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          result = await client.invoke(
+            new Api.auth.SendCode({
+              phoneNumber: formattedPhone,
+              apiId: configApiId,
+              apiHash: configApiHash,
+              settings: new Api.CodeSettings({}),
+            })
+          );
+          break;
+        } catch (err: any) {
+          if (err.errorMessage === "AUTH_RESTART" && attempt < 2) {
+            await new Promise((r) => setTimeout(r, 600));
+            continue;
+          }
+          throw err;
+        }
+      }
 
-      const returnedLength = (result as any)?.type?.length;
+      const typeClass = result?.type?.className || "";
+      let detectedDelivery: DeliveryType = "unknown";
+      if (
+        result?.type instanceof Api.auth.SentCodeTypeApp ||
+        typeClass === "auth.SentCodeTypeApp" ||
+        result?.type?.CONSTRUCTOR_ID === 1035688326
+      ) {
+        detectedDelivery = "app";
+      } else if (
+        result?.type instanceof Api.auth.SentCodeTypeSms ||
+        typeClass === "auth.SentCodeTypeSms" ||
+        typeClass === "auth.SentCodeTypeFirebaseSms" ||
+        typeClass === "auth.SentCodeTypeFragmentSms"
+      ) {
+        detectedDelivery = "sms";
+      } else if (
+        result?.type instanceof Api.auth.SentCodeTypeEmailCode ||
+        typeClass === "auth.SentCodeTypeEmailCode"
+      ) {
+        detectedDelivery = "email";
+        setEmailPattern(result.type?.emailPattern || "");
+      } else if (
+        typeClass === "auth.SentCodeTypeCall" ||
+        typeClass === "auth.SentCodeTypeFlashCall" ||
+        typeClass === "auth.SentCodeTypeMissedCall"
+      ) {
+        detectedDelivery = "call";
+      }
+      setDeliveryType(detectedDelivery);
+
+      const returnedLength = result?.type?.length;
       const detectedLength =
         typeof returnedLength === "number" && returnedLength >= 4 && returnedLength <= 8
           ? returnedLength
           : 5;
       setCodeLength(detectedLength);
       setOtp(new Array(detectedLength).fill(""));
-      setPhoneCodeHash((result as any).phoneCodeHash);
+      setPhoneCodeHash(result.phoneCodeHash);
+
+      const timeoutSec =
+        typeof result?.timeout === "number" && result.timeout > 0
+          ? result.timeout
+          : detectedDelivery === "app"
+          ? 30
+          : 60;
+      setCountdown(timeoutSec);
+
       setStep("otp");
-      toast.success(t("toasts.codeSent"));
+
+      if (detectedDelivery === "app") {
+        toast.success(t("toasts.codeSentApp"));
+      } else if (detectedDelivery === "sms") {
+        toast.success(t("toasts.codeSentSms"));
+      } else if (detectedDelivery === "email") {
+        toast.success(t("toasts.codeSentEmail"));
+      } else {
+        toast.success(t("toasts.codeSent"));
+      }
     } catch (err: any) {
       console.error("Send code failed:", err);
-      setError(err.message || t("errors.sendCodeFailed"));
+      setError(parseTelegramError(err, t));
     } finally {
       setLoading(false);
     }
   };
 
-  // ── Step 2: Verify OTP ───────────────────────────────────────────────────
+  // ── Resend Code ──────────────────────────────────────────────────────────
+  const handleResendCode = async () => {
+    if (resending || countdown > 0 || !configApiId || !configApiHash) return;
+    setResending(true);
+    setError(null);
+
+    try {
+      const client = getClient();
+      const formattedPhone = sanitizePhone(phone);
+
+      const resendResult: any = await client.invoke(
+        new Api.auth.ResendCode({
+          phoneNumber: formattedPhone,
+          phoneCodeHash: phoneCodeHash,
+        })
+      );
+
+      if (resendResult?.phoneCodeHash) {
+        setPhoneCodeHash(resendResult.phoneCodeHash);
+      }
+
+      const newTypeClass = resendResult?.type?.className || "";
+      if (
+        newTypeClass === "auth.SentCodeTypeSms" ||
+        newTypeClass === "auth.SentCodeTypeFirebaseSms" ||
+        newTypeClass === "auth.SentCodeTypeFragmentSms"
+      ) {
+        setDeliveryType("sms");
+      }
+
+      const timeoutSec =
+        typeof resendResult?.timeout === "number" && resendResult.timeout > 0
+          ? resendResult.timeout
+          : 60;
+      setCountdown(timeoutSec);
+
+      toast.success(t("otp.resend.successToast"));
+    } catch (err: any) {
+      console.error("Resend code failed:", err);
+      const errMsg = err?.errorMessage || err?.message || "";
+      if (errMsg.includes("SEND_CODE_UNAVAILABLE")) {
+        toast.info(t("otp.resend.unavailableToast"));
+        setDeliveryType("app");
+      } else {
+        setError(parseTelegramError(err, t));
+      }
+    } finally {
+      setResending(false);
+    }
+  };
+
+  // ── Verify Code Execution ────────────────────────────────────────────────
+  const executeVerifyCode = async (codeToVerify: string) => {
+    if (!configApiId || !configApiHash) return;
+    setLoading(true);
+    setError(null);
+
+    try {
+      const client = getClient();
+      const formattedPhone = sanitizePhone(phone);
+
+      try {
+        await client.invoke(
+          new Api.auth.SignIn({
+            phoneNumber: formattedPhone,
+            phoneCodeHash,
+            phoneCode: codeToVerify,
+          })
+        );
+        await completeAuthentication(client);
+      } catch (err: any) {
+        if (err.message?.includes("SESSION_PASSWORD_NEEDED")) {
+          setStep("password");
+        } else {
+          throw err;
+        }
+      }
+    } catch (err: any) {
+      console.error("OTP verification failed:", err);
+      setError(parseTelegramError(err, t));
+      setOtp(new Array(codeLength).fill(""));
+      otpRefs.current[0]?.focus();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Step 2: Verify OTP handlers ──────────────────────────────────────────
   const handleOtpChange = (index: number, val: string) => {
     const cleanVal = val.replace(/[^0-9]/g, "").slice(0, 1);
     const newOtp = [...otp];
     newOtp[index] = cleanVal;
     setOtp(newOtp);
+
     if (cleanVal && index < codeLength - 1) {
       otpRefs.current[index + 1]?.focus();
+    }
+
+    // Auto-verify when all digits are filled
+    const fullCode = newOtp.join("");
+    if (cleanVal && fullCode.length === codeLength && !newOtp.includes("")) {
+      setTimeout(() => {
+        executeVerifyCode(fullCode);
+      }, 50);
     }
   };
 
@@ -367,7 +652,6 @@ export default function AuthPage() {
     const rawDigits = e.clipboardData.getData("text").replace(/[^0-9]/g, "");
     if (!rawDigits) return;
 
-    // Dynamically adjust code length if pasted length matches 5 or 6 digits
     const targetLength =
       rawDigits.length >= 5 && rawDigits.length <= 8
         ? rawDigits.length
@@ -379,15 +663,17 @@ export default function AuthPage() {
 
     const digits = rawDigits.slice(0, targetLength).split("");
     const newOtp = new Array(targetLength).fill("");
-    digits.forEach((d, i) => {
-      newOtp[i] = d;
-    });
+    digits.forEach((d, i) => { newOtp[i] = d; });
     setOtp(newOtp);
 
     const focusIndex = Math.min(digits.length, targetLength - 1);
-    setTimeout(() => {
-      otpRefs.current[focusIndex]?.focus();
-    }, 0);
+    setTimeout(() => { otpRefs.current[focusIndex]?.focus(); }, 0);
+
+    if (digits.length === targetLength) {
+      setTimeout(() => {
+        executeVerifyCode(digits.join(""));
+      }, 60);
+    }
   };
 
   const handleVerifyOTP = async (e: React.FormEvent) => {
@@ -397,38 +683,7 @@ export default function AuthPage() {
       setError(t("errors.incompleteCode", { count: codeLength }));
       return;
     }
-    if (!configApiId || !configApiHash) return;
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const client = getClient();
-
-      try {
-        await client.invoke(
-          new Api.auth.SignIn({
-            phoneNumber: phone.trim(),
-            phoneCodeHash,
-            phoneCode: code,
-          })
-        );
-        await completeAuthentication(client);
-      } catch (err: any) {
-        if (err.message?.includes("SESSION_PASSWORD_NEEDED")) {
-          setStep("password");
-        } else {
-          throw err;
-        }
-      }
-    } catch (err: any) {
-      console.error("OTP verification failed:", err);
-      setError(err.message || t("errors.invalidCode"));
-      setOtp(new Array(codeLength).fill(""));
-      otpRefs.current[0]?.focus();
-    } finally {
-      setLoading(false);
-    }
+    await executeVerifyCode(code);
   };
 
   const toggleCodeLength = () => {
@@ -442,9 +697,7 @@ export default function AuthPage() {
       return updated;
     });
     setError(null);
-    setTimeout(() => {
-      otpRefs.current[0]?.focus();
-    }, 50);
+    setTimeout(() => { otpRefs.current[0]?.focus(); }, 50);
   };
 
   // ── Step 3: 2FA password ─────────────────────────────────────────────────
@@ -457,62 +710,58 @@ export default function AuthPage() {
 
     try {
       const client = getClient();
-      const passwordConfig = await client.invoke(new Api.account.GetPassword());
-
-      // safeComputeCheck handles all Buffer polyfill issues across platforms
-      // (macOS, Windows WebView2, Linux). See src/lib/telegram/srp-helper.ts.
-      const srpResult = await safeComputeCheck(passwordConfig as any, password);
-
-      await client.invoke(
-        new Api.auth.CheckPassword({ password: srpResult })
-      );
-
+      const pwdInfo = await client.invoke(new Api.account.GetPassword());
+      const srpResult = await safeComputeCheck(pwdInfo as any, password);
+      const passwordParam =
+        srpResult instanceof Api.InputCheckPasswordSRP
+          ? srpResult
+          : new Api.InputCheckPasswordSRP({
+              srpId: srpResult.srpId || (pwdInfo as any).srpId,
+              A: srpResult.A,
+              M1: srpResult.M1,
+            });
+      await client.invoke(new Api.auth.CheckPassword({ password: passwordParam }));
       await completeAuthentication(client);
     } catch (err: any) {
-      console.error("2FA Verification failed:", err);
-      const msg = err.message || "";
-      // Translate raw Telegram errors into user-friendly messages
-      if (msg.includes("FLOOD_WAIT")) {
-        const seconds = msg.match(/\d+/)?.[0];
-        setError(seconds ? t("errors.floodWait", { count: Number(seconds) }) : t("errors.floodWaitFewSeconds"));
-      } else if (msg.includes("PASSWORD_HASH_INVALID") || msg.includes("Incorrect password")) {
-        setError(t("errors.incorrectPassword"));
-      } else if (msg.includes("PASSWORD_EMPTY")) {
-        setError(t("errors.passwordEmpty"));
-      } else if (msg.includes("Platform compatibility")) {
-        setError(msg);
-      } else {
-        setError(msg || t("errors.incorrectCloudPassword"));
-      }
+      console.error("2FA password failed:", err);
+      setError(parseTelegramError(err, t));
     } finally {
       setLoading(false);
     }
   };
 
-  // ── Shared: complete auth flow ───────────────────────────────────────────
+  // ── Complete auth ────────────────────────────────────────────────────────
   const completeAuthentication = async (client: any) => {
     const sessionString = client.session.save() as string;
+    let authPhone = sanitizePhone(phone);
+
+    if (!phone.trim()) {
+      try {
+        const me: any = await client.getMe();
+        if (me?.phone) authPhone = `+${me.phone}`;
+      } catch (meErr) {
+        console.warn("Could not retrieve profile phone:", meErr);
+      }
+    }
 
     try {
-      await invoke("save_session", { session: sessionString, phone: phone.trim() });
+      await invoke("save_session", { session: sessionString, phone: authPhone });
     } catch (saveErr) {
       console.error("save_session (Rust) failed:", saveErr);
     }
 
     try {
       await saveSecret(VAULT_KEY_SESSION, sessionString);
-      await saveSecret(VAULT_KEY_PHONE, phone.trim());
+      await saveSecret(VAULT_KEY_PHONE, authPhone);
     } catch (vaultErr) {
       console.warn("Stronghold saveSecret failed (non-fatal):", vaultErr);
     }
 
     setStep("bootstrap");
     try {
-      await bootstrapTeleDrive((status) => {
-        setBootstrapStatus(status);
-      }, phone.trim());
+      await bootstrapTeleDrive((status) => { setBootstrapStatus(status); }, authPhone);
       toast.success(t("toasts.ready"));
-      setSession(sessionString, phone.trim());
+      setSession(sessionString, authPhone);
       navigate("/drive/my-drive");
     } catch (err: any) {
       console.error("Bootstrap failed:", err);
@@ -523,13 +772,13 @@ export default function AuthPage() {
   // ── Loading screen ───────────────────────────────────────────────────────
   if (checkingConfig) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-background select-none">
+      <div className="fixed inset-0 flex items-center justify-center bg-background select-none">
         <div className="flex flex-col items-center gap-3">
           <div className="relative">
-            <div className="h-12 w-12 rounded-full border-2 border-[#e0e3e7] dark:border-white/[0.06]" />
-            <Loader2 className="h-12 w-12 animate-spin text-[#0B57D0] dark:text-[#A8C7FA] absolute inset-0" />
+            <div className="h-8 w-8 rounded-full border-2 border-slate-200 dark:border-white/10" />
+            <Loader2 className="h-8 w-8 animate-spin text-[#0B57D0] dark:text-[#A8C7FA] absolute inset-0" />
           </div>
-          <span className="text-xs font-medium text-[#747775] dark:text-[#9aa0a6] mt-1">
+          <span className="text-xs font-medium text-muted-foreground">
             {t("loading")}
           </span>
         </div>
@@ -537,24 +786,24 @@ export default function AuthPage() {
     );
   }
 
-  // ── Main render ──────────────────────────────────────────────────────────
+  // ── Main render (Minimal, refined, zero-scroll mobile & desktop) ───────────
   return (
-    <div className="flex items-center justify-center min-h-[100dvh] h-auto overflow-y-auto bg-background relative select-none pt-[max(env(safe-area-inset-top,0px),var(--safe-area-top,2.5rem))] pb-[max(env(safe-area-inset-bottom,0px),var(--safe-area-bottom,1rem))] px-3 sm:px-4">
-      {/* Language Switcher */}
-      <div className="absolute top-[calc(var(--safe-area-top,2.5rem)+0.5rem)] right-3 sm:right-5 z-20">
+    <div className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-background select-none flex flex-col justify-between items-center py-3 sm:py-6 px-4 relative">
+      {/* Language switcher — unobtrusive top-right placement */}
+      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-30">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="h-8 px-2.5 sm:h-9 sm:px-3.5 rounded-full text-[11px] sm:text-xs font-medium text-[#444746] dark:text-[#C4C7C5] bg-white/80 dark:bg-[#141518]/90 backdrop-blur-md border border-slate-200/90 dark:border-white/[0.06] shadow-xs hover:bg-slate-100 dark:hover:bg-[#1f2124] transition-all flex items-center gap-1.5 sm:gap-2 cursor-pointer"
+              className="h-8 px-2.5 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground bg-secondary/50 hover:bg-secondary/80 border border-border/40 transition-all flex items-center gap-1.5 cursor-pointer"
             >
-              <Languages className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#0B57D0] dark:text-[#A8C7FA]" />
-              <span>{SUPPORTED_LANGUAGES.find((l) => l.code === (i18n.resolvedLanguage || i18n.language))?.label ?? "Language"}</span>
+              <Languages className="h-3.5 w-3.5 text-[#0B57D0] dark:text-[#A8C7FA]" />
+              <span>{SUPPORTED_LANGUAGES.find((l) => l.code === (i18n.resolvedLanguage || i18n.language))?.label ?? "Lang"}</span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48 p-1.5 rounded-2xl bg-white dark:bg-[#141518] border border-slate-200 dark:border-white/[0.06] shadow-xl">
+          <DropdownMenuContent align="end" className="w-40 p-1 rounded-xl bg-popover border border-border/60 shadow-xl">
             {SUPPORTED_LANGUAGES.map((lang) => {
               const currentLng = i18n.resolvedLanguage || i18n.language;
               const isSelected = currentLng === lang.code;
@@ -563,10 +812,10 @@ export default function AuthPage() {
                   key={lang.code}
                   onClick={() => i18n.changeLanguage(lang.code)}
                   className={cn(
-                    "flex items-center justify-between px-3 py-2 text-xs rounded-xl cursor-pointer transition-colors",
+                    "flex items-center justify-between px-2.5 py-1.5 text-xs rounded-lg cursor-pointer transition-colors",
                     isSelected
-                      ? "bg-[#C2E7FF]/40 dark:bg-[#004A77]/50 text-[#0B57D0] dark:text-[#A8C7FA] font-semibold"
-                      : "text-[#1F1F1F] dark:text-[#E3E3E3] hover:bg-slate-100 dark:hover:bg-[#1f2124]"
+                      ? "bg-[#C2E7FF]/40 dark:bg-[#004A77]/50 text-[#0B57D0] dark:text-[#A8C7FA] font-medium"
+                      : "text-foreground hover:bg-muted/60"
                   )}
                 >
                   <span>{lang.label}</span>
@@ -577,115 +826,184 @@ export default function AuthPage() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      {/* Decorative background blobs */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        aria-hidden="true"
-      >
-        <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] rounded-full opacity-[0.04] dark:opacity-[0.03]"
-          style={{ background: "radial-gradient(circle, #0B57D0, transparent 70%)" }} />
-        <div className="absolute bottom-[-15%] left-[-10%] w-[500px] h-[500px] rounded-full opacity-[0.03] dark:opacity-[0.02]"
-          style={{ background: "radial-gradient(circle, #1e8e3e, transparent 70%)" }} />
-      </div>
 
-      {/* Card */}
-      <div className="relative z-10 w-full max-w-[380px] sm:max-w-[400px] mx-auto animate-fade-in my-auto">
-        <div className="bg-white dark:bg-[#111214] border border-[#e0e3e7] dark:border-white/[0.04] rounded-2xl sm:rounded-3xl shadow-[0_4px_32px_rgba(0,0,0,0.06)] dark:shadow-[0_4px_32px_rgba(0,0,0,0.4)] p-5 sm:p-8 md:p-10">
+      {/* Main card column — perfectly centered vertically with zero scroll */}
+      <div className="my-auto w-full max-w-[340px] sm:max-w-[380px] flex flex-col items-center justify-center z-10">
 
-          {/* Logo */}
-          <div className="flex flex-col items-center mb-3 sm:mb-6 md:mb-8">
-            <Link to="/drive/my-drive" className="inline-flex items-center gap-2 group mb-0.5">
-              <div className="relative">
-                <img
-                  src="/teledrive.png"
-                  alt="TeleDrive"
-                  className="h-8 w-8 sm:h-9 sm:w-9 md:h-10 md:w-10 object-contain transition-transform duration-300 group-hover:scale-110"
-                />
-              </div>
-              <span className="text-xl sm:text-2xl font-semibold tracking-tight text-[#1F1F1F] dark:text-[#E3E3E3]">
-                TeleDrive
-              </span>
-            </Link>
-            <p className="text-[9px] sm:text-[10px] font-medium tracking-widest uppercase text-[#9aa0a6] dark:text-[#747775]">
-              {t("tagline")}
-            </p>
-          </div>
+        {/* ── Minimal Brand Logo ── */}
+        <div className="flex flex-col items-center mb-3 sm:mb-4">
+          <Link to="/drive/my-drive" className="inline-flex items-center gap-2.5 group">
+            <img
+              src="/teledrive.png"
+              alt="TeleDrive"
+              className="h-8 w-8 sm:h-9 sm:w-9 object-contain transition-transform duration-200 group-hover:scale-105"
+            />
+            <span className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground">
+              TeleDrive
+            </span>
+          </Link>
+        </div>
 
-          {/* Error banner — shown above step content */}
+        {/* ── Main Surface Card (Solid, seamless, borderless) ── */}
+        <div className="w-full bg-white dark:bg-[#141517] rounded-2xl sm:rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.05)] dark:shadow-[0_16px_44px_rgba(0,0,0,0.6)] p-4 sm:p-5 transition-all duration-300">
+
+          {/* Error banner */}
           {error && (
-            <div className="mb-4">
+            <div className="mb-3">
               <ErrorBanner message={error} />
             </div>
           )}
 
-          {/* ── STEP 1: Phone ─────────────────────────────────────────── */}
-          {step === "phone" && (
-            <form onSubmit={handleSendCode} className="space-y-4 sm:space-y-5 animate-slide-up-fade" noValidate>
-              <div className="text-center space-y-1 mb-3.5 sm:mb-6">
-                <h1 className="text-lg sm:text-[22px] font-normal text-[#1F1F1F] dark:text-[#E3E3E3] leading-tight">
-                  {t("phone.title")}
-                </h1>
-                <p className="text-xs sm:text-sm text-[#747775] dark:text-[#9aa0a6] leading-relaxed">
-                  {t("phone.subtitle")}
-                </p>
+          {/* ── PHONE / QR ── */}
+          {(step === "phone" || step === "qr") && (
+            <div className="space-y-3.5 animate-in fade-in duration-200">
+              {/* Tab switcher */}
+              <div className="flex bg-[#F0F4F9] dark:bg-[#1E1F22] p-1 rounded-full">
+                <button
+                  type="button"
+                  onClick={() => { setStep("phone"); setError(null); }}
+                  className={cn(
+                    "flex-1 py-1.5 text-xs font-medium rounded-full transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+                    step === "phone"
+                      ? "bg-white dark:bg-[#2C2D30] text-foreground shadow-xs font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Smartphone className="h-3.5 w-3.5" />
+                  <span>{t("phone.tabPhone")}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setStep("qr"); setError(null); }}
+                  className={cn(
+                    "flex-1 py-1.5 text-xs font-medium rounded-full transition-all flex items-center justify-center gap-1.5 cursor-pointer",
+                    step === "qr"
+                      ? "bg-white dark:bg-[#2C2D30] text-foreground shadow-xs font-semibold"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <QrCode className="h-3.5 w-3.5" />
+                  <span>{t("phone.tabQr")}</span>
+                </button>
               </div>
 
-              <FloatingInput
-                id="phone-number"
-                label={t("phone.label")}
-                type="tel"
-                inputMode="tel"
-                enterKeyHint="next"
-                value={phone}
-                onChange={(e) => { setPhone(e.target.value); setError(null); }}
-                disabled={loading}
-                autoComplete="tel"
-                autoFocus
-                onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.form?.requestSubmit(); }}
-              />
+              {/* Phone form */}
+              {step === "phone" && (
+                <form onSubmit={handleSendCode} className="space-y-3.5" noValidate>
+                  <div className="text-center space-y-0.5">
+                    <h1 className="text-base sm:text-lg font-semibold text-foreground leading-tight">
+                      {t("phone.title")}
+                    </h1>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {t("phone.subtitle")}
+                    </p>
+                  </div>
 
-              <div className="pt-0.5 sm:pt-1">
-                <PrimaryButton
-                  loading={loading}
-                  loadingLabel={t("phone.sending")}
-                  label={t("phone.next")}
-                  disabled={loading || !phone.trim()}
-                />
-              </div>
+                  <div className="space-y-1.5">
+                    <FloatingInput
+                      id="phone-number"
+                      label={t("phone.label")}
+                      type="tel"
+                      inputMode="tel"
+                      enterKeyHint="next"
+                      value={phone}
+                      onChange={(e) => { setPhone(e.target.value); setError(null); }}
+                      disabled={loading}
+                      autoComplete="tel"
+                      autoFocus
+                      onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.form?.requestSubmit(); }}
+                    />
+                    {/* Clear, gentle delivery tip */}
+                    <div className="flex items-start gap-1.5 px-1 text-[11px] text-muted-foreground leading-tight">
+                      <Info className="h-3.5 w-3.5 text-[#0B57D0] dark:text-[#A8C7FA] shrink-0 mt-0.5" />
+                      <span>Telegram delivers codes to your <strong>Telegram app</strong>, not SMS.</span>
+                    </div>
+                  </div>
 
-              <p className="text-center text-[10px] sm:text-[11px] text-[#9aa0a6] dark:text-[#747775] leading-relaxed pt-0.5 sm:pt-1">
-                <Trans
-                  t={t}
-                  i18nKey="phone.terms"
-                  components={{
-                    terms: <span className="text-[#0B57D0] dark:text-[#A8C7FA] cursor-pointer hover:underline" />,
-                  }}
-                />
-              </p>
-            </form>
+                  <PrimaryButton
+                    loading={loading}
+                    loadingLabel={t("phone.sending")}
+                    label={t("phone.next")}
+                    disabled={loading || !phone.trim()}
+                  />
+
+                  <p className="text-center text-[10px] text-muted-foreground/80 leading-relaxed">
+                    <Trans
+                      t={t}
+                      i18nKey="phone.terms"
+                      components={{
+                        terms: <span className="text-[#0B57D0] dark:text-[#A8C7FA] cursor-pointer hover:underline" />,
+                      }}
+                    />
+                  </p>
+                </form>
+              )}
+
+              {/* QR tab */}
+              {step === "qr" && (
+                <div className="space-y-3 text-center">
+                  <div className="space-y-0.5">
+                    <h1 className="text-base sm:text-lg font-semibold text-foreground leading-tight">
+                      {t("qr.title")}
+                    </h1>
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      {t("qr.subtitle")}
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col items-center py-1">
+                    <div className="p-2.5 bg-white rounded-2xl shadow-xs border border-black/5">
+                      {qrLoading || !qrDataUrl ? (
+                        <div className="w-[135px] h-[135px] sm:w-[150px] sm:h-[150px] flex flex-col items-center justify-center gap-2">
+                          <Loader2 className="h-6 w-6 animate-spin text-[#0B57D0] dark:text-[#A8C7FA]" />
+                          <span className="text-[11px] font-medium text-muted-foreground">{t("qr.refreshing")}</span>
+                        </div>
+                      ) : (
+                        <img
+                          src={qrDataUrl}
+                          alt="Telegram QR Login"
+                          className="w-[135px] h-[135px] sm:w-[150px] sm:h-[150px] object-contain rounded-lg"
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1 text-left bg-muted/40 p-2.5 rounded-xl text-[11px] text-foreground/80">
+                    {([t("qr.step1"), t("qr.step2"), t("qr.step3")] as string[]).map((stepText, i) => (
+                      <div key={i} className="flex items-center gap-2 leading-tight">
+                        <span className="w-4 h-4 rounded-full bg-[#0B57D0]/10 dark:bg-[#A8C7FA]/20 text-[#0B57D0] dark:text-[#A8C7FA] font-bold text-[10px] flex items-center justify-center shrink-0">
+                          {i + 1}
+                        </span>
+                        <span>{stepText}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           )}
 
-          {/* ── STEP 2: OTP ───────────────────────────────────────────── */}
+          {/* ── OTP ── */}
           {step === "otp" && (
-            <form onSubmit={handleVerifyOTP} className="space-y-4 sm:space-y-6 animate-slide-up-fade" noValidate>
-              <div className="text-center space-y-1">
-                <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-[#EDF2FC] dark:bg-[#1a2744] mb-2 sm:mb-3">
-                  <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5 text-[#0B57D0] dark:text-[#A8C7FA]" />
+            <form onSubmit={handleVerifyOTP} className="space-y-3 animate-in fade-in duration-200" noValidate>
+              <div className="text-center space-y-0.5">
+                <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#EDF2FC] dark:bg-[#1a2744] mb-1">
+                  <MessageSquare className="h-4 w-4 text-[#0B57D0] dark:text-[#A8C7FA]" />
                 </div>
-                <h1 className="text-lg sm:text-[22px] font-normal text-[#1F1F1F] dark:text-[#E3E3E3] leading-tight">
+                <h1 className="text-base sm:text-lg font-semibold text-foreground leading-tight">
                   {t("otp.title")}
                 </h1>
-                <p className="text-sm text-[#747775] dark:text-[#9aa0a6] leading-relaxed">
+                <p className="text-xs text-muted-foreground leading-relaxed">
                   <Trans
                     t={t}
                     i18nKey="otp.subtitle"
-                    values={{ phone }}
+                    values={{ phone: sanitizePhone(phone) }}
                     components={{
                       phone: (
                         <button
                           type="button"
                           onClick={() => { if (!loading) setStep("phone"); }}
-                          className="font-semibold text-[#1F1F1F] dark:text-[#E3E3E3] hover:text-[#0B57D0] dark:hover:text-[#A8C7FA] transition-colors underline-offset-2 hover:underline cursor-pointer"
+                          className="font-semibold text-foreground hover:text-[#0B57D0] dark:hover:text-[#A8C7FA] transition-colors underline-offset-2 hover:underline cursor-pointer"
                         />
                       ),
                     }}
@@ -693,17 +1011,67 @@ export default function AuthPage() {
                 </p>
               </div>
 
-              {/* OTP boxes */}
-              <div className={`flex justify-center ${codeLength >= 6 ? "gap-1.5 sm:gap-2" : "gap-2"} my-2`}>
+              {/* Delivery notification callout */}
+              {deliveryType === "app" ? (
+                <div className="p-2.5 rounded-xl bg-amber-500/[0.08] dark:bg-amber-400/[0.08] text-left animate-in fade-in duration-200">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0">
+                      <Send className="h-3 w-3 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[11px] font-bold text-amber-900 dark:text-amber-200">
+                          {t("otp.delivery.appTitle")}
+                        </span>
+                        <span className="text-[9px] font-semibold px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300">
+                          {t("otp.delivery.appBadge")}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-amber-800/90 dark:text-amber-300/90 leading-tight mt-0.5">
+                        {t("otp.delivery.appDesc")}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : deliveryType === "sms" ? (
+                <div className="p-2.5 rounded-xl bg-emerald-500/10 text-left animate-in fade-in duration-200">
+                  <div className="flex items-center gap-2.5">
+                    <Smartphone className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[11px] font-semibold text-foreground">
+                        {t("otp.delivery.smsTitle")}
+                      </span>
+                      <p className="text-[10px] text-muted-foreground leading-tight">
+                        {t("otp.delivery.smsDesc", { phone: sanitizePhone(phone) })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : deliveryType === "email" ? (
+                <div className="p-2.5 rounded-xl bg-purple-500/10 text-left animate-in fade-in duration-200">
+                  <div className="flex items-center gap-2.5">
+                    <Mail className="h-4 w-4 text-purple-600 dark:text-purple-400 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[11px] font-semibold text-foreground">
+                        {t("otp.delivery.emailTitle")}
+                      </span>
+                      <p className="text-[10px] text-muted-foreground leading-tight">
+                        {t("otp.delivery.emailDesc", { email: emailPattern || "your email" })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              {/* OTP digit boxes */}
+              <div className={`flex justify-center ${codeLength >= 6 ? "gap-1 sm:gap-1.5" : "gap-1.5 sm:gap-2"}`}>
                 {otp.map((digit, idx) => (
                   <OtpBox
                     key={idx}
                     index={idx}
                     value={digit}
                     isFilled={digit.length > 0}
-                    inputRef={(el) => {
-                      otpRefs.current[idx] = el;
-                    }}
+                    inputRef={(el) => { otpRefs.current[idx] = el; }}
                     disabled={loading}
                     onChange={(val) => handleOtpChange(idx, val)}
                     onKeyDown={(e) => handleOtpKeyDown(idx, e)}
@@ -713,30 +1081,38 @@ export default function AuthPage() {
                 ))}
               </div>
 
-              {/* Progress strip */}
-              <div className="flex gap-1.5">
-                {otp.map((d, i) => (
-                  <div
-                    key={i}
-                    className="flex-1 h-0.5 rounded-full transition-all duration-300"
-                    style={{ background: d ? "#0B57D0" : "#e0e3e7" }}
-                  />
-                ))}
-              </div>
-
-              {/* Code length helper / switch */}
-              <div className="flex justify-center items-center pt-1 pb-1">
+              {/* Countdown / Resend + code-length toggle on same row */}
+              <div className="flex items-center justify-between px-1">
+                {countdown > 0 ? (
+                  <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <Clock className="h-3 w-3" />
+                    <span>{t("otp.resend.countdown", { seconds: countdown })}</span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={resending || loading}
+                    onClick={handleResendCode}
+                    className="flex items-center gap-1 text-[11px] font-medium text-[#0B57D0] dark:text-[#A8C7FA] hover:underline cursor-pointer transition-colors disabled:opacity-50"
+                  >
+                    {resending ? (
+                      <><Loader2 className="h-3 w-3 animate-spin" /><span>{t("otp.resend.sending")}</span></>
+                    ) : (
+                      <span>{t("otp.resend.button")}</span>
+                    )}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={toggleCodeLength}
                   disabled={loading}
-                  className="text-xs text-[#0B57D0] dark:text-[#A8C7FA] hover:underline cursor-pointer transition-colors"
+                  className="text-[11px] text-muted-foreground hover:text-[#0B57D0] dark:hover:text-[#A8C7FA] hover:underline cursor-pointer transition-colors"
                 >
                   {codeLength === 5 ? t("otp.switchToSix") : t("otp.switchToFive")}
                 </button>
               </div>
 
-              <div className="space-y-2 sm:space-y-2.5">
+              <div className="space-y-1 pt-1">
                 <PrimaryButton
                   loading={loading}
                   loadingLabel={t("otp.verifying")}
@@ -754,50 +1130,60 @@ export default function AuthPage() {
                   label={t("otp.differentNumber")}
                 />
               </div>
+
+              {/* Prominent QR login fallback pill */}
+              <div className="text-center pt-0.5">
+                <button
+                  type="button"
+                  onClick={() => { setStep("qr"); setError(null); }}
+                  className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#0B57D0] dark:text-[#A8C7FA] hover:bg-[#0B57D0]/10 dark:hover:bg-[#A8C7FA]/10 py-1 px-3 rounded-full transition-colors cursor-pointer"
+                >
+                  <QrCode className="h-3.5 w-3.5" />
+                  <span>{t("otp.tryQr")}</span>
+                </button>
+              </div>
             </form>
           )}
 
-          {/* ── STEP 3: 2FA Password ──────────────────────────────────── */}
+          {/* ── PASSWORD (2FA) ── */}
           {step === "password" && (
-            <form onSubmit={handleVerifyPassword} className="space-y-4 sm:space-y-5 animate-slide-up-fade" noValidate>
-              <div className="text-center space-y-1">
-                <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-[#FFF4EC] dark:bg-[#2a1f10] mb-2 sm:mb-3">
-                  <Lock className="h-4 w-4 sm:h-5 sm:w-5 text-[#F9AB00] dark:text-[#fdd663]" />
+            <form onSubmit={handleVerifyPassword} className="space-y-3.5 animate-in fade-in duration-200" noValidate>
+              <div className="text-center space-y-0.5">
+                <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-amber-500/10 dark:bg-amber-400/10 text-amber-600 dark:text-amber-400 mb-1">
+                  <Lock className="h-4 w-4" />
                 </div>
-                <h1 className="text-lg sm:text-[22px] font-normal text-[#1F1F1F] dark:text-[#E3E3E3] leading-tight">
+                <h1 className="text-base sm:text-lg font-semibold text-foreground leading-tight">
                   {t("password.title")}
                 </h1>
-                <p className="text-xs sm:text-sm text-[#747775] dark:text-[#9aa0a6] leading-relaxed">
+                <p className="text-xs text-muted-foreground leading-relaxed">
                   {t("password.subtitle")}
                 </p>
               </div>
 
-              <div className="mt-1 sm:mt-2">
-                <FloatingInput
-                  id="cloud-password"
-                  label={t("password.label")}
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => { setPassword(e.target.value); setError(null); }}
-                  disabled={loading}
-                  autoFocus
-                  autoComplete="current-password"
-                  enterKeyHint="done"
-                  suffix={
-                    <button
-                      type="button"
-                      tabIndex={-1}
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="text-[#747775] hover:text-[#1F1F1F] dark:hover:text-[#E3E3E3] transition-colors p-1 rounded-lg cursor-pointer"
-                      aria-label={showPassword ? t("password.hide") : t("password.show")}
-                    >
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  }
-                />
-              </div>
+              <FloatingInput
+                id="cloud-password"
+                label={t("password.label")}
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => { setPassword(e.target.value); setError(null); }}
+                disabled={loading}
+                autoFocus
+                autoComplete="current-password"
+                enterKeyHint="done"
+                suffix={
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg cursor-pointer"
+                    aria-label={showPassword ? t("password.hide") : t("password.show")}
+                  >
+                    {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                  </button>
+                }
+              />
 
-              <div className="space-y-2 sm:space-y-2.5 pt-0.5 sm:pt-1">
+              <div className="space-y-1 pt-1">
                 <PrimaryButton
                   loading={loading}
                   loadingLabel={t("password.signingIn")}
@@ -806,27 +1192,27 @@ export default function AuthPage() {
                 />
                 <BackButton
                   disabled={loading}
-                  onClick={() => { setStep("otp"); setPassword(""); setError(null); }}
+                  onClick={() => { setStep("phone"); setPassword(""); setError(null); }}
                   label={t("password.back")}
                 />
               </div>
             </form>
           )}
 
-          {/* ── STEP 4: Bootstrap ─────────────────────────────────────── */}
+          {/* ── BOOTSTRAP ── */}
           {step === "bootstrap" && (
-            <div className="space-y-5 sm:space-y-6 py-2 text-center animate-slide-up-fade">
-              <div className="flex flex-col items-center gap-1.5 mb-2">
-                <h1 className="text-lg sm:text-[22px] font-normal text-[#1F1F1F] dark:text-[#E3E3E3]">
+            <div className="space-y-3 py-2 text-center animate-in fade-in duration-200">
+              <div>
+                <h1 className="text-base sm:text-lg font-semibold text-foreground">
                   {t("bootstrap.title")}
                 </h1>
-                <p className="text-xs sm:text-sm text-[#747775] dark:text-[#9aa0a6]">
+                <p className="text-xs text-muted-foreground mt-0.5">
                   {t("bootstrap.subtitle")}
                 </p>
               </div>
 
               {bootstrapError ? (
-                <div className="space-y-4">
+                <div className="space-y-2.5">
                   <ErrorBanner message={bootstrapError} />
                   <PrimaryButton
                     type="button"
@@ -842,10 +1228,9 @@ export default function AuthPage() {
                   />
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center gap-4 sm:gap-5 py-4 sm:py-6">
-                  {/* Animated spinner ring */}
-                  <div className="relative w-14 h-14 sm:w-16 sm:h-16">
-                    <div className="absolute inset-0 rounded-full border-2 border-[#e0e3e7] dark:border-white/[0.06]" />
+                <div className="flex flex-col items-center justify-center gap-3 py-2">
+                  <div className="relative w-12 h-12">
+                    <div className="absolute inset-0 rounded-full border-2 border-slate-200 dark:border-white/10" />
                     <div
                       className="absolute inset-0 rounded-full border-2 border-transparent animate-spin"
                       style={{
@@ -854,11 +1239,11 @@ export default function AuthPage() {
                         animationDuration: "0.8s",
                       }}
                     />
-                    <div className="absolute inset-[6px] flex items-center justify-center">
-                      <img src="/teledrive.png" alt="" className="h-6 w-6 sm:h-7 sm:w-7 object-contain opacity-80" />
+                    <div className="absolute inset-[5px] flex items-center justify-center">
+                      <img src="/teledrive.png" alt="" className="h-5 w-5 object-contain opacity-80" />
                     </div>
                   </div>
-                  <span className="text-[11px] sm:text-xs font-medium text-[#747775] dark:text-[#9aa0a6] bg-[#F0F4F9] dark:bg-[#161719] px-3.5 sm:px-4 py-1.5 rounded-full border border-[#e0e3e7] dark:border-white/[0.04] transition-all duration-500">
+                  <span className="text-[11px] font-medium text-muted-foreground bg-muted/60 px-3.5 py-1 rounded-full transition-all duration-300">
                     {bootstrapStatus}
                   </span>
                 </div>
@@ -866,19 +1251,22 @@ export default function AuthPage() {
             </div>
           )}
 
-          {/* Step dots (phone, otp, password only) */}
-          {step !== "bootstrap" && (
-            <div className="mt-3.5 sm:mt-6 md:mt-8">
-              <StepDots current={step} />
-            </div>
-          )}
         </div>
 
-        {/* Footer note */}
-        <p className="text-center text-[10px] sm:text-[11px] text-[#9aa0a6] dark:text-[#5f6368] mt-2 sm:mt-3 md:mt-4">
+        {/* Step dots */}
+        {step !== "bootstrap" && (
+          <div className="mt-2.5 sm:mt-3">
+            <StepDots current={step} />
+          </div>
+        )}
+      </div>
+
+      {/* Footer — pinned to bottom of locked viewport */}
+      <footer className="w-full text-center z-10 shrink-0">
+        <p className="text-[10px] text-muted-foreground/60">
           {t("footer", { version: "0.1.2" })}
         </p>
-      </div>
+      </footer>
     </div>
   );
 }

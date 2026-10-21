@@ -778,7 +778,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
     <div className={cn("flex flex-col h-full px-3 pt-2 pb-4 md:p-6 lg:p-7 space-y-4", isDraggingActive && "dragging-active")}>
       {/* File Browser Header Toolbar: Show on desktop OR when there are breadcrumbs on mobile */}
       {(!isMobile || breadcrumbs.length > 0) && (
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between border-b border-slate-200/70 dark:border-border pb-2.5 sm:pb-3 shrink-0">
+        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-start sm:justify-between pb-1 sm:pb-2 shrink-0">
           <div className="space-y-1">
             {/* Hide h1 on mobile — the DriveLayout topbar already shows the page title inline */}
             <h1 className="hidden md:block text-2xl font-semibold tracking-tight text-[#1f1f1f] dark:text-[#e3e3e3]">
@@ -1435,7 +1435,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
 
       {/* Floating Bulk Action Bar */}
       {selectedIds.length > 0 && (
-        <div className="fixed bottom-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom,0px)+16px)] md:bottom-6 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-3 sm:gap-4 bg-white/95 dark:bg-[#141518]/95 text-[#1f1f1f] dark:text-[#e3e3e3] px-4 sm:px-5 py-2.5 rounded-full shadow-2xl border border-slate-300/80 dark:border-white/[0.06] backdrop-blur-md animate-slide-up select-none">
+        <div className="fixed bottom-[calc(3.75rem+max(var(--safe-area-bottom,0px),16px)+16px)] md:bottom-6 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-3 sm:gap-4 bg-white/95 dark:bg-[#141518]/95 text-[#1f1f1f] dark:text-[#e3e3e3] px-4 sm:px-5 py-2.5 rounded-full shadow-2xl border border-slate-300/80 dark:border-white/[0.06] backdrop-blur-md animate-slide-up select-none">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold bg-[#0b57d0] dark:bg-[#a8c7fa] px-2.5 py-0.5 rounded-full text-white dark:text-[#003258]">{selectedIds.length}</span>
             <span className="text-xs font-medium whitespace-nowrap text-[#1f1f1f] dark:text-[#e3e3e3]">{t("browser.bulkBar.selected", { count: selectedIds.length })}</span>
