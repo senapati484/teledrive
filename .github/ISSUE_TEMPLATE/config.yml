@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security Vulnerabilities
+    url: https://github.com/senapati484/teledrive/security/advisories/new
+    about: Please report security vulnerabilities privately using our security advisory process.
+  - name: Ask Questions & Discussions
+    url: https://github.com/senapati484/teledrive/discussions
+    about: Ask questions or discuss with the community.
