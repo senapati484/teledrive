@@ -28,6 +28,8 @@ jobs:
       ANDROID_HOME: /usr/local/lib/android/sdk
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
       NDK_HOME: /usr/local/lib/android/sdk/ndk/27.1.12297006
+      GRADLE_OPTS: "-Dorg.gradle.internal.http.connectionTimeout=120000 -Dorg.gradle.internal.http.socketTimeout=120000"
+      JAVA_OPTS: "-Dorg.gradle.internal.http.connectionTimeout=120000 -Dorg.gradle.internal.http.socketTimeout=120000"
 
     steps:
       - name: Checkout repository
@@ -55,6 +57,9 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Install Android NDK
         run: |
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
@@ -69,6 +74,20 @@ jobs:
 
       - name: Initialize Android project
         run: npm run tauri android init -- --ci --skip-targets-install
+
+      - name: Pre-download and verify Gradle wrapper
+        run: |
+          DIST_DIR="$HOME/.gradle/wrapper/dists/gradle-8.14.3-bin/cv11ve7ro1n3o1j4so8xd9n66"
+          mkdir -p "$DIST_DIR"
+          if [ ! -f "$DIST_DIR/gradle-8.14.3-bin.zip.ok" ]; then
+            echo "Pre-fetching Gradle 8.14.3 distribution..."
+            curl -fL --retry 5 --retry-delay 3 --connect-timeout 30 \
+              -o "$DIST_DIR/gradle-8.14.3-bin.zip" \
+              https://services.gradle.org/distributions/gradle-8.14.3-bin.zip
+          fi
+          cd src-tauri/gen/android
+          chmod +x gradlew
+          ./gradlew --version
 
       - name: Build Android APK (debug)
         run: npx tauri android build --apk --ci --debug
