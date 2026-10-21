@@ -848,8 +848,8 @@ export default function AuthPage() {
   // ── Main render (Minimal, refined, zero-scroll mobile & desktop) ───────────
   return (
     <div className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-background select-none flex flex-col justify-between items-center py-3 sm:py-6 px-4 relative">
-      {/* Language switcher — unobtrusive top-right placement */}
-      <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-30">
+      {/* Language switcher — top-right placement with comfortable mobile padding and safe-area support */}
+      <div className="absolute top-[max(calc(var(--safe-area-top,0px)+0.75rem),1.5rem)] sm:top-4 right-4 sm:right-4 z-30">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
