@@ -237,7 +237,7 @@ export default function TelegramAccountSection() {
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2.5 pt-1 border-t border-slate-100 dark:border-white/[0.04]">
+            <div className="flex flex-wrap gap-2.5 pt-1 border-t border-slate-100 dark:border-white/[0.06]">
               <Button
                 variant="outline"
                 size="sm"

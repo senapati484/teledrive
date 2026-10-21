@@ -69,17 +69,17 @@ export default function AboutSection() {
         </p>
       </div>
 
-      <div className="p-6 bg-white dark:bg-[#111214] border border-slate-200/90 dark:border-white/[0.04] rounded-2xl space-y-5 shadow-xs">
+      <div className="p-6 bg-white dark:bg-[#0c0d0f] border border-slate-200/90 dark:border-white/[0.06] rounded-2xl space-y-5 shadow-xs">
         <div className="flex items-center gap-3.5">
           <img
             src="/teledrive.png"
             alt={t("about.logoAlt")}
-            className="h-12 w-12 object-contain rounded-2xl shrink-0 border border-slate-200/80 dark:border-white/[0.04] p-0.5 bg-white dark:bg-[#161719]"
+            className="h-12 w-12 object-contain rounded-2xl shrink-0 border border-slate-200/80 dark:border-white/[0.06] p-0.5 bg-white dark:bg-[#060709]"
           />
           <div className="space-y-1">
             <div className="flex items-center gap-2.5">
               <h4 className="text-base font-semibold text-[#1F1F1F] dark:text-[#E3E3E3]">TeleDrive</h4>
-              <span className="bg-blue-50 dark:bg-blue-950/40 text-[#0B57D0] dark:text-[#A8C7FA] border border-blue-200/60 dark:border-blue-800/60 font-mono text-xs px-2.5 py-0.5 rounded-full font-medium">
+              <span className="bg-blue-50 dark:bg-blue-950/40 text-[#0B57D0] dark:text-[#8ab4f8] border border-blue-200/60 dark:border-blue-800/60 font-mono text-xs px-2.5 py-0.5 rounded-full font-medium">
                 v{version}
               </span>
             </div>
@@ -98,7 +98,7 @@ export default function AboutSection() {
             variant="outline"
             size="sm"
             onClick={() => handleOpenLink("https://github.com/senapati484/teledrive")}
-            className="rounded-full text-xs font-medium gap-2 border-slate-300 dark:border-white/[0.06] hover:bg-slate-100 dark:hover:bg-[#1f2124] cursor-pointer h-9 px-4"
+            className="rounded-full text-xs font-medium gap-2 border border-slate-300 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-200 cursor-pointer h-9 px-4"
           >
             <GithubIcon className="h-4 w-4" />
             {t("about.githubRepository")}
@@ -107,21 +107,21 @@ export default function AboutSection() {
             variant="outline"
             size="sm"
             onClick={() => handleOpenLink("https://github.com/senapati484/teledrive/issues")}
-            className="rounded-full text-xs font-medium gap-2 border-slate-300 dark:border-white/[0.06] hover:bg-slate-100 dark:hover:bg-[#1f2124] cursor-pointer h-9 px-4"
+            className="rounded-full text-xs font-medium gap-2 border border-slate-300 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-200 cursor-pointer h-9 px-4"
           >
             <Bug className="h-4 w-4 text-[#444746] dark:text-[#C4C7C5]" />
             {t("about.reportIssue")}
           </Button>
         </div>
 
-        <div className="pt-4 border-t border-slate-200/80 dark:border-white/[0.04] flex items-center justify-between flex-wrap gap-3">
-          <div className="text-xs text-[#747775]">
+        <div className="pt-4 border-t border-slate-200/80 dark:border-white/[0.06] flex items-center justify-between flex-wrap gap-3">
+          <div className="text-xs text-[#747775] dark:text-[#9aa0a6]">
             {t("about.architecture")}
           </div>
           <Button
             onClick={handleCheckUpdates}
             disabled={checking}
-            className="rounded-full text-xs font-medium bg-[#0B57D0] hover:bg-[#0842A0] text-white dark:bg-[#A8C7FA] dark:hover:bg-[#D3E3FD] dark:text-[#062E6F] px-5 h-9 cursor-pointer transition-colors shadow-xs"
+            className="rounded-full text-xs font-semibold bg-[#0B57D0] hover:bg-[#0842A0] text-white dark:bg-[#1a73e8] dark:hover:bg-[#1558b0] dark:text-white px-5 h-9 cursor-pointer transition-colors shadow-xs border-0"
           >
             {checking ? t("about.checkingUpdates") : t("about.checkUpdates")}
           </Button>
@@ -129,8 +129,8 @@ export default function AboutSection() {
       </div>
 
       {/* Disclaimer Section Callout */}
-      <div className="flex gap-3.5 p-4 rounded-2xl bg-slate-50 dark:bg-[#161719]/50 border border-slate-200/70 dark:border-white/[0.04] text-[#444746] dark:text-[#C4C7C5]">
-        <ShieldAlert className="h-5 w-5 shrink-0 mt-0.5 text-[#0B57D0] dark:text-[#A8C7FA]" />
+      <div className="flex gap-3.5 p-4 rounded-2xl bg-slate-50 dark:bg-[#060709] border border-slate-200/70 dark:border-white/[0.06] text-[#444746] dark:text-[#C4C7C5]">
+        <ShieldAlert className="h-5 w-5 shrink-0 mt-0.5 text-[#0B57D0] dark:text-[#8ab4f8]" />
         <div className="space-y-1 text-xs leading-relaxed">
           <h5 className="font-semibold text-[#1F1F1F] dark:text-[#E3E3E3]">{t("about.disclaimer.title")}</h5>
           <p>

@@ -126,7 +126,7 @@ export default function StorageSection() {
         </div>
 
         {/* 3-Column Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-100 dark:border-white/[0.04]">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-100 dark:border-white/[0.06]">
           <div className="p-3.5 rounded-xl bg-[#F0F4F9] dark:bg-[#060709] border border-slate-200/60 dark:border-white/[0.06] flex items-center gap-3">
             <div className="h-9 w-9 rounded-lg bg-blue-500/10 dark:bg-blue-500/20 text-[#0B57D0] dark:text-[#8ab4f8] flex items-center justify-center shrink-0">
               <Files className="h-4 w-4" />
