@@ -8,12 +8,13 @@ let activeApiId: number | null = null;
 export async function initClient(
   apiId: number,
   apiHash: string,
-  sessionString: string = ""
+  sessionString: string = "",
+  forceNew: boolean = false
 ): Promise<void> {
-  // If already connected with the SAME credentials, reuse the client
-  if (clientInstance && isConnectedStatus && activeApiId === apiId) return;
+  // If already connected with the SAME credentials and no force-new requested, reuse the client
+  if (!forceNew && clientInstance && isConnectedStatus && activeApiId === apiId) return;
 
-  // Credentials changed or client not initialised — tear down any existing client
+  // Tear down any existing client
   if (clientInstance) {
     try { await clientInstance.disconnect(); } catch { /* ignore */ }
     clientInstance = null;
