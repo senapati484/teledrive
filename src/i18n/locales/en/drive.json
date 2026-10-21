@@ -16,6 +16,7 @@
     "settings": "Settings"
   },
   "header": {
+    "searchPlaceholder": "Search in Drive",
     "switchToLight": "Switch to Light Theme",
     "switchToDark": "Switch to Dark Theme",
     "settings": "Settings"

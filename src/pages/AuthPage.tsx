@@ -39,6 +39,7 @@ import { SUPPORTED_LANGUAGES } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { invoke } from "@tauri-apps/api/core";
+import { openUrl } from "@tauri-apps/plugin-opener";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type Step = "phone" | "qr" | "otp" | "password" | "bootstrap";
@@ -330,6 +331,7 @@ export default function AuthPage() {
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [qrTgUrl, setQrTgUrl] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
+  const [openingTelegram, setOpeningTelegram] = useState(false);
   const qrCleanupRef = useRef<(() => void) | null>(null);
 
   // Password & bootstrap state
@@ -448,6 +450,38 @@ export default function AuthPage() {
       }
     };
   }, [step, configApiId, configApiHash]);
+
+  // Open Telegram app using Tauri plugin-opener with fallbacks for Android/iOS/Desktop
+  const handleOpenTelegram = async (url: string) => {
+    if (!url) return;
+    setOpeningTelegram(true);
+
+    const httpsFallback = url
+      .replace(/^tg:\/\/login\?token=/, "https://t.me/login?token=")
+      .replace(/^tg:\/\/resolve\?domain=/, "https://t.me/");
+
+    try {
+      // 1. Try native scheme via plugin-opener (triggers native Android Intent or iOS openURL)
+      await openUrl(url);
+      toast.info(t("qr.openedTelegramToast", "Opening Telegram... Please confirm the login request in the app."));
+    } catch (tgErr) {
+      console.warn("Direct tg:// scheme open failed, attempting https fallback:", tgErr);
+      try {
+        // 2. Try HTTPS fallback via plugin-opener (App Links / Universal Links or Browser)
+        await openUrl(httpsFallback);
+        toast.info(t("qr.openedTelegramToast", "Opening Telegram... Please confirm the login request in the app."));
+      } catch (httpsErr) {
+        console.warn("openUrl https fallback failed, attempting browser window.open:", httpsErr);
+        try {
+          window.open(httpsFallback, "_blank", "noopener,noreferrer");
+        } catch {
+          window.location.href = url;
+        }
+      }
+    } finally {
+      setTimeout(() => setOpeningTelegram(false), 1500);
+    }
+  };
 
   // ── Step 1: Send code ────────────────────────────────────────────────────
   const handleSendCode = async (e: React.FormEvent) => {
@@ -1019,14 +1053,24 @@ export default function AuthPage() {
                   </div>
 
                   {qrTgUrl && (
-                    <a
-                      href={qrTgUrl}
-                      className="flex items-center justify-center gap-2 w-full py-2.5 px-3 rounded-xl bg-[#0B57D0] hover:bg-[#0B57D0]/90 text-white font-medium text-xs sm:text-sm shadow-sm transition-all"
+                    <button
+                      type="button"
+                      disabled={openingTelegram}
+                      onClick={() => handleOpenTelegram(qrTgUrl)}
+                      className="flex items-center justify-center gap-2 w-full py-2.5 px-3 rounded-xl bg-[#0B57D0] hover:bg-[#0842A0] active:bg-[#063177] dark:bg-[#A8C7FA] dark:hover:bg-[#c2d8fb] dark:text-[#062E6F] text-white font-medium text-xs sm:text-sm shadow-sm transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                     >
-                      <Send className="h-3.5 w-3.5" />
-                      <span>Log in with Telegram App (1-Tap)</span>
+                      {openingTelegram ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Send className="h-3.5 w-3.5" />
+                      )}
+                      <span>
+                        {openingTelegram
+                          ? t("qr.openingTelegram", "Opening Telegram...")
+                          : t("qr.oneTapLogin", "Log in with Telegram App (1-Tap)")}
+                      </span>
                       <ExternalLink className="h-3 w-3 opacity-75" />
-                    </a>
+                    </button>
                   )}
 
                   <div className="flex flex-col items-center py-1">
@@ -1110,14 +1154,15 @@ export default function AuthPage() {
                       </p>
                     </div>
                   </div>
-                  <a
-                    href="tg://resolve?domain=telegram"
+                  <button
+                    type="button"
+                    onClick={() => handleOpenTelegram("tg://resolve?domain=telegram")}
                     className="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-xl bg-[#0B57D0] hover:bg-[#0842A0] active:bg-[#063177] dark:bg-[#A8C7FA] dark:hover:bg-[#c2d8fb] dark:text-[#062E6F] text-white text-xs font-medium shadow-xs transition-all cursor-pointer"
                   >
                     <Send className="h-3.5 w-3.5" />
-                    <span>Open Telegram App</span>
+                    <span>{t("otp.delivery.openApp", "Open Telegram App")}</span>
                     <ExternalLink className="h-3 w-3 opacity-75" />
-                  </a>
+                  </button>
                 </div>
               ) : deliveryType === "sms" ? (
                 <div className="p-2.5 rounded-xl bg-emerald-500/10 text-left border border-emerald-500/20 animate-in fade-in duration-200">

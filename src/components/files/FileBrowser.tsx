@@ -1489,7 +1489,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
 
       {/* dialog for creating folder */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent className="rounded-3xl max-w-sm p-6 bg-white dark:bg-[#141518] border border-slate-200/80 dark:border-white/[0.06] shadow-2xl">
+        <DialogContent className="rounded-3xl max-w-sm p-6 bg-white dark:bg-[#0d0e11] border border-slate-200/80 dark:border-white/[0.08] shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">{t("browser.dialogs.createFolder.title")}</DialogTitle>
           </DialogHeader>
@@ -1499,21 +1499,21 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
               onChange={(e) => setNewFolderName(e.target.value)}
               placeholder={t("browser.dialogs.createFolder.placeholder")}
               autoFocus
-              className="rounded-xl h-11 px-3.5 border-slate-300 dark:border-white/[0.06] bg-white dark:bg-[#161719] text-[#1f1f1f] dark:text-[#e3e3e3] focus-visible:ring-2 focus-visible:ring-[#0b57d0]/30"
+              className="rounded-xl h-11 px-3.5 border-slate-300 dark:border-white/[0.08] bg-white dark:bg-[#060709] text-[#1f1f1f] dark:text-[#e3e3e3] placeholder:text-slate-400 dark:placeholder:text-[#6e7170] focus-visible:ring-2 focus-visible:ring-[#0b57d0]/40 dark:focus-visible:ring-[#1a73e8]/40"
             />
             <DialogFooter className="gap-2 sm:gap-2 justify-end">
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => setCreateDialogOpen(false)}
-                className="rounded-full h-9.5 px-4 text-xs font-medium text-[#0b57d0] dark:text-[#a8c7fa] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] cursor-pointer"
+                className="rounded-full h-9.5 px-4 text-xs font-medium text-[#0b57d0] dark:text-[#8ab4f8] hover:bg-[#f0f4f9] dark:hover:bg-white/[0.06] cursor-pointer"
               >
                 {t("browser.dialogs.cancel")}
               </Button>
               <Button
                 type="submit"
                 disabled={!newFolderName.trim()}
-                className="rounded-full h-9.5 px-5 bg-[#0b57d0] hover:bg-[#0842a0] dark:bg-[#a8c7fa] dark:text-[#003258] text-white text-xs font-semibold shadow-xs cursor-pointer border-0"
+                className="rounded-full h-9.5 px-5 bg-[#0b57d0] hover:bg-[#0842a0] dark:bg-[#1a73e8] dark:hover:bg-[#1558b0] text-white text-xs font-semibold shadow-xs cursor-pointer border-0 disabled:opacity-40"
               >
                 {t("browser.dialogs.createFolder.submit")}
               </Button>
@@ -1524,7 +1524,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
 
       {/* dialog for renaming file */}
       <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
-        <DialogContent className="rounded-3xl max-w-sm p-6 bg-white dark:bg-[#141518] border border-slate-200/80 dark:border-white/[0.06] shadow-2xl">
+        <DialogContent className="rounded-3xl max-w-sm p-6 bg-white dark:bg-[#0d0e11] border border-slate-200/80 dark:border-white/[0.08] shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">{t("browser.dialogs.rename.title")}</DialogTitle>
           </DialogHeader>
@@ -1534,21 +1534,21 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
               onChange={(e) => setNewFileName(e.target.value)}
               placeholder={t("browser.dialogs.rename.placeholder")}
               autoFocus
-              className="rounded-xl h-11 px-3.5 border-slate-300 dark:border-white/[0.06] bg-white dark:bg-[#161719] text-[#1f1f1f] dark:text-[#e3e3e3] focus-visible:ring-2 focus-visible:ring-[#0b57d0]/30"
+              className="rounded-xl h-11 px-3.5 border-slate-300 dark:border-white/[0.08] bg-white dark:bg-[#060709] text-[#1f1f1f] dark:text-[#e3e3e3] placeholder:text-slate-400 dark:placeholder:text-[#6e7170] focus-visible:ring-2 focus-visible:ring-[#0b57d0]/40 dark:focus-visible:ring-[#1a73e8]/40"
             />
             <DialogFooter className="gap-2 sm:gap-2 justify-end">
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => setRenameDialogOpen(false)}
-                className="rounded-full h-9.5 px-4 text-xs font-medium text-[#0b57d0] dark:text-[#a8c7fa] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] cursor-pointer"
+                className="rounded-full h-9.5 px-4 text-xs font-medium text-[#0b57d0] dark:text-[#8ab4f8] hover:bg-[#f0f4f9] dark:hover:bg-white/[0.06] cursor-pointer"
               >
                 {t("browser.dialogs.cancel")}
               </Button>
               <Button
                 type="submit"
                 disabled={!newFileName.trim()}
-                className="rounded-full h-9.5 px-5 bg-[#0b57d0] hover:bg-[#0842a0] dark:bg-[#a8c7fa] dark:text-[#003258] text-white text-xs font-semibold shadow-xs cursor-pointer border-0"
+                className="rounded-full h-9.5 px-5 bg-[#0b57d0] hover:bg-[#0842a0] dark:bg-[#1a73e8] dark:hover:bg-[#1558b0] text-white text-xs font-semibold shadow-xs cursor-pointer border-0 disabled:opacity-40"
               >
                 {t("browser.dialogs.rename.submit")}
               </Button>
@@ -1560,7 +1560,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       {/* Mobile Context Menu Bottom Sheet */}
       {isMobile && (
         <Sheet open={!!mobileContextFile} onOpenChange={(open) => !open && setMobileContextFile(null)}>
-          <SheetContent side="bottom" className="rounded-t-2xl px-6 pt-5 pb-[max(var(--safe-area-bottom,0px),24px)] max-h-[80vh] overflow-y-auto bg-white dark:bg-[#141518] border-t dark:border-white/[0.06]">
+          <SheetContent side="bottom" className="rounded-t-2xl px-6 pt-5 pb-[max(var(--safe-area-bottom,0px),24px)] max-h-[80vh] overflow-y-auto bg-white dark:bg-[#0d0e11] border-t dark:border-white/[0.08]">
             {mobileContextFile && (
               <div className="space-y-4 select-none">
                 <div className="flex items-center gap-3 border-b dark:border-white/[0.04] pb-3">
@@ -1702,7 +1702,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       {/* Empty Trash confirmation dialog (replaces window.confirm)           */}
       {/* ------------------------------------------------------------------ */}
       <Dialog open={emptyTrashDialogOpen} onOpenChange={setEmptyTrashDialogOpen}>
-        <DialogContent className="rounded-3xl max-w-sm p-6 bg-white dark:bg-[#141518] border border-slate-200/80 dark:border-white/[0.06] shadow-2xl">
+        <DialogContent className="rounded-3xl max-w-sm p-6 bg-white dark:bg-[#0d0e11] border border-slate-200/80 dark:border-white/[0.08] shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-[#1f1f1f] dark:text-[#e3e3e3] flex items-center gap-2">
               <Trash2 className="h-4.5 w-4.5 text-red-600" />
@@ -1721,7 +1721,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
             <Button
               variant="ghost"
               size="sm"
-              className="rounded-full h-9 px-4 text-xs font-medium text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] cursor-pointer"
+              className="rounded-full h-9 px-4 text-xs font-medium text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-white/[0.06] cursor-pointer"
               onClick={() => setEmptyTrashDialogOpen(false)}
             >
               {t("browser.dialogs.cancel")}
@@ -1746,7 +1746,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       {/* Individual item permanent delete confirmation dialog               */}
       {/* ------------------------------------------------------------------ */}
       <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <DialogContent className="rounded-3xl max-w-sm p-6 bg-white dark:bg-[#141518] border border-slate-200/80 dark:border-white/[0.06] shadow-2xl">
+        <DialogContent className="rounded-3xl max-w-sm p-6 bg-white dark:bg-[#0d0e11] border border-slate-200/80 dark:border-white/[0.08] shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-[#1f1f1f] dark:text-[#e3e3e3] flex items-center gap-2">
               <Trash2 className="h-4.5 w-4.5 text-red-600" />
@@ -1771,7 +1771,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
             <Button
               variant="ghost"
               size="sm"
-              className="rounded-full h-9 px-4 text-xs font-medium text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] cursor-pointer"
+              className="rounded-full h-9 px-4 text-xs font-medium text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-white/[0.06] cursor-pointer"
               onClick={() => setDeleteTarget(null)}
             >
               {t("browser.dialogs.cancel")}
@@ -1797,7 +1797,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       {/* Bulk permanent delete confirmation dialog                           */}
       {/* ------------------------------------------------------------------ */}
       <Dialog open={bulkDeleteDialogOpen} onOpenChange={setBulkDeleteDialogOpen}>
-        <DialogContent className="rounded-3xl max-w-sm p-6 bg-white dark:bg-[#141518] border border-slate-200/80 dark:border-white/[0.06] shadow-2xl">
+        <DialogContent className="rounded-3xl max-w-sm p-6 bg-white dark:bg-[#0d0e11] border border-slate-200/80 dark:border-white/[0.08] shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-[#1f1f1f] dark:text-[#e3e3e3] flex items-center gap-2">
               <Trash2 className="h-4.5 w-4.5 text-red-600" />
@@ -1816,7 +1816,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
             <Button
               variant="ghost"
               size="sm"
-              className="rounded-full h-9 px-4 text-xs font-medium text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] cursor-pointer"
+              className="rounded-full h-9 px-4 text-xs font-medium text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-white/[0.06] cursor-pointer"
               onClick={() => setBulkDeleteDialogOpen(false)}
             >
               {t("browser.dialogs.cancel")}

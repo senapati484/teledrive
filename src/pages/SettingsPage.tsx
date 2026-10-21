@@ -178,12 +178,12 @@ export default function SettingsPage() {
                     onClick={() => (isMobile ? handleMobileSelect(sec.id) : setActiveSection(sec.id))}
                     className={`w-full flex items-center justify-between gap-3.5 px-4 h-12 md:h-10 rounded-2xl md:rounded-full text-sm font-medium transition-colors text-left cursor-pointer ${
                       isSelected && !isMobile
-                        ? "bg-[#C2E7FF] dark:bg-[#004A77] text-[#001D35] dark:text-[#C2E7FF] font-semibold"
-                        : "text-[#444746] dark:text-[#C4C7C5] hover:bg-[#F0F4F9] dark:hover:bg-[#161719] active:bg-[#F0F4F9] dark:active:bg-[#1c1d20] hover:text-[#1F1F1F] dark:hover:text-[#E3E3E3]"
+                        ? "bg-[#C2E7FF] dark:bg-[#004A77]/60 text-[#001D35] dark:text-[#C2E7FF] font-semibold"
+                        : "text-[#444746] dark:text-[#C4C7C5] hover:bg-[#F0F4F9] dark:hover:bg-white/[0.04] active:bg-[#F0F4F9] dark:active:bg-white/[0.06] hover:text-[#1F1F1F] dark:hover:text-[#E3E3E3]"
                     }`}
                   >
                     <div className="flex items-center gap-3.5 min-w-0">
-                      <Icon className={`h-5 w-5 md:h-4.5 md:w-4.5 shrink-0 ${isSelected && !isMobile ? "text-[#0B57D0] dark:text-[#A8C7FA]" : "text-[#444746] dark:text-[#C4C7C5]"}`} />
+                      <Icon className={`h-5 w-5 md:h-4.5 md:w-4.5 shrink-0 ${isSelected && !isMobile ? "text-[#0B57D0] dark:text-[#8ab4f8]" : "text-[#444746] dark:text-[#C4C7C5]"}`} />
                       <span className="truncate">{sec.label}</span>
                     </div>
                     <ChevronRight className="h-4 w-4 text-[#747775]/60 dark:text-[#9aa0a6]/60 shrink-0 md:hidden" />
@@ -196,7 +196,7 @@ export default function SettingsPage() {
             <div className="pt-4 border-t border-slate-200/60 dark:border-white/[0.04] mb-2">
               <button
                 onClick={() => setLogoutDialogOpen(true)}
-                className="w-full flex items-center gap-3.5 px-4 h-12 md:h-10 rounded-2xl md:rounded-full text-sm font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors text-left cursor-pointer"
+                className="w-full flex items-center gap-3.5 px-4 h-12 md:h-10 rounded-2xl md:rounded-full text-sm font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors text-left cursor-pointer"
               >
                 <svg
                   className="h-4.5 w-4.5 shrink-0 text-rose-500"
@@ -234,13 +234,13 @@ export default function SettingsPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           {/* Backdrop */}
           <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-xs"
+            className="absolute inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-xs"
             onClick={() => !isLoggingOut && setLogoutDialogOpen(false)}
           />
           {/* Dialog card */}
-          <div className="relative z-10 w-full max-w-sm bg-surface dark:bg-[#141518] border border-slate-200 dark:border-white/[0.06] rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-200">
+          <div className="relative z-10 w-full max-w-sm bg-white dark:bg-[#0d0e11] border border-slate-200 dark:border-white/[0.08] rounded-3xl shadow-2xl p-6 animate-in fade-in zoom-in-95 duration-200">
             {/* Icon */}
-            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 mx-auto mb-4">
+            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-rose-50 dark:bg-rose-950/30 border border-rose-200/60 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 mx-auto mb-4">
               <svg
                 className="h-6 w-6"
                 fill="none"
@@ -265,15 +265,15 @@ export default function SettingsPage() {
 
             <div className="flex gap-3">
               <Button
-                variant="outline"
-                className="flex-1 rounded-full h-10 text-sm font-medium border-slate-300 dark:border-white/[0.06] hover:bg-[#F0F4F9] dark:hover:bg-[#1f2124]"
+                variant="ghost"
+                className="flex-1 rounded-full h-10 text-sm font-medium border border-slate-300 dark:border-white/[0.08] text-slate-700 dark:text-slate-200 hover:bg-[#F0F4F9] dark:hover:bg-white/[0.06] cursor-pointer"
                 disabled={isLoggingOut}
                 onClick={() => setLogoutDialogOpen(false)}
               >
                 {t("logout.cancel")}
               </Button>
               <Button
-                className="flex-1 rounded-full h-10 text-sm font-medium bg-rose-600 hover:bg-rose-700 text-white border-0 shadow-sm"
+                className="flex-1 rounded-full h-10 text-sm font-medium bg-red-600 hover:bg-red-700 dark:bg-red-600/90 dark:hover:bg-red-600 text-white border-0 shadow-sm cursor-pointer disabled:opacity-40"
                 disabled={isLoggingOut}
                 onClick={handleLogout}
               >

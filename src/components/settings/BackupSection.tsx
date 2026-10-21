@@ -175,9 +175,9 @@ export default function BackupSection() {
       </div>
 
       {/* Source folders Card */}
-      <div className="p-6 bg-white dark:bg-[#111214] border border-slate-200/90 dark:border-white/[0.04] rounded-2xl space-y-4 shadow-xs">
+      <div className="p-6 bg-white dark:bg-[#0c0d0f] border border-slate-200/90 dark:border-white/[0.06] rounded-2xl space-y-4 shadow-xs">
         <div className="flex items-start gap-3.5">
-          <div className="h-10 w-10 rounded-full bg-[#C2E7FF] dark:bg-[#004A77] flex items-center justify-center text-[#0B57D0] dark:text-[#A8C7FA] shrink-0 mt-0.5">
+          <div className="h-10 w-10 rounded-full bg-[#C2E7FF]/60 dark:bg-[#004A77]/40 border border-[#0B57D0]/20 dark:border-[#1a73e8]/20 flex items-center justify-center text-[#0B57D0] dark:text-[#8ab4f8] shrink-0 mt-0.5">
             <Folder className="h-5 w-5" />
           </div>
           <div className="flex-1 min-w-0 space-y-3">
@@ -185,7 +185,7 @@ export default function BackupSection() {
               <h4 className="text-sm font-semibold text-[#1F1F1F] dark:text-[#E3E3E3]">
                 {t("backup.folders.title")}
               </h4>
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-[#161719] text-[#444746] dark:text-[#C4C7C5]">
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-[#060709] border border-transparent dark:border-white/[0.06] text-[#444746] dark:text-[#C4C7C5]">
                 {paths.length}/{MAX_FOLDERS}
               </span>
               {isSaving && (
@@ -206,9 +206,9 @@ export default function BackupSection() {
                 {paths.map((p) => (
                   <li
                     key={p}
-                    className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-[#161719]/60 border border-slate-200/70 dark:border-white/[0.04] text-xs"
+                    className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-[#060709] border border-slate-200/70 dark:border-white/[0.06] text-xs"
                   >
-                    <Folder className="h-4 w-4 text-[#0B57D0] dark:text-[#A8C7FA] shrink-0" />
+                    <Folder className="h-4 w-4 text-[#0B57D0] dark:text-[#8ab4f8] shrink-0" />
                     <span
                       className="flex-1 truncate font-mono text-[11px] text-[#1F1F1F] dark:text-[#E3E3E3]"
                       title={p}
@@ -232,9 +232,9 @@ export default function BackupSection() {
               variant="outline"
               onClick={handleAddFolder}
               disabled={paths.length >= MAX_FOLDERS}
-              className="rounded-full text-xs font-medium border-slate-300 dark:border-white/[0.06] hover:bg-slate-100 dark:hover:bg-[#1f2124] h-9 px-4"
+              className="rounded-full text-xs font-medium border-slate-300 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-200 cursor-pointer h-9 px-4"
             >
-              <FolderPlus className="h-3.5 w-3.5 mr-1.5 text-[#0B57D0] dark:text-[#A8C7FA]" />
+              <FolderPlus className="h-3.5 w-3.5 mr-1.5 text-[#0B57D0] dark:text-[#8ab4f8]" />
               {t("backup.folders.add")}
             </Button>
           </div>
@@ -242,9 +242,9 @@ export default function BackupSection() {
       </div>
 
       {/* Exclude patterns Card */}
-      <div className="p-6 bg-white dark:bg-[#111214] border border-slate-200/90 dark:border-white/[0.04] rounded-2xl space-y-4 shadow-xs">
+      <div className="p-6 bg-white dark:bg-[#0c0d0f] border border-slate-200/90 dark:border-white/[0.06] rounded-2xl space-y-4 shadow-xs">
         <div className="flex items-start gap-3.5">
-          <div className="h-10 w-10 rounded-full bg-[#C2E7FF] dark:bg-[#004A77] flex items-center justify-center text-[#0B57D0] dark:text-[#A8C7FA] shrink-0 mt-0.5">
+          <div className="h-10 w-10 rounded-full bg-[#C2E7FF]/60 dark:bg-[#004A77]/40 border border-[#0B57D0]/20 dark:border-[#1a73e8]/20 flex items-center justify-center text-[#0B57D0] dark:text-[#8ab4f8] shrink-0 mt-0.5">
             <FileX2 className="h-5 w-5" />
           </div>
           <div className="flex-1 min-w-0 space-y-3">
@@ -252,7 +252,7 @@ export default function BackupSection() {
               <h4 className="text-sm font-semibold text-[#1F1F1F] dark:text-[#E3E3E3]">
                 {t("backup.excludes.title")}
               </h4>
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-[#161719] text-[#444746] dark:text-[#C4C7C5]">
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-100 dark:bg-[#060709] border border-transparent dark:border-white/[0.06] text-[#444746] dark:text-[#C4C7C5]">
                 {excludes.length}/{MAX_EXCLUDES}
               </span>
             </div>
@@ -261,7 +261,7 @@ export default function BackupSection() {
                 t={t}
                 i18nKey="backup.excludes.description"
                 components={{
-                  code: <code className="text-[11px] bg-slate-100 dark:bg-[#161719] px-1.5 py-0.5 rounded border border-slate-200/60 dark:border-white/[0.04]" />,
+                  code: <code className="text-[11px] bg-slate-100 dark:bg-[#060709] px-1.5 py-0.5 rounded border border-slate-200/60 dark:border-white/[0.06]" />,
                 }}
               />
             </p>
@@ -274,7 +274,7 @@ export default function BackupSection() {
                 {excludes.map((p) => (
                   <li
                     key={p}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-[#161719]/60 border border-slate-200/70 dark:border-white/[0.04] text-xs"
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-[#060709] border border-slate-200/70 dark:border-white/[0.06] text-xs"
                   >
                     <span
                       className="flex-1 truncate font-mono text-[11px] text-[#1F1F1F] dark:text-[#E3E3E3]"
@@ -309,7 +309,7 @@ export default function BackupSection() {
                 inputMode="text"
                 autoComplete="off"
                 enterKeyHint="done"
-                className="h-9 text-xs font-mono rounded-xl flex-1 bg-slate-50 dark:bg-[#161719]/50 border-slate-300 dark:border-white/[0.06] focus:bg-white dark:focus:bg-[#161719]"
+                className="h-9 text-xs font-mono rounded-xl flex-1 bg-slate-50 dark:bg-[#060709] border-slate-300 dark:border-white/[0.08] focus:bg-white dark:focus:bg-[#0a0b0d]"
               />
               <Button
                 size="sm"
@@ -319,7 +319,7 @@ export default function BackupSection() {
                   excludes.length >= MAX_EXCLUDES ||
                   excludeDraft.trim().length === 0
                 }
-                className="rounded-full text-xs font-medium border-slate-300 dark:border-white/[0.06] hover:bg-slate-100 dark:hover:bg-[#1f2124] h-9 px-3.5"
+                className="rounded-full text-xs font-medium border-slate-300 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-200 cursor-pointer h-9 px-3.5"
               >
                 <Plus className="h-3.5 w-3.5 mr-1" />
                 {t("backup.excludes.add")}
@@ -330,9 +330,9 @@ export default function BackupSection() {
       </div>
 
       {/* Cadence Card */}
-      <div className="p-6 bg-white dark:bg-[#111214] border border-slate-200/90 dark:border-white/[0.04] rounded-2xl space-y-5 shadow-xs">
+      <div className="p-6 bg-white dark:bg-[#0c0d0f] border border-slate-200/90 dark:border-white/[0.06] rounded-2xl space-y-5 shadow-xs">
         <div className="flex items-start gap-3.5">
-          <div className="h-10 w-10 rounded-full bg-[#C2E7FF] dark:bg-[#004A77] flex items-center justify-center text-[#0B57D0] dark:text-[#A8C7FA] shrink-0 mt-0.5">
+          <div className="h-10 w-10 rounded-full bg-[#C2E7FF]/60 dark:bg-[#004A77]/40 border border-[#0B57D0]/20 dark:border-[#1a73e8]/20 flex items-center justify-center text-[#0B57D0] dark:text-[#8ab4f8] shrink-0 mt-0.5">
             <Clock className="h-5 w-5" />
           </div>
           <div className="flex-1 min-w-0 space-y-2">
@@ -341,7 +341,7 @@ export default function BackupSection() {
                 {t("backup.cadence.title")}
               </h4>
               {intervalMinutes !== null && (
-                <span className="bg-blue-50 dark:bg-blue-950/40 text-[#0B57D0] dark:text-[#A8C7FA] border border-blue-200/60 dark:border-blue-800/60 font-medium text-[11px] px-2.5 py-0.5 rounded-full">
+                <span className="bg-blue-50 dark:bg-[#004A77]/30 text-[#0B57D0] dark:text-[#8ab4f8] border border-blue-200/60 dark:border-[#1a73e8]/30 font-medium text-[11px] px-2.5 py-0.5 rounded-full">
                   {t("backup.cadence.active")}
                 </span>
               )}
@@ -355,18 +355,18 @@ export default function BackupSection() {
                   <Button
                     variant="outline"
                     disabled={pendingInterval !== null}
-                    className="w-full sm:w-56 rounded-full h-10 text-xs font-medium justify-between border-slate-300 dark:border-white/[0.06] hover:bg-slate-100 dark:hover:bg-[#1f2124]"
+                    className="w-full sm:w-56 rounded-full h-10 text-xs font-medium justify-between border-slate-300 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-200 cursor-pointer"
                   >
                     <span className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-[#747775]" />
+                      <Clock className="h-4 w-4 text-[#747775] dark:text-[#9aa0a6]" />
                       {t(currentLabelKey)}
                     </span>
-                    <ChevronDown className="h-4 w-4 text-[#747775]" />
+                    <ChevronDown className="h-4 w-4 text-[#747775] dark:text-[#9aa0a6]" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   align="start"
-                  className="w-56 rounded-2xl bg-white dark:bg-[#141518] border-slate-200 dark:border-white/[0.06] p-1.5 shadow-lg"
+                  className="w-56 rounded-2xl bg-white dark:bg-[#0d0e11] border-slate-200 dark:border-white/[0.08] p-1.5 shadow-lg"
                 >
                   {INTERVAL_PRESETS.map((p) => {
                     const isCurrent = p.value === currentPreset;
@@ -374,11 +374,11 @@ export default function BackupSection() {
                       <DropdownMenuItem
                         key={p.value}
                         onSelect={() => handleChange(p.value)}
-                        className="rounded-xl text-xs font-medium cursor-pointer dark:hover:bg-[#1f2124]"
+                        className="rounded-xl text-xs font-medium cursor-pointer dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-200"
                       >
                         <span className="flex-1">{t(p.labelKey)}</span>
                         {isCurrent && (
-                          <Check className="h-4 w-4 text-[#0B57D0] dark:text-[#A8C7FA]" />
+                          <Check className="h-4 w-4 text-[#0B57D0] dark:text-[#8ab4f8]" />
                         )}
                       </DropdownMenuItem>
                     );
@@ -390,8 +390,8 @@ export default function BackupSection() {
         </div>
 
         {/* Last run + Run now / Cancel */}
-        <div className="flex items-center justify-between flex-wrap gap-3 pt-4 border-t border-slate-200/80 dark:border-white/[0.04]">
-          <div className="flex flex-col gap-0.5 text-xs text-[#747775] min-w-0">
+        <div className="flex items-center justify-between flex-wrap gap-3 pt-4 border-t border-slate-200/80 dark:border-white/[0.06]">
+          <div className="flex flex-col gap-0.5 text-xs text-[#747775] dark:text-[#9aa0a6] min-w-0">
             <div className="flex items-center gap-2">
               <History className="h-3.5 w-3.5 shrink-0" />
               <span>
@@ -417,7 +417,7 @@ export default function BackupSection() {
               </div>
             )}
             {isRunning && (
-              <div className="pl-5 text-[11px] text-[#0B57D0] dark:text-[#A8C7FA] font-medium">
+              <div className="pl-5 text-[11px] text-[#0B57D0] dark:text-[#8ab4f8] font-medium">
                 {t("backup.progressHint")}
               </div>
             )}
@@ -436,18 +436,18 @@ export default function BackupSection() {
             <Button
               size="sm"
               variant="outline"
-              className="rounded-full text-xs font-medium border-slate-300 dark:border-white/[0.06] hover:bg-slate-100 dark:hover:bg-[#1f2124] h-9 px-4 disabled:opacity-50"
+              className="rounded-full text-xs font-medium border-slate-300 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-200 cursor-pointer h-9 px-4 disabled:opacity-50"
               onClick={handleRunNow}
               disabled={isRunning || paths.length === 0}
             >
               {isRunning ? (
                 <>
-                  <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin text-[#0B57D0] dark:text-[#A8C7FA]" />
+                  <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin text-[#0B57D0] dark:text-[#8ab4f8]" />
                   {t("backup.running")}
                 </>
               ) : (
                 <>
-                  <RefreshCw className="h-3.5 w-3.5 mr-1.5 text-[#0B57D0] dark:text-[#A8C7FA]" />
+                  <RefreshCw className="h-3.5 w-3.5 mr-1.5 text-[#0B57D0] dark:text-[#8ab4f8]" />
                   {t("backup.runNow")}
                 </>
               )}
@@ -457,7 +457,7 @@ export default function BackupSection() {
       </div>
 
       {/* Footer explainer callout */}
-      <div className="flex items-start sm:items-center gap-3.5 justify-between flex-wrap p-4 rounded-2xl bg-slate-50 dark:bg-[#161719]/50 border border-slate-200/70 dark:border-white/[0.04] text-xs text-[#444746] dark:text-[#C4C7C5] leading-relaxed">
+      <div className="flex items-start sm:items-center gap-3.5 justify-between flex-wrap p-4 rounded-2xl bg-[#F0F4F9] dark:bg-[#060709] border border-slate-200/60 dark:border-white/[0.06] text-xs text-[#444746] dark:text-[#C4C7C5] leading-relaxed">
         <div className="flex items-start gap-2.5 flex-1 min-w-[220px]">
           <span className="text-base select-none mt-0.5">💡</span>
           <span>
@@ -468,9 +468,9 @@ export default function BackupSection() {
           size="sm"
           variant="outline"
           onClick={() => navigate("/drive/backups")}
-          className="rounded-full text-xs font-medium border-slate-300 dark:border-white/[0.06] hover:bg-slate-100 dark:hover:bg-[#1f2124] h-9 px-4 shrink-0"
+          className="rounded-full text-xs font-medium border-slate-300 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-200 cursor-pointer h-9 px-4 shrink-0"
         >
-          <Shield className="h-3.5 w-3.5 mr-1.5 text-[#0B57D0] dark:text-[#A8C7FA]" />
+          <Shield className="h-3.5 w-3.5 mr-1.5 text-[#0B57D0] dark:text-[#8ab4f8]" />
           {t("backup.viewBackups")}
           <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
         </Button>

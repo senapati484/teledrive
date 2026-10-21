@@ -129,8 +129,8 @@ export default function TelegramAccountSection() {
       </div>
 
       {!isAuthenticated ? (
-        <div className="p-8 border border-slate-200/90 dark:border-white/[0.04] rounded-2xl bg-white dark:bg-[#111214] text-center shadow-xs">
-          <div className="h-12 w-12 rounded-full bg-[#EDF2FC] dark:bg-[#161719] flex items-center justify-center text-[#0B57D0] dark:text-[#A8C7FA] mx-auto mb-3">
+        <div className="p-8 border border-slate-200/90 dark:border-white/[0.06] rounded-2xl bg-white dark:bg-[#0c0d0f] text-center shadow-xs">
+          <div className="h-12 w-12 rounded-full bg-[#EDF2FC] dark:bg-[#060709] border border-slate-200/60 dark:border-white/[0.06] flex items-center justify-center text-[#0B57D0] dark:text-[#8ab4f8] mx-auto mb-3">
             <Smartphone className="h-6 w-6 stroke-[1.75]" />
           </div>
           <h4 className="font-semibold text-[#1F1F1F] dark:text-[#E3E3E3] text-sm">
@@ -140,7 +140,7 @@ export default function TelegramAccountSection() {
             {t("account.notConnected.description")}
           </p>
           <Button
-            className="rounded-full bg-[#0B57D0] hover:bg-[#0842A0] text-white dark:bg-[#A8C7FA] dark:hover:bg-[#D3E3FD] dark:text-[#062E6F] font-medium px-6 h-10 text-xs shadow-xs cursor-pointer"
+            className="rounded-full bg-[#0B57D0] hover:bg-[#0842A0] text-white dark:bg-[#1a73e8] dark:hover:bg-[#1558b0] font-medium px-6 h-10 text-xs shadow-xs cursor-pointer border-0"
             onClick={() => navigate("/auth")}
           >
             {t("account.notConnected.connect")}
@@ -149,9 +149,9 @@ export default function TelegramAccountSection() {
       ) : (
         <div className="space-y-4 animate-fade-in">
           {/* Card 1: User Profile & Session */}
-          <div className="p-5 border border-slate-200/90 dark:border-white/[0.04] rounded-2xl bg-white dark:bg-[#111214] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="p-5 border border-slate-200/90 dark:border-white/[0.06] rounded-2xl bg-white dark:bg-[#0c0d0f] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3.5 min-w-0">
-              <div className="h-11 w-11 rounded-full bg-[#C2E7FF]/60 dark:bg-[#004A77]/50 border border-[#0B57D0]/20 flex items-center justify-center text-[#0B57D0] dark:text-[#A8C7FA] shrink-0">
+              <div className="h-11 w-11 rounded-full bg-[#C2E7FF]/60 dark:bg-[#004A77]/40 border border-[#0B57D0]/20 dark:border-[#1a73e8]/20 flex items-center justify-center text-[#0B57D0] dark:text-[#8ab4f8] shrink-0">
                 <Smartphone className="h-5 w-5" />
               </div>
               <div className="space-y-1 min-w-0">
@@ -173,7 +173,7 @@ export default function TelegramAccountSection() {
             <Button
               variant="outline"
               size="sm"
-              className="rounded-full text-xs font-medium border-slate-200 dark:border-white/[0.06] text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 shrink-0 w-full sm:w-auto cursor-pointer h-9 px-4 gap-1.5"
+              className="rounded-full text-xs font-medium border border-slate-200 dark:border-rose-500/20 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 shrink-0 w-full sm:w-auto cursor-pointer h-9 px-4 gap-1.5"
               onClick={handleDisconnect}
             >
               <LogOut className="h-3.5 w-3.5" />
@@ -182,9 +182,9 @@ export default function TelegramAccountSection() {
           </div>
 
           {/* Card 2: Active Storage Channel */}
-          <div className="p-5 border border-slate-200/90 dark:border-white/[0.04] rounded-2xl bg-white dark:bg-[#111214] shadow-xs space-y-4">
+          <div className="p-5 border border-slate-200/90 dark:border-white/[0.06] rounded-2xl bg-white dark:bg-[#0c0d0f] shadow-xs space-y-4">
             <div className="flex items-start gap-3.5">
-              <div className="h-11 w-11 rounded-full bg-[#C2E7FF]/60 dark:bg-[#004A77]/50 border border-[#0B57D0]/20 flex items-center justify-center text-[#0B57D0] dark:text-[#A8C7FA] shrink-0 mt-0.5">
+              <div className="h-11 w-11 rounded-full bg-[#C2E7FF]/60 dark:bg-[#004A77]/40 border border-[#0B57D0]/20 dark:border-[#1a73e8]/20 flex items-center justify-center text-[#0B57D0] dark:text-[#8ab4f8] shrink-0 mt-0.5">
                 <Database className="h-5 w-5" />
               </div>
               <div className="space-y-2 flex-1 min-w-0">
@@ -199,17 +199,17 @@ export default function TelegramAccountSection() {
 
                 {/* Structured Channel Details */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                  <div className="p-3 rounded-xl bg-[#F0F4F9] dark:bg-[#161719] border border-slate-200/60 dark:border-white/[0.04] space-y-1">
+                  <div className="p-3 rounded-xl bg-[#F0F4F9] dark:bg-[#060709] border border-slate-200/60 dark:border-white/[0.06] space-y-1">
                     <span className="text-[11px] font-medium text-[#747775] dark:text-[#8E918F] block">
                       {t("account.channel.name")}
                     </span>
                     <div className="flex items-center gap-1.5 font-medium text-xs text-[#1F1F1F] dark:text-[#E3E3E3]">
-                      <Cloud className="h-3.5 w-3.5 text-[#0B57D0] dark:text-[#A8C7FA]" />
+                      <Cloud className="h-3.5 w-3.5 text-[#0B57D0] dark:text-[#8ab4f8]" />
                       <span>TeleDrive Storage</span>
                     </div>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-[#F0F4F9] dark:bg-[#161719] border border-slate-200/60 dark:border-white/[0.04] space-y-1">
+                  <div className="p-3 rounded-xl bg-[#F0F4F9] dark:bg-[#060709] border border-slate-200/60 dark:border-white/[0.06] space-y-1">
                     <span className="text-[11px] font-medium text-[#747775] dark:text-[#8E918F] block">
                       {t("account.channel.id")}
                     </span>
@@ -221,7 +221,7 @@ export default function TelegramAccountSection() {
                         <button
                           type="button"
                           onClick={handleCopyChannelId}
-                          className="h-6 w-6 rounded-md hover:bg-slate-200 dark:hover:bg-[#202225] flex items-center justify-center text-[#444746] dark:text-[#C4C7C5] transition-colors cursor-pointer"
+                          className="h-6 w-6 rounded-md hover:bg-slate-200 dark:hover:bg-white/[0.08] flex items-center justify-center text-[#444746] dark:text-[#C4C7C5] transition-colors cursor-pointer"
                           title={t("account.channel.copyId")}
                         >
                           {copiedId ? (
@@ -237,11 +237,11 @@ export default function TelegramAccountSection() {
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-2.5 pt-1 border-t border-slate-100 dark:border-white/[0.04]">
+            <div className="flex flex-wrap gap-2.5 pt-1 border-t border-slate-100 dark:border-white/[0.06]">
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded-full text-xs font-medium border-slate-300 dark:border-white/[0.06] hover:bg-[#F0F4F9] dark:hover:bg-[#1f2124] cursor-pointer flex items-center gap-1.5 h-9 px-4"
+                className="rounded-full text-xs font-medium border border-slate-300 dark:border-white/[0.08] hover:bg-[#F0F4F9] dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-200 cursor-pointer flex items-center gap-1.5 h-9 px-4"
                 disabled={isSyncing}
                 onClick={handleSyncNow}
               >
@@ -251,7 +251,7 @@ export default function TelegramAccountSection() {
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded-full text-xs font-medium border-slate-300 dark:border-white/[0.06] hover:bg-[#F0F4F9] dark:hover:bg-[#1f2124] cursor-pointer h-9 px-4"
+                className="rounded-full text-xs font-medium border border-slate-300 dark:border-white/[0.08] hover:bg-[#F0F4F9] dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-200 cursor-pointer h-9 px-4"
                 onClick={() => setIsDialogOpen(true)}
               >
                 {t("account.switchChannel")}
@@ -260,8 +260,8 @@ export default function TelegramAccountSection() {
           </div>
 
           {/* Architecture Callout */}
-          <div className="p-4 rounded-2xl bg-[#F0F4F9] dark:bg-[#161719] border border-slate-200/60 dark:border-white/[0.04] flex items-start gap-3 text-xs text-[#444746] dark:text-[#C4C7C5] leading-relaxed">
-            <Info className="h-4.5 w-4.5 text-[#0B57D0] dark:text-[#A8C7FA] shrink-0 mt-0.5" />
+          <div className="p-4 rounded-2xl bg-[#F0F4F9] dark:bg-[#060709] border border-slate-200/60 dark:border-white/[0.06] flex items-start gap-3 text-xs text-[#444746] dark:text-[#C4C7C5] leading-relaxed">
+            <Info className="h-4.5 w-4.5 text-[#0B57D0] dark:text-[#8ab4f8] shrink-0 mt-0.5" />
             <div>
               <Trans
                 t={t}
@@ -275,7 +275,7 @@ export default function TelegramAccountSection() {
 
       {/* Change storage channel dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="rounded-3xl max-w-md bg-white dark:bg-[#141518] border border-slate-200 dark:border-white/[0.06] p-6 shadow-2xl">
+        <DialogContent className="rounded-3xl max-w-md bg-white dark:bg-[#0d0e11] border border-slate-200 dark:border-white/[0.08] p-6 shadow-2xl">
           <DialogHeader>
             <DialogTitle className="font-semibold text-[#1F1F1F] dark:text-[#E3E3E3]">
               {t("account.switchDialog.title")}
@@ -290,13 +290,13 @@ export default function TelegramAccountSection() {
           <DialogFooter className="gap-2 sm:gap-0 mt-4">
             <Button
               variant="outline"
-              className="rounded-full text-xs font-medium border-slate-300 dark:border-white/[0.06] hover:bg-[#F0F4F9] dark:hover:bg-[#1f2124]"
+              className="rounded-full text-xs font-medium border-slate-300 dark:border-white/[0.08] hover:bg-[#F0F4F9] dark:hover:bg-white/[0.06]"
               onClick={() => setIsDialogOpen(false)}
             >
               {t("account.switchDialog.cancel")}
             </Button>
             <Button
-              className="rounded-full bg-[#0B57D0] hover:bg-[#0842A0] text-white dark:bg-[#A8C7FA] dark:hover:bg-[#D3E3FD] dark:text-[#062E6F] font-medium text-xs ml-2 cursor-pointer"
+              className="rounded-full bg-[#0B57D0] hover:bg-[#0842A0] text-white dark:bg-[#1a73e8] dark:hover:bg-[#1558b0] font-medium text-xs ml-2 cursor-pointer"
               onClick={async () => {
                 setIsDialogOpen(false);
                 try {
