@@ -45,41 +45,32 @@ export default function LanguageSection() {
                 )}
                 onClick={() => i18n.changeLanguage(lang.code)}
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Languages
                     className={cn(
-                      "h-9 w-9 rounded-xl flex items-center justify-center shrink-0 transition-colors",
-                      isSelected
-                        ? "bg-[#0B57D0]/10 dark:bg-[#004A77]/50 text-[#0B57D0] dark:text-[#8ab4f8]"
-                        : "bg-slate-200/60 dark:bg-[#111214] text-[#444746] dark:text-[#C4C7C5]"
+                      "h-4 w-4 shrink-0",
+                      isSelected ? "text-[#0B57D0] dark:text-[#8ab4f8]" : "text-[#444746] dark:text-[#C4C7C5]"
+                    )}
+                  />
+                  <span
+                    className={cn(
+                      "text-xs font-semibold truncate",
+                      isSelected ? "text-[#001D35] dark:text-[#C2E7FF]" : "text-[#1F1F1F] dark:text-[#E3E3E3]"
                     )}
                   >
-                    <Languages className="h-4.5 w-4.5" />
-                  </div>
-                  <div className="min-w-0">
-                    <span
-                      className={cn(
-                        "text-xs font-semibold block truncate",
-                        isSelected ? "text-[#001D35] dark:text-[#C2E7FF]" : "text-[#1F1F1F] dark:text-[#E3E3E3]"
-                      )}
-                    >
-                      {lang.label}
-                    </span>
-                    <span className="text-[10px] text-[#747775] dark:text-[#8E918F] uppercase tracking-wider font-mono">
-                      {lang.code}
-                    </span>
-                  </div>
+                    {lang.label}
+                  </span>
                 </div>
 
                 <div
                   className={cn(
-                    "h-5 w-5 shrink-0 rounded-full flex items-center justify-center transition-all",
+                    "h-4 w-4 shrink-0 rounded-full flex items-center justify-center transition-all",
                     isSelected
                       ? "bg-[#0B57D0] text-white dark:bg-[#1a73e8] dark:text-white"
                       : "border border-slate-300 dark:border-white/[0.1]"
                   )}
                 >
-                  {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
+                  {isSelected && <Check className="h-2.5 w-2.5 stroke-[3]" />}
                 </div>
               </button>
             );
