@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { Api } from "telegram";
 import { useAuthStore } from "@/stores/authStore";
-import { initClient, getClient } from "@/lib/telegram/client";
+import { initClient, getClient, resetClient } from "@/lib/telegram/client";
 import { saveSecret, getSecret, VAULT_KEY_SESSION, VAULT_KEY_PHONE, VAULT_KEY_API_ID, VAULT_KEY_API_HASH } from "@/lib/secure/vault";
 import { bootstrapTeleDrive } from "@/lib/telegram/bootstrap";
 import { DEFAULT_API_ID, DEFAULT_API_HASH } from "@/lib/telegram/config";
@@ -66,7 +66,13 @@ function parseTelegramError(err: any, t: any): string {
   if (msg.includes("PHONE_CODE_EXPIRED")) return t("errors.codeExpired");
   if (msg.includes("PASSWORD_HASH_INVALID") || msg.includes("Incorrect password")) return t("errors.incorrectPassword");
   if (msg.includes("PASSWORD_EMPTY")) return t("errors.passwordEmpty");
-  if (msg.includes("AUTH_RESTART")) return "Authentication restarted by Telegram. Please try again.";
+  if (msg.includes("AUTH_RESTART")) return "Telegram restarted the authentication. Please try again.";
+  if (msg.includes("AUTH_KEY_UNREGISTERED") || msg.includes("AUTH_KEY_INVALID")) return "Session is invalid. Please try again.";
+  if (msg.includes("NETWORK_MIGRATE") || msg.includes("USER_MIGRATE") || msg.includes("PHONE_MIGRATE")) return "Redirecting to the correct Telegram server, please retry...";
+  if (msg.includes("CONNECTION_NOT_INITED")) return "Connection issue. Please try again.";
+  if (msg.includes("RPC_CALL_FAIL") || msg.includes("RPC_MCGET_FAIL")) return "Telegram server error. Please try again.";
+  if (msg.includes("SESSION_PASSWORD_NEEDED")) return "Two-step verification required. Please enter your password.";
+  if (msg.includes("NETWORK_ERROR") || msg.includes("Network request failed") || msg.includes("net::ERR")) return "Network error. Please check your internet connection and try again.";
   return msg || t("errors.sendCodeFailed");
 }
 
@@ -360,6 +366,9 @@ export default function AuthPage() {
         qrCleanupRef.current = null;
       }
       setQrDataUrl(null);
+      // Reset the client so phone login always gets a fresh connection.
+      // Without this, the QR login client lingers and can break SendCode.
+      resetClient();
       return;
     }
 
@@ -437,7 +446,9 @@ export default function AuthPage() {
     setError(null);
 
     try {
-      await initClient(configApiId, configApiHash);
+      // Always force a fresh client for phone login — this is critical when the user
+      // previously attempted QR login (which leaves the client in a different auth state).
+      await initClient(configApiId, configApiHash, "", true);
       const client = getClient();
 
       // Retry loop handling Telegram DC migration or AUTH_RESTART
@@ -454,13 +465,23 @@ export default function AuthPage() {
           );
           break;
         } catch (err: any) {
-          if (err.errorMessage === "AUTH_RESTART" && attempt < 2) {
-            await new Promise((r) => setTimeout(r, 600));
+          const errMsg = err?.errorMessage || err?.message || "";
+          if ((errMsg.includes("AUTH_RESTART") || errMsg.includes("CONNECTION_NOT_INITED")) && attempt < 2) {
+            console.warn(`SendCode attempt ${attempt + 1} failed (${errMsg}), retrying...`);
+            await new Promise((r) => setTimeout(r, 800));
             continue;
+          }
+          if (errMsg.includes("PHONE_MIGRATE") || errMsg.includes("NETWORK_MIGRATE") || errMsg.includes("USER_MIGRATE")) {
+            // Extract DC number and let the client handle the migration
+            console.warn("DC migration required:", errMsg);
+            await new Promise((r) => setTimeout(r, 500));
+            if (attempt < 2) continue;
           }
           throw err;
         }
       }
+
+      if (!result) throw new Error("Failed to send code after retries. Please try again.");
 
       const typeClass = result?.type?.className || "";
       let detectedDelivery: DeliveryType = "unknown";
@@ -535,6 +556,8 @@ export default function AuthPage() {
     setError(null);
 
     try {
+      // Ensure client is ready (it may have been reset after QR attempt)
+      await initClient(configApiId, configApiHash);
       const client = getClient();
       const formattedPhone = sanitizePhone(phone);
 
@@ -599,7 +622,8 @@ export default function AuthPage() {
         );
         await completeAuthentication(client);
       } catch (err: any) {
-        if (err.message?.includes("SESSION_PASSWORD_NEEDED")) {
+        const errMsg = err?.errorMessage || err?.message || "";
+        if (errMsg.includes("SESSION_PASSWORD_NEEDED")) {
           setStep("password");
         } else {
           throw err;
