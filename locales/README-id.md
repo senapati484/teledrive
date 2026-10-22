@@ -17,7 +17,7 @@ Tanpa biaya server. Tanpa biaya langganan bulanan. Enkripsi MTProto langsung ke 
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-FFC131.svg?style=flat-square&logo=tauri&logoColor=black)](https://tauri.app/)
 [![React 19](https://img.shields.io/badge/React-19-61dafb.svg?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
 
-[**Situs Web**](https://teledrive.space) • [**Unduhan**](#-unduhan) • [**Demo Video**](#-panduan-video--demo) • [**Laporkan Bug**](https://github.com/senapati484/teledrive/issues/new) • [**Minta Fitur Baru**](https://github.com/senapati484/teledrive/issues/new)
+[**Situs Web**](https://teledrive.space) • [**Unduhan**](#-unduhan) • [**Demo Video**](#-panduan-video--demo) • [**Laporkan Bug**](https://github.com/senapati484/teledrive/issues/new/choose) • [**Minta Fitur Baru**](https://github.com/senapati484/teledrive/issues/new/choose)
 
 </div>
 
@@ -105,6 +105,14 @@ Versi terbaru: **v0.1.2** · Berkas biner native siap pakai untuk semua sistem o
 
 ---
 
+## 🧪 Beta Testers Wanted!
+
+We are looking for beta testers to help test upcoming releases, performance enhancements, and new features:
+
+> 🗳️ **Community Poll:**  
+> **👉 [Want to beta test the next version of TeleDrive? 🧪](https://github.com/senapati484/teledrive/discussions/35)**  
+> Vote in our community poll, share your feedback, and get early access to pre-release builds!
+
 ## 🚀 Memulai
 
 ### 1. Dapatkan Kredensial API Telegram
@@ -113,31 +121,8 @@ Versi terbaru: **v0.1.2** · Berkas biner native siap pakai untuk semua sistem o
 2. Buka **API development tools** dan buat aplikasi baru (contoh: `TeleDrive`).
 3. Salin `api_id` dan `api_hash` Anda lalu masukkan saat membuka TeleDrive untuk pertama kalinya.
 
-### 2. Jalankan dari Kode Sumber
 
-**Prasyarat:**
-- [Rust & Cargo](https://rustup.rs/) (1.78+)
-- [Node.js](https://nodejs.org/) (20.19+ atau 22.12+)
-
-```bash
-# Klon repositori
-git clone https://github.com/senapati484/teledrive.git
-cd teledrive
-
-# Pasang dependensi
-npm install
-
-# Jalankan aplikasi desktop dalam mode pengembangan
-npm run tauri dev
-```
-
-### 3. Bangun Berkas Biner Rilis
-
-```bash
-npm run tauri build
-```
-Paket installer yang dihasilkan (`.dmg`, `.exe` / `.msi`, `.deb` / `.AppImage`) akan tersedia di dalam folder `src-tauri/target/release/bundle/`.
-
+> 💡 *Developers interested in compiling from source or contributing code should refer to our [**Contributing Guide**](../CONTRIBUTING.md).*
 ---
 
 ## ⌨️ Pintasan Papan Ketik
@@ -158,6 +143,7 @@ Paket installer yang dihasilkan (`.dmg`, `.exe` / `.msi`, `.deb` / `.AppImage`) 
 
 Kami menyambut baik pelaporan bug, ide fitur baru, dan Pull Request!
 
+- 🧪 **Beta Testing**: [Want to beta test the next version of TeleDrive? 🧪](https://github.com/senapati484/teledrive/discussions/35) — Vote in the community poll!
 1. Fork repositori ini dan buat branch Anda: `git checkout -b feat/fitur-saya`
 2. Jalankan linter: `npm run lint` dan `cargo fmt`
 3. Buat pesan commit yang jelas (contoh: `feat(ui): ...`)

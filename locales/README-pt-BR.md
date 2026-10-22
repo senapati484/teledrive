@@ -17,7 +17,7 @@ Zero custos com servidores. Zero assinaturas. Criptografia MTProto direta para o
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-FFC131.svg?style=flat-square&logo=tauri&logoColor=black)](https://tauri.app/)
 [![React 19](https://img.shields.io/badge/React-19-61dafb.svg?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
 
-[**Site Oficial**](https://teledrive.space) • [**Downloads**](#-downloads) • [**Vídeo Demonstrativo**](#-vídeo-demonstrativo) • [**Reportar um Erro**](https://github.com/senapati484/teledrive/issues/new) • [**Sugerir Funcionalidade**](https://github.com/senapati484/teledrive/issues/new)
+[**Site Oficial**](https://teledrive.space) • [**Downloads**](#-downloads) • [**Beta Testing Poll 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**Vídeo Demonstrativo**](#-vídeo-demonstrativo) • [**Reportar um Erro**](https://github.com/senapati484/teledrive/issues/new/choose) • [**Sugerir Funcionalidade**](https://github.com/senapati484/teledrive/issues/new/choose)
 
 </div>
 
@@ -105,6 +105,14 @@ Versão mais recente: **v0.1.2** · Instaladores nativos pré-compilados para os
 
 ---
 
+## 🧪 Beta Testers Wanted!
+
+We are looking for beta testers to help test upcoming releases, performance enhancements, and new features:
+
+> 🗳️ **Community Poll:**  
+> **👉 [Want to beta test the next version of TeleDrive? 🧪](https://github.com/senapati484/teledrive/discussions/35)**  
+> Vote in our community poll, share your feedback, and get early access to pre-release builds!
+
 ## 🚀 Como Começar
 
 ### 1. Obter Credenciais da API do Telegram
@@ -113,31 +121,8 @@ Versão mais recente: **v0.1.2** · Instaladores nativos pré-compilados para os
 2. Abra **API development tools** e crie um aplicativo (ex: `TeleDrive`).
 3. Copie o seu `api_id` e `api_hash` e insira-os ao iniciar o TeleDrive pela primeira vez.
 
-### 2. Executar a partir do Código-Fonte
 
-**Pré-requisitos:**
-- [Rust & Cargo](https://rustup.rs/) (1.78+)
-- [Node.js](https://nodejs.org/) (20.19+ ou 22.12+)
-
-```bash
-# Clonar o repositório
-git clone https://github.com/senapati484/teledrive.git
-cd teledrive
-
-# Instalar dependências
-npm install
-
-# Iniciar o aplicativo desktop em modo de desenvolvimento
-npm run tauri dev
-```
-
-### 3. Compilar os Binários de Produção
-
-```bash
-npm run tauri build
-```
-Os instaladores nativos compilados (`.dmg`, `.exe` / `.msi`, `.deb` / `.AppImage`) serão gerados em `src-tauri/target/release/bundle/`.
-
+> 💡 *Developers interested in compiling from source or contributing code should refer to our [**Contributing Guide**](../CONTRIBUTING.md).*
 ---
 
 ## ⌨️ Atalhos de Teclado
@@ -158,6 +143,7 @@ Os instaladores nativos compilados (`.dmg`, `.exe` / `.msi`, `.deb` / `.AppImage
 
 Contribuições, sugestões e correções são muito bem-vindas!
 
+- 🧪 **Beta Testing**: [Want to beta test the next version of TeleDrive? 🧪](https://github.com/senapati484/teledrive/discussions/35) — Vote in the community poll!
 1. Faça um Fork do repositório e crie uma branch: `git checkout -b feat/minha-feature`
 2. Execute os linters: `npm run lint` e `cargo fmt`
 3. Faça o commit com mensagens semânticas (ex: `feat(ui): ...`)

@@ -17,7 +17,7 @@
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-FFC131.svg?style=flat-square&logo=tauri&logoColor=black)](https://tauri.app/)
 [![React 19](https://img.shields.io/badge/React-19-61dafb.svg?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
 
-[**官方网站**](https://teledrive.space) • [**安装包下载**](#-下载) • [**视频演示**](#-视频演示与讲解) • [**提交问题**](https://github.com/senapati484/teledrive/issues/new) • [**建议新功能**](https://github.com/senapati484/teledrive/issues/new)
+[**官方网站**](https://teledrive.space) • [**安装包下载**](#-下载) • [**视频演示**](#-视频演示与讲解) • [**提交问题**](https://github.com/senapati484/teledrive/issues/new/choose) • [**建议新功能**](https://github.com/senapati484/teledrive/issues/new/choose)
 
 </div>
 
@@ -105,6 +105,14 @@ Telegram 在私人频道中提供了几乎无限的免费云存储空间，但�
 
 ---
 
+## 🧪 Beta Testers Wanted!
+
+We are looking for beta testers to help test upcoming releases, performance enhancements, and new features:
+
+> 🗳️ **Community Poll:**  
+> **👉 [Want to beta test the next version of TeleDrive? 🧪](https://github.com/senapati484/teledrive/discussions/35)**  
+> Vote in our community poll, share your feedback, and get early access to pre-release builds!
+
 ## 🚀 快速上手
 
 ### 1. 获取 Telegram API 凭据
@@ -113,31 +121,8 @@ Telegram 在私人频道中提供了几乎无限的免费云存储空间，但�
 2. 进入 **API development tools**，新建一个应用（例如名称填写 `TeleDrive`）。
 3. 复制生成的 `api_id` 和 `api_hash`，在首次启动 TeleDrive 时填入即可。
 
-### 2. 源码本地运行
 
-**开发环境准备：**
-- [Rust & Cargo](https://rustup.rs/) (1.78+)
-- [Node.js](https://nodejs.org/) (20.19+ 或 22.12+)
-
-```bash
-# 克隆仓库
-git clone https://github.com/senapati484/teledrive.git
-cd teledrive
-
-# 安装依赖
-npm install
-
-# 以开发模式启动桌面客户端
-npm run tauri dev
-```
-
-### 3. 构建发布安装包
-
-```bash
-npm run tauri build
-```
-编译生成的本地系统安装包 (`.dmg`, `.exe` / `.msi`, `.deb` / `.AppImage`) 将位于 `src-tauri/target/release/bundle/` 目录下。
-
+> 💡 *Developers interested in compiling from source or contributing code should refer to our [**Contributing Guide**](../CONTRIBUTING.md).*
 ---
 
 ## ⌨️ 常用快捷键
@@ -158,6 +143,7 @@ npm run tauri build
 
 欢迎提交 Issue、功能建议或代码 Pull Request！
 
+- 🧪 **Beta Testing**: [Want to beta test the next version of TeleDrive? 🧪](https://github.com/senapati484/teledrive/discussions/35) — Vote in the community poll!
 1. Fork 本仓库并新建分支：`git checkout -b feat/my-feature`
 2. 运行代码检查：`npm run lint` 和 `cargo fmt`
 3. 提交语义化 commit 信息（如 `feat(ui): ...`）
