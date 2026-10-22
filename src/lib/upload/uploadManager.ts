@@ -1,4 +1,19 @@
-import { getSecret, VAULT_KEY_CHANNEL_ID, channelIdKey } from "../secure/vault";
+import { invoke } from "@tauri-apps/api/core";
+import { toast } from "sonner";
+import i18n from "@/i18n";
+
+import { useAuthStore } from "../../stores/authStore";
+import { useFileStore } from "../../stores/fileStore";
+import { useSupportStore } from "../../stores/supportStore";
+import { logEvent } from "../events";
+import { channelIdKey, getSecret, VAULT_KEY_CHANNEL_ID } from "../secure/vault";
+import { isJunkFile } from "../storage/fileSanitizer";
+import { enqueueSave } from "../storage/indexQueue";
+import { loadIndex, reconstructMissingFolders } from "../storage/metadataStore";
+import { getClient } from "../telegram/client";
+import { uploadFileToTelegram } from "../telegram/uploader";
+import { TeleFile, UploadItem } from "../types";
+import { normalizeFolderPath } from "../utils";
 
 // ---------------------------------------------------------------------------
 // MIME type inference from file extension
@@ -65,18 +80,6 @@ function getMimeFromExtension(fileName: string): string {
   const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
   return EXTENSION_MIME_MAP[ext] ?? "application/octet-stream";
 }
-import { uploadFileToTelegram } from "../telegram/uploader";
-import { useFileStore } from "../../stores/fileStore";
-import { useAuthStore } from "../../stores/authStore";
-import { TeleFile, UploadItem } from "../types";
-import { toast } from "sonner";
-import { invoke } from "@tauri-apps/api/core";
-import { enqueueSave } from "../storage/indexQueue";
-import { getClient } from "../telegram/client";
-import { logEvent } from "../events";
-import { isJunkFile } from "../storage/fileSanitizer";
-import { useSupportStore } from "../../stores/supportStore";
-import i18n from "@/i18n";
 
 /**
  * Wait until `bootstrapComplete=true` on the file store, capped at `timeoutMs`.
@@ -97,6 +100,55 @@ async function waitForBootstrap(timeoutMs: number = 2000): Promise<boolean> {
   return useFileStore.getState().bootstrapComplete || useFileStore.getState().files.length > 0;
 }
 
+let uploadCommitChain = Promise.resolve();
+
+/**
+ * Serializes the in-memory store commit and index persistence across parallel uploads.
+ * Prevents race conditions where concurrent uploads finish around the same millisecond
+ * and overwrite each other's optimistic state array.
+ */
+async function commitUploadedFileToStore(channelId: string, newFile: TeleFile): Promise<TeleFile[]> {
+  return new Promise<TeleFile[]>((resolve, reject) => {
+    uploadCommitChain = uploadCommitChain
+      .catch(() => {})
+      .then(async () => {
+        try {
+          if (!useFileStore.getState().bootstrapComplete && useFileStore.getState().files.length === 0) {
+            await waitForBootstrap(2000);
+          }
+
+          let existingFiles = useFileStore.getState().files;
+          if (existingFiles.length === 0) {
+            try {
+              existingFiles = await loadIndex(channelId);
+            } catch (err) {
+              console.warn("[uploadManager] Direct loadIndex fallback error:", err);
+            }
+          }
+
+          // Build optimistic state, avoiding duplicates by id and messageId
+          const baseFiles = existingFiles.filter(
+            (f) =>
+              f.id !== newFile.id &&
+              (!f.messageId || !newFile.messageId || Number(f.messageId) !== Number(newFile.messageId))
+          );
+          const rawFiles = [...baseFiles, newFile];
+
+          // Reconstruct parent virtual folders dynamically for any user folder path so they exist in the file tree
+          const { healedFiles } = reconstructMissingFolders(rawFiles, channelId);
+
+          useFileStore.getState().setFiles(healedFiles);
+          useFileStore.getState().setBootstrapComplete(true);
+
+          await enqueueSave(channelId, healedFiles);
+          resolve(healedFiles);
+        } catch (err) {
+          reject(err);
+        }
+      });
+  });
+}
+
 let isProcessing = false;
 
 /**
@@ -109,7 +161,7 @@ export async function processQueue(): Promise<void> {
   isProcessing = true;
 
   try {
-    const { uploadQueue, updateQueueItem, setFiles } = useFileStore.getState();
+    const { uploadQueue, updateQueueItem } = useFileStore.getState();
 
     const pendingItems = uploadQueue.filter((item) => item.status === "pending");
     const uploadingItems = uploadQueue.filter((item) => item.status === "uploading");
@@ -150,6 +202,8 @@ export async function processQueue(): Promise<void> {
       return;
     }
 
+    const activeChannelId: string = channelId;
+
     // Determine how many parallel uploads we can start
     const openSlots = 3 - uploadingItems.length;
     const itemsToStart = pendingItems.slice(0, openSlots);
@@ -168,7 +222,7 @@ export async function processQueue(): Promise<void> {
     // Start each upload process asynchronously
     for (const item of itemsToStart) {
       // Run the upload task
-      (async () => {
+      void (async () => {
         try {
           let fileSource: string | File;
 
@@ -183,7 +237,7 @@ export async function processQueue(): Promise<void> {
             throw new Error("No valid file reference or path found.");
           }
 
-          const destinationFolder = item.folderPath || "/";
+          const destinationFolder = normalizeFolderPath(item.folderPath);
 
           // Ensure Telegram client is connected before starting the upload
           const client = getClient();
@@ -206,7 +260,7 @@ export async function processQueue(): Promise<void> {
           const speedSamples: Array<[number, number]> = [];
 
           const message = await uploadFileToTelegram(
-            channelId,
+            activeChannelId,
             item.name,
             item.size,
             fileSource,
@@ -266,41 +320,20 @@ export async function processQueue(): Promise<void> {
             mime: mimeType,
             folderPath: destinationFolder,
             messageId: message.id,
-            channelId,
+            channelId: activeChannelId,
             uploadedAt: Date.now(),
             starred: false,
             trashed: false,
           };
 
-          // --- Phase 2: Save metadata index to Telegram via the shared IndexQueue ---
-          // Ensure we don't clobber state if bootstrap is starting up cold with 0 files
-          if (!useFileStore.getState().bootstrapComplete && useFileStore.getState().files.length === 0) {
-            await waitForBootstrap(2000);
-          }
-
-          let existingFiles = useFileStore.getState().files;
-          if (existingFiles.length === 0) {
-            try {
-              const { loadIndex } = await import("../storage/metadataStore");
-              existingFiles = await loadIndex(channelId);
-            } catch (err) {
-              console.warn("[uploadManager] Direct loadIndex fallback error:", err);
-            }
-          }
-
-          const optimisticFiles = [
-            ...existingFiles.filter((f) => f.id !== newFile.id),
-            newFile,
-          ];
-          setFiles(optimisticFiles);
-          useFileStore.getState().setBootstrapComplete(true);
-
-          updateQueueItem(item.id, { status: "done", progress: 100 });
-          useSupportStore.getState().incrementUploadCount();
-          toast.success(i18n.t("messages:upload.success", { name: item.name }));
-
+          // --- Phase 2: Save metadata index to Telegram via serialized commit ---
           try {
-            await enqueueSave(channelId, optimisticFiles);
+            const optimisticFiles = await commitUploadedFileToStore(activeChannelId, newFile);
+
+            updateQueueItem(item.id, { status: "done", progress: 100 });
+            useSupportStore.getState().incrementUploadCount();
+            toast.success(i18n.t("messages:upload.success", { name: item.name }));
+
             await invoke("log_vault_state", {
               state: `UPLOAD_INDEX_OK name=${item.name} files=${optimisticFiles.length}`,
             }).catch(() => {});
@@ -346,7 +379,7 @@ export async function processQueue(): Promise<void> {
           toast.error(i18n.t("messages:upload.failed", { name: item.name, message: err.message || i18n.t("messages:common.unknownError") }));
         } finally {
           // Re-trigger processQueue to pull the next pending items
-          processQueue();
+          void processQueue();
         }
       })();
     }
@@ -373,10 +406,11 @@ export function addFilesToUploadQueue(
   files: (File | { name: string; size: number; path: string; type: string })[]
 ) {
   const { addToQueue, currentFolder } = useFileStore.getState();
+  const normalizedCurrentFolder = normalizeFolderPath(currentFolder);
   let addedCount = 0;
 
   files.forEach((file) => {
-    if (isJunkFile({ name: file.name, size: file.size, folderPath: currentFolder })) {
+    if (isJunkFile({ name: file.name, size: file.size, folderPath: normalizedCurrentFolder })) {
       return;
     }
 
@@ -394,7 +428,7 @@ export function addFilesToUploadQueue(
       progress: 0,
       status: "pending",
       file: file,
-      folderPath: currentFolder,
+      folderPath: normalizedCurrentFolder,
     };
     addToQueue(uploadItem);
     addedCount++;
@@ -402,6 +436,8 @@ export function addFilesToUploadQueue(
 
   // Trigger processor shortly after if we actually added items
   if (addedCount > 0) {
-    setTimeout(() => processQueue(), 50);
+    setTimeout(() => {
+      void processQueue();
+    }, 50);
   }
 }

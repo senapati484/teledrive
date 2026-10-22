@@ -263,7 +263,7 @@ export function useFileActions() {
         name: trimmed,
         size: 0,
         mime: "inode/directory",
-        folderPath: currentFolder,
+        folderPath: targetParent,
         messageId: 0,
         channelId,
         uploadedAt: Date.now(),

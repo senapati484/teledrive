@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { TeleFile, UploadItem } from "../lib/types";
 import { filterJunkFiles } from "../lib/storage/fileSanitizer";
+import { normalizeFolderPath } from "../lib/utils";
 
 export type IndexQueueState =
   | "idle"
@@ -89,10 +90,16 @@ interface FileState {
 }
 
 const getInitialFiles = (): TeleFile[] => {
+  if (typeof localStorage === "undefined") return [];
   try {
     const cached = localStorage.getItem("teledrive_cached_files");
     if (!cached) return [];
-    return filterJunkFiles(JSON.parse(cached));
+    const parsed = JSON.parse(cached);
+    if (!Array.isArray(parsed)) return [];
+    return filterJunkFiles(parsed).map((f) => ({
+      ...f,
+      folderPath: normalizeFolderPath(f.folderPath),
+    }));
   } catch (err) {
     console.warn("[fileStore] Failed to load cached files from localStorage:", err);
     return [];
@@ -101,6 +108,7 @@ const getInitialFiles = (): TeleFile[] => {
 
 let cacheTimeout: ReturnType<typeof setTimeout> | null = null;
 const debouncedCacheFiles = (files: TeleFile[]) => {
+  if (typeof localStorage === "undefined") return;
   if (cacheTimeout) clearTimeout(cacheTimeout);
   cacheTimeout = setTimeout(() => {
     try {
@@ -137,13 +145,20 @@ export const useFileStore = create<FileState>((set, get) => ({
   lastRemoteSyncAt: null,
   lastBackupAt: null,
   setFiles: (rawFiles) => {
-    const files = filterJunkFiles(rawFiles);
+    const files = filterJunkFiles(rawFiles).map((f) => ({
+      ...f,
+      folderPath: normalizeFolderPath(f.folderPath),
+    }));
     debouncedCacheFiles(files);
     set({ files });
   },
   setSyncing: (isSyncing) => set({ isSyncing }),
   setFolder: (currentFolder) =>
-    set({ currentFolder, selectedIds: [], selectedIdsSet: new Set() }),
+    set({
+      currentFolder: normalizeFolderPath(currentFolder),
+      selectedIds: [],
+      selectedIdsSet: new Set(),
+    }),
   toggleSelect: (id) =>
     set((state) => {
       const next = new Set(state.selectedIdsSet);
@@ -216,15 +231,17 @@ export const useFileStore = create<FileState>((set, get) => ({
   setRemoteDelta: async (remoteFiles: TeleFile[]) => {
     const cleanRemote = filterJunkFiles(remoteFiles);
     if (cleanRemote.length === 0) return;
-    const { dedupeByMessageId, collapseDuplicateFolders } = await import(
+    const { dedupeByMessageId, collapseDuplicateFolders, reconstructMissingFolders } = await import(
       "../lib/storage/metadataStore"
     );
     set((state) => {
       const merged = filterJunkFiles(collapseDuplicateFolders(dedupeByMessageId([...state.files, ...cleanRemote])));
-      if (merged.length === state.files.length) return state;
-      debouncedCacheFiles(merged);
+      const channelId = state.files[0]?.channelId || remoteFiles[0]?.channelId || "";
+      const { healedFiles } = reconstructMissingFolders(merged, channelId);
+      if (healedFiles.length === state.files.length) return state;
+      debouncedCacheFiles(healedFiles);
       return {
-        files: merged,
+        files: healedFiles,
         lastRemoteSyncAt: Date.now(),
       };
     });

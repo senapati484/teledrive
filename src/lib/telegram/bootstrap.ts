@@ -18,6 +18,7 @@ import {
   loadManifest,
   manifestEntryToTeleFile,
 } from "../backup/manifest";
+import { normalizeFolderPath } from "../utils";
 import i18n from "@/i18n";
 
 /**
@@ -141,10 +142,12 @@ async function bootstrapTeleDriveInner(
     // is updated immediately and the Backups view can render before
     // bootstrap completes. The helper does its own setFiles internally.
     const merged = await mergeBackupManifestSync(channelId, files, setFiles);
-    // Persist to Telegram after the merge. fireAndForgetSaveIndex
-    // swallows errors and never throws into the bootstrap flow — a
-    // pending enqueueSave (FLOOD_WAIT) cannot block us here.
-    fireAndForgetSaveIndex(channelId, merged);
+    // Persist to Telegram after the merge ONLY if new entries were actually merged.
+    // If no entries were added, we do not fire a premature save — orphan recovery right below
+    // will merge any discovered uploads and persist a clean, comprehensive index.
+    if (merged.length > files.length) {
+      fireAndForgetSaveIndex(channelId, merged);
+    }
   } catch (manifestErr) {
     console.warn("[bootstrap] manifest merge failed (continuing):", manifestErr);
   }
@@ -181,16 +184,33 @@ async function bootstrapTeleDriveInner(
     state: `BOOTSTRAP: Starting orphan scan for channelId=${channelId}`,
   }).catch(() => {});
   try {
-    const recentMessages = await withTimeout(
-      client.getMessages(channelId, { limit: 1000 }),
-      12000,
-      "client.getMessages(orphan scan)"
-    );
+    let recentMessages: any[] = [];
+    try {
+      recentMessages = await withTimeout(
+        client.getMessages(channelId, { limit: 300 }),
+        10000,
+        "client.getMessages(orphan scan)"
+      );
+    } catch (fetchErr: any) {
+      console.warn("[bootstrap] Standard orphan scan timed out, attempting fast fallback:", fetchErr);
+      try {
+        recentMessages = await withTimeout(
+          client.getMessages(channelId, { limit: 100 }),
+          5000,
+          "client.getMessages(orphan fallback)"
+        );
+      } catch (_) {
+        recentMessages = [];
+      }
+    }
 
-    // Read current files and cursor from store
+    // Read current files from store
     const currentFiles = useFileStore.getState().files;
-    const lastIndexMsgId = useFileStore.getState().lastIndexMsgId;
-    const indexedMsgIds = new Set(currentFiles.map((f) => Number(f.messageId)));
+    const indexedMsgIds = new Set(
+      currentFiles
+        .map((f) => Number(f.messageId))
+        .filter((id) => Number.isFinite(id) && id > 0)
+    );
     const orphans: TeleFile[] = [];
 
     for (const msg of recentMessages) {
@@ -201,13 +221,6 @@ async function bootstrapTeleDriveInner(
       const msgId = Number(msg.id);
       // Skip if already in the index
       if (indexedMsgIds.has(msgId)) continue;
-
-      // If we already have a loaded index with a cursor, only recover messages
-      // that were posted AFTER the last index was saved. Any message with msgId <= lastIndexMsgId
-      // was already present when the index was saved — if it's not in the index, it was deleted!
-      if (lastIndexMsgId > 0 && currentFiles.length > 0 && msgId <= lastIndexMsgId) {
-        continue;
-      }
 
       // Only care about document media (uploaded files)
       const media = (msg as any).media;
@@ -227,7 +240,7 @@ async function bootstrapTeleDriveInner(
         const jsonStr = captionText.substring("teledrive_file:".length);
         const meta = JSON.parse(jsonStr);
         if (meta && typeof meta.folder === "string") {
-          folderPath = meta.folder;
+          folderPath = normalizeFolderPath(meta.folder);
         } else {
           continue;
         }
