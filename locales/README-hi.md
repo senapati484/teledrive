@@ -115,14 +115,77 @@ We are looking for beta testers to help test upcoming releases, performance enha
 
 ## 🚀 आरंभ करना
 
-### 1. टेलीग्राम API क्रेडेंशियल प्राप्त करें
+### 🛠️ डेवलपर्स और योगदानकर्ताओं के लिए त्वरित शुरुआत
 
-1. अपने फ़ोन नंबर के साथ [my.telegram.org](https://my.telegram.org) पर साइन इन करें।
-2. **API development tools** खोलें और एक ऐप बनाएं (जैसे `TeleDrive`)।
-3. अपना `api_id` और `api_hash` कॉपी करें और TeleDrive को पहली बार शुरू करते समय दर्ज करें।
+TeleDrive पूरी तरह से ओपन-सोर्स है और स्थानीय रूप से चलाना बेहद आसान है। इसमें पहले से अंतर्निहित विकास क्रेडेंशियल शामिल हैं, जिससे आप बिना किसी कस्टम टेलीग्राम डेवलपर ऐप बनाए 2 मिनट के भीतर योगदान शुरू कर सकते हैं।
 
+#### 1. रिपॉजिटरी क्लोन करें
+```bash
+git clone https://github.com/senapati484/teledrive.git
+cd teledrive
+```
 
-> 💡 *Developers interested in compiling from source or contributing code should refer to our [**Contributing Guide**](../CONTRIBUTING.md).*
+#### 2. निर्भरताएँ (Dependencies) इंस्टॉल करें
+```bash
+npm install
+```
+> ℹ️ *`postinstall` हुक स्वचालित रूप से GramJS MTProto संगतता पैच (`scripts/patch-telegram.cjs`) लागू करता है जो Tauri और ब्राउज़र के लिए आवश्यक हैं।*
+
+#### 3. डेवलपमेंट सर्वर शुरू करें
+```bash
+# Tauri v2 हॉट-रीलोडिंग के साथ डेस्कटॉप एप्लिकेशन चलाएं:
+npm run tauri dev
+
+# या ब्राउज़र में वेब पूर्वावलोकन चलाएं:
+npm run dev
+```
+
+---
+
+### 📋 पूर्वापेक्षाएँ (Prerequisites)
+
+- **Node.js**: `>= 18.0.0` (`v20+` LTS अनुशंसित)
+- **Rust**: नवीनतम स्थिर संस्करण (`rustup default stable`)
+- **सिस्टम टूलचेन**:
+  - **macOS**: `xcode-select --install`
+  - **Linux (Debian/Ubuntu)**: `sudo apt update && sudo apt install -y build-essential libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf`
+  - **Linux (Fedora/RHEL)**: `sudo dnf install -y webkit2gtk4.1-devel openssl-devel libappindicator-gtk3-devel librsvg2-devel`
+  - **Windows**: Microsoft Visual Studio C++ Build Tools & WebView2
+
+---
+
+### 🧪 परीक्षण एवं सत्यापन
+
+```bash
+# Vitest टेस्ट सुइट चलाएं
+npm test
+
+# TypeScript प्रकार और Vite बंडल सत्यापित करें
+npm run build
+
+# Rust बैकएंड संकलन सत्यापित करें
+cargo check --manifest-path src-tauri/Cargo.toml
+```
+
+---
+
+### 🔑 टेलीग्राम API क्रेडेंशियल (वैकल्पिक)
+
+TeleDrive में स्थानीय परीक्षण के लिए डिफ़ॉल्ट क्रेडेंशियल पहले से मौजूद हैं। यदि आप अपने स्वयं के टेलीग्राम क्रेडेंशियल का उपयोग करना चाहते हैं:
+1. [**my.telegram.org**](https://my.telegram.org) पर साइन इन करें।
+2. **API development tools** पर जाएं और एक ऐप बनाएं (उदा. `TeleDrive-Dev`)।
+3. अपना `api_id` और `api_hash` कॉपी करें।
+4. इन्हें ऐप में **सेटिंग्स → API कॉन्फ़िगरेशन** में दर्ज करें या एक `.env` फ़ाइल बनाएं:
+   ```env
+   VITE_TELEGRAM_API_ID=your_api_id
+   VITE_TELEGRAM_API_HASH=your_api_hash
+   ```
+
+---
+
+### 📦 अंतिम उपयोगकर्ताओं के लिए प्री-कंपाइल इंस्टॉलर
+
+यदि आप स्रोत कोड को कंपाइल किए बिना केवल TeleDrive का उपयोग करना चाहते हैं, तो ऊपर दी गई [**डाउनलोड तालिका**](#-डाउनलोड) से अपने ऑपरेटिंग सिस्टम के लिए इंस्टॉलर डाउनलोड करें। योगदान दिशानिर्देशों के लिए हमारा [**Contributing Guide (CONTRIBUTING.md)**](../CONTRIBUTING.md) देखें।
 ---
 
 ## ⌨️ कीबोर्ड शॉर्टकट

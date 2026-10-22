@@ -115,14 +115,77 @@ We are looking for beta testers to help test upcoming releases, performance enha
 
 ## 🚀 快速上手
 
-### 1. 取得 Telegram API 憑證
+### 🛠️ 開發者與貢獻者極速起步
 
-1. 使用手機號碼登入 [my.telegram.org](https://my.telegram.org)。
-2. 進入 **API development tools**，新建一個應用程式（例如名稱填寫 `TeleDrive`）。
-3. 複製生成的 `api_id` 與 `api_hash`，在首次啟動 TeleDrive 時填入即可。
+TeleDrive 是 100% 開源專案，支援本機快速運行。專案已內建開發專用的 Telegram API 憑證，無需自行建立 Telegram 開發者應用程式，2 分鐘內即可開始貢獻程式碼。
 
+#### 1. 複製代碼庫
+```bash
+git clone https://github.com/senapati484/teledrive.git
+cd teledrive
+```
 
-> 💡 *Developers interested in compiling from source or contributing code should refer to our [**Contributing Guide**](../CONTRIBUTING.md).*
+#### 2. 安裝依賴套件
+```bash
+npm install
+```
+> ℹ️ *`postinstall` 鉤子會自動套用 Tauri 與瀏覽器環境所需的 GramJS MTProto 相容性修補檔（`scripts/patch-telegram.cjs`）。*
+
+#### 3. 啟動開發伺服器
+```bash
+# 啟動具備熱重載的 Tauri v2 跨平台桌面端應用程式：
+npm run tauri dev
+
+# 或在瀏覽器中預覽 Web 端：
+npm run dev
+```
+
+---
+
+### 📋 環境需求（Prerequisites）
+
+- **Node.js**：`>= 18.0.0`（推薦 `v20+` LTS）
+- **Rust**：最新穩定版（`rustup default stable`）
+- **系統編譯工具**：
+  - **macOS**：`xcode-select --install`
+  - **Linux (Debian/Ubuntu)**：`sudo apt update && sudo apt install -y build-essential libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf`
+  - **Linux (Fedora/RHEL)**：`sudo dnf install -y webkit2gtk4.1-devel openssl-devel libappindicator-gtk3-devel librsvg2-devel`
+  - **Windows**：Microsoft Visual Studio C++ 生成工具 & WebView2
+
+---
+
+### 🧪 自動化測試與校驗
+
+```bash
+# 執行 Vitest 測試套件
+npm test
+
+# 校驗 TypeScript 型別與 Vite 打包
+npm run build
+
+# 校驗 Rust 後端編譯
+cargo check --manifest-path src-tauri/Cargo.toml
+```
+
+---
+
+### 🔑 Telegram API 憑證設定（選填）
+
+TeleDrive 已內建開發憑證，開箱即用。若需使用您自己的 Telegram API 憑證進行測試：
+1. 使用手機號碼登入 [**my.telegram.org**](https://my.telegram.org)。
+2. 進入 **API development tools**，新建一個應用程式（例如名稱填寫 `TeleDrive-Dev`）。
+3. 複製產生的 `api_id` 與 `api_hash`。
+4. 在 TeleDrive 應用程式內 **設定 → API 設定** 中填入，或在專案根目錄建立 `.env` 檔案：
+   ```env
+   VITE_TELEGRAM_API_ID=your_api_id
+   VITE_TELEGRAM_API_HASH=your_api_hash
+   ```
+
+---
+
+### 📦 最終使用者預編譯安裝包
+
+如果您不需要從源碼編譯，只想直接安裝使用 TeleDrive，請從上方的 [**下載列表**](#-下載) 取得對應作業系統的安裝包。提交 PR 規範請查閱我們的 [**貢獻指南 (CONTRIBUTING.md)**](../CONTRIBUTING.md)。
 ---
 
 ## ⌨️ 常用快捷鍵

@@ -115,14 +115,77 @@ We are looking for beta testers to help test upcoming releases, performance enha
 
 ## 🚀 Memulai
 
-### 1. Dapatkan Kredensial API Telegram
+### 🛠️ Panduan Cepat untuk Pengembang & Kontributor
 
-1. Masuk ke [my.telegram.org](https://my.telegram.org) menggunakan nomor telepon Anda.
-2. Buka **API development tools** dan buat aplikasi baru (contoh: `TeleDrive`).
-3. Salin `api_id` dan `api_hash` Anda lalu masukkan saat membuka TeleDrive untuk pertama kalinya.
+TeleDrive adalah proyek open-source 100% dan sangat mudah dijalankan secara lokal. Kredensial pengembangan bawaan sudah disertakan sehingga Anda dapat mulai berkontribusi dalam waktu kurang dari 2 menit tanpa perlu membuat aplikasi pengembang Telegram kustom.
 
+#### 1. Kloning Repositori
+```bash
+git clone https://github.com/senapati484/teledrive.git
+cd teledrive
+```
 
-> 💡 *Developers interested in compiling from source or contributing code should refer to our [**Contributing Guide**](../CONTRIBUTING.md).*
+#### 2. Instal Dependensi
+```bash
+npm install
+```
+> ℹ️ *Hook `postinstall` secara otomatis menerapkan patch kompatibilitas GramJS MTProto (`scripts/patch-telegram.cjs`) yang dibutuhkan oleh Tauri dan browser.*
+
+#### 3. Jalankan Server Pengembangan
+```bash
+# Jalankan aplikasi desktop dengan hot-reloading Tauri v2:
+npm run tauri dev
+
+# Atau jalankan pratinjau web di browser:
+npm run dev
+```
+
+---
+
+### 📋 Prasyarat Sistem
+
+- **Node.js**: `>= 18.0.0` (`v20+` LTS disarankan)
+- **Rust**: Versi stabil terbaru (`rustup default stable`)
+- **Peralatan Kompilasi Sistem**:
+  - **macOS**: `xcode-select --install`
+  - **Linux (Debian/Ubuntu)**: `sudo apt update && sudo apt install -y build-essential libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf`
+  - **Linux (Fedora/RHEL)**: `sudo dnf install -y webkit2gtk4.1-devel openssl-devel libappindicator-gtk3-devel librsvg2-devel`
+  - **Windows**: Microsoft Visual Studio C++ Build Tools & WebView2
+
+---
+
+### 🧪 Pengujian & Verifikasi
+
+```bash
+# Jalankan rangkaian tes Vitest
+npm test
+
+# Verifikasi tipe TypeScript dan bundel Vite
+npm run build
+
+# Verifikasi kompilasi backend Rust
+cargo check --manifest-path src-tauri/Cargo.toml
+```
+
+---
+
+### 🔑 Kredensial API Telegram (Opsional)
+
+TeleDrive menyertakan kredensial default untuk pengujian lokal. Jika Anda ingin menggunakan kredensial API Telegram Anda sendiri:
+1. Masuk ke [**my.telegram.org**](https://my.telegram.org) dengan nomor telepon Anda.
+2. Buka **API development tools** dan buat aplikasi baru (contoh: `TeleDrive-Dev`).
+3. Salin `api_id` dan `api_hash`.
+4. Masukkan ke dalam TeleDrive di menu **Pengaturan → Konfigurasi API**, atau buat file `.env`:
+   ```env
+   VITE_TELEGRAM_API_ID=your_api_id
+   VITE_TELEGRAM_API_HASH=your_api_hash
+   ```
+
+---
+
+### 📦 Penginstal Siap Pakai untuk Pengguna Akhir
+
+Jika Anda hanya ingin menggunakan TeleDrive tanpa mengompilasi dari kode sumber, unduh paket penginstal yang sesuai untuk sistem operasi Anda dari [**tabel unduhan**](#-unduhan) di atas. Untuk pedoman kontribusi, lihat [**Contributing Guide (CONTRIBUTING.md)**](../CONTRIBUTING.md).
 ---
 
 ## ⌨️ Pintasan Papan Ketik

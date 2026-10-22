@@ -115,14 +115,77 @@ We are looking for beta testers to help test upcoming releases, performance enha
 
 ## 🚀 Erste Schritte
 
-### 1. Telegram API-Zugangsdaten anfordern
+### 🛠️ Schnellstart für Entwickler & Mitwirkende
 
-1. Melden Sie sich unter [my.telegram.org](https://my.telegram.org) mit Ihrer Handynummer an.
-2. Öffnen Sie **API development tools** und erstellen Sie eine App (z. B. `TeleDrive`).
-3. Kopieren Sie `api_id` und `api_hash` und geben Sie diese beim ersten Start von TeleDrive ein.
+TeleDrive ist 100% Open-Source und sofort einsatzbereit. Vorkonfigurierte Entwicklungs-Zugangsdaten sind bereits integriert, sodass Sie in unter 2 Minuten mitwirken können, ohne eine eigene Telegram-App erstellen zu müssen.
 
+#### 1. Repository klonen
+```bash
+git clone https://github.com/senapati484/teledrive.git
+cd teledrive
+```
 
-> 💡 *Developers interested in compiling from source or contributing code should refer to our [**Contributing Guide**](../CONTRIBUTING.md).*
+#### 2. Abhängigkeiten installieren
+```bash
+npm install
+```
+> ℹ️ *Der `postinstall`-Hook wendet automatisch die für Tauri und Webbrowser erforderlichen GramJS-MTProto-Kompatibilitätspatches (`scripts/patch-telegram.cjs`) an.*
+
+#### 3. Entwicklungsserver starten
+```bash
+# Desktop-Applikation mit Tauri v2 Hot-Reloading starten:
+npm run tauri dev
+
+# Oder Web-Vorschau im Browser ausführen:
+npm run dev
+```
+
+---
+
+### 📋 Systemvoraussetzungen
+
+- **Node.js**: `>= 18.0.0` (`v20+` LTS empfohlen)
+- **Rust**: Aktuelle stabile Version (`rustup default stable`)
+- **Build-Tools**:
+  - **macOS**: `xcode-select --install`
+  - **Linux (Debian/Ubuntu)**: `sudo apt update && sudo apt install -y build-essential libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf`
+  - **Linux (Fedora/RHEL)**: `sudo dnf install -y webkit2gtk4.1-devel openssl-devel libappindicator-gtk3-devel librsvg2-devel`
+  - **Windows**: Microsoft Visual Studio C++ Build Tools & WebView2
+
+---
+
+### 🧪 Tests & Verifizierung
+
+```bash
+# Vitest Testsuite ausführen
+npm test
+
+# TypeScript-Typen und Vite-Build prüfen
+npm run build
+
+# Rust Backend-Kompilierung prüfen
+cargo check --manifest-path src-tauri/Cargo.toml
+```
+
+---
+
+### 🔑 Telegram API-Zugangsdaten (Optional)
+
+TeleDrive enthält bereits eingebaute Zugangsdaten für die lokale Entwicklung. Wenn Sie Ihre eigenen Telegram-API-Daten verwenden möchten:
+1. Melden Sie sich unter [**my.telegram.org**](https://my.telegram.org) an.
+2. Erstellen Sie unter **API development tools** eine Anwendung (z. B. `TeleDrive-Dev`).
+3. Kopieren Sie `api_id` und `api_hash`.
+4. Tragen Sie diese in TeleDrive unter **Einstellungen → API-Konfiguration** ein oder erstellen Sie eine `.env`-Datei:
+   ```env
+   VITE_TELEGRAM_API_ID=your_api_id
+   VITE_TELEGRAM_API_HASH=your_api_hash
+   ```
+
+---
+
+### 📦 Fertige Installationsprogramme für Endbenutzer
+
+Wenn Sie TeleDrive als Endbenutzer verwenden möchten, laden Sie die Installationsdatei für Ihr Betriebssystem aus der obigen [**Download-Tabelle**](#-downloads) herunter. Richtlinien für Pull Requests finden Sie in unserem [**Contributing Guide (CONTRIBUTING.md)**](../CONTRIBUTING.md).
 ---
 
 ## ⌨️ Tastaturkürzel
