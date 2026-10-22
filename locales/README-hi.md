@@ -17,7 +17,7 @@
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-FFC131.svg?style=flat-square&logo=tauri&logoColor=black)](https://tauri.app/)
 [![React 19](https://img.shields.io/badge/React-19-61dafb.svg?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
 
-[**वेबसाइट**](https://teledrive.space) • [**डाउनलोड**](#-डाउनलोड) • [**वीडियो डेमो**](#-वीडियो-वॉकथ्रू-और-डेमो) • [**बग रिपोर्ट करें**](https://github.com/senapati484/teledrive/issues/new) • [**सुविधा का अनुरोध करें**](https://github.com/senapati484/teledrive/issues/new)
+[**वेबसाइट**](https://teledrive.space) • [**डाउनलोड**](#-डाउनलोड) • [**वीडियो डेमो**](#-वीडियो-वॉकथ्रू-और-डेमो) • [**बग रिपोर्ट करें**](https://github.com/senapati484/teledrive/issues/new/choose) • [**सुविधा का अनुरोध करें**](https://github.com/senapati484/teledrive/issues/new/choose)
 
 </div>
 
@@ -105,6 +105,14 @@
 
 ---
 
+## 🧪 Beta Testers Wanted!
+
+We are looking for beta testers to help test upcoming releases, performance enhancements, and new features:
+
+> 🗳️ **Community Poll:**  
+> **👉 [Want to beta test the next version of TeleDrive? 🧪](https://github.com/senapati484/teledrive/discussions/35)**  
+> Vote in our community poll, share your feedback, and get early access to pre-release builds!
+
 ## 🚀 आरंभ करना
 
 ### 1. टेलीग्राम API क्रेडेंशियल प्राप्त करें
@@ -113,31 +121,8 @@
 2. **API development tools** खोलें और एक ऐप बनाएं (जैसे `TeleDrive`)।
 3. अपना `api_id` और `api_hash` कॉपी करें और TeleDrive को पहली बार शुरू करते समय दर्ज करें।
 
-### 2. सोर्स कोड से चलाएं
 
-**आवश्यकताएं:**
-- [Rust & Cargo](https://rustup.rs/) (1.78+)
-- [Node.js](https://nodejs.org/) (20.19+ या 22.12+)
-
-```bash
-# रिपॉजिटरी क्लोन करें
-git clone https://github.com/senapati484/teledrive.git
-cd teledrive
-
-# निर्भरताएं इंस्टॉल करें
-npm install
-
-# डेवलपमेंट मोड में डेस्कटॉप ऐप शुरू करें
-npm run tauri dev
-```
-
-### 3. रिलीज़ बाइनरी बनाएं
-
-```bash
-npm run tauri build
-```
-संकलित इंस्टॉलर (`.dmg`, `.exe` / `.msi`, `.deb` / `.AppImage`) `src-tauri/target/release/bundle/` निर्देशिका में उत्पन्न होंगे।
-
+> 💡 *Developers interested in compiling from source or contributing code should refer to our [**Contributing Guide**](../CONTRIBUTING.md).*
 ---
 
 ## ⌨️ कीबोर्ड शॉर्टकट
@@ -158,6 +143,7 @@ npm run tauri build
 
 समस्याओं की रिपोर्ट करने, नई सुविधाओं के सुझाव देने और Pull Requests का स्वागत है!
 
+- 🧪 **Beta Testing**: [Want to beta test the next version of TeleDrive? 🧪](https://github.com/senapati484/teledrive/discussions/35) — Vote in the community poll!
 1. इस रेपो को Fork करें और अपनी शाखा बनाएं: `git checkout -b feat/my-feature`
 2. कोड लिंटिंग चलाएं: `npm run lint` और `cargo fmt`
 3. अर्थपूर्ण कमिट संदेश लिखें (उदा. `feat(ui): ...`)

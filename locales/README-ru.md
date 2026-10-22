@@ -17,7 +17,7 @@
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-FFC131.svg?style=flat-square&logo=tauri&logoColor=black)](https://tauri.app/)
 [![React 19](https://img.shields.io/badge/React-19-61dafb.svg?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
 
-[**Веб-сайт**](https://teledrive.space) • [**Скачать**](#-скачать) • [**Видео Демо**](#-видео-демонстрация) • [**Сообщить об ошибке**](https://github.com/senapati484/teledrive/issues/new) • [**Предложить функцию**](https://github.com/senapati484/teledrive/issues/new)
+[**Веб-сайт**](https://teledrive.space) • [**Скачать**](#-скачать) • [**Видео Демо**](#-видео-демонстрация) • [**Сообщить об ошибке**](https://github.com/senapati484/teledrive/issues/new/choose) • [**Предложить функцию**](https://github.com/senapati484/teledrive/issues/new/choose)
 
 </div>
 
@@ -105,6 +105,14 @@ Telegram предоставляет практически неограниче�
 
 ---
 
+## 🧪 Beta Testers Wanted!
+
+We are looking for beta testers to help test upcoming releases, performance enhancements, and new features:
+
+> 🗳️ **Community Poll:**  
+> **👉 [Want to beta test the next version of TeleDrive? 🧪](https://github.com/senapati484/teledrive/discussions/35)**  
+> Vote in our community poll, share your feedback, and get early access to pre-release builds!
+
 ## 🚀 Быстрый старт
 
 ### 1. Получение ключей Telegram API
@@ -113,31 +121,8 @@ Telegram предоставляет практически неограниче�
 2. Перейдите в раздел **API development tools** и создайте приложение (например, `TeleDrive`).
 3. Скопируйте `api_id` и `api_hash` и укажите их при первом запуске TeleDrive.
 
-### 2. Сборка и запуск из исходников
 
-**Требования:**
-- [Rust & Cargo](https://rustup.rs/) (1.78+)
-- [Node.js](https://nodejs.org/) (20.19+ или 22.12+)
-
-```bash
-# Клонировать репозиторий
-git clone https://github.com/senapati484/teledrive.git
-cd teledrive
-
-# Установить зависимости
-npm install
-
-# Запустить в режиме разработки
-npm run tauri dev
-```
-
-### 3. Сборка релизных пакетов
-
-```bash
-npm run tauri build
-```
-Готовые установщики (`.dmg`, `.exe` / `.msi`, `.deb` / `.AppImage`) будут скомпилированы в `src-tauri/target/release/bundle/`.
-
+> 💡 *Developers interested in compiling from source or contributing code should refer to our [**Contributing Guide**](../CONTRIBUTING.md).*
 ---
 
 ## ⌨️ Горячие клавиши
@@ -158,6 +143,7 @@ npm run tauri build
 
 Мы рады предложениям, сообщениям об ошибках и Pull Request'ам!
 
+- 🧪 **Beta Testing**: [Want to beta test the next version of TeleDrive? 🧪](https://github.com/senapati484/teledrive/discussions/35) — Vote in the community poll!
 1. Сделайте Fork репозитория и создайте ветку: `git checkout -b feat/my-feature`
 2. Проверьте код линтерами: `npm run lint` и `cargo fmt`
 3. Сделайте коммит с понятным описанием (например: `feat(ui): ...`)

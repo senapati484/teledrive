@@ -17,7 +17,7 @@
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-FFC131.svg?style=flat-square&logo=tauri&logoColor=black)](https://tauri.app/)
 [![React 19](https://img.shields.io/badge/React-19-61dafb.svg?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
 
-[**公式サイト**](https://teledrive.space) • [**ダウンロード**](#-ダウンロード) • [**デモ動画**](#-デモ動画) • [**バグ報告**](https://github.com/senapati484/teledrive/issues/new) • [**機能リクエスト**](https://github.com/senapati484/teledrive/issues/new)
+[**公式サイト**](https://teledrive.space) • [**ダウンロード**](#-ダウンロード) • [**デモ動画**](#-デモ動画) • [**バグ報告**](https://github.com/senapati484/teledrive/issues/new/choose) • [**機能リクエスト**](https://github.com/senapati484/teledrive/issues/new/choose)
 
 </div>
 
@@ -105,6 +105,14 @@ Telegram はプライベートチャンネルで実質無制限のクラウド�
 
 ---
 
+## 🧪 Beta Testers Wanted!
+
+We are looking for beta testers to help test upcoming releases, performance enhancements, and new features:
+
+> 🗳️ **Community Poll:**  
+> **👉 [Want to beta test the next version of TeleDrive? 🧪](https://github.com/senapati484/teledrive/discussions/35)**  
+> Vote in our community poll, share your feedback, and get early access to pre-release builds!
+
 ## 🚀 クイックスタート
 
 ### 1. Telegram API 認証情報の取得
@@ -113,31 +121,8 @@ Telegram はプライベートチャンネルで実質無制限のクラウド�
 2. **API development tools** を開き、アプリを新規作成します（例: `TeleDrive`）。
 3. 発行された `api_id` と `api_hash` をコピーし、TeleDrive 初回起動時に入力します。
 
-### 2. ソースコードから起動
 
-**前提条件:**
-- [Rust & Cargo](https://rustup.rs/) (1.78+)
-- [Node.js](https://nodejs.org/) (20.19+ または 22.12+)
-
-```bash
-# リポジトリのクローン
-git clone https://github.com/senapati484/teledrive.git
-cd teledrive
-
-# 依存パッケージのインストール
-npm install
-
-# 開発モードでデスクトップアプリを起動
-npm run tauri dev
-```
-
-### 3. リリースビルドの作成
-
-```bash
-npm run tauri build
-```
-各 OS 向けインストーラー (`.dmg`, `.exe` / `.msi`, `.deb` / `.AppImage`) が `src-tauri/target/release/bundle/` に出力されます。
-
+> 💡 *Developers interested in compiling from source or contributing code should refer to our [**Contributing Guide**](../CONTRIBUTING.md).*
 ---
 
 ## ⌨️ キーボードショートカット
@@ -158,6 +143,7 @@ npm run tauri build
 
 バグ報告、改善提案、Pull Request を大歓迎します！
 
+- 🧪 **Beta Testing**: [Want to beta test the next version of TeleDrive? 🧪](https://github.com/senapati484/teledrive/discussions/35) — Vote in the community poll!
 1. リポジトリをフォークしてブランチを作成: `git checkout -b feat/my-feature`
 2. リンターの実行: `npm run lint` および `cargo fmt`
 3. コミットを作成（例: `feat(ui): ...`）

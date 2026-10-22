@@ -17,7 +17,7 @@ Zero server costs. Zero subscriptions. Direct MTProto encryption straight to Tel
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-FFC131.svg?style=flat-square&logo=tauri&logoColor=black)](https://tauri.app/)
 [![React 19](https://img.shields.io/badge/React-19-61dafb.svg?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
 
-[**Website**](https://teledrive.space) • [**Downloads**](#-downloads) • [**Video Demo**](#-video-walkthrough--demo) • [**Report a Bug**](https://github.com/senapati484/teledrive/issues/new) • [**Request a Feature**](https://github.com/senapati484/teledrive/issues/new)
+[**Website**](https://teledrive.space) • [**Downloads**](#-downloads) • [**Beta Testing Poll 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**Video Demo**](#-video-walkthrough--demo) • [**Report a Bug**](https://github.com/senapati484/teledrive/issues/new/choose) • [**Request a Feature**](https://github.com/senapati484/teledrive/issues/new/choose)
 
 </div>
 
@@ -105,38 +105,26 @@ Latest release: **v0.1.2** · Pre-compiled native binaries for all major operati
 
 ---
 
+## 🧪 Beta Testers Wanted!
+
+We are looking for beta testers to help test upcoming releases, performance enhancements, and new features:
+
+> 🗳️ **Community Poll:**  
+> **👉 [Want to beta test the next version of TeleDrive? 🧪](https://github.com/senapati484/teledrive/discussions/35)**  
+> Vote in our community poll, share your feedback, and get early access to pre-release builds!
+
+---
+
 ## 🚀 Getting Started
 
-### 1. Obtain Telegram API Credentials
+1. **Install TeleDrive**: Download the pre-compiled installer for your operating system from the [**Downloads table**](#-downloads) above.
+2. **Obtain Telegram API Credentials**:
+   - Sign in to [my.telegram.org](https://my.telegram.org) with your phone number.
+   - Go to **API development tools** and create an application (e.g. `TeleDrive`).
+   - Copy your `api_id` and `api_hash`.
+3. **Launch & Connect**: Open TeleDrive, enter your credentials, sign in via phone number or QR code, and start uploading to your private Telegram cloud!
 
-1. Sign in to [my.telegram.org](https://my.telegram.org) with your phone number.
-2. Open **API development tools** and create an app (e.g. `TeleDrive`).
-3. Copy your `api_id` and `api_hash` and enter them upon first launching TeleDrive.
-
-### 2. Run from Source
-
-**Prerequisites:**
-- [Rust & Cargo](https://rustup.rs/) (1.78+)
-- [Node.js](https://nodejs.org/) (20.19+ or 22.12+)
-
-```bash
-# Clone the repository
-git clone https://github.com/senapati484/teledrive.git
-cd teledrive
-
-# Install dependencies
-npm install
-
-# Launch desktop app in development mode
-npm run tauri dev
-```
-
-### 3. Build Release Binaries
-
-```bash
-npm run tauri build
-```
-Compiled native installers (`.dmg`, `.exe` / `.msi`, `.deb` / `.AppImage`) will be generated under `src-tauri/target/release/bundle/`.
+> 💡 *Developers interested in compiling from source or contributing code should refer to our [**Contributing Guide**](CONTRIBUTING.md).*
 
 ---
 
@@ -156,12 +144,12 @@ Compiled native installers (`.dmg`, `.exe` / `.msi`, `.deb` / `.AppImage`) will 
 
 ## 🤝 Contributing
 
-We welcome issues, feedback, and pull requests!
+We welcome issues, feedback, ideas, and pull requests!
 
-1. Fork the repo and create your branch: `git checkout -b feat/my-feature`
-2. Run linters: `npm run lint` and `cargo fmt`
-3. Commit with semantic commit messages (e.g., `feat(ui): ...`)
-4. Open a Pull Request
+- 🧪 **Beta Testing**: [Want to beta test the next version of TeleDrive? 🧪](https://github.com/senapati484/teledrive/discussions/35) — Vote in the community poll!
+- 💬 **Discussions**: Join our [GitHub Discussions](https://github.com/senapati484/teledrive/discussions) to ask questions or suggest ideas.
+- 🛠️ **Development Guide**: Read [**CONTRIBUTING.md**](CONTRIBUTING.md) for local environment setup, architecture notes, and PR guidelines.
+- 🐛 **Report Issues**: Use our structured [Issue Forms](https://github.com/senapati484/teledrive/issues/new/choose).
 
 ---
 
