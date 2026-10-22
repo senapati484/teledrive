@@ -32,9 +32,9 @@ export default defineConfig(async () => ({
   ],
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, "./src"),
-      buffer: path.resolve(__dirname, "node_modules/buffer"),
-      "node:buffer": path.resolve(__dirname, "node_modules/buffer"),
+      "@": path.resolve(import.meta.dirname, "./src"),
+      buffer: path.resolve(import.meta.dirname, "node_modules/buffer"),
+      "node:buffer": path.resolve(import.meta.dirname, "node_modules/buffer"),
     },
   },
 

@@ -529,6 +529,91 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
     setZoom(z => Math.min(Math.max(z * factor, 0.25), 4));
   }, []);
 
+  // ── Touch gesture state (refs avoid stale closures across renders) ──────
+  const touchStateRef = useRef<{
+    mode: "none" | "pan" | "pinch";
+    lastX: number;
+    lastY: number;
+    lastDist: number;
+    lastPan: { x: number; y: number };
+    lastZoom: number;
+  }>({
+    mode: "none",
+    lastX: 0,
+    lastY: 0,
+    lastDist: 0,
+    lastPan: { x: 0, y: 0 },
+    lastZoom: 1,
+  });
+
+  const getTouchDist = (t: React.TouchList) =>
+    Math.hypot(
+      t[1].clientX - t[0].clientX,
+      t[1].clientY - t[0].clientY
+    );
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    e.preventDefault();
+    const ts = touchStateRef.current;
+    if (e.touches.length === 1) {
+      ts.mode = "pan";
+      ts.lastX = e.touches[0].clientX;
+      ts.lastY = e.touches[0].clientY;
+      ts.lastPan = { x: 0, y: 0 }; // will be set from current state via setPan
+      // We read current pan via the setter to avoid stale closure
+      setPan(p => {
+        ts.lastPan = p;
+        return p; // no-op update just to capture current value
+      });
+    } else if (e.touches.length === 2) {
+      ts.mode = "pinch";
+      ts.lastDist = getTouchDist(e.touches);
+      ts.lastX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      ts.lastY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      setZoom(z => { ts.lastZoom = z; return z; });
+      setPan(p => { ts.lastPan = p; return p; });
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    e.preventDefault();
+    const ts = touchStateRef.current;
+
+    if (ts.mode === "pan" && e.touches.length === 1) {
+      const dx = e.touches[0].clientX - ts.lastX;
+      const dy = e.touches[0].clientY - ts.lastY;
+      ts.lastX = e.touches[0].clientX;
+      ts.lastY = e.touches[0].clientY;
+      setPan(p => ({ x: p.x + dx, y: p.y + dy }));
+    } else if (ts.mode === "pinch" && e.touches.length === 2) {
+      const dist = getTouchDist(e.touches);
+      const scaleDelta = dist / ts.lastDist;
+      ts.lastDist = dist;
+      setZoom(z => Math.min(Math.max(z * scaleDelta, 0.25), 4));
+
+      // Also pan by mid-point movement so image stays under fingers
+      const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      const dx = midX - ts.lastX;
+      const dy = midY - ts.lastY;
+      ts.lastX = midX;
+      ts.lastY = midY;
+      setPan(p => ({ x: p.x + dx, y: p.y + dy }));
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length === 0) {
+      touchStateRef.current.mode = "none";
+      setIsDragging(false);
+    } else if (e.touches.length === 1) {
+      // One finger lifted during pinch — switch back to pan
+      touchStateRef.current.mode = "pan";
+      touchStateRef.current.lastX = e.touches[0].clientX;
+      touchStateRef.current.lastY = e.touches[0].clientY;
+    }
+  }, []);
+
   // ── Theme-derived surface colors (Google Drive Material 3) ───────────────
   const colors = useMemo(() => isDark ? {
     bg:         "#000000",
@@ -1490,8 +1575,11 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     onMouseUp={handleMouseUp}
                     onMouseLeave={handleMouseUp}
                     onWheel={handleWheel}
+                    onTouchStart={handleTouchStart}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
                     style={{
-                      touchAction: "pinch-zoom",
+                      touchAction: "none",
                       backgroundImage: showGrid
                         ? `radial-gradient(circle at center, ${colors.dotGrid} 1px, transparent 1px)`
                         : "none",
