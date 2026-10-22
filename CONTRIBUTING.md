@@ -56,19 +56,48 @@ To maintain a clean and readable codebase, we require:
 
 ## 🚀 Local Development Setup
 
-1. **Clone the repo**:
-   ```bash
-   git clone https://github.com/your-username/teledrive.git
-   cd teledrive
-   ```
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-3. **Start the dev server**:
-   ```bash
-   npm run tauri dev
-   ```
+### 1. Prerequisites
+- **Node.js**: `v18.0.0+` (`v20+` LTS recommended)
+- **Rust Toolchain**: Latest stable (`rustup default stable`)
+- Platform C/C++ toolchain (Xcode Command Line Tools on macOS, `build-essential` on Linux)
+
+### 2. Fork & Clone
+```bash
+# Fork the repository on GitHub, then clone your fork:
+git clone https://github.com/your-username/teledrive.git
+cd teledrive
+
+# Or clone the official repository directly:
+git clone https://github.com/senapati484/teledrive.git
+cd teledrive
+```
+
+### 3. Install Dependencies
+```bash
+npm install
+```
+*(This automatically runs `scripts/patch-telegram.cjs` via `postinstall` to configure GramJS MTProto compatibility for browser and Tauri).*
+
+### 4. Run Locally
+```bash
+# Launch the desktop application with Tauri v2 hot-reloading:
+npm run tauri dev
+
+# Or run the browser frontend dev server:
+npm run dev
+```
+
+### 5. Running Tests & Verifying Build
+```bash
+# Run unit and integration tests:
+npm test
+
+# Verify production frontend build:
+npm run build
+
+# Verify Rust backend compilation:
+cargo check --manifest-path src-tauri/Cargo.toml
+```
 
 ---
 
