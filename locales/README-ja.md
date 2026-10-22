@@ -115,14 +115,77 @@ We are looking for beta testers to help test upcoming releases, performance enha
 
 ## 🚀 クイックスタート
 
-### 1. Telegram API 認証情報の取得
+### 🛠️ 開発者・コントリビューター向けクイックスタート
 
-1. お使いの電話番号で [my.telegram.org](https://my.telegram.org) にログインします。
-2. **API development tools** を開き、アプリを新規作成します（例: `TeleDrive`）。
-3. 発行された `api_id` と `api_hash` をコピーし、TeleDrive 初回起動時に入力します。
+TeleDrive は 100% オープンソースであり、ローカル環境で簡単に動かすことができます。開発用 Telegram API 認証情報が内蔵されているため、独自の Telegram 開発者アプリを作成することなく、2分以内にコントリビューションを開始できます。
 
+#### 1. リポジトリをクローン
+```bash
+git clone https://github.com/senapati484/teledrive.git
+cd teledrive
+```
 
-> 💡 *Developers interested in compiling from source or contributing code should refer to our [**Contributing Guide**](../CONTRIBUTING.md).*
+#### 2. 依存関係のインストール
+```bash
+npm install
+```
+> ℹ️ *`postinstall` フックにより、Tauri およびブラウザ環境に必要な GramJS MTProto 互換性パッチ（`scripts/patch-telegram.cjs`）が自動適用されます。*
+
+#### 3. 開発サーバーの起動
+```bash
+# Tauri v2 のホットリロード付きでデスクトップアプリを起動:
+npm run tauri dev
+
+# またはブラウザで Web プレビューを起動:
+npm run dev
+```
+
+---
+
+### 📋 必要動作環境（Prerequisites）
+
+- **Node.js**: `>= 18.0.0`（`v20+` LTS 推奨）
+- **Rust**: 最新安定版（`rustup default stable`）
+- **システムビルドツール**:
+  - **macOS**: `xcode-select --install`
+  - **Linux (Debian/Ubuntu)**: `sudo apt update && sudo apt install -y build-essential libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf`
+  - **Linux (Fedora/RHEL)**: `sudo dnf install -y webkit2gtk4.1-devel openssl-devel libappindicator-gtk3-devel librsvg2-devel`
+  - **Windows**: Microsoft Visual Studio C++ Build Tools & WebView2
+
+---
+
+### 🧪 テスト・動作検証
+
+```bash
+# Vitest テストスイートの実行
+npm test
+
+# TypeScript 型検査と Vite ビルドの検証
+npm run build
+
+# Rust バックエンドのコンパイル検証
+cargo check --manifest-path src-tauri/Cargo.toml
+```
+
+---
+
+### 🔑 Telegram API 認証情報（任意）
+
+TeleDrive には初期開発用の認証情報が組み込まれています。ご自身が作成した Telegram API アプリを利用したい場合:
+1. お使いの電話番号で [**my.telegram.org**](https://my.telegram.org) にログインします。
+2. **API development tools** を開き、アプリを新規作成します（例: `TeleDrive-Dev`）。
+3. 発行された `api_id` と `api_hash` をコピーします。
+4. TeleDrive 内の **設定 → API 設定** に入力するか、プロジェクト直下に `.env` ファイルを作成してください:
+   ```env
+   VITE_TELEGRAM_API_ID=your_api_id
+   VITE_TELEGRAM_API_HASH=your_api_hash
+   ```
+
+---
+
+### 📦 エンドユーザー向けプリコンパイル済みインストーラー
+
+ソースコードからビルドせずに TeleDrive を利用したい場合は、上記の [**ダウンロード一覧**](#-ダウンロード) からお使いの OS に適したインストーラーを取得してください。プルリクエストのルールは [**Contributing Guide (CONTRIBUTING.md)**](../CONTRIBUTING.md) をご参照ください。
 ---
 
 ## ⌨️ キーボードショートカット

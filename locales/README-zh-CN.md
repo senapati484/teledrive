@@ -115,14 +115,77 @@ We are looking for beta testers to help test upcoming releases, performance enha
 
 ## 🚀 快速上手
 
-### 1. 获取 Telegram API 凭据
+### 🛠️ 开发者与贡献者极速起步
 
-1. 使用手机号登录 [my.telegram.org](https://my.telegram.org)。
-2. 进入 **API development tools**，新建一个应用（例如名称填写 `TeleDrive`）。
-3. 复制生成的 `api_id` 和 `api_hash`，在首次启动 TeleDrive 时填入即可。
+TeleDrive 是 100% 开源项目，支持本地快速运行。项目已内置开发专用的 Telegram API 凭据，无需自行创建 Telegram 开发者应用，2 分钟内即可开始贡献代码。
 
+#### 1. 克隆代码仓库
+```bash
+git clone https://github.com/senapati484/teledrive.git
+cd teledrive
+```
 
-> 💡 *Developers interested in compiling from source or contributing code should refer to our [**Contributing Guide**](../CONTRIBUTING.md).*
+#### 2. 安装依赖
+```bash
+npm install
+```
+> ℹ️ *`postinstall` 钩子会自动应用 Tauri 与浏览器环境所需的 GramJS MTProto 兼容补丁（`scripts/patch-telegram.cjs`）。*
+
+#### 3. 启动开发服务器
+```bash
+# 启动带有热重载的 Tauri v2 跨平台桌面端应用：
+npm run tauri dev
+
+# 或在浏览器中预览 Web 端：
+npm run dev
+```
+
+---
+
+### 📋 环境要求（Prerequisites）
+
+- **Node.js**：`>= 18.0.0`（推荐 `v20+` LTS）
+- **Rust**：最新稳定版（`rustup default stable`）
+- **系统编译工具**：
+  - **macOS**：`xcode-select --install`
+  - **Linux (Debian/Ubuntu)**：`sudo apt update && sudo apt install -y build-essential libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf`
+  - **Linux (Fedora/RHEL)**：`sudo dnf install -y webkit2gtk4.1-devel openssl-devel libappindicator-gtk3-devel librsvg2-devel`
+  - **Windows**：Microsoft Visual Studio C++ 生成工具 & WebView2
+
+---
+
+### 🧪 自动化测试与校验
+
+```bash
+# 运行 Vitest 测试套件
+npm test
+
+# 校验 TypeScript 类型与 Vite 打包
+npm run build
+
+# 校验 Rust 后端编译
+cargo check --manifest-path src-tauri/Cargo.toml
+```
+
+---
+
+### 🔑 Telegram API 凭据配置（可选）
+
+TeleDrive 已内置开发凭据，开箱即用。若需使用您自己的 Telegram API 凭据进行测试：
+1. 使用手机号登录 [**my.telegram.org**](https://my.telegram.org)。
+2. 进入 **API development tools**，新建一个应用（例如名称填写 `TeleDrive-Dev`）。
+3. 复制生成的 `api_id` 与 `api_hash`。
+4. 在 TeleDrive 应用内 **设置 → API 配置** 中填入，或在项目根目录创建 `.env` 文件：
+   ```env
+   VITE_TELEGRAM_API_ID=your_api_id
+   VITE_TELEGRAM_API_HASH=your_api_hash
+   ```
+
+---
+
+### 📦 最终用户预编译安装包
+
+如果您不需要从源码编译，只想直接安装使用 TeleDrive，请从上方的 [**下载列表**](#-下载) 获取对应操作系统的安装包。提交 PR 规范请查阅我们的 [**贡献指南 (CONTRIBUTING.md)**](../CONTRIBUTING.md)。
 ---
 
 ## ⌨️ 常用快捷键
