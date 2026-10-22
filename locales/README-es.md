@@ -115,14 +115,23 @@ We are looking for beta testers to help test upcoming releases, performance enha
 
 ## 🚀 Guía de Inicio Rápido
 
-### 1. Obtener Credenciales de la API de Telegram
+### 🛠️ Inicio Rápido para Desarrolladores y Colaboradores
 
-1. Inicia sesión en [my.telegram.org](https://my.telegram.org) con tu número de teléfono.
-2. Abre **API development tools** y crea una aplicación (por ejemplo, `TeleDrive`).
-3. Copia tu `api_id` y `api_hash` e ingrésalos al abrir TeleDrive por primera vez.
+TeleDrive es 100% código abierto y fácil de ejecutar localmente con credenciales de desarrollo integradas:
 
+```bash
+# 1. Clonar el repositorio
+git clone https://github.com/senapati484/teledrive.git
+cd teledrive
 
-> 💡 *Developers interested in compiling from source or contributing code should refer to our [**Contributing Guide**](../CONTRIBUTING.md).*
+# 2. Instalar dependencias
+npm install
+
+# 3. Iniciar en desarrollo (Tauri v2)
+npm run tauri dev
+```
+
+Consulta nuestra [**Guía de Contribución (CONTRIBUTING.md)**](../CONTRIBUTING.md) para convenciones de ramas, pruebas y estándares de código.
 ---
 
 ## ⌨️ Atajos de Teclado

@@ -117,9 +117,9 @@ We are looking for beta testers to help test upcoming releases, performance enha
 
 ## 🚀 Getting Started
 
-### 🛠️ Local Development & Contributing
+### 🛠️ Quick Start for Contributors & Developers
 
-Get TeleDrive up and running locally in 3 steps:
+TeleDrive is 100% open-source and easy to set up locally. It comes with built-in development credentials, so you can start contributing in under 2 minutes without creating a custom Telegram developer app.
 
 #### 1. Clone the Repository
 ```bash
@@ -131,37 +131,73 @@ cd teledrive
 ```bash
 npm install
 ```
-> *This automatically configures GramJS MTProto compatibility patches for Tauri and browser environments via `postinstall`.*
+> ℹ️ *The `postinstall` hook automatically applies GramJS MTProto compatibility patches (`scripts/patch-telegram.cjs`) required for Tauri and browser runtimes.*
 
-#### 3. Run the App
+#### 3. Start the Development Server
 ```bash
-# Start the cross-platform desktop application (Tauri v2 + Vite + React 19)
+# Run the cross-platform desktop application with Tauri v2 hot-reloading:
 npm run tauri dev
 
-# Or run the browser web client preview
+# Or run the browser web client preview:
 npm run dev
 ```
 
 ---
 
 ### 📋 Prerequisites
-- **Node.js**: `v18.0.0` or higher (`v20+` LTS recommended)
-- **Rust Toolchain**: Latest stable (`rustup default stable`)
-- **System Build Tools**:
-  - **macOS**: `xcode-select --install`
-  - **Linux (Debian/Ubuntu)**: `sudo apt install build-essential libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf`
-  - **Windows**: Microsoft Visual Studio C++ Build Tools & WebView2
+
+Ensure your development environment meets these baseline requirements before running locally:
+
+| Requirement | Supported Version | Notes |
+|:---|:---|:---|
+| **Node.js** | `>= 18.0.0` (`v20+` LTS recommended) | JavaScript/TypeScript runtime & package tooling |
+| **Rust** | Latest stable (`rustup default stable`) | Required to compile the native Tauri backend core |
+| **System Toolchain** | Platform specific (see below) | C/C++ compiler and webview runtime libraries |
+
+#### Platform-Specific Build Dependencies
+- **macOS**:
+  ```bash
+  xcode-select --install
+  ```
+- **Linux (Ubuntu / Debian)**:
+  ```bash
+  sudo apt update && sudo apt install -y build-essential libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+  ```
+- **Linux (Fedora / RHEL)**:
+  ```bash
+  sudo dnf install -y webkit2gtk4.1-devel openssl-devel libappindicator-gtk3-devel librsvg2-devel
+  ```
+- **Windows**:
+  - [Visual Studio C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) (select "Desktop development with C++").
+  - [WebView2 Runtime](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) (pre-installed on Windows 10/11).
 
 ---
 
-### 🔑 Telegram API Credentials
+### 🧪 Verifying & Testing
 
-TeleDrive connects directly to Telegram's MTProto servers without middleman relays:
+Before submitting a pull request, run local verification checks:
+
+```bash
+# Run Vitest test suite
+npm test
+
+# Verify TypeScript types and Vite bundle
+npm run build
+
+# Verify Rust backend compilation
+cargo check --manifest-path src-tauri/Cargo.toml
+```
+
+---
+
+### 🔑 Telegram API Credentials (Optional)
+
+TeleDrive includes built-in development credentials so you can log in immediately. If you wish to test with your own Telegram Application ID and Hash:
 
 1. Sign in to [**my.telegram.org**](https://my.telegram.org) with your phone number.
-2. Go to **API development tools** and create an application (e.g. `TeleDrive`).
+2. Navigate to **API development tools** and create an application (e.g., `TeleDrive-Dev`).
 3. Copy your `api_id` and `api_hash`.
-4. Enter them in the TeleDrive sign-in screen, or set them in a local `.env` file:
+4. Provide them either directly inside the app under **Settings → API Configuration**, or create a `.env` file in the root directory:
    ```env
    VITE_TELEGRAM_API_ID=your_api_id
    VITE_TELEGRAM_API_HASH=your_api_hash
@@ -169,9 +205,11 @@ TeleDrive connects directly to Telegram's MTProto servers without middleman rela
 
 ---
 
-### 📦 Pre-compiled Installers
+### 📦 End-User Pre-compiled Installers
 
-If you only want to install and use TeleDrive without building from source, download the latest package for your operating system from the [**Downloads table**](#-downloads) above. For contribution guidelines, branch conventions, and PR checklists, check out our [**Contributing Guide**](CONTRIBUTING.md).
+If you are an end user looking to use TeleDrive without compiling from source, download the latest official installers for Windows, macOS, or Linux directly from the [**Downloads table**](#-downloads) above.
+
+For pull request conventions, branch naming, and architectural guidelines, please review our [**Contributing Guide (CONTRIBUTING.md)**](CONTRIBUTING.md).
 
 ---
 
