@@ -73,8 +73,12 @@ void i18n
   });
 
 i18n.on("languageChanged", (lng) => {
-  document.documentElement.lang = lng;
+  if (typeof document !== "undefined") {
+    document.documentElement.lang = lng;
+  }
 });
-document.documentElement.lang = i18n.resolvedLanguage ?? "en";
+if (typeof document !== "undefined") {
+  document.documentElement.lang = i18n.resolvedLanguage ?? "en";
+}
 
 export default i18n;

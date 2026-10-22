@@ -391,40 +391,39 @@ class ChannelQueue {
     // If cache is empty or length differs, discover existing index messages from Telegram
     if (!existingMsgIds || existingMsgIds.length !== chunks.length) {
       let allMsgs: any[] = [];
-      try {
-        const pinned = await withTimeout(
+      const [pinnedRes, recentRes] = await Promise.allSettled([
+        withTimeout(
           client.getMessages(peer, {
             filter: new Api.InputMessagesFilterPinned(),
             limit: 100,
           }),
           FETCH_TIMEOUT_MS,
           "client.getMessages(pinned)"
-        );
-        allMsgs = allMsgs.concat(pinned);
-      } catch (err: any) {
+        ),
+        withTimeout(
+          client.getMessages(peer, { limit: 100 }),
+          FETCH_TIMEOUT_MS,
+          "client.getMessages(recent)"
+        ),
+      ]);
+
+      if (pinnedRes.status === "fulfilled" && Array.isArray(pinnedRes.value)) {
+        allMsgs = allMsgs.concat(pinnedRes.value);
+      } else if (pinnedRes.status === "rejected") {
         await invoke("log_vault_state", {
-          state: `INDEX_FETCH_PINNED_FAIL reason=${err?.message ?? err}`,
+          state: `INDEX_FETCH_PINNED_FAIL reason=${pinnedRes.reason?.message ?? pinnedRes.reason}`,
         }).catch(() => {});
       }
 
-      // Check if pinned messages alone form a complete coherent set (fast-path)
-      let coherentSet = pickCoherentIndexSet(allMsgs);
-      if (!coherentSet) {
-        // Only fetch recent messages if pinned did not contain a complete coherent set
-        try {
-          const recent = await withTimeout(
-            client.getMessages(peer, { limit: 50 }),
-            FETCH_TIMEOUT_MS,
-            "client.getMessages(recent)"
-          );
-          allMsgs = allMsgs.concat(recent);
-          coherentSet = pickCoherentIndexSet(allMsgs);
-        } catch (err: any) {
-          await invoke("log_vault_state", {
-            state: `INDEX_FETCH_RECENT_FAIL reason=${err?.message ?? err}`,
-          }).catch(() => {});
-        }
+      if (recentRes.status === "fulfilled" && Array.isArray(recentRes.value)) {
+        allMsgs = allMsgs.concat(recentRes.value);
+      } else if (recentRes.status === "rejected") {
+        await invoke("log_vault_state", {
+          state: `INDEX_FETCH_RECENT_FAIL reason=${recentRes.reason?.message ?? recentRes.reason}`,
+        }).catch(() => {});
       }
+
+      const coherentSet = pickCoherentIndexSet(allMsgs);
 
       if (coherentSet && coherentSet.length > 0) {
         existingMsgIds = coherentSet.map((c) => c.msgId);

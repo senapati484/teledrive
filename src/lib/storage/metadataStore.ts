@@ -4,6 +4,7 @@ import { TeleFile } from "../types";
 import { useFileStore } from "../../stores/fileStore";
 import { enqueueSave, getIndexQueue } from "./indexQueue";
 import { filterJunkFiles } from "./fileSanitizer";
+import { normalizeFolderPath } from "../utils";
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -291,7 +292,8 @@ export function reconstructMissingFolders(
   const existingFolderPaths = new Set<string>();
   for (const f of files) {
     if (f.mime === "inode/directory" || f.mime === "application/x-directory") {
-      const fullPath = f.folderPath === "/" ? `/${f.name}` : `${f.folderPath}/${f.name}`;
+      const parent = normalizeFolderPath(f.folderPath);
+      const fullPath = parent === "/" ? `/${f.name}` : `${parent}/${f.name}`;
       existingFolderPaths.add(fullPath);
     }
   }
@@ -304,7 +306,7 @@ export function reconstructMissingFolders(
   const distinctPaths = new Set<string>();
   for (const f of files) {
     if (f.trashed || f.archived) continue;
-    const path = f.folderPath;
+    const path = normalizeFolderPath(f.folderPath);
     if (!path || path === "/") continue;
     distinctPaths.add(path);
   }
@@ -414,12 +416,16 @@ export interface ParsedIndexChunk {
  */
 function parseIndexMessages(messages: any[]): ParsedIndexChunk[] {
   const indexMsgs = messages
-    .filter((m: any) => m?.text?.includes("teledrive_index"))
+    .filter((m: any) => {
+      const txt = m?.text || m?.message;
+      return typeof txt === "string" && txt.includes("teledrive_index");
+    })
     .sort((a: any, b: any) => a.id - b.id);
   const parsed: ParsedIndexChunk[] = [];
   for (const msg of indexMsgs) {
     try {
-      const data = JSON.parse(msg.text || "");
+      const txt = msg.text || msg.message || "";
+      const data = JSON.parse(txt);
       if (
         data &&
         Array.isArray(data.files) &&
@@ -429,7 +435,9 @@ function parseIndexMessages(messages: any[]): ParsedIndexChunk[] {
         data.chunkIndex >= 0 &&
         data.chunkIndex < data.totalChunks
       ) {
-        const files = (data.files as TeleFile[]).filter((f) => f?.id);
+        const files = (data.files as TeleFile[])
+          .filter((f) => f?.id)
+          .map((f) => ({ ...f, folderPath: normalizeFolderPath(f.folderPath) }));
         parsed.push({
           msgId: Number(msg.id),
           chunkIndex: data.chunkIndex,
@@ -573,37 +581,40 @@ export async function loadIndex(channelId: string): Promise<TeleFile[]> {
     throw err;
   }
 
-  // 1. Try pinned messages first (fast path)
+  // Fetch both pinned messages AND recent messages in parallel.
+  // Pinned messages may contain a stale epoch if Telegram rate-limited UpdatePinnedMessage (FLOOD_WAIT),
+  // while recent messages contain the newly posted chunks with higher message IDs.
+  // Querying both concurrently guarantees pickCoherentIndexSet selects the freshest coherent epoch.
   let allMsgs: any[] = [];
-  try {
-    const pinned = await withTimeout(
+  const [pinnedRes, recentRes] = await Promise.allSettled([
+    withTimeout(
       client.getMessages(peer, {
         filter: new Api.InputMessagesFilterPinned(),
         limit: 100,
       }),
       5000,
       "client.getMessages(pinned)"
-    );
-    allMsgs = allMsgs.concat(pinned);
-  } catch (pinnedErr) {
-    console.warn("[metadataStore] Failed to load pinned messages, falling back to scan:", pinnedErr);
+    ),
+    withTimeout(
+      client.getMessages(peer, { limit: 100 }),
+      5000,
+      "client.getMessages(recent)"
+    ),
+  ]);
+
+  if (pinnedRes.status === "fulfilled" && Array.isArray(pinnedRes.value)) {
+    allMsgs = allMsgs.concat(pinnedRes.value);
+  } else if (pinnedRes.status === "rejected") {
+    console.warn("[metadataStore] Failed to load pinned messages:", pinnedRes.reason);
   }
 
-  // If pinned messages already provide a coherent index set, skip fetching recent messages!
-  let chosenSet = pickCoherentIndexSet(allMsgs);
-  if (!chosenSet) {
-    try {
-      const recent = await withTimeout(
-        client.getMessages(peer, { limit: 100 }),
-        5000,
-        "client.getMessages(recent)"
-      );
-      allMsgs = allMsgs.concat(recent);
-      chosenSet = pickCoherentIndexSet(allMsgs);
-    } catch (scanErr) {
-      console.warn("[metadataStore] Failed to scan channel messages:", scanErr);
-    }
+  if (recentRes.status === "fulfilled" && Array.isArray(recentRes.value)) {
+    allMsgs = allMsgs.concat(recentRes.value);
+  } else if (recentRes.status === "rejected") {
+    console.warn("[metadataStore] Failed to scan recent messages:", recentRes.reason);
   }
+
+  let chosenSet = pickCoherentIndexSet(allMsgs);
 
   if (allMsgs.length === 0) {
     console.error("[metadataStore] No messages loaded from channel");

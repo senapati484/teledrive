@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { cn } from "@/lib/utils";
+import { cn, normalizeFolderPath } from "@/lib/utils";
 import { TeleFile } from "@/lib/types";
 import { useFileStore } from "@/stores/fileStore";
 import { useUIStore } from "@/stores/uiStore";
@@ -321,11 +321,12 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
   const folderEntriesIndex = useMemo(() => {
     const index = new Map<string, TeleFile[]>();
     for (const file of dedupedActiveFiles) {
-      const bucket = index.get(file.folderPath);
+      const normalized = normalizeFolderPath(file.folderPath);
+      const bucket = index.get(normalized);
       if (bucket) {
         bucket.push(file);
       } else {
-        index.set(file.folderPath, [file]);
+        index.set(normalized, [file]);
       }
     }
     return index;
@@ -340,7 +341,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
   const indexedFiles = useMemo(() => {
     switch (mode) {
       case "drive":
-        return folderEntriesIndex.get(folderPath) ?? EMPTY_FILES;
+        return folderEntriesIndex.get(normalizeFolderPath(folderPath)) ?? EMPTY_FILES;
       case "starred":
         return dedupedActiveFiles.filter((file) => file.starred);
       case "recent":
