@@ -32,4 +32,10 @@ export interface UploadItem {
   file?: SelectedFile | File;
   folderPath?: string;
   error?: string;
+  /** Live transfer speed in bytes/second — updated during upload */
+  speed?: number;
+  /** Estimated seconds remaining — updated during upload */
+  eta?: number;
+  /** Bytes uploaded so far — updated during upload */
+  uploadedBytes?: number;
 }

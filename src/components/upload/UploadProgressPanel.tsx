@@ -13,6 +13,21 @@ import {
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 
+/** Format bytes to a human-readable string (KB / MB / GB). */
+function formatBytes(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
+/** Format remaining seconds to a short human string ("45s", "2m 3s"). */
+function formatEta(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return s > 0 ? `${m}m ${s}s` : `${m}m`;
+}
+
 /**
  * Circular progress indicator for the minimized header state.
  */
@@ -181,9 +196,27 @@ export function UploadProgressPanel() {
               </div>
               
               <div className="flex items-center justify-between text-[11px] text-[#444746] dark:text-[#8e918f]">
-                <span>{(item.size / (1024 * 1024)).toFixed(2)} MB</span>
+                {item.status === "uploading" && item.uploadedBytes !== undefined ? (
+                  <span>
+                    {formatBytes(item.uploadedBytes)}
+                    <span className="text-[#c4c7c5] dark:text-[#5f6368] mx-1">/</span>
+                    {formatBytes(item.size)}
+                  </span>
+                ) : (
+                  <span>{formatBytes(item.size)}</span>
+                )}
                 {item.status === "uploading" && (
-                  <span className="text-[#0b57d0] dark:text-[#a8c7fa] text-[10px]">{t("upload.uploading")}</span>
+                  <span className="flex items-center gap-1.5 text-[#0b57d0] dark:text-[#a8c7fa] text-[10px] font-medium">
+                    {item.speed !== undefined && (
+                      <span>{formatBytes(item.speed)}/s</span>
+                    )}
+                    {item.speed !== undefined && item.eta !== undefined && (
+                      <span className="text-[#747775] dark:text-[#5f6368]">·</span>
+                    )}
+                    {item.eta !== undefined && (
+                      <span className="text-[#444746] dark:text-[#8e918f]">{formatEta(item.eta)} left</span>
+                    )}
+                  </span>
                 )}
               </div>
 

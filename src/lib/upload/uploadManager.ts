@@ -75,6 +75,7 @@ import { enqueueSave } from "../storage/indexQueue";
 import { getClient } from "../telegram/client";
 import { logEvent } from "../events";
 import { isJunkFile } from "../storage/fileSanitizer";
+import { useSupportStore } from "../../stores/supportStore";
 import i18n from "@/i18n";
 
 /**
@@ -194,6 +195,16 @@ export async function processQueue(): Promise<void> {
           }
 
           // --- Phase 1: Upload file bytes to Telegram ---
+          // Throttle progress updates to ~120ms intervals to avoid
+          // flooding the React render cycle on every 512KB chunk.
+          // A rolling 3-second window gives a stable speed readout.
+          const PROGRESS_THROTTLE_MS = 120;
+          const SPEED_WINDOW_MS = 3000;
+
+          let lastDispatchAt = 0;
+          // Ring buffer: [timestampMs, bytesAtThatPoint]
+          const speedSamples: Array<[number, number]> = [];
+
           const message = await uploadFileToTelegram(
             channelId,
             item.name,
@@ -201,9 +212,40 @@ export async function processQueue(): Promise<void> {
             fileSource,
             destinationFolder,
             (uploaded, total) => {
-              const pct = Math.round((uploaded / total) * 100);
-              // Cap at 95% until indexing succeeds
-              updateQueueItem(item.id, { progress: Math.min(pct, 95) });
+              const now = Date.now();
+
+              // Record sample
+              speedSamples.push([now, uploaded]);
+              // Prune samples older than the rolling window
+              const cutoff = now - SPEED_WINDOW_MS;
+              while (speedSamples.length > 1 && speedSamples[0][0] < cutoff) {
+                speedSamples.shift();
+              }
+
+              // Compute rolling speed (bytes/s)
+              let speed: number | undefined;
+              let eta: number | undefined;
+              if (speedSamples.length >= 2) {
+                const oldest = speedSamples[0];
+                const dt = (now - oldest[0]) / 1000; // seconds
+                if (dt > 0) {
+                  speed = (uploaded - oldest[1]) / dt;
+                  const remaining = total - uploaded;
+                  eta = speed > 0 ? Math.round(remaining / speed) : undefined;
+                }
+              }
+
+              // Throttle state dispatch
+              if (now - lastDispatchAt >= PROGRESS_THROTTLE_MS || uploaded >= total) {
+                lastDispatchAt = now;
+                const pct = Math.round((uploaded / total) * 100);
+                updateQueueItem(item.id, {
+                  progress: Math.min(pct, 95),
+                  uploadedBytes: uploaded,
+                  speed,
+                  eta,
+                });
+              }
             }
           );
 
@@ -254,6 +296,7 @@ export async function processQueue(): Promise<void> {
           useFileStore.getState().setBootstrapComplete(true);
 
           updateQueueItem(item.id, { status: "done", progress: 100 });
+          useSupportStore.getState().incrementUploadCount();
           toast.success(i18n.t("messages:upload.success", { name: item.name }));
 
           try {

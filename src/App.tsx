@@ -22,6 +22,9 @@ const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const AuthPage = lazy(() => import("./pages/AuthPage"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const RemoteSyncOrchestrator = lazy(() => import("./components/RemoteSyncOrchestrator"));
+const StarPromptDialog = lazy(() => import("./components/support/StarPromptDialog"));
+const WhatsNewDialog = lazy(() => import("./components/support/WhatsNewDialog"));
+import { useSupportStore } from "./stores/supportStore";
 
 // Full-screen spinner fallback
 function LoadingFallback() {
@@ -69,10 +72,12 @@ import { useTheme } from "./hooks/useTheme";
 function App() {
   useTheme(); // Initialize theme logic
   const [isRestoring, setIsRestoring] = useState(true);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const { t } = useTranslation("drive");
   const status = t("splash.connecting");
 
   useEffect(() => {
+    useSupportStore.getState().initFirstLaunch();
     let active = true;
     async function initSession() {
       try {
@@ -202,6 +207,13 @@ function App() {
       <Suspense fallback={null}>
         <RemoteSyncOrchestrator />
       </Suspense>
+      {/* Support & update dialogs */}
+      {isAuthenticated && (
+        <Suspense fallback={null}>
+          <StarPromptDialog />
+          <WhatsNewDialog />
+        </Suspense>
+      )}
       <Toaster />
     </BrowserRouter>
   );

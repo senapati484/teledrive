@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="src-tauri/icons/icon.png" alt="TeleDrive logo" width="100" height="100" />
+<img src="docs/logo.png" alt="TeleDrive logo" width="110" />
 
 # TeleDrive
 
