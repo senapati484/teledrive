@@ -117,14 +117,61 @@ We are looking for beta testers to help test upcoming releases, performance enha
 
 ## 🚀 Getting Started
 
-1. **Install TeleDrive**: Download the pre-compiled installer for your operating system from the [**Downloads table**](#-downloads) above.
-2. **Obtain Telegram API Credentials**:
-   - Sign in to [my.telegram.org](https://my.telegram.org) with your phone number.
-   - Go to **API development tools** and create an application (e.g. `TeleDrive`).
-   - Copy your `api_id` and `api_hash`.
-3. **Launch & Connect**: Open TeleDrive, enter your credentials, sign in via phone number or QR code, and start uploading to your private Telegram cloud!
+### 🛠️ Local Development & Contributing
 
-> 💡 *Developers interested in compiling from source or contributing code should refer to our [**Contributing Guide**](CONTRIBUTING.md).*
+Get TeleDrive up and running locally in 3 steps:
+
+#### 1. Clone the Repository
+```bash
+git clone https://github.com/senapati484/teledrive.git
+cd teledrive
+```
+
+#### 2. Install Dependencies
+```bash
+npm install
+```
+> *This automatically configures GramJS MTProto compatibility patches for Tauri and browser environments via `postinstall`.*
+
+#### 3. Run the App
+```bash
+# Start the cross-platform desktop application (Tauri v2 + Vite + React 19)
+npm run tauri dev
+
+# Or run the browser web client preview
+npm run dev
+```
+
+---
+
+### 📋 Prerequisites
+- **Node.js**: `v18.0.0` or higher (`v20+` LTS recommended)
+- **Rust Toolchain**: Latest stable (`rustup default stable`)
+- **System Build Tools**:
+  - **macOS**: `xcode-select --install`
+  - **Linux (Debian/Ubuntu)**: `sudo apt install build-essential libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf`
+  - **Windows**: Microsoft Visual Studio C++ Build Tools & WebView2
+
+---
+
+### 🔑 Telegram API Credentials
+
+TeleDrive connects directly to Telegram's MTProto servers without middleman relays:
+
+1. Sign in to [**my.telegram.org**](https://my.telegram.org) with your phone number.
+2. Go to **API development tools** and create an application (e.g. `TeleDrive`).
+3. Copy your `api_id` and `api_hash`.
+4. Enter them in the TeleDrive sign-in screen, or set them in a local `.env` file:
+   ```env
+   VITE_TELEGRAM_API_ID=your_api_id
+   VITE_TELEGRAM_API_HASH=your_api_hash
+   ```
+
+---
+
+### 📦 Pre-compiled Installers
+
+If you only want to install and use TeleDrive without building from source, download the latest package for your operating system from the [**Downloads table**](#-downloads) above. For contribution guidelines, branch conventions, and PR checklists, check out our [**Contributing Guide**](CONTRIBUTING.md).
 
 ---
 

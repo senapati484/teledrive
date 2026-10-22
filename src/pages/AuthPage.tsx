@@ -120,61 +120,65 @@ function StepDots({ current }: { current: Step }) {
   );
 }
 
-// ─── Floating label input ─────────────────────────────────────────────────────
-interface FloatingInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+// ─── Clean form input with stable static label and subtle placeholder ─────────
+interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
   id: string;
   suffix?: React.ReactNode;
   inputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
-function FloatingInput({ label, id, suffix, inputRef, className, ...props }: FloatingInputProps) {
+function FormInput({ label, id, suffix, inputRef, className, placeholder, ...props }: FormInputProps) {
   const [focused, setFocused] = useState(false);
-  const hasValue = Boolean(props.value);
-  const lifted = focused || hasValue;
 
   return (
-    <div className="relative group w-full text-left">
+    <div className="w-full text-left space-y-1.5">
       <label
         htmlFor={id}
-        className="absolute left-3.5 transition-all duration-200 ease-out pointer-events-none z-10 select-none whitespace-nowrap overflow-hidden text-ellipsis max-w-[calc(100%-20px)]"
-        style={{
-          top: lifted ? "6px" : "50%",
-          transform: lifted ? "none" : "translateY(-50%)",
-          fontSize: lifted ? "10px" : "13px",
-          color: focused ? "var(--color-brand-500)" : lifted ? "#747775" : "#9aa0a6",
-          fontWeight: lifted ? 600 : 400,
-          letterSpacing: lifted ? "0.02em" : "normal",
-        }}
+        className={cn(
+          "block text-xs font-semibold tracking-tight transition-colors duration-150 select-none",
+          focused
+            ? "text-[#0B57D0] dark:text-[#A8C7FA]"
+            : "text-foreground/80 dark:text-foreground/70"
+        )}
       >
         {label}
       </label>
-      <Input
-        ref={inputRef as any}
-        id={id}
-        {...props}
-        onFocus={(e) => { setFocused(true); props.onFocus?.(e); }}
-        onBlur={(e) => { setFocused(false); props.onBlur?.(e); }}
-        className={`
-          h-11 sm:h-11.5 pt-4 pb-1 px-3.5 rounded-xl text-base sm:text-sm
-          border transition-all duration-200 outline-none
-          bg-white dark:bg-[#18191B]
-          text-[#1f1f1f] dark:text-[#E3E3E3]
-          ${focused
-            ? "border-[#0B57D0] dark:border-[#A8C7FA] shadow-[0_0_0_3px_rgba(11,87,208,0.12)]"
-            : "border-slate-200 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.12]"}
-          ${props.disabled ? "opacity-60 cursor-not-allowed" : "cursor-text"}
-          focus-visible:ring-0 focus-visible:border-[#0B57D0] dark:focus-visible:border-[#A8C7FA]
-          ${suffix ? "pr-10" : "pr-3.5"}
-          ${className ?? ""}
-        `}
-      />
-      {suffix && (
-        <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center">{suffix}</div>
-      )}
+      <div className="relative flex items-center w-full">
+        <Input
+          ref={inputRef as any}
+          id={id}
+          placeholder={placeholder}
+          {...props}
+          onFocus={(e) => { setFocused(true); props.onFocus?.(e); }}
+          onBlur={(e) => { setFocused(false); props.onBlur?.(e); }}
+          className={cn(
+            "h-11 sm:h-11.5 px-3.5 rounded-xl text-base sm:text-sm font-normal",
+            "border transition-all duration-200 outline-none",
+            "bg-white dark:bg-[#18191B]",
+            "text-[#1f1f1f] dark:text-[#E3E3E3]",
+            "placeholder:text-muted-foreground/45 dark:placeholder:text-muted-foreground/40",
+            focused
+              ? "border-[#0B57D0] dark:border-[#A8C7FA] ring-2 ring-[#0B57D0]/12 dark:ring-[#A8C7FA]/15"
+              : "border-slate-200 dark:border-white/[0.08] hover:border-slate-300 dark:hover:border-white/[0.14]",
+            props.disabled ? "opacity-60 cursor-not-allowed" : "cursor-text",
+            "focus-visible:ring-0 focus-visible:border-[#0B57D0] dark:focus-visible:border-[#A8C7FA]",
+            suffix ? "pr-10" : "pr-3.5",
+            className
+          )}
+        />
+        {suffix && (
+          <div className="absolute right-2.5 top-1/2 -translate-y-1/2 flex items-center text-muted-foreground">
+            {suffix}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
+
+// Keep FloatingInput alias for backwards-compatibility
+const FloatingInput = FormInput;
 
 // ─── OTP digit box ────────────────────────────────────────────────────────────
 interface OtpBoxProps {
@@ -451,33 +455,45 @@ export default function AuthPage() {
     };
   }, [step, configApiId, configApiHash]);
 
-  // Open Telegram app using Tauri plugin-opener with fallbacks for Android/iOS/Desktop
+  // Open Telegram app directly using native commands or tg:// scheme without browser redirection
   const handleOpenTelegram = async (url: string) => {
     if (!url) return;
     setOpeningTelegram(true);
 
-    const httpsFallback = url
-      .replace(/^tg:\/\/login\?token=/, "https://t.me/login?token=")
-      .replace(/^tg:\/\/resolve\?domain=/, "https://t.me/");
+    try {
+      // 1. Primary: Native Tauri backend command (OS-level launch or mobile opener directly)
+      await invoke("open_telegram_app", { url });
+      toast.info(t("qr.openedTelegramToast", "Opening Telegram... Please confirm the login request in the app."));
+      return;
+    } catch (nativeErr) {
+      console.warn("Native open_telegram_app failed, trying openUrl / deep link:", nativeErr);
+    }
 
     try {
-      // 1. Try native scheme via plugin-opener (triggers native Android Intent or iOS openURL)
+      // 2. Secondary: Tauri plugin-opener with raw tg:// URI
       await openUrl(url);
       toast.info(t("qr.openedTelegramToast", "Opening Telegram... Please confirm the login request in the app."));
-    } catch (tgErr) {
-      console.warn("Direct tg:// scheme open failed, attempting https fallback:", tgErr);
-      try {
-        // 2. Try HTTPS fallback via plugin-opener (App Links / Universal Links or Browser)
-        await openUrl(httpsFallback);
-        toast.info(t("qr.openedTelegramToast", "Opening Telegram... Please confirm the login request in the app."));
-      } catch (httpsErr) {
-        console.warn("openUrl https fallback failed, attempting browser window.open:", httpsErr);
-        try {
-          window.open(httpsFallback, "_blank", "noopener,noreferrer");
-        } catch {
-          window.location.href = url;
-        }
+      return;
+    } catch (openerErr) {
+      console.warn("openUrl failed for tg:// URL:", openerErr);
+    }
+
+    // 3. Fallback for mobile / web: directly trigger window navigation to tg:// or Android intent://
+    // We intentionally NEVER open t.me or telegram.com in browser because users are logged into the Telegram mobile application!
+    try {
+      const isAndroid = typeof navigator !== "undefined" && /android/i.test(navigator.userAgent);
+      if (isAndroid) {
+        // Android intent scheme explicitly directs to Telegram package
+        const token = url.replace(/^tg:\/\/login\?token=/, "");
+        const androidIntent = `intent://login?token=${token}#Intent;scheme=tg;package=org.telegram.messenger;end`;
+        window.location.href = androidIntent;
+      } else {
+        window.location.href = url;
       }
+      toast.info(t("qr.openedTelegramToast", "Opening Telegram... Please confirm the login request in the app."));
+    } catch (redirectErr) {
+      console.error("Failed to trigger Telegram app link:", redirectErr);
+      toast.error(t("qr.openAppError", "Could not open Telegram app. Please scan the QR code manually."));
     } finally {
       setTimeout(() => setOpeningTelegram(false), 1500);
     }
@@ -998,6 +1014,7 @@ export default function AuthPage() {
                     <FloatingInput
                       id="phone-number"
                       label={t("phone.label")}
+                      placeholder={t("phone.placeholder", "+1 234 567 8900")}
                       type="tel"
                       inputMode="tel"
                       enterKeyHint="next"
@@ -1294,6 +1311,7 @@ export default function AuthPage() {
               <FloatingInput
                 id="cloud-password"
                 label={t("password.label")}
+                placeholder={t("password.placeholder", "Enter your 2FA password")}
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => { setPassword(e.target.value); setError(null); }}

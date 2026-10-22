@@ -552,6 +552,51 @@ fn open_file_in_system_viewer(app: tauri::AppHandle, path: String) -> Result<(),
     }
 }
 
+/// Launches the native Telegram app directly using OS-level commands or deep links,
+/// preventing accidental fallback to web browsers on desktop and mobile.
+#[tauri::command]
+fn open_telegram_app(app: tauri::AppHandle, url: String) -> Result<(), String> {
+    #[cfg(mobile)]
+    {
+        use tauri_plugin_opener::OpenerExt;
+        app.opener()
+            .open_url(&url, None::<&str>)
+            .map_err(|e| format!("Failed to open Telegram app: {e}"))
+    }
+    #[cfg(not(mobile))]
+    {
+        let _ = &app;
+        #[cfg(target_os = "macos")]
+        {
+            std::process::Command::new("open")
+                .arg(&url)
+                .spawn()
+                .map_err(|e| format!("Failed to launch Telegram on macOS: {e}"))?;
+            Ok(())
+        }
+        #[cfg(target_os = "windows")]
+        {
+            std::process::Command::new("cmd")
+                .args(["/C", "start", "", &url])
+                .spawn()
+                .map_err(|e| format!("Failed to launch Telegram on Windows: {e}"))?;
+            Ok(())
+        }
+        #[cfg(target_os = "linux")]
+        {
+            std::process::Command::new("xdg-open")
+                .arg(&url)
+                .spawn()
+                .map_err(|e| format!("Failed to launch Telegram on Linux: {e}"))?;
+            Ok(())
+        }
+        #[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
+        {
+            Err("Unsupported operating system for launching Telegram".to_string())
+        }
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // Build the Tauri application.
@@ -603,6 +648,7 @@ pub fn run() {
             write_file_binary,
             write_file_chunk,
             open_file_in_system_viewer,
+            open_telegram_app,
         ])
         .setup(|app| {
             #[cfg(debug_assertions)]
