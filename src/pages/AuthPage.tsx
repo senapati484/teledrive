@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
 import {
@@ -18,15 +18,56 @@ import {
   Clock,
   Info,
   ExternalLink,
+  Copy,
+  PhoneCall,
+  RefreshCw,
 } from "lucide-react";
 import { Api, TelegramClient } from "telegram";
 import { useAuthStore } from "@/stores/authStore";
-import { initClient, getClient } from "@/lib/telegram/client";
-import { saveSecret, getSecret, VAULT_KEY_SESSION, VAULT_KEY_PHONE, VAULT_KEY_API_ID, VAULT_KEY_API_HASH } from "@/lib/secure/vault";
+import { initClient, getClient, disconnectClient } from "@/lib/telegram/client";
+import {
+  saveSecret,
+  getSecret,
+  VAULT_KEY_SESSION,
+  VAULT_KEY_PHONE,
+  VAULT_KEY_API_ID,
+  VAULT_KEY_API_HASH,
+} from "@/lib/secure/vault";
 import { bootstrapTeleDrive } from "@/lib/telegram/bootstrap";
-import { DEFAULT_API_ID, DEFAULT_API_HASH } from "@/lib/telegram/config";
+import { APP_VERSION, DEFAULT_API_ID, DEFAULT_API_HASH } from "@/lib/telegram/config";
 import { safeComputeCheck } from "@/lib/telegram/srp-helper";
 import { startQrLogin } from "@/lib/telegram/qr-helper";
+import { saveFutureAuthToken, loadLogoutTokens } from "@/lib/telegram/futureAuth";
+import {
+  PendingLogin,
+  PENDING_CODE_TTL_MS,
+  LoginDelivery,
+  authErrorText,
+  buildDiagnostics,
+  checkCodeRequestBudget,
+  classifyAuthError,
+  getErrorCode,
+  getMigrateDc,
+  isAuthorizationSignUpRequired,
+  isEmailVerifiedLogin,
+  isPendingUsable,
+  isSentCodeSuccess,
+  maskEmail,
+  maskPhone,
+  parseSentCode,
+  pendingFromSentCode,
+  remainingSeconds,
+} from "@/lib/telegram/loginFlow";
+import {
+  clearPendingLogin,
+  loadFloodUntil,
+  loadPendingLogin,
+  loadRequestTimes,
+  recordCodeRequest,
+  saveFloodUntil,
+  savePendingLogin,
+} from "@/lib/telegram/loginStorage";
+import { getPlatform } from "@/lib/platform";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -41,11 +82,11 @@ import { toast } from "sonner";
 import { invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-type Step = "phone" | "qr" | "otp" | "password" | "bootstrap";
-type DeliveryType = "app" | "sms" | "email" | "call" | "unknown";
+type Step = "phone" | "qr" | "otp" | "password" | "email" | "bootstrap";
+type EmailStage = "address" | "code";
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+const DEFAULT_CODE_LENGTH = 5;
+
 function sanitizePhone(raw: string): string {
   let clean = raw.trim().replace(/[^\d+]/g, "");
   if (clean.startsWith("00")) {
@@ -54,52 +95,115 @@ function sanitizePhone(raw: string): string {
   if (clean.startsWith("+")) {
     return clean;
   }
-  // Strip leading 0 if 11 digits (e.g. 09876543210 -> 9876543210)
   if (clean.startsWith("0") && clean.length === 11) {
     clean = clean.slice(1);
   }
-  // 10 digits starting with 6, 7, 8, 9 (standard Indian mobile numbers)
   if (clean.length === 10 && /^[6-9]/.test(clean)) {
     return `+91${clean}`;
   }
-  // 12 digits starting with 91 (India without +)
   if (clean.length === 12 && clean.startsWith("91")) {
     return `+${clean}`;
   }
   return `+${clean}`;
 }
 
-function parseTelegramError(err: any, t: any): string {
-  const msg = err?.errorMessage || err?.message || "";
-  if (msg.includes("PHONE_NUMBER_INVALID")) return t("errors.phoneNumberInvalid");
-  if (msg.includes("PHONE_NUMBER_BANNED")) return t("errors.phoneNumberBanned");
-  if (msg.includes("FLOOD_WAIT")) {
-    const seconds = msg.match(/\d+/)?.[0];
-    return seconds ? t("errors.floodWait", { count: Number(seconds) }) : t("errors.floodWaitFewSeconds");
-  }
-  if (msg.includes("FLOOD") || msg.includes("PHONE_NUMBER_FLOOD") || msg.includes("PHONE_PASSWORD_FLOOD")) {
-    return t("errors.phoneFlood");
-  }
-  if (msg.includes("SEND_CODE_UNAVAILABLE")) return t("errors.sendCodeUnavailable");
-  if (msg.includes("PHONE_CODE_EMPTY") || msg.includes("PHONE_CODE_INVALID")) return t("errors.invalidCode");
-  if (msg.includes("PHONE_CODE_EXPIRED")) return t("errors.codeExpired");
-  if (msg.includes("PASSWORD_HASH_INVALID") || msg.includes("Incorrect password")) return t("errors.incorrectPassword");
-  if (msg.includes("PASSWORD_EMPTY")) return t("errors.passwordEmpty");
-  if (msg.includes("AUTH_RESTART")) return "Telegram restarted the authentication. Please try again.";
-  if (msg.includes("AUTH_KEY_UNREGISTERED") || msg.includes("AUTH_KEY_INVALID")) return "Session is invalid. Please try again.";
-  if (msg.includes("NETWORK_MIGRATE") || msg.includes("USER_MIGRATE") || msg.includes("PHONE_MIGRATE")) return "Redirecting to the correct Telegram server, please retry...";
-  if (msg.includes("CONNECTION_NOT_INITED")) return "Connection issue. Please try again.";
-  if (msg.includes("RPC_CALL_FAIL") || msg.includes("RPC_MCGET_FAIL")) return "Telegram server error. Please try again.";
-  if (msg.includes("SESSION_PASSWORD_NEEDED")) return "Two-step verification required. Please enter your password.";
-  if (msg.includes("NETWORK_ERROR") || msg.includes("Network request failed") || msg.includes("net::ERR")) return "Network error. Please check your internet connection and try again.";
-  return msg || t("errors.sendCodeFailed");
+function formatDuration(totalSeconds: number): string {
+  if (totalSeconds <= 0) return "0s";
+  if (totalSeconds < 60) return `${totalSeconds}s`;
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  if (minutes < 60) return `${minutes}m ${seconds.toString().padStart(2, "0")}s`;
+  const hours = Math.floor(minutes / 60);
+  return `${hours}h ${(minutes % 60).toString().padStart(2, "0")}m`;
 }
 
-// ─── Animated step indicator ──────────────────────────────────────────────────
+function ResendFooter({
+  floodUntil,
+  resendAt,
+  nextDelivery,
+  resending,
+  loading,
+  onResend,
+}: {
+  floodUntil: number;
+  resendAt: number;
+  nextDelivery: LoginDelivery | null;
+  resending: boolean;
+  loading: boolean;
+  onResend: () => void;
+}) {
+  const { t } = useTranslation("auth");
+  const [now, setNow] = useState(() => Date.now());
+  const floodRemaining = remainingSeconds(floodUntil, now);
+  const resendRemaining = remainingSeconds(resendAt, now);
+  const needsTick =
+    floodRemaining > 0 || (!!nextDelivery && resendRemaining > 0);
+
+  useEffect(() => {
+    if (!needsTick) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [needsTick, floodUntil, resendAt]);
+
+  const nextDeliveryKey =
+    nextDelivery === "sms"
+      ? "otp.resend.viaSms"
+      : nextDelivery === "call"
+      ? "otp.resend.viaCall"
+      : nextDelivery === "fragment"
+      ? "otp.resend.viaFragment"
+      : "otp.resend.button";
+
+  return (
+    <div className="flex items-center justify-between px-1 text-[11px] min-h-[16px]">
+      {floodRemaining > 0 ? (
+        <div className="flex items-center gap-1 text-rose-600 dark:text-rose-400 font-medium">
+          <Clock className="h-3 w-3" />
+          <span>
+            {t("otp.floodWait", { seconds: formatDuration(floodRemaining) })}
+          </span>
+        </div>
+      ) : nextDelivery ? (
+        resendRemaining > 0 ? (
+          <div className="flex items-center gap-1 text-muted-foreground">
+            <Clock className="h-3 w-3" />
+            <span>
+              {t("otp.resend.wait", {
+                seconds: formatDuration(resendRemaining),
+              })}
+            </span>
+          </div>
+        ) : (
+          <button
+            type="button"
+            disabled={resending || loading}
+            onClick={onResend}
+            className="flex items-center gap-1 font-medium text-[#0B57D0] dark:text-[#A8C7FA] hover:underline cursor-pointer transition-colors disabled:opacity-50"
+          >
+            {resending ? (
+              <>
+                <Loader2 className="h-3 w-3 animate-spin" />
+                <span>{t("otp.resend.sending")}</span>
+              </>
+            ) : (
+              <span>{t(nextDeliveryKey)}</span>
+            )}
+          </button>
+        )
+      ) : (
+        <span className="text-muted-foreground">
+          {t("otp.resend.notAvailable")}
+        </span>
+      )}
+    </div>
+  );
+}
+
 function StepDots({ current }: { current: Step }) {
   const visibleSteps: Step[] = ["phone", "otp", "password"];
-  const stepToMap = current === "qr" ? "phone" : current;
-  const currentIndex = visibleSteps.indexOf(stepToMap as any);
+  const stepToMap =
+    current === "qr" ? "phone" : current === "email" ? "otp" : current;
+  const currentIndex = visibleSteps.indexOf(stepToMap as Step);
   if (currentIndex === -1) return null;
   return (
     <div className="flex items-center justify-center gap-1.5" aria-hidden="true">
@@ -120,7 +224,6 @@ function StepDots({ current }: { current: Step }) {
   );
 }
 
-// ─── Clean form input with stable static label and subtle placeholder ─────────
 interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label: string;
   id: string;
@@ -128,7 +231,15 @@ interface FormInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   inputRef?: React.RefObject<HTMLInputElement | null>;
 }
 
-function FormInput({ label, id, suffix, inputRef, className, placeholder, ...props }: FormInputProps) {
+function FormInput({
+  label,
+  id,
+  suffix,
+  inputRef,
+  className,
+  placeholder,
+  ...props
+}: FormInputProps) {
   const [focused, setFocused] = useState(false);
 
   return (
@@ -150,8 +261,14 @@ function FormInput({ label, id, suffix, inputRef, className, placeholder, ...pro
           id={id}
           placeholder={placeholder}
           {...props}
-          onFocus={(e) => { setFocused(true); props.onFocus?.(e); }}
-          onBlur={(e) => { setFocused(false); props.onBlur?.(e); }}
+          onFocus={(e) => {
+            setFocused(true);
+            props.onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setFocused(false);
+            props.onBlur?.(e);
+          }}
           className={cn(
             "h-11 sm:h-11.5 px-3.5 rounded-xl text-base sm:text-sm font-normal",
             "border transition-all duration-200 outline-none",
@@ -177,10 +294,8 @@ function FormInput({ label, id, suffix, inputRef, className, placeholder, ...pro
   );
 }
 
-// Keep FloatingInput alias for backwards-compatibility
 const FloatingInput = FormInput;
 
-// ─── OTP digit box ────────────────────────────────────────────────────────────
 interface OtpBoxProps {
   value: string;
   onChange: (val: string) => void;
@@ -193,7 +308,17 @@ interface OtpBoxProps {
   totalDigits: number;
 }
 
-function OtpBox({ value, onChange, onKeyDown, onPaste, inputRef, disabled, index, isFilled, totalDigits }: OtpBoxProps) {
+function OtpBox({
+  value,
+  onChange,
+  onKeyDown,
+  onPaste,
+  inputRef,
+  disabled,
+  index,
+  isFilled,
+  totalDigits,
+}: OtpBoxProps) {
   const { t } = useTranslation("auth");
   const [focused, setFocused] = useState(false);
 
@@ -237,7 +362,6 @@ function OtpBox({ value, onChange, onKeyDown, onPaste, inputRef, disabled, index
   );
 }
 
-// ─── Error banner ─────────────────────────────────────────────────────────────
 function ErrorBanner({ message }: { message: string }) {
   return (
     <div className="w-full flex items-start gap-2 p-2.5 rounded-xl bg-rose-500/[0.08] dark:bg-rose-500/[0.12] text-rose-700 dark:text-rose-300 text-xs animate-in fade-in duration-200 text-left">
@@ -247,7 +371,6 @@ function ErrorBanner({ message }: { message: string }) {
   );
 }
 
-// ─── Primary action button ────────────────────────────────────────────────────
 function PrimaryButton({
   loading,
   loadingLabel,
@@ -280,7 +403,11 @@ function PrimaryButton({
         relative overflow-hidden
       `}
     >
-      <span className={`flex items-center justify-center gap-2 transition-all duration-200 ${loading ? "opacity-0" : "opacity-100"}`}>
+      <span
+        className={`flex items-center justify-center gap-2 transition-all duration-200 ${
+          loading ? "opacity-0" : "opacity-100"
+        }`}
+      >
         {label}
       </span>
       {loading && (
@@ -293,8 +420,15 @@ function PrimaryButton({
   );
 }
 
-// ─── Ghost back button ────────────────────────────────────────────────────────
-function BackButton({ onClick, disabled, label }: { onClick: () => void; disabled?: boolean; label: string }) {
+function BackButton({
+  onClick,
+  disabled,
+  label,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  label: string;
+}) {
   return (
     <Button
       type="button"
@@ -309,53 +443,75 @@ function BackButton({ onClick, disabled, label }: { onClick: () => void; disable
   );
 }
 
-// ─── Main AuthPage ────────────────────────────────────────────────────────────
 export default function AuthPage() {
   const { t, i18n } = useTranslation(["auth", "common"]);
   const navigate = useNavigate();
   const setSession = useAuthStore((state) => state.setSession);
 
-  // Auth credential check
   const [configApiId, setConfigApiId] = useState<number | null>(null);
   const [configApiHash, setConfigApiHash] = useState<string | null>(null);
   const [checkingConfig, setCheckingConfig] = useState(true);
 
-  // Step state
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
-  const [phoneCodeHash, setPhoneCodeHash] = useState("");
-  const [codeLength, setCodeLength] = useState<number>(5);
-  const [otp, setOtp] = useState<string[]>(["", "", "", "", ""]);
-  const [deliveryType, setDeliveryType] = useState<DeliveryType>("unknown");
-  const [emailPattern, setEmailPattern] = useState("");
-  const [countdown, setCountdown] = useState<number>(0);
-  const [resending, setResending] = useState(false);
+  const [pending, setPending] = useState<PendingLogin | null>(null);
+  const pendingRef = useRef<PendingLogin | null>(null);
+  const [otp, setOtp] = useState<string[]>(
+    new Array(DEFAULT_CODE_LENGTH).fill("")
+  );
+  const [resendAt, setResendAt] = useState(0);
+  const [floodUntil, setFloodUntil] = useState(0);
+  const [lastError, setLastError] = useState<ReturnType<
+    typeof classifyAuthError
+  > | null>(null);
 
-  // QR Code login state
+  const [emailStage, setEmailStage] = useState<EmailStage>("address");
+  const [emailAddress, setEmailAddress] = useState("");
+  const [emailCode, setEmailCode] = useState("");
+  const [emailCodeLength, setEmailCodeLength] = useState(5);
+  const [emailPattern, setEmailPattern] = useState("");
+  const [emailBusy, setEmailBusy] = useState(false);
+
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [bootstrapStatus, setBootstrapStatus] = useState(() =>
+    t("bootstrap.connecting")
+  );
+  const [bootstrapError, setBootstrapError] = useState<string | null>(null);
+
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [qrTgUrl, setQrTgUrl] = useState<string | null>(null);
   const [qrLoading, setQrLoading] = useState(false);
   const [openingTelegram, setOpeningTelegram] = useState(false);
   const qrCleanupRef = useRef<(() => void) | null>(null);
 
-  // Password & bootstrap state
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [bootstrapStatus, setBootstrapStatus] = useState(() => t("bootstrap.connecting"));
-  const [bootstrapError, setBootstrapError] = useState<string | null>(null);
-
-  // Dynamic OTP box refs
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const sendInFlightRef = useRef(false);
+  const verifyInFlightRef = useRef(false);
+  const passwordInFlightRef = useRef(false);
+  const emailInFlightRef = useRef(false);
+  const autoSubmitTimerRef = useRef<number | null>(null);
+  const resendingGuard = useRef(false);
 
-  // Load API credentials from vault on mount
+  const codeLength =
+    pending && pending.codeLength > 0 ? pending.codeLength : DEFAULT_CODE_LENGTH;
+  const deliveryType: LoginDelivery = pending?.delivery ?? "unknown";
+  const nextDelivery: LoginDelivery | null = pending?.nextDelivery ?? null;
+
   useEffect(() => {
     async function loadConfig() {
       try {
         const id = await getSecret(VAULT_KEY_API_ID);
         const hash = await getSecret(VAULT_KEY_API_HASH);
-        setConfigApiId(id ? parseInt(id) : DEFAULT_API_ID);
+        const parsedId = id ? parseInt(id, 10) : NaN;
+        setConfigApiId(
+          Number.isFinite(parsedId) && parsedId > 0
+            ? parsedId
+            : DEFAULT_API_ID
+        );
         setConfigApiHash(hash || DEFAULT_API_HASH);
       } catch {
         setConfigApiId(DEFAULT_API_ID);
@@ -367,23 +523,193 @@ export default function AuthPage() {
     loadConfig();
   }, []);
 
-  // Auto-focus first OTP box when entering that step
   useEffect(() => {
     if (step === "otp") {
       setTimeout(() => otpRefs.current[0]?.focus(), 100);
     }
   }, [step]);
 
-  // Countdown timer for resending OTP
   useEffect(() => {
-    if (step !== "otp" || countdown <= 0) return;
-    const timer = setInterval(() => {
-      setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [step, countdown]);
+    return () => {
+      if (autoSubmitTimerRef.current) {
+        window.clearTimeout(autoSubmitTimerRef.current);
+        autoSubmitTimerRef.current = null;
+      }
+    };
+  }, []);
 
-  // Start QR login when step === "qr"
+  const applyPending = useCallback((next: PendingLogin | null) => {
+    pendingRef.current = next;
+    setPending(next);
+    if (next) {
+      setResendAt(next.resendAt);
+      setFloodUntil(next.floodUntil);
+      void savePendingLogin(next);
+    } else {
+      setResendAt(0);
+      setFloodUntil(0);
+      void clearPendingLogin();
+    }
+  }, []);
+
+  const persistPending = useCallback((next: PendingLogin) => {
+    pendingRef.current = next;
+    setPending(next);
+    void savePendingLogin(next);
+  }, []);
+
+  const applySentCode = useCallback(
+    (info: ReturnType<typeof parseSentCode>, phoneValue: string, tempSession: string) => {
+      if (!info) return;
+      const p = pendingFromSentCode(phoneValue, info, tempSession);
+      applyPending(p);
+      const length = info.codeLength > 0 ? info.codeLength : DEFAULT_CODE_LENGTH;
+      setOtp(new Array(length).fill(""));
+      setEmailPattern(info.emailPattern || "");
+      setEmailCode("");
+      setEmailStage("address");
+      setError(null);
+      setLastError(null);
+      saveFloodUntil(phoneValue, 0);
+
+      if (info.delivery === "emailSetup") {
+        setStep("email");
+        toast.info(t("toasts.emailSetupRequired"));
+      } else {
+        setStep("otp");
+        if (info.delivery === "app") toast.success(t("toasts.codeSentApp"));
+        else if (info.delivery === "sms") toast.success(t("toasts.codeSentSms"));
+        else if (info.delivery === "email") toast.success(t("toasts.codeSentEmail"));
+        else toast.success(t("toasts.codeSent"));
+      }
+    },
+    [applyPending, t]
+  );
+
+  const showError = useCallback(
+    (err: any) => {
+      const info = classifyAuthError(err);
+      setLastError(info);
+      setError(authErrorText(info, t));
+      if (info.floodSeconds) {
+        const until = Date.now() + info.floodSeconds * 1000;
+        setFloodUntil(until);
+        const stored = pendingRef.current;
+        const forPhone = stored?.phone || sanitizePhone(phone);
+        if (forPhone) saveFloodUntil(forPhone, until);
+        if (stored) persistPending({ ...stored, floodUntil: until });
+      }
+      return info;
+    },
+    [persistPending, phone, t]
+  );
+
+  const completeAuthentication = useCallback(
+    async (client: TelegramClient, authorization?: any) => {
+      if (authorization?.futureAuthToken) {
+        await saveFutureAuthToken(authorization.futureAuthToken);
+      }
+
+      const sessionString = client.session.save() as unknown as string;
+      let authPhone =
+        pendingRef.current?.phone || (phone.trim() ? sanitizePhone(phone) : "");
+
+      // auth.Authorization already carries the user, so QR/2FA logins usually
+      // avoid an extra getMe round-trip.
+      const userPhone = authorization?.user?.phone;
+      if (!authPhone && typeof userPhone === "string" && userPhone.trim()) {
+        const trimmed = userPhone.trim();
+        authPhone = trimmed.startsWith("+") ? trimmed : `+${trimmed}`;
+      }
+
+      if (!authPhone) {
+        try {
+          const me: any = await client.getMe();
+          if (me?.phone) authPhone = `+${me.phone}`;
+        } catch (meErr) {
+          console.warn("Could not retrieve profile phone:", meErr);
+        }
+      }
+
+      try {
+        await invoke("save_session", { session: sessionString, phone: authPhone });
+      } catch (saveErr) {
+        console.error("save_session (Rust) failed:", saveErr);
+      }
+
+      try {
+        await saveSecret(VAULT_KEY_SESSION, sessionString);
+        await saveSecret(VAULT_KEY_PHONE, authPhone);
+      } catch (vaultErr) {
+        console.warn("Stronghold saveSecret failed (non-fatal):", vaultErr);
+      }
+
+      applyPending(null);
+      setStep("bootstrap");
+      try {
+        await bootstrapTeleDrive(
+          (status) => {
+            setBootstrapStatus(status);
+          },
+          authPhone
+        );
+        toast.success(t("toasts.ready"));
+        setSession(sessionString, authPhone);
+        navigate("/drive/my-drive");
+      } catch (err: any) {
+        console.error("Bootstrap failed:", err);
+        setBootstrapError(err.message || t("errors.bootstrapFailed"));
+      }
+    },
+    [applyPending, navigate, phone, setSession, t]
+  );
+
+  useEffect(() => {
+    if (checkingConfig || !configApiId || !configApiHash) return;
+    let active = true;
+
+    (async () => {
+      const stored = await loadPendingLogin();
+      if (!active || !stored) return;
+
+      setPhone(stored.phone);
+      if (Date.now() >= stored.expiresAt) {
+        await clearPendingLogin();
+        return;
+      }
+
+      pendingRef.current = stored;
+      setPending(stored);
+      setResendAt(stored.resendAt);
+      setFloodUntil(Math.max(stored.floodUntil, loadFloodUntil(stored.phone)));
+      setEmailPattern(stored.emailPattern || "");
+      const length =
+        stored.codeLength > 0 ? stored.codeLength : DEFAULT_CODE_LENGTH;
+      setOtp(new Array(length).fill(""));
+
+      if (stored.tempSession) {
+        try {
+          await initClient(configApiId, configApiHash, stored.tempSession);
+        } catch (err) {
+          console.warn("Could not restore pending Telegram auth key:", err);
+        }
+      }
+
+      if (stored.requiresPassword) {
+        setStep("password");
+      } else if (stored.delivery === "emailSetup") {
+        setStep("email");
+        setEmailStage("address");
+      } else {
+        setStep("otp");
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [checkingConfig, configApiId, configApiHash]);
+
   useEffect(() => {
     if (step !== "qr") {
       if (qrCleanupRef.current) {
@@ -413,11 +739,15 @@ export default function AuthPage() {
               setQrDataUrl(url);
               if (tgUrl) setQrTgUrl(tgUrl);
               setQrLoading(false);
+              setError(null);
+              setLastError(null);
             }
           },
-          onSuccess: async () => {
+          onSuccess: (authorization) => {
             if (isSubscribed) {
-              await completeAuthentication(client);
+              void completeAuthentication(client, authorization).catch((err) =>
+                showError(err)
+              );
             }
           },
           onPasswordNeeded: () => {
@@ -428,7 +758,7 @@ export default function AuthPage() {
           onError: (err) => {
             if (isSubscribed) {
               console.error("QR Login error:", err);
-              setError(parseTelegramError(err, t));
+              showError(err);
               setQrLoading(false);
             }
           },
@@ -440,7 +770,7 @@ export default function AuthPage() {
       } catch (err: any) {
         if (isSubscribed) {
           console.error("QR setup error:", err);
-          setError(parseTelegramError(err, t));
+          showError(err);
           setQrLoading(false);
         }
       }
@@ -453,75 +783,160 @@ export default function AuthPage() {
         qrCleanupRef.current = null;
       }
     };
-  }, [step, configApiId, configApiHash]);
+  }, [step, configApiId, configApiHash, completeAuthentication, showError]);
 
-  // Open Telegram app directly using native commands or tg:// scheme without browser redirection
-  const handleOpenTelegram = async (url: string) => {
-    if (!url) return;
-    setOpeningTelegram(true);
+  const handleOpenTelegram = useCallback(
+    async (url: string, oneTap = false) => {
+      if (!url) return;
+      setOpeningTelegram(true);
+      const toastMessage = oneTap
+        ? t("qr.openedOneTapToast")
+        : t("otp.delivery.openAppToast");
 
-    try {
-      // 1. Primary: Native Tauri backend command (OS-level launch or mobile opener directly)
-      await invoke("open_telegram_app", { url });
-      toast.info(t("qr.openedTelegramToast", "Opening Telegram... Please confirm the login request in the app."));
-      return;
-    } catch (nativeErr) {
-      console.warn("Native open_telegram_app failed, trying openUrl / deep link:", nativeErr);
-    }
+      try {
+        try {
+          await invoke("open_telegram_app", { url });
+          toast.info(toastMessage);
+          return;
+        } catch (nativeErr) {
+          console.warn(
+            "Native open_telegram_app failed, trying openUrl:",
+            nativeErr
+          );
+        }
 
-    try {
-      // 2. Secondary: Tauri plugin-opener with raw tg:// URI
-      await openUrl(url);
-      toast.info(t("qr.openedTelegramToast", "Opening Telegram... Please confirm the login request in the app."));
-      return;
-    } catch (openerErr) {
-      console.warn("openUrl failed for tg:// URL:", openerErr);
-    }
+        try {
+          await openUrl(url);
+          toast.info(toastMessage);
+          return;
+        } catch (openerErr) {
+          console.warn("openUrl failed for Telegram URL:", openerErr);
+        }
 
-    // 3. Fallback for mobile / web: directly trigger window navigation to tg:// or Android intent://
-    // We intentionally NEVER open t.me or telegram.com in browser because users are logged into the Telegram mobile application!
-    try {
-      const isAndroid = typeof navigator !== "undefined" && /android/i.test(navigator.userAgent);
-      if (isAndroid) {
-        // Android intent scheme explicitly directs to Telegram package
-        const token = url.replace(/^tg:\/\/login\?token=/, "");
-        const androidIntent = `intent://login?token=${token}#Intent;scheme=tg;package=org.telegram.messenger;end`;
-        window.location.href = androidIntent;
-      } else {
-        window.location.href = url;
+        const isAndroid =
+          typeof navigator !== "undefined" && /android/i.test(navigator.userAgent);
+        if (isAndroid && url.startsWith("tg://login?token=")) {
+          const token = url.replace(/^tg:\/\/login\?token=/, "");
+          window.location.href = `intent://login?token=${token}#Intent;scheme=tg;package=org.telegram.messenger;end`;
+        } else {
+          window.location.href = url;
+        }
+        toast.info(toastMessage);
+      } catch (err) {
+        console.error("Failed to open Telegram:", err);
+        toast.error(t("qr.openAppError"));
+      } finally {
+        setTimeout(() => setOpeningTelegram(false), 1500);
       }
-      toast.info(t("qr.openedTelegramToast", "Opening Telegram... Please confirm the login request in the app."));
-    } catch (redirectErr) {
-      console.error("Failed to trigger Telegram app link:", redirectErr);
-      toast.error(t("qr.openAppError", "Could not open Telegram app. Please scan the QR code manually."));
-    } finally {
-      setTimeout(() => setOpeningTelegram(false), 1500);
-    }
+    },
+    [t]
+  );
+
+  const openQrStep = () => {
+    if (step === "qr") return;
+    applyPending(null);
+    void disconnectClient();
+    setPhone("");
+    setOtp([]);
+    setPassword("");
+    setLastError(null);
+    setStep("qr");
+    setError(null);
   };
 
-  // ── Step 1: Send code ────────────────────────────────────────────────────
+  const ensureClient = async (): Promise<TelegramClient> => {
+    if (!configApiId || !configApiHash) {
+      throw new Error("Telegram API credentials missing.");
+    }
+    const stored = pendingRef.current;
+    await initClient(
+      configApiId,
+      configApiHash,
+      stored?.tempSession ?? ""
+    );
+    const client = getClient();
+    if (!client.connected) await client.connect();
+    return client;
+  };
+
   const handleSendCode = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (sendInFlightRef.current) return;
+
     const formattedPhone = sanitizePhone(phone);
-    if (!phone.trim()) { setError(t("errors.phoneRequired")); return; }
+    if (!phone.trim()) {
+      setError(t("errors.phoneRequired"));
+      return;
+    }
     if (formattedPhone.length < 7 || !/^\+[0-9]{6,16}$/.test(formattedPhone)) {
       setError(t("errors.phoneNumberInvalid"));
       return;
     }
-    if (!configApiId || !configApiHash) { setError(t("errors.apiCredentialsMissing")); return; }
+    if (!configApiId || !configApiHash) {
+      setError(t("errors.apiCredentialsMissing"));
+      return;
+    }
 
+    const existing = pendingRef.current;
+    if (
+      existing &&
+      existing.phone === formattedPhone &&
+      isPendingUsable(existing)
+    ) {
+      setError(null);
+      setStep(
+        existing.requiresPassword
+          ? "password"
+          : existing.delivery === "emailSetup"
+          ? "email"
+          : "otp"
+      );
+      return;
+    }
+
+    const now = Date.now();
+    const savedFlood = loadFloodUntil(formattedPhone);
+    if (savedFlood > now) {
+      setFloodUntil(savedFlood);
+      const seconds = remainingSeconds(savedFlood, now);
+      setError(t("errors.floodWait", { count: seconds }));
+      return;
+    }
+
+    const budget = checkCodeRequestBudget(
+      loadRequestTimes(formattedPhone, now),
+      now
+    );
+    if (!budget.allowed) {
+      setLastError({
+        code: "LOCAL_RATE_LIMIT",
+        messageKey: "errors.tooManyCodeRequests",
+        floodSeconds: budget.retryAfterSeconds,
+        isNetwork: false,
+        suggestQr: true,
+      });
+      setError(
+        t("errors.tooManyCodeRequests", { count: budget.retryAfterSeconds })
+      );
+      return;
+    }
+
+    sendInFlightRef.current = true;
     setLoading(true);
     setError(null);
+    setLastError(null);
 
     try {
-      // Always force a fresh client for phone login — this is critical when the user
-      // previously attempted QR login (which leaves the client in a different auth state).
-      await initClient(configApiId, configApiHash, "", true);
+      const [, logoutTokens] = await Promise.all([
+        initClient(configApiId, configApiHash, "", true),
+        loadLogoutTokens(),
+      ]);
       const client = getClient();
 
-      // Retry loop handling Telegram DC migration or AUTH_RESTART
       let result: any = null;
-      for (let attempt = 0; attempt < 3; attempt++) {
+      let lastErr: any = null;
+
+      for (let attempt = 0; attempt < 2; attempt++) {
         try {
           result = await client.invoke(
             new Api.auth.SendCode({
@@ -529,224 +944,277 @@ export default function AuthPage() {
               apiId: configApiId,
               apiHash: configApiHash,
               settings: new Api.CodeSettings({
-                allowAppHash: true,
-                currentNumber: true,
+                currentNumber: false,
+                allowAppHash: false,
+                allowMissedCall: true,
+                logoutTokens: logoutTokens.length ? logoutTokens : undefined,
               }),
             })
           );
-          console.log("Telegram SendCode result:", result);
           break;
         } catch (err: any) {
-          const errMsg = err?.errorMessage || err?.message || "";
-          if ((errMsg.includes("AUTH_RESTART") || errMsg.includes("CONNECTION_NOT_INITED")) && attempt < 2) {
-            console.warn(`SendCode attempt ${attempt + 1} failed (${errMsg}), retrying...`);
-            await new Promise((r) => setTimeout(r, 800));
-            continue;
-          }
-          if (errMsg.includes("PHONE_MIGRATE") || errMsg.includes("NETWORK_MIGRATE") || errMsg.includes("USER_MIGRATE")) {
-            // Extract DC number and let the client handle the migration
-            console.warn("DC migration required:", errMsg);
-            await new Promise((r) => setTimeout(r, 500));
-            if (attempt < 2) continue;
+          lastErr = err;
+          if (attempt === 0) {
+            if (getErrorCode(err) === "AUTH_RESTART") {
+              await new Promise((r) => setTimeout(r, 900));
+              continue;
+            }
+            const migrateDc = getMigrateDc(err);
+            if (migrateDc) {
+              await (client as any)._switchDC(migrateDc);
+              continue;
+            }
           }
           throw err;
         }
       }
 
-      if (!result) throw new Error("Failed to send code after retries. Please try again.");
+      if (!result) throw lastErr ?? new Error(t("errors.sendCodeFailed"));
 
-      const typeClass = result?.type?.className || "";
-      let detectedDelivery: DeliveryType = "unknown";
-      if (
-        result?.type instanceof Api.auth.SentCodeTypeApp ||
-        typeClass === "auth.SentCodeTypeApp" ||
-        result?.type?.CONSTRUCTOR_ID === 1035688326
-      ) {
-        detectedDelivery = "app";
-      } else if (
-        result?.type instanceof Api.auth.SentCodeTypeSms ||
-        typeClass === "auth.SentCodeTypeSms" ||
-        typeClass === "auth.SentCodeTypeFirebaseSms" ||
-        typeClass === "auth.SentCodeTypeFragmentSms"
-      ) {
-        detectedDelivery = "sms";
-      } else if (
-        result?.type instanceof Api.auth.SentCodeTypeEmailCode ||
-        typeClass === "auth.SentCodeTypeEmailCode"
-      ) {
-        detectedDelivery = "email";
-        setEmailPattern(result.type?.emailPattern || "");
-      } else if (
-        typeClass === "auth.SentCodeTypeCall" ||
-        typeClass === "auth.SentCodeTypeFlashCall" ||
-        typeClass === "auth.SentCodeTypeMissedCall"
-      ) {
-        detectedDelivery = "call";
+      if (isSentCodeSuccess(result)) {
+        if (result.authorization?.futureAuthToken) {
+          await saveFutureAuthToken(result.authorization.futureAuthToken);
+        }
+        await completeAuthentication(client, result.authorization);
+        return;
       }
-      setDeliveryType(detectedDelivery);
 
-      const returnedLength = result?.type?.length;
-      const detectedLength =
-        typeof returnedLength === "number" && returnedLength >= 4 && returnedLength <= 8
-          ? returnedLength
-          : 5;
-      setCodeLength(detectedLength);
-      setOtp(new Array(detectedLength).fill(""));
-      setPhoneCodeHash(result.phoneCodeHash);
-
-      const timeoutSec =
-        typeof result?.timeout === "number" && result.timeout > 0
-          ? result.timeout
-          : detectedDelivery === "app"
-          ? 30
-          : 60;
-      setCountdown(timeoutSec);
-
-      setStep("otp");
-
-      if (detectedDelivery === "app") {
-        toast.success(t("toasts.codeSentApp"));
-      } else if (detectedDelivery === "sms") {
-        toast.success(t("toasts.codeSentSms"));
-      } else if (detectedDelivery === "email") {
-        toast.success(t("toasts.codeSentEmail"));
-      } else {
-        toast.success(t("toasts.codeSent"));
-      }
+      const info = parseSentCode(result);
+      if (!info) throw new Error(t("errors.sendCodeFailed"));
+      recordCodeRequest(formattedPhone, Date.now());
+      applySentCode(info, formattedPhone, client.session.save() as unknown as string);
     } catch (err: any) {
+      if (getErrorCode(err) === "SESSION_PASSWORD_NEEDED") {
+        const client = getClient();
+        const nowMs = Date.now();
+        const passwordPending: PendingLogin = {
+          phone: formattedPhone,
+          tempSession: client.session.save() as unknown as string,
+          phoneCodeHash: "",
+          delivery: "unknown",
+          typeName: "",
+          codeLength: 0,
+          nextDelivery: null,
+          nextTypeName: null,
+          timeoutSeconds: 0,
+          emailPattern: null,
+          resetAvailablePeriod: null,
+          resetPendingDate: null,
+          fragmentUrl: null,
+          sentAt: nowMs,
+          resendAt: 0,
+          expiresAt: nowMs + PENDING_CODE_TTL_MS,
+          floodUntil: 0,
+          requiresPassword: true,
+        };
+        applyPending(passwordPending);
+        setStep("password");
+        return;
+      }
+
       console.error("Send code failed:", err);
-      setError(parseTelegramError(err, t));
+      if (pendingRef.current) {
+        applyPending(null);
+      }
+      showError(err);
     } finally {
+      sendInFlightRef.current = false;
       setLoading(false);
     }
   };
 
-  // ── Client Resilience Helper ─────────────────────────────────────────────
-  const getOrInitClient = async (): Promise<TelegramClient> => {
-    try {
-      const client = getClient();
-      if (!client.connected) {
-        await client.connect();
-      }
-      return client;
-    } catch {
-      if (!configApiId || !configApiHash) {
-        throw new Error("Telegram API credentials missing. Please check settings.");
-      }
-      await initClient(configApiId, configApiHash);
-      return getClient();
-    }
-  };
-
-  // ── Resend Code ──────────────────────────────────────────────────────────
   const handleResendCode = async () => {
-    if (resending || countdown > 0 || !configApiId || !configApiHash) return;
+    const stored = pendingRef.current;
+    if (resendingGuard.current || !stored) return;
+    const now = Date.now();
+    if (floodUntil > now || stored.resendAt > now) return;
+    if (!stored.nextDelivery) return;
+
+    const budget = checkCodeRequestBudget(
+      loadRequestTimes(stored.phone, now),
+      now
+    );
+    if (!budget.allowed) {
+      setLastError({
+        code: "LOCAL_RATE_LIMIT",
+        messageKey: "errors.tooManyCodeRequests",
+        floodSeconds: budget.retryAfterSeconds,
+        isNetwork: false,
+        suggestQr: true,
+      });
+      setError(
+        t("errors.tooManyCodeRequests", { count: budget.retryAfterSeconds })
+      );
+      return;
+    }
+
+    resendingGuard.current = true;
     setResending(true);
     setError(null);
+    setLastError(null);
 
     try {
-      const client = await getOrInitClient();
-      const formattedPhone = sanitizePhone(phone);
-
+      const client = await ensureClient();
       const resendResult: any = await client.invoke(
         new Api.auth.ResendCode({
-          phoneNumber: formattedPhone,
-          phoneCodeHash: phoneCodeHash,
+          phoneNumber: stored.phone,
+          phoneCodeHash: stored.phoneCodeHash,
         })
       );
 
-      if (resendResult?.phoneCodeHash) {
-        setPhoneCodeHash(resendResult.phoneCodeHash);
+      if (isSentCodeSuccess(resendResult)) {
+        await completeAuthentication(client, resendResult.authorization);
+        return;
       }
 
-      const newTypeClass = resendResult?.type?.className || "";
-      if (
-        newTypeClass === "auth.SentCodeTypeSms" ||
-        newTypeClass === "auth.SentCodeTypeFirebaseSms" ||
-        newTypeClass === "auth.SentCodeTypeFragmentSms"
-      ) {
-        setDeliveryType("sms");
-      }
-
-      const timeoutSec =
-        typeof resendResult?.timeout === "number" && resendResult.timeout > 0
-          ? resendResult.timeout
-          : 60;
-      setCountdown(timeoutSec);
-
+      const info = parseSentCode(resendResult);
+      if (!info) throw new Error(t("errors.resendFailed"));
+      recordCodeRequest(stored.phone, Date.now());
+      applySentCode(info, stored.phone, stored.tempSession);
       toast.success(t("otp.resend.successToast"));
     } catch (err: any) {
       console.error("Resend code failed:", err);
-      const errMsg = err?.errorMessage || err?.message || "";
-      if (errMsg.includes("SEND_CODE_UNAVAILABLE")) {
+      const info = classifyAuthError(err);
+      if (info.code === "SEND_CODE_UNAVAILABLE") {
+        const updated = { ...stored, nextDelivery: null, nextTypeName: null };
+        persistPending(updated);
         toast.info(t("otp.resend.unavailableToast"));
-        setDeliveryType("app");
       } else {
-        setError(parseTelegramError(err, t));
+        showError(err);
+        if (
+          info.code === "PHONE_CODE_EXPIRED" ||
+          info.code === "PHONE_HASH_EXPIRED" ||
+          info.code === "AUTH_KEY_UNREGISTERED" ||
+          info.code === "AUTH_KEY_INVALID" ||
+          info.code === "AUTH_RESTART"
+        ) {
+          applyPending(null);
+          setStep("phone");
+        }
       }
     } finally {
+      resendingGuard.current = false;
       setResending(false);
     }
   };
 
-  // ── Verify Code Execution ────────────────────────────────────────────────
   const executeVerifyCode = async (codeToVerify: string) => {
-    if (!configApiId || !configApiHash) return;
+    if (autoSubmitTimerRef.current) {
+      window.clearTimeout(autoSubmitTimerRef.current);
+      autoSubmitTimerRef.current = null;
+    }
+    const stored = pendingRef.current;
+    if (!stored || verifyInFlightRef.current) return;
+
+    verifyInFlightRef.current = true;
     setLoading(true);
     setError(null);
+    setLastError(null);
 
     try {
-      const client = await getOrInitClient();
-      const formattedPhone = sanitizePhone(phone);
+      const client = await ensureClient();
+      const result: any = await client.invoke(
+        new Api.auth.SignIn({
+          phoneNumber: stored.phone,
+          phoneCodeHash: stored.phoneCodeHash,
+          phoneCode: codeToVerify,
+        })
+      );
 
-      try {
-        await client.invoke(
-          new Api.auth.SignIn({
-            phoneNumber: formattedPhone,
-            phoneCodeHash,
-            phoneCode: codeToVerify,
-          })
-        );
-        await completeAuthentication(client);
-      } catch (err: any) {
-        const errMsg = err?.errorMessage || err?.message || "";
-        if (errMsg.includes("SESSION_PASSWORD_NEEDED")) {
-          setStep("password");
-        } else {
-          throw err;
-        }
+      if (isAuthorizationSignUpRequired(result)) {
+        applyPending(null);
+        setStep("phone");
+        setError(t("errors.signUpRequired"));
+        return;
       }
+
+      await completeAuthentication(client, result);
     } catch (err: any) {
+      const code = getErrorCode(err);
+      if (code === "SESSION_PASSWORD_NEEDED") {
+        const updated = { ...stored, requiresPassword: true };
+        persistPending(updated);
+        setStep("password");
+        return;
+      }
+
       console.error("OTP verification failed:", err);
-      setError(parseTelegramError(err, t));
-      setOtp(new Array(codeLength).fill(""));
-      otpRefs.current[0]?.focus();
+      const info = showError(err);
+
+      if (
+        code === "PHONE_CODE_EXPIRED" ||
+        code === "PHONE_HASH_EXPIRED" ||
+        code === "AUTH_KEY_UNREGISTERED" ||
+        code === "AUTH_KEY_INVALID" ||
+        code === "AUTH_RESTART"
+      ) {
+        applyPending(null);
+        setStep("phone");
+      } else if (code === "PHONE_CODE_INVALID" || code === "PHONE_CODE_EMPTY") {
+        setOtp(new Array(codeLength).fill(""));
+        otpRefs.current[0]?.focus();
+      }
+      setLastError(info);
     } finally {
+      verifyInFlightRef.current = false;
       setLoading(false);
     }
   };
 
-  // ── Step 2: Verify OTP handlers ──────────────────────────────────────────
-  const handleOtpChange = (index: number, val: string) => {
-    const cleanVal = val.replace(/[^0-9]/g, "").slice(0, 1);
-    const newOtp = [...otp];
-    newOtp[index] = cleanVal;
-    setOtp(newOtp);
+  const scheduleVerify = (code: string, delayMs: number) => {
+    if (autoSubmitTimerRef.current) {
+      window.clearTimeout(autoSubmitTimerRef.current);
+    }
+    autoSubmitTimerRef.current = window.setTimeout(() => {
+      autoSubmitTimerRef.current = null;
+      void executeVerifyCode(code);
+    }, delayMs);
+  };
 
-    if (cleanVal && index < codeLength - 1) {
+  const handleOtpChange = (index: number, val: string) => {
+    if (autoSubmitTimerRef.current) {
+      window.clearTimeout(autoSubmitTimerRef.current);
+      autoSubmitTimerRef.current = null;
+    }
+    const digits = val.replace(/[^0-9]/g, "");
+    if (!digits) {
+      const next = [...otp];
+      next[index] = "";
+      setOtp(next);
+      return;
+    }
+
+    if (digits.length > 1) {
+      const next = [...otp];
+      for (let i = 0; i < digits.length && index + i < codeLength; i++) {
+        next[index + i] = digits[i];
+      }
+      setOtp(next);
+      const focusIndex = Math.min(index + digits.length, codeLength - 1);
+      otpRefs.current[focusIndex]?.focus();
+      if (!next.includes("")) {
+        scheduleVerify(next.join(""), 50);
+      }
+      return;
+    }
+
+    const next = [...otp];
+    next[index] = digits[0];
+    setOtp(next);
+
+    if (index < codeLength - 1) {
       otpRefs.current[index + 1]?.focus();
     }
 
-    // Auto-verify when all digits are filled
-    const fullCode = newOtp.join("");
-    if (cleanVal && fullCode.length === codeLength && !newOtp.includes("")) {
-      setTimeout(() => {
-        executeVerifyCode(fullCode);
-      }, 50);
+    if (!next.includes("")) {
+      scheduleVerify(next.join(""), 50);
     }
   };
 
-  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleOtpKeyDown = (
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>
+  ) => {
     if (e.key === "Backspace") {
       if (!otp[index] && index > 0) {
         otpRefs.current[index - 1]?.focus();
@@ -760,30 +1228,29 @@ export default function AuthPage() {
 
   const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
-    const rawDigits = e.clipboardData.getData("text").replace(/[^0-9]/g, "");
+    if (autoSubmitTimerRef.current) {
+      window.clearTimeout(autoSubmitTimerRef.current);
+      autoSubmitTimerRef.current = null;
+    }
+    const rawDigits = e.clipboardData
+      .getData("text")
+      .replace(/[^0-9]/g, "")
+      .slice(0, codeLength);
     if (!rawDigits) return;
 
-    const targetLength =
-      rawDigits.length >= 5 && rawDigits.length <= 8
-        ? rawDigits.length
-        : codeLength;
-
-    if (targetLength !== codeLength) {
-      setCodeLength(targetLength);
-    }
-
-    const digits = rawDigits.slice(0, targetLength).split("");
-    const newOtp = new Array(targetLength).fill("");
-    digits.forEach((d, i) => { newOtp[i] = d; });
+    const newOtp = new Array(codeLength).fill("");
+    rawDigits.split("").forEach((d, i) => {
+      newOtp[i] = d;
+    });
     setOtp(newOtp);
 
-    const focusIndex = Math.min(digits.length, targetLength - 1);
-    setTimeout(() => { otpRefs.current[focusIndex]?.focus(); }, 0);
+    const focusIndex = Math.min(rawDigits.length, codeLength - 1);
+    setTimeout(() => {
+      otpRefs.current[focusIndex]?.focus();
+    }, 0);
 
-    if (digits.length === targetLength) {
-      setTimeout(() => {
-        executeVerifyCode(digits.join(""));
-      }, 60);
+    if (rawDigits.length === codeLength) {
+      scheduleVerify(rawDigits, 60);
     }
   };
 
@@ -797,30 +1264,21 @@ export default function AuthPage() {
     await executeVerifyCode(code);
   };
 
-  const toggleCodeLength = () => {
-    const newLen = codeLength === 5 ? 6 : 5;
-    setCodeLength(newLen);
-    setOtp((prev) => {
-      const updated = new Array(newLen).fill("");
-      for (let i = 0; i < Math.min(prev.length, newLen); i++) {
-        updated[i] = prev[i];
-      }
-      return updated;
-    });
-    setError(null);
-    setTimeout(() => { otpRefs.current[0]?.focus(); }, 50);
-  };
-
-  // ── Step 3: 2FA password ─────────────────────────────────────────────────
   const handleVerifyPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!password) { setError(t("errors.passwordRequired")); return; }
+    if (loading || passwordInFlightRef.current) return;
+    if (!password) {
+      setError(t("errors.passwordRequired"));
+      return;
+    }
 
+    passwordInFlightRef.current = true;
     setLoading(true);
     setError(null);
+    setLastError(null);
 
     try {
-      const client = await getOrInitClient();
+      const client = await ensureClient();
       const pwdInfo = await client.invoke(new Api.account.GetPassword());
       const srpResult = await safeComputeCheck(pwdInfo as any, password);
       const passwordParam =
@@ -831,56 +1289,160 @@ export default function AuthPage() {
               A: srpResult.A,
               M1: srpResult.M1,
             });
-      await client.invoke(new Api.auth.CheckPassword({ password: passwordParam }));
-      await completeAuthentication(client);
+      const result: any = await client.invoke(
+        new Api.auth.CheckPassword({ password: passwordParam })
+      );
+      await completeAuthentication(client, result);
     } catch (err: any) {
       console.error("2FA password failed:", err);
-      setError(parseTelegramError(err, t));
+      showError(err);
     } finally {
+      passwordInFlightRef.current = false;
       setLoading(false);
     }
   };
 
-  // ── Complete auth ────────────────────────────────────────────────────────
-  const completeAuthentication = async (client: any) => {
-    const sessionString = client.session.save() as string;
-    let authPhone = sanitizePhone(phone);
+  const buildEmailPurpose = () => {
+    const stored = pendingRef.current;
+    return new Api.EmailVerifyPurposeLoginSetup({
+      phoneNumber: stored?.phone || sanitizePhone(phone),
+      phoneCodeHash: stored?.phoneCodeHash || "",
+    });
+  };
 
-    if (!phone.trim()) {
-      try {
-        const me: any = await client.getMe();
-        if (me?.phone) authPhone = `+${me.phone}`;
-      } catch (meErr) {
-        console.warn("Could not retrieve profile phone:", meErr);
-      }
+  const handleSendVerifyEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (emailBusy || emailInFlightRef.current) return;
+    const email = emailAddress.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError(t("errors.emailInvalid"));
+      return;
     }
 
-    try {
-      await invoke("save_session", { session: sessionString, phone: authPhone });
-    } catch (saveErr) {
-      console.error("save_session (Rust) failed:", saveErr);
-    }
+    emailInFlightRef.current = true;
+    setEmailBusy(true);
+    setError(null);
+    setLastError(null);
 
     try {
-      await saveSecret(VAULT_KEY_SESSION, sessionString);
-      await saveSecret(VAULT_KEY_PHONE, authPhone);
-    } catch (vaultErr) {
-      console.warn("Stronghold saveSecret failed (non-fatal):", vaultErr);
-    }
-
-    setStep("bootstrap");
-    try {
-      await bootstrapTeleDrive((status) => { setBootstrapStatus(status); }, authPhone);
-      toast.success(t("toasts.ready"));
-      setSession(sessionString, authPhone);
-      navigate("/drive/my-drive");
+      const client = await ensureClient();
+      const result: any = await client.invoke(
+        new Api.account.SendVerifyEmailCode({
+          purpose: buildEmailPurpose(),
+          email,
+        })
+      );
+      setEmailPattern(result?.emailPattern || email);
+      setEmailCodeLength(
+        typeof result?.length === "number" && result.length > 0
+          ? result.length
+          : 5
+      );
+      setEmailCode("");
+      setEmailStage("code");
+      toast.success(t("emailSetup.codeSentToast"));
     } catch (err: any) {
-      console.error("Bootstrap failed:", err);
-      setBootstrapError(err.message || t("errors.bootstrapFailed"));
+      console.error("Send verify email code failed:", err);
+      showError(err);
+    } finally {
+      emailInFlightRef.current = false;
+      setEmailBusy(false);
     }
   };
 
-  // ── Loading screen ───────────────────────────────────────────────────────
+  const handleVerifyEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (emailBusy || emailInFlightRef.current) return;
+    const stored = pendingRef.current;
+    if (!stored) return;
+    if (emailCode.trim().length !== emailCodeLength) {
+      setError(t("errors.incompleteCode", { count: emailCodeLength }));
+      return;
+    }
+
+    emailInFlightRef.current = true;
+    setEmailBusy(true);
+    setError(null);
+    setLastError(null);
+
+    try {
+      const client = await ensureClient();
+      const result: any = await client.invoke(
+        new Api.account.VerifyEmail({
+          purpose: buildEmailPurpose(),
+          verification: new Api.EmailVerificationCode({ code: emailCode.trim() }),
+        })
+      );
+
+      if (isEmailVerifiedLogin(result) || result?.sentCode) {
+        const info = parseSentCode(result.sentCode);
+        if (!info) throw new Error(t("errors.sendCodeFailed"));
+        const newEmail = result.email || emailPattern || emailAddress;
+        setEmailPattern(newEmail);
+        applySentCode(info, stored.phone, stored.tempSession);
+      } else {
+        throw new Error(t("errors.emailVerifyFailed"));
+      }
+    } catch (err: any) {
+      console.error("Verify email failed:", err);
+      showError(err);
+    } finally {
+      emailInFlightRef.current = false;
+      setEmailBusy(false);
+    }
+  };
+
+  const handleResetLoginEmail = async () => {
+    const stored = pendingRef.current;
+    if (!stored || !stored.phoneCodeHash || emailBusy || emailInFlightRef.current)
+      return;
+
+    emailInFlightRef.current = true;
+    setEmailBusy(true);
+    setError(null);
+    setLastError(null);
+
+    try {
+      const client = await ensureClient();
+      const result: any = await client.invoke(
+        new Api.auth.ResetLoginEmail({
+          phoneNumber: stored.phone,
+          phoneCodeHash: stored.phoneCodeHash,
+        })
+      );
+      const info = parseSentCode(result);
+      if (!info) throw new Error(t("errors.resendFailed"));
+      applySentCode(info, stored.phone, stored.tempSession);
+    } catch (err: any) {
+      console.error("Reset login email failed:", err);
+      showError(err);
+    } finally {
+      emailInFlightRef.current = false;
+      setEmailBusy(false);
+    }
+  };
+
+  const handleCopyDiagnostics = async () => {
+    const stored = pendingRef.current;
+    const text = buildDiagnostics({
+      delivery: stored?.delivery ?? "unknown",
+      nextDelivery: stored?.nextDelivery ?? null,
+      timeoutSeconds: stored?.timeoutSeconds ?? 0,
+      codeLength,
+      phone: stored?.phone || sanitizePhone(phone),
+      platform: getPlatform(),
+      appVersion: APP_VERSION,
+      errorCode: lastError?.code || null,
+    });
+
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success(t("diagnostics.copied"));
+    } catch {
+      toast.info(text);
+    }
+  };
+
   if (checkingConfig) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-background select-none">
@@ -897,10 +1459,8 @@ export default function AuthPage() {
     );
   }
 
-  // ── Main render (Minimal, refined, zero-scroll mobile & desktop) ───────────
   return (
     <div className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-background select-none flex flex-col justify-between items-center py-3 sm:py-6 px-4 relative">
-      {/* Language switcher — top-right placement with comfortable mobile padding and safe-area support */}
       <div className="absolute top-[max(calc(var(--safe-area-top,0px)+0.75rem),1.5rem)] sm:top-4 right-4 sm:right-4 z-30">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -911,10 +1471,17 @@ export default function AuthPage() {
               className="h-8 px-2.5 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground bg-secondary/50 hover:bg-secondary/80 border border-border/40 transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <Languages className="h-3.5 w-3.5 text-[#0B57D0] dark:text-[#A8C7FA]" />
-              <span>{SUPPORTED_LANGUAGES.find((l) => l.code === (i18n.resolvedLanguage || i18n.language))?.label ?? "Lang"}</span>
+              <span>
+                {SUPPORTED_LANGUAGES.find(
+                  (l) => l.code === (i18n.resolvedLanguage || i18n.language)
+                )?.label ?? "Lang"}
+              </span>
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-40 p-1 rounded-xl bg-popover border border-border/60 shadow-xl">
+          <DropdownMenuContent
+            align="end"
+            className="w-40 p-1 rounded-xl bg-popover border border-border/60 shadow-xl"
+          >
             {SUPPORTED_LANGUAGES.map((lang) => {
               const currentLng = i18n.resolvedLanguage || i18n.language;
               const isSelected = currentLng === lang.code;
@@ -930,7 +1497,9 @@ export default function AuthPage() {
                   )}
                 >
                   <span>{lang.label}</span>
-                  {isSelected && <Check className="h-3.5 w-3.5 text-[#0B57D0] dark:text-[#A8C7FA]" />}
+                  {isSelected && (
+                    <Check className="h-3.5 w-3.5 text-[#0B57D0] dark:text-[#A8C7FA]" />
+                  )}
                 </DropdownMenuItem>
               );
             })}
@@ -938,12 +1507,12 @@ export default function AuthPage() {
         </DropdownMenu>
       </div>
 
-      {/* Main card column — perfectly centered vertically with zero scroll */}
       <div className="my-auto w-full max-w-[340px] sm:max-w-[380px] flex flex-col items-center justify-center z-10">
-
-        {/* ── Minimal Brand Logo ── */}
         <div className="flex flex-col items-center mb-3 sm:mb-4">
-          <Link to="/drive/my-drive" className="inline-flex items-center gap-2.5 group">
+          <Link
+            to="/drive/my-drive"
+            className="inline-flex items-center gap-2.5 group"
+          >
             <img
               src="/teledrive.png"
               alt="TeleDrive"
@@ -955,24 +1524,22 @@ export default function AuthPage() {
           </Link>
         </div>
 
-        {/* ── Main Surface Card (Solid, seamless, borderless) ── */}
         <div className="w-full bg-white dark:bg-[#141517] rounded-2xl sm:rounded-3xl shadow-[0_4px_24px_rgba(0,0,0,0.05)] dark:shadow-[0_16px_44px_rgba(0,0,0,0.6)] p-4 sm:p-5 transition-all duration-300">
-
-          {/* Error banner */}
           {error && (
             <div className="mb-3">
               <ErrorBanner message={error} />
             </div>
           )}
 
-          {/* ── PHONE / QR ── */}
           {(step === "phone" || step === "qr") && (
             <div className="space-y-3.5 animate-in fade-in duration-200">
-              {/* Tab switcher */}
               <div className="flex bg-[#F0F4F9] dark:bg-[#1E1F22] p-1 rounded-full">
                 <button
                   type="button"
-                  onClick={() => { setStep("phone"); setError(null); }}
+                  onClick={() => {
+                    setStep("phone");
+                    setError(null);
+                  }}
                   className={cn(
                     "flex-1 py-1.5 text-xs font-medium rounded-full transition-all flex items-center justify-center gap-1.5 cursor-pointer",
                     step === "phone"
@@ -985,7 +1552,7 @@ export default function AuthPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setStep("qr"); setError(null); }}
+                  onClick={openQrStep}
                   className={cn(
                     "flex-1 py-1.5 text-xs font-medium rounded-full transition-all flex items-center justify-center gap-1.5 cursor-pointer",
                     step === "qr"
@@ -998,7 +1565,6 @@ export default function AuthPage() {
                 </button>
               </div>
 
-              {/* Phone form */}
               {step === "phone" && (
                 <form onSubmit={handleSendCode} className="space-y-3.5" noValidate>
                   <div className="text-center space-y-0.5">
@@ -1014,27 +1580,33 @@ export default function AuthPage() {
                     <FloatingInput
                       id="phone-number"
                       label={t("phone.label")}
-                      placeholder={t("phone.placeholder", "+1 234 567 8900")}
+                      placeholder={t("phone.placeholder")}
                       type="tel"
                       inputMode="tel"
                       enterKeyHint="next"
                       value={phone}
-                      onChange={(e) => { setPhone(e.target.value); setError(null); }}
+                      onChange={(e) => {
+                        setPhone(e.target.value);
+                        setError(null);
+                      }}
                       disabled={loading}
                       autoComplete="tel"
                       autoFocus
-                      onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.form?.requestSubmit(); }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") e.currentTarget.form?.requestSubmit();
+                      }}
                     />
                     {phone.trim().length >= 5 && (
                       <div className="flex items-center gap-1.5 px-1 text-xs text-[#0B57D0] dark:text-[#A8C7FA] font-medium animate-in fade-in duration-150">
-                        <span>Will send code to:</span>
-                        <span className="font-mono font-semibold">{sanitizePhone(phone)}</span>
+                        <span>{t("phone.willSendCode")}</span>
+                        <span className="font-mono font-semibold">
+                          {sanitizePhone(phone)}
+                        </span>
                       </div>
                     )}
-                    {/* Clear, gentle delivery tip */}
                     <div className="flex items-start gap-1.5 px-1 text-[11px] text-muted-foreground leading-tight">
                       <Info className="h-3.5 w-3.5 text-[#0B57D0] dark:text-[#A8C7FA] shrink-0 mt-0.5" />
-                      <span>Telegram delivers codes to your <strong>Telegram app</strong> first. SMS available as fallback.</span>
+                      <span>{t("phone.deliveryTip")}</span>
                     </div>
                   </div>
 
@@ -1045,21 +1617,22 @@ export default function AuthPage() {
                     disabled={loading || !phone.trim()}
                   />
 
-                  <p className="text-center text-[10px] text-muted-foreground/80 leading-relaxed">
+                  <p className="text-center text-[10px] text-muted-foreground/80 leading-relaxed pt-0.5">
                     <Trans
                       t={t}
                       i18nKey="phone.terms"
                       components={{
-                        terms: <span className="text-[#0B57D0] dark:text-[#A8C7FA] cursor-pointer hover:underline" />,
+                        terms: (
+                          <span className="text-[#0B57D0] dark:text-[#A8C7FA] cursor-pointer hover:underline" />
+                        ),
                       }}
                     />
                   </p>
                 </form>
               )}
 
-              {/* QR tab */}
               {step === "qr" && (
-                <div className="space-y-3 text-center">
+                <div className="space-y-3.5 text-center">
                   <div className="space-y-0.5">
                     <h1 className="text-base sm:text-lg font-semibold text-foreground leading-tight">
                       {t("qr.title")}
@@ -1069,62 +1642,79 @@ export default function AuthPage() {
                     </p>
                   </div>
 
-                  {qrTgUrl && (
-                    <button
-                      type="button"
-                      disabled={openingTelegram}
-                      onClick={() => handleOpenTelegram(qrTgUrl)}
-                      className="flex items-center justify-center gap-2 w-full py-2.5 px-3 rounded-xl bg-[#0B57D0] hover:bg-[#0842A0] active:bg-[#063177] dark:bg-[#A8C7FA] dark:hover:bg-[#c2d8fb] dark:text-[#062E6F] text-white font-medium text-xs sm:text-sm shadow-sm transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-                    >
-                      {openingTelegram ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Send className="h-3.5 w-3.5" />
-                      )}
-                      <span>
-                        {openingTelegram
-                          ? t("qr.openingTelegram", "Opening Telegram...")
-                          : t("qr.oneTapLogin", "Log in with Telegram App (1-Tap)")}
-                      </span>
-                      <ExternalLink className="h-3 w-3 opacity-75" />
-                    </button>
-                  )}
-
-                  <div className="flex flex-col items-center py-1">
-                    <div className="p-2.5 bg-white rounded-2xl shadow-xs border border-black/5">
+                  <div className="flex flex-col items-center py-0.5">
+                    <div className="p-2.5 bg-white rounded-2xl shadow-xs border border-black/5 dark:border-white/10">
                       {qrLoading || !qrDataUrl ? (
-                        <div className="w-[135px] h-[135px] sm:w-[150px] sm:h-[150px] flex flex-col items-center justify-center gap-2">
+                        <div className="w-[140px] h-[140px] sm:w-[150px] sm:h-[150px] flex flex-col items-center justify-center gap-2">
                           <Loader2 className="h-6 w-6 animate-spin text-[#0B57D0] dark:text-[#A8C7FA]" />
-                          <span className="text-[11px] font-medium text-muted-foreground">{t("qr.refreshing")}</span>
+                          <span className="text-[11px] font-medium text-muted-foreground">
+                            {t("qr.refreshing")}
+                          </span>
                         </div>
                       ) : (
                         <img
                           src={qrDataUrl}
                           alt="Telegram QR Login"
-                          className="w-[135px] h-[135px] sm:w-[150px] sm:h-[150px] object-contain rounded-lg"
+                          className="w-[140px] h-[140px] sm:w-[150px] sm:h-[150px] object-contain rounded-lg"
                         />
                       )}
                     </div>
                   </div>
 
-                  <div className="space-y-1 text-left bg-muted/40 p-2.5 rounded-xl text-[11px] text-foreground/80">
-                    {([t("qr.step1"), t("qr.step2"), t("qr.step3")] as string[]).map((stepText, i) => (
-                      <div key={i} className="flex items-center gap-2 leading-tight">
-                        <span className="w-4 h-4 rounded-full bg-[#0B57D0]/10 dark:bg-[#A8C7FA]/20 text-[#0B57D0] dark:text-[#A8C7FA] font-bold text-[10px] flex items-center justify-center shrink-0">
-                          {i + 1}
-                        </span>
-                        <span>{stepText}</span>
-                      </div>
-                    ))}
+                  <div className="flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+                    <Smartphone className="h-3.5 w-3.5 text-[#0B57D0] dark:text-[#A8C7FA] shrink-0" />
+                    <span>{t("qr.scanInstruction")}</span>
                   </div>
+
+                  {qrTgUrl && (
+                    <div className="space-y-2 pt-1">
+                      <button
+                        type="button"
+                        disabled={openingTelegram}
+                        onClick={() => handleOpenTelegram(qrTgUrl, true)}
+                        className="flex items-center justify-center gap-2 w-full py-2.5 px-3 rounded-xl bg-[#0B57D0] hover:bg-[#0842A0] active:bg-[#063177] dark:bg-[#A8C7FA] dark:hover:bg-[#c2d8fb] dark:text-[#062E6F] text-white font-medium text-xs sm:text-sm shadow-xs transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        {openingTelegram ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Send className="h-3.5 w-3.5" />
+                        )}
+                        <span>
+                          {openingTelegram
+                            ? t("qr.openingTelegram")
+                            : t("qr.oneTapLogin")}
+                        </span>
+                        <ExternalLink className="h-3 w-3 opacity-75" />
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(qrTgUrl);
+                            toast.success(t("qr.copiedLinkToast"));
+                          } catch {
+                            toast.info(qrTgUrl);
+                          }
+                        }}
+                        className="inline-flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors py-0.5 cursor-pointer"
+                      >
+                        <Copy className="h-3 w-3" />
+                        <span>{t("qr.copyLink")}</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           )}
 
-          {/* ── OTP ── */}
           {step === "otp" && (
-            <form onSubmit={handleVerifyOTP} className="space-y-3 animate-in fade-in duration-200" noValidate>
+            <form
+              onSubmit={handleVerifyOTP}
+              className="space-y-3 animate-in fade-in duration-200"
+              noValidate
+            >
               <div className="text-center space-y-0.5">
                 <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-[#EDF2FC] dark:bg-[#1a2744] mb-1">
                   <MessageSquare className="h-4 w-4 text-[#0B57D0] dark:text-[#A8C7FA]" />
@@ -1136,12 +1726,14 @@ export default function AuthPage() {
                   <Trans
                     t={t}
                     i18nKey="otp.subtitle"
-                    values={{ phone: sanitizePhone(phone) }}
+                    values={{ phone: maskPhone(pending?.phone || sanitizePhone(phone)) }}
                     components={{
                       phone: (
                         <button
                           type="button"
-                          onClick={() => { if (!loading) setStep("phone"); }}
+                          onClick={() => {
+                            if (!loading) setStep("phone");
+                          }}
                           className="font-semibold text-foreground hover:text-[#0B57D0] dark:hover:text-[#A8C7FA] transition-colors underline-offset-2 hover:underline cursor-pointer"
                         />
                       ),
@@ -1150,7 +1742,6 @@ export default function AuthPage() {
                 </p>
               </div>
 
-              {/* Delivery notification callout */}
               {deliveryType === "app" ? (
                 <div className="p-3 rounded-2xl bg-sky-500/[0.08] dark:bg-sky-400/[0.08] text-left border border-sky-500/20 animate-in fade-in duration-200 space-y-2">
                   <div className="flex items-start gap-2.5">
@@ -1173,11 +1764,20 @@ export default function AuthPage() {
                   </div>
                   <button
                     type="button"
+                    disabled={openingTelegram}
                     onClick={() => handleOpenTelegram("tg://resolve?domain=telegram")}
-                    className="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-xl bg-[#0B57D0] hover:bg-[#0842A0] active:bg-[#063177] dark:bg-[#A8C7FA] dark:hover:bg-[#c2d8fb] dark:text-[#062E6F] text-white text-xs font-medium shadow-xs transition-all cursor-pointer"
+                    className="flex items-center justify-center gap-2 w-full py-2 px-3 rounded-xl bg-[#0B57D0] hover:bg-[#0842A0] active:bg-[#063177] dark:bg-[#A8C7FA] dark:hover:bg-[#c2d8fb] dark:text-[#062E6F] text-white text-xs font-medium shadow-xs transition-all cursor-pointer disabled:opacity-60"
                   >
-                    <Send className="h-3.5 w-3.5" />
-                    <span>{t("otp.delivery.openApp", "Open Telegram App")}</span>
+                    {openingTelegram ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Send className="h-3.5 w-3.5" />
+                    )}
+                    <span>
+                      {openingTelegram
+                        ? t("qr.openingTelegram")
+                        : t("otp.delivery.openApp")}
+                    </span>
                     <ExternalLink className="h-3 w-3 opacity-75" />
                   </button>
                 </div>
@@ -1190,7 +1790,9 @@ export default function AuthPage() {
                         {t("otp.delivery.smsTitle")}
                       </span>
                       <p className="text-[10px] text-muted-foreground leading-tight">
-                        {t("otp.delivery.smsDesc", { phone: sanitizePhone(phone) })}
+                        {t("otp.delivery.smsDesc", {
+                          phone: maskPhone(pending?.phone || sanitizePhone(phone)),
+                        })}
                       </p>
                     </div>
                   </div>
@@ -1204,22 +1806,78 @@ export default function AuthPage() {
                         {t("otp.delivery.emailTitle")}
                       </span>
                       <p className="text-[10px] text-muted-foreground leading-tight">
-                        {t("otp.delivery.emailDesc", { email: emailPattern || "your email" })}
+                        {t("otp.delivery.emailDesc", {
+                          email: maskEmail(emailPattern),
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={emailBusy || loading}
+                    onClick={handleResetLoginEmail}
+                    className="mt-2 inline-flex items-center gap-1 text-[10px] font-medium text-purple-700 dark:text-purple-300 hover:underline disabled:opacity-50 cursor-pointer"
+                  >
+                    <RefreshCw className="h-3 w-3" />
+                    <span>{t("otp.delivery.emailReset")}</span>
+                  </button>
+                </div>
+              ) : deliveryType === "call" ? (
+                <div className="p-2.5 rounded-xl bg-amber-500/10 text-left border border-amber-500/20 animate-in fade-in duration-200">
+                  <div className="flex items-center gap-2.5">
+                    <PhoneCall className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[11px] font-semibold text-foreground">
+                        {t("otp.delivery.callTitle")}
+                      </span>
+                      <p className="text-[10px] text-muted-foreground leading-tight">
+                        {t("otp.delivery.callDesc", {
+                          phone: maskPhone(pending?.phone || sanitizePhone(phone)),
+                        })}
                       </p>
                     </div>
                   </div>
                 </div>
+              ) : deliveryType === "fragment" ? (
+                <div className="p-2.5 rounded-xl bg-sky-500/10 text-left border border-sky-500/20 animate-in fade-in duration-200">
+                  <div className="flex items-center gap-2.5">
+                    <ExternalLink className="h-4 w-4 text-sky-600 dark:text-sky-400 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[11px] font-semibold text-foreground">
+                        {t("otp.delivery.fragmentTitle")}
+                      </span>
+                      <p className="text-[10px] text-muted-foreground leading-tight">
+                        {t("otp.delivery.fragmentDesc")}
+                      </p>
+                    </div>
+                  </div>
+                  {pending?.fragmentUrl && (
+                    <button
+                      type="button"
+                      onClick={() => openUrl(pending.fragmentUrl!)}
+                      className="mt-2 inline-flex items-center gap-1 text-[10px] font-medium text-sky-700 dark:text-sky-300 hover:underline cursor-pointer"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      <span>{t("otp.delivery.fragmentOpen")}</span>
+                    </button>
+                  )}
+                </div>
               ) : null}
 
-              {/* OTP digit boxes */}
-              <div className={`flex justify-center ${codeLength >= 6 ? "gap-1 sm:gap-1.5" : "gap-1.5 sm:gap-2"}`}>
+              <div
+                className={`flex justify-center ${
+                  codeLength >= 6 ? "gap-1 sm:gap-1.5" : "gap-1.5 sm:gap-2"
+                }`}
+              >
                 {otp.map((digit, idx) => (
                   <OtpBox
                     key={idx}
                     index={idx}
                     value={digit}
                     isFilled={digit.length > 0}
-                    inputRef={(el) => { otpRefs.current[idx] = el; }}
+                    inputRef={(el) => {
+                      otpRefs.current[idx] = el;
+                    }}
                     disabled={loading}
                     onChange={(val) => handleOtpChange(idx, val)}
                     onKeyDown={(e) => handleOtpKeyDown(idx, e)}
@@ -1229,36 +1887,14 @@ export default function AuthPage() {
                 ))}
               </div>
 
-              {/* Countdown / Resend + code-length toggle on same row */}
-              <div className="flex items-center justify-between px-1 text-[11px]">
-                {countdown > 0 ? (
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <Clock className="h-3 w-3" />
-                    <span>Send via SMS in {countdown}s</span>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    disabled={resending || loading}
-                    onClick={handleResendCode}
-                    className="flex items-center gap-1 font-medium text-[#0B57D0] dark:text-[#A8C7FA] hover:underline cursor-pointer transition-colors disabled:opacity-50"
-                  >
-                    {resending ? (
-                      <><Loader2 className="h-3 w-3 animate-spin" /><span>Sending via SMS...</span></>
-                    ) : (
-                      <span>Didn't get code? Send via SMS</span>
-                    )}
-                  </button>
-                )}
-                <button
-                  type="button"
-                  onClick={toggleCodeLength}
-                  disabled={loading}
-                  className="text-[11px] text-muted-foreground hover:text-[#0B57D0] dark:hover:text-[#A8C7FA] hover:underline cursor-pointer transition-colors"
-                >
-                  {codeLength === 5 ? t("otp.switchToSix") : t("otp.switchToFive")}
-                </button>
-              </div>
+              <ResendFooter
+                floodUntil={floodUntil}
+                resendAt={resendAt}
+                nextDelivery={nextDelivery}
+                resending={resending}
+                loading={loading}
+                onResend={handleResendCode}
+              />
 
               <div className="space-y-1 pt-1">
                 <PrimaryButton
@@ -1270,20 +1906,19 @@ export default function AuthPage() {
                 <BackButton
                   disabled={loading}
                   onClick={() => {
+                    applyPending(null);
                     setStep("phone");
-                    setCodeLength(5);
-                    setOtp(["", "", "", "", ""]);
+                    setOtp(new Array(codeLength).fill(""));
                     setError(null);
                   }}
                   label={t("otp.differentNumber")}
                 />
               </div>
 
-              {/* Prominent QR login fallback pill */}
-              <div className="text-center pt-0.5">
+              <div className="flex items-center justify-center gap-3 pt-0.5">
                 <button
                   type="button"
-                  onClick={() => { setStep("qr"); setError(null); }}
+                  onClick={openQrStep}
                   className="inline-flex items-center gap-1.5 text-[11px] font-medium text-[#0B57D0] dark:text-[#A8C7FA] hover:bg-[#0B57D0]/10 dark:hover:bg-[#A8C7FA]/10 py-1 px-3 rounded-full transition-colors cursor-pointer"
                 >
                   <QrCode className="h-3.5 w-3.5" />
@@ -1293,9 +1928,119 @@ export default function AuthPage() {
             </form>
           )}
 
-          {/* ── PASSWORD (2FA) ── */}
+          {step === "email" && (
+            <div className="space-y-3 animate-in fade-in duration-200">
+              <div className="text-center space-y-0.5">
+                <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-500/10 dark:bg-purple-400/10 text-purple-600 dark:text-purple-400 mb-1">
+                  <Mail className="h-4 w-4" />
+                </div>
+                <h1 className="text-base sm:text-lg font-semibold text-foreground leading-tight">
+                  {emailStage === "address"
+                    ? t("emailSetup.title")
+                    : t("emailSetup.codeTitle")}
+                </h1>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {emailStage === "address"
+                    ? t("emailSetup.subtitle")
+                    : t("emailSetup.codeSubtitle", {
+                        email: maskEmail(emailPattern || emailAddress),
+                      })}
+                </p>
+              </div>
+
+              {emailStage === "address" ? (
+                <form onSubmit={handleSendVerifyEmail} className="space-y-3" noValidate>
+                  <FloatingInput
+                    id="login-email"
+                    label={t("emailSetup.emailLabel")}
+                    placeholder={t("emailSetup.emailPlaceholder")}
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    value={emailAddress}
+                    onChange={(e) => {
+                      setEmailAddress(e.target.value);
+                      setError(null);
+                    }}
+                    disabled={emailBusy}
+                    autoFocus
+                  />
+                  <PrimaryButton
+                    loading={emailBusy}
+                    loadingLabel={t("emailSetup.sending")}
+                    label={t("emailSetup.send")}
+                    disabled={emailBusy || !emailAddress.trim()}
+                  />
+                  <BackButton
+                    disabled={emailBusy}
+                    onClick={() => {
+                      applyPending(null);
+                      setStep("phone");
+                      setError(null);
+                    }}
+                    label={t("emailSetup.back")}
+                  />
+                </form>
+              ) : (
+                <form onSubmit={handleVerifyEmail} className="space-y-3" noValidate>
+                  <FloatingInput
+                    id="login-email-code"
+                    label={t("emailSetup.codeLabel")}
+                    placeholder={t("emailSetup.codePlaceholder", {
+                      count: emailCodeLength,
+                    })}
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    maxLength={emailCodeLength}
+                    value={emailCode}
+                    onChange={(e) => {
+                      setEmailCode(e.target.value.replace(/[^0-9]/g, ""));
+                      setError(null);
+                    }}
+                    disabled={emailBusy}
+                    autoFocus
+                  />
+                  <PrimaryButton
+                    loading={emailBusy}
+                    loadingLabel={t("emailSetup.verifying")}
+                    label={t("emailSetup.verify")}
+                    disabled={
+                      emailBusy || emailCode.trim().length !== emailCodeLength
+                    }
+                  />
+                  <div className="flex items-center justify-between px-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEmailStage("address");
+                        setEmailCode("");
+                        setError(null);
+                      }}
+                      className="text-[11px] font-medium text-[#0B57D0] dark:text-[#A8C7FA] hover:underline cursor-pointer"
+                    >
+                      {t("emailSetup.changeEmail")}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={emailBusy}
+                      onClick={handleSendVerifyEmail}
+                      className="text-[11px] font-medium text-muted-foreground hover:text-foreground hover:underline cursor-pointer disabled:opacity-50"
+                    >
+                      {t("emailSetup.resend")}
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+          )}
+
           {step === "password" && (
-            <form onSubmit={handleVerifyPassword} className="space-y-3.5 animate-in fade-in duration-200" noValidate>
+            <form
+              onSubmit={handleVerifyPassword}
+              className="space-y-3.5 animate-in fade-in duration-200"
+              noValidate
+            >
               <div className="text-center space-y-0.5">
                 <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-amber-500/10 dark:bg-amber-400/10 text-amber-600 dark:text-amber-400 mb-1">
                   <Lock className="h-4 w-4" />
@@ -1311,10 +2056,13 @@ export default function AuthPage() {
               <FloatingInput
                 id="cloud-password"
                 label={t("password.label")}
-                placeholder={t("password.placeholder", "Enter your 2FA password")}
+                placeholder={t("password.placeholder")}
                 type={showPassword ? "text" : "password"}
                 value={password}
-                onChange={(e) => { setPassword(e.target.value); setError(null); }}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setError(null);
+                }}
                 disabled={loading}
                 autoFocus
                 autoComplete="current-password"
@@ -1327,7 +2075,11 @@ export default function AuthPage() {
                     className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-lg cursor-pointer"
                     aria-label={showPassword ? t("password.hide") : t("password.show")}
                   >
-                    {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                    {showPassword ? (
+                      <EyeOff className="h-3.5 w-3.5" />
+                    ) : (
+                      <Eye className="h-3.5 w-3.5" />
+                    )}
                   </button>
                 }
               />
@@ -1341,14 +2093,23 @@ export default function AuthPage() {
                 />
                 <BackButton
                   disabled={loading}
-                  onClick={() => { setStep("phone"); setPassword(""); setError(null); }}
+                  onClick={() => {
+                    const stored = pendingRef.current;
+                    if (stored?.requiresPassword && !stored.phoneCodeHash) {
+                      applyPending(null);
+                      setStep("phone");
+                    } else {
+                      setStep(stored?.phoneCodeHash ? "otp" : "phone");
+                    }
+                    setPassword("");
+                    setError(null);
+                  }}
                   label={t("password.back")}
                 />
               </div>
             </form>
           )}
 
-          {/* ── BOOTSTRAP ── */}
           {step === "bootstrap" && (
             <div className="space-y-3 py-2 text-center animate-in fade-in duration-200">
               <div>
@@ -1371,8 +2132,15 @@ export default function AuthPage() {
                     onClick={() => {
                       setBootstrapError(null);
                       setBootstrapStatus(t("bootstrap.reconnecting"));
-                      setStep("phone");
-                      setTimeout(() => setStep("bootstrap"), 50);
+                      try {
+                        void completeAuthentication(getClient()).catch((err: any) => {
+                          setBootstrapError(
+                            err?.message || t("errors.bootstrapFailed")
+                          );
+                        });
+                      } catch {
+                        setStep("phone");
+                      }
                     }}
                   />
                 </div>
@@ -1389,7 +2157,11 @@ export default function AuthPage() {
                       }}
                     />
                     <div className="absolute inset-[5px] flex items-center justify-center">
-                      <img src="/teledrive.png" alt="" className="h-5 w-5 object-contain opacity-80" />
+                      <img
+                        src="/teledrive.png"
+                        alt=""
+                        className="h-5 w-5 object-contain opacity-80"
+                      />
                     </div>
                   </div>
                   <span className="text-[11px] font-medium text-muted-foreground bg-muted/60 px-3.5 py-1 rounded-full transition-all duration-300">
@@ -1400,9 +2172,20 @@ export default function AuthPage() {
             </div>
           )}
 
+          {step !== "bootstrap" && (
+            <div className="mt-3 flex justify-center">
+              <button
+                type="button"
+                onClick={handleCopyDiagnostics}
+                className="inline-flex items-center gap-1 text-[10px] font-medium text-muted-foreground/70 hover:text-foreground transition-colors cursor-pointer"
+              >
+                <Copy className="h-3 w-3" />
+                <span>{t("diagnostics.copy")}</span>
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Step dots */}
         {step !== "bootstrap" && (
           <div className="mt-2.5 sm:mt-3">
             <StepDots current={step} />
@@ -1410,10 +2193,9 @@ export default function AuthPage() {
         )}
       </div>
 
-      {/* Footer — pinned to bottom of locked viewport */}
       <footer className="w-full text-center z-10 shrink-0">
         <p className="text-[10px] text-muted-foreground/60">
-          {t("footer", { version: "0.1.2" })}
+          {t("footer", { version: APP_VERSION })}
         </p>
       </footer>
     </div>

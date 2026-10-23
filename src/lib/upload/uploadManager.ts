@@ -275,7 +275,7 @@ export async function processQueue(): Promise<void> {
             fileSource = item.file;
           } else if (item.file && "data" in item.file && item.file.data) {
             // Convert byte array to HTML File object
-            fileSource = new File([item.file.data], item.name, { type: (item.file as any).type });
+            fileSource = new File([item.file.data as BlobPart], item.name, { type: (item.file as any).type });
           } else {
             throw new Error("No valid file reference or path found.");
           }

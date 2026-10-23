@@ -90,8 +90,8 @@ export default function TelegramAccountSection() {
 
   const handleDisconnect = async () => {
     try {
-      const { disconnectClient } = await import("@/lib/telegram/client");
-      await disconnectClient();
+      const { logoutTelegram } = await import("@/lib/telegram/logout");
+      await logoutTelegram();
 
       await invoke("clear_session_only").catch((e: any) =>
         console.warn("clear_session_only failed:", e)
