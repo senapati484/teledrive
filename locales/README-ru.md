@@ -53,25 +53,45 @@ Telegram предоставляет практически неограниче�
 
 ## 📥 Скачать
 
-Текущий релиз: **v0.1.2** · Готовые бинарные сборки для всех основных операционных систем:
+Текущий релиз: **v0.1.2** · Готовые нативные бинарные сборки для всех 5 платформ:
 
-| Операционная система | Формат пакета | Прямая ссылка | Размер |
-|:---|:---|:---|---:|
-| **Windows** | Установщик (`.exe`) | [**teledrive-setup.exe**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive-setup.exe/download) | 5.5 MB |
-| **Windows** | Пакет MSI (`.msi`) | [**teledrive.msi**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.msi/download) | 7.2 MB |
-| **macOS** | Образ диска Universal (`.dmg`) | [**teledrive.dmg**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.dmg/download) | 15.8 MB |
-| **Linux** | Universal AppImage (`.AppImage`) | [**teledrive.AppImage**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.AppImage/download) | 86.1 MB |
-| **Linux** | Debian / Ubuntu (`.deb`) | [**teledrive.deb**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.deb/download) | 8.4 MB |
-| **Linux** | Fedora / RHEL (`.rpm`) | [**teledrive.rpm**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.rpm/download) | 8.0 MB |
+| Операционная система | Формат пакета | Прямая ссылка | Архитектура / Совместимость | Размер |
+|:---|:---|:---|:---|---:|
+| **Windows** | Установщик (`.exe`) | [**teledrive-setup.exe**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive-setup.exe/download) | x64 64-Bit (Windows 10 / 11) | 5.8 MB |
+| **Windows** | Пакет MSI (`.msi`) | [**teledrive.msi**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.msi/download) | Корпоративный установщик (Win 10 / 11) | 7.3 MB |
+| **macOS** | Образ диска Universal (`.dmg`) | [**teledrive.dmg**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.dmg/download) | Apple Silicon (M1–M4) и Intel x64 | 14.4 MB |
+| **Linux** | Universal AppImage (`.AppImage`) | [**teledrive.AppImage**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.AppImage/download) | Автономный портативный (glibc 2.31+) | 85.5 MB |
+| **Linux** | Debian / Ubuntu (`.deb`) | [**teledrive.deb**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.deb/download) | x86_64 / amd64 | 7.5 MB |
+| **Linux** | Fedora / RHEL (`.rpm`) | [**teledrive.rpm**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.rpm/download) | x86_64 / amd64 | 7.5 MB |
+| **Android** | Universal APK (`.apk`) | [**teledrive.apk**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.apk/download) | Android 8.0+ (ARM64, ARMv7a, x86_64) | 45.9 MB |
+| **iOS** | Пакет Sideload (`.ipa`) | [**teledrive.ipa**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.ipa/download) | iOS 15.0+ (AltStore / TrollStore) | 24.1 MB |
+| **iOS** | Сборка для симулятора (`.zip`) | [**teledrive-ios-simulator.zip**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive-ios-simulator.zip/download) | iOS Simulator (x86_64 / arm64) | 24.1 MB |
 
-> 🌐 Полный список зеркал и контрольные суммы доступны на [**SourceForge**](https://sourceforge.net/projects/teledrive/files/) или на [**teledrive.space**](https://teledrive.space).
+> 🌐 Полный список пакетов, зеркал и криптографические контрольные суммы доступны на [**SourceForge**](https://sourceforge.net/projects/teledrive/files/) или на [**teledrive.space**](https://teledrive.space).
+
+<details>
+<summary>🔐 <b>Проверка криптографических контрольных сумм SHA-256 (v0.1.2)</b></summary>
+
+```
+dfb353e361336ebbb8921982aa190b1a4e765f987d6558535582d837e2c3b633  teledrive.dmg
+3cfe950e5d64d80c8733586198bd6136fdfc19c3dcde0ee516b5e08eb7ba9491  teledrive-setup.exe
+fc433cf302a739b8a39a0ac95f85a86e6c2c9ad9e3fc11ae1eae89a49d52cbe3  teledrive.msi
+a13e910d62262038bca5203ca652636c738f78f55f25210d60a01c6aadee02dd  teledrive.AppImage
+fec9e1596ec35d49bebdbbae4579f2abdacb13bdde73156109cf3a4ac57286d2  teledrive.deb
+11ce69e7001fe62c8547f5b74f4237bfd3b57b49f723e5d9ad9a58e3200a7fe1  teledrive.rpm
+8368b7899484ccf820607df315071e86546c5c94c0534b7d1bf2eb081437cda8  teledrive.apk
+1ee38b2ae8900fdb5a9dbe7d2aded8ad04f719a048400453b02f009cd305c779  teledrive.ipa
+05797dcca05decc6ae463a560535ddd6cd013cd941b100e15e89351de6472745  teledrive-ios-simulator.zip
+```
+</details>
 
 ---
 
 ## ✨ Возможности
 
 - **Действительно безлимитное облако**: Ваш личный канал Telegram используется как хранилище без абонентской платы.
-- **Нативная кроссплатформенность**: Легковесное приложение на базе Tauri v2 и Rust с минимальным потреблением ресурсов.
+- **Нативная кроссплатформенность**: Легковесное приложение для 5 платформ (macOS, Windows, Linux, Android и iOS) на базе Tauri v2 и Rust с минимальным потреблением ресурсов (< 250 МБ).
+- **11 локализованных языков**: Полная нативная поддержка интерфейса на русском, английском, испанском, немецком, французском, португальском, китайском (упрощенном и традиционном), хинди, индонезийском и японском языках.
 - **Прямой стриминг MTProto**: Движок GramJS передает файлы блоками по 512 КБ с поддержкой до 4 параллельных потоков.
 - **Приватность превыше всего**: Никакой телеметрии, трекеров или скрытых прокси. Данные циркулируют строго между вами и Telegram.
 - **Быстрый поиск и навигация**: Хлебные крошки, фильтры по типу файлов, табличный вид и горячие клавиши.
@@ -185,7 +205,7 @@ TeleDrive уже содержит встроенные ключи для раз�
 
 ### 📦 Готовые пакеты для пользователей
 
-Если вам не нужно собирать приложение из исходного кода, скачайте готовый установщик для вашей операционной системы из [**таблицы загрузок**](#-загрузки) выше. С правилами оформления Pull Request можно ознакомиться в [**Contributing Guide (CONTRIBUTING.md)**](../CONTRIBUTING.md).
+Если вам не нужно собирать приложение из исходного кода, скачайте готовый установщик для вашей операционной системы (macOS, Windows, Linux, Android или iOS) прямо из [**таблицы загрузок**](#-скачать) выше или на [**teledrive.space**](https://teledrive.space). С правилами оформления Pull Request можно ознакомиться в [**Contributing Guide (CONTRIBUTING.md)**](../CONTRIBUTING.md).
 ---
 
 ## ⌨️ Горячие клавиши

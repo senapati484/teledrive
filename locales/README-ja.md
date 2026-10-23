@@ -53,25 +53,45 @@ Telegram はプライベートチャンネルで実質無制限のクラウド�
 
 ## 📥 ダウンロード
 
-最新リリース: **v0.1.2** · 各 OS 向けビルド済みネイティブインストーラー：
+最新リリース: **v0.1.2** · 全5プラットフォーム対応ビルド済みネイティブインストーラー：
 
-| オペレーティングシステム | パッケージ形式 | 直接ダウンロード | サイズ |
-|:---|:---|:---|---:|
-| **Windows** | セットアップインストーラー (`.exe`) | [**teledrive-setup.exe**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive-setup.exe/download) | 5.5 MB |
-| **Windows** | MSI パッケージ (`.msi`) | [**teledrive.msi**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.msi/download) | 7.2 MB |
-| **macOS** | Universal ディスクイメージ (`.dmg`) | [**teledrive.dmg**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.dmg/download) | 15.8 MB |
-| **Linux** | Universal AppImage (`.AppImage`) | [**teledrive.AppImage**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.AppImage/download) | 86.1 MB |
-| **Linux** | Debian / Ubuntu (`.deb`) | [**teledrive.deb**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.deb/download) | 8.4 MB |
-| **Linux** | Fedora / RHEL (`.rpm`) | [**teledrive.rpm**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.rpm/download) | 8.0 MB |
+| オペレーティングシステム | パッケージ形式 | 直接ダウンロード | アーキテクチャ / 互換性 | サイズ |
+|:---|:---|:---|:---|---:|
+| **Windows** | セットアップインストーラー (`.exe`) | [**teledrive-setup.exe**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive-setup.exe/download) | x64 64-Bit (Windows 10 / 11) | 5.8 MB |
+| **Windows** | MSI パッケージ (`.msi`) | [**teledrive.msi**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.msi/download) | エンタープライズインストーラー (Win 10 / 11) | 7.3 MB |
+| **macOS** | Universal ディスクイメージ (`.dmg`) | [**teledrive.dmg**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.dmg/download) | Apple Silicon (M1–M4) & Intel x64 | 14.4 MB |
+| **Linux** | Universal AppImage (`.AppImage`) | [**teledrive.AppImage**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.AppImage/download) | スタンドアロンポータブル (glibc 2.31+) | 85.5 MB |
+| **Linux** | Debian / Ubuntu (`.deb`) | [**teledrive.deb**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.deb/download) | x86_64 / amd64 | 7.5 MB |
+| **Linux** | Fedora / RHEL (`.rpm`) | [**teledrive.rpm**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.rpm/download) | x86_64 / amd64 | 7.5 MB |
+| **Android** | Universal APK (`.apk`) | [**teledrive.apk**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.apk/download) | Android 8.0+ (ARM64, ARMv7a, x86_64) | 45.9 MB |
+| **iOS** | サイドロードパッケージ (`.ipa`) | [**teledrive.ipa**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.ipa/download) | iOS 15.0+ (AltStore / TrollStore) | 24.1 MB |
+| **iOS** | シミュレータビルド (`.zip`) | [**teledrive-ios-simulator.zip**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive-ios-simulator.zip/download) | iOS シミュレータ (x86_64 / arm64) | 24.1 MB |
 
-> 🌐 パッケージ一覧、ミラーリンク、チェックサムは [**SourceForge**](https://sourceforge.net/projects/teledrive/files/) または [**teledrive.space**](https://teledrive.space) で確認できます。
+> 🌐 パッケージ一覧、ミラーリンク、暗号化チェックサムは [**SourceForge**](https://sourceforge.net/projects/teledrive/files/) または [**teledrive.space**](https://teledrive.space) で確認できます。
+
+<details>
+<summary>🔐 <b>SHA-256 暗号化チェックサムの検証 (v0.1.2)</b></summary>
+
+```
+dfb353e361336ebbb8921982aa190b1a4e765f987d6558535582d837e2c3b633  teledrive.dmg
+3cfe950e5d64d80c8733586198bd6136fdfc19c3dcde0ee516b5e08eb7ba9491  teledrive-setup.exe
+fc433cf302a739b8a39a0ac95f85a86e6c2c9ad9e3fc11ae1eae89a49d52cbe3  teledrive.msi
+a13e910d62262038bca5203ca652636c738f78f55f25210d60a01c6aadee02dd  teledrive.AppImage
+fec9e1596ec35d49bebdbbae4579f2abdacb13bdde73156109cf3a4ac57286d2  teledrive.deb
+11ce69e7001fe62c8547f5b74f4237bfd3b57b49f723e5d9ad9a58e3200a7fe1  teledrive.rpm
+8368b7899484ccf820607df315071e86546c5c94c0534b7d1bf2eb081437cda8  teledrive.apk
+1ee38b2ae8900fdb5a9dbe7d2aded8ad04f719a048400453b02f009cd305c779  teledrive.ipa
+05797dcca05decc6ae463a560535ddd6cd013cd941b100e15e89351de6472745  teledrive-ios-simulator.zip
+```
+</details>
 
 ---
 
 ## ✨ 主な機能
 
 - **真の無制限クラウド**：非公開 Telegram チャンネルをバックエンドストレージとして活用し、月額費用は永年ゼロ。
-- **軽量ネイティブクロスプラットフォーム**：Tauri v2 + Rust を採用し、メモリ消費量は通常 250MB 未満と極めて軽量。
+- **軽量ネイティブクロスプラットフォーム**：5プラットフォーム（macOS、Windows、Linux、Android、iOS）向けに Tauri v2 + Rust を採用し、メモリ消費量は通常 250MB 未満と極めて軽量。
+- **11言語のネイティブ多言語対応**：日本語、英語、簡体字中国語、繁体字中国語、スペイン語、ドイツ語、フランス語、ポルトガル語、ロシア語、ヒンディー語、インドネシア語を完全サポート。
 - **MTProto チャンク分割転送**：GramJS エンジンが 512 KB チャンクを最大 4 スレッド並列で高速アップロード。
 - **プライバシー最優先**：テレメトリ、行動追跡、サードパーティのプロキシは一切不使用。データはお使いの端末と Telegram 間でのみ送受信されます。
 - **充実の内蔵ツール**：PDF 連続スクロールビューアー、CSV テーブルソート、20以上の言語ハイライトに対応した CodeMirror 6 エディター。
@@ -185,7 +205,7 @@ TeleDrive には初期開発用の認証情報が組み込まれています。�
 
 ### 📦 エンドユーザー向けプリコンパイル済みインストーラー
 
-ソースコードからビルドせずに TeleDrive を利用したい場合は、上記の [**ダウンロード一覧**](#-ダウンロード) からお使いの OS に適したインストーラーを取得してください。プルリクエストのルールは [**Contributing Guide (CONTRIBUTING.md)**](../CONTRIBUTING.md) をご参照ください。
+ソースコードからビルドせずに TeleDrive を利用したい場合は、上記の [**ダウンロード一覧**](#-ダウンロード) または [**teledrive.space**](https://teledrive.space) からお使いの OS（macOS、Windows、Linux、Android、iOS）に適したインストーラーを取得してください。プルリクエストのルールは [**Contributing Guide (CONTRIBUTING.md)**](../CONTRIBUTING.md) をご参照ください。
 ---
 
 ## ⌨️ キーボードショートカット
