@@ -181,7 +181,22 @@ jobs:
       - name: Install Android NDK
         run: |
           yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "ndk;27.1.12297006"
+          if [ -d "$NDK_HOME" ] && [ -f "$NDK_HOME/source.properties" ]; then
+            echo "✓ Android NDK is already installed at $NDK_HOME"
+          else
+            echo "Installing Android NDK 27.1.12297006 with retries..."
+            for attempt in 1 2 3; do
+              echo "Attempt $attempt of 3..."
+              if $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;27.1.12297006"; then
+                echo "✓ Android NDK installed successfully"
+                break
+              fi
+              echo "⚠ NDK install failed on attempt $attempt, cleaning temporary files and retrying in 10s..."
+              rm -rf "$ANDROID_HOME/.temp" "$ANDROID_HOME/ndk/27.1.12297006" 2>/dev/null || true
+              sleep 10
+            done
+          fi
+          test -d "$NDK_HOME"
 
       - name: Install dependencies
         run: npm ci

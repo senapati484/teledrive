@@ -101,9 +101,45 @@ async function waitForBootstrap(timeoutMs: number = 2000): Promise<boolean> {
 }
 
 let uploadCommitChain = Promise.resolve();
+let indexSaveDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+let activeSavingChannelId: string | null = null;
 
 /**
- * Serializes the in-memory store commit and index persistence across parallel uploads.
+ * Coalesces/debounces index saves to Telegram during active uploads.
+ * If 100 files are uploading, we don't spam Telegram with 100 individual index saves.
+ * Instead, we debounce saves while uploads are actively churning, and guarantee
+ * a final immediate flush when the queue completes.
+ */
+export function scheduleUploadIndexSave(channelId: string, immediate = false): void {
+  activeSavingChannelId = channelId;
+  if (indexSaveDebounceTimer) {
+    clearTimeout(indexSaveDebounceTimer);
+    indexSaveDebounceTimer = null;
+  }
+
+  const runSave = () => {
+    indexSaveDebounceTimer = null;
+    const targetChannel = activeSavingChannelId || channelId;
+    const currentFiles = useFileStore.getState().files;
+    if (targetChannel && currentFiles.length > 0) {
+      void enqueueSave(targetChannel, currentFiles).catch((err) => {
+        console.warn("[uploadManager] Coalesced index save error:", err);
+      });
+    }
+  };
+
+  const { uploadQueue } = useFileStore.getState();
+  const hasMoreUploads = uploadQueue.some((i) => i.status === "uploading" || i.status === "pending");
+
+  if (immediate || !hasMoreUploads) {
+    runSave();
+  } else {
+    indexSaveDebounceTimer = setTimeout(runSave, 1500);
+  }
+}
+
+/**
+ * Serializes the in-memory store commit across parallel uploads.
  * Prevents race conditions where concurrent uploads finish around the same millisecond
  * and overwrite each other's optimistic state array.
  */
@@ -140,7 +176,9 @@ async function commitUploadedFileToStore(channelId: string, newFile: TeleFile): 
           useFileStore.getState().setFiles(healedFiles);
           useFileStore.getState().setBootstrapComplete(true);
 
-          await enqueueSave(channelId, healedFiles);
+          // Schedule debounced / coalesced index persistence to Telegram
+          scheduleUploadIndexSave(channelId);
+
           resolve(healedFiles);
         } catch (err) {
           reject(err);
@@ -169,6 +207,11 @@ export async function processQueue(): Promise<void> {
     await invoke("log_vault_state", {
       state: `PROCESS_QUEUE: pending=${pendingItems.length} uploading=${uploadingItems.length} total=${uploadQueue.length}`
     }).catch(() => {});
+
+    // If nothing is uploading or pending, ensure any pending index save is flushed immediately!
+    if (uploadingItems.length === 0 && pendingItems.length === 0 && activeSavingChannelId) {
+      scheduleUploadIndexSave(activeSavingChannelId, true);
+    }
 
     // Concurrency limit is 3. If full or nothing is pending, exit.
     if (uploadingItems.length >= 3 || pendingItems.length === 0) {
@@ -232,7 +275,7 @@ export async function processQueue(): Promise<void> {
             fileSource = item.file;
           } else if (item.file && "data" in item.file && item.file.data) {
             // Convert byte array to HTML File object
-            fileSource = new File([item.file.data], item.name, { type: (item.file as any).type });
+            fileSource = new File([item.file.data as BlobPart], item.name, { type: (item.file as any).type });
           } else {
             throw new Error("No valid file reference or path found.");
           }
@@ -326,7 +369,7 @@ export async function processQueue(): Promise<void> {
             trashed: false,
           };
 
-          // --- Phase 2: Save metadata index to Telegram via serialized commit ---
+          // --- Phase 2: Save metadata to store and schedule coalesced index persistence ---
           try {
             const optimisticFiles = await commitUploadedFileToStore(activeChannelId, newFile);
 
@@ -342,30 +385,10 @@ export async function processQueue(): Promise<void> {
               payload: { name: item.name, size: Number(newFile.size) || 0 },
             });
           } catch (indexErr: any) {
-            // Hard error from the queue (auth lost, channel missing, etc.).
-            // Roll back the optimistic files array for this single upload by
-            // removing the just-added entry; transient errors are swallowed
-            // by the queue and the entry will retry on its own.
-            const isHard =
-              /AUTH_KEY_UNREGISTERED|SESSION_REVOKED|CHANNEL_PRIVATE|PEER_ID_INVALID|CHAT_WRITE_FORBIDDEN|JSON/i.test(
-                indexErr?.message ?? ""
-              );
-            if (isHard) {
-              const rolled = useFileStore
-                .getState()
-                .files.filter((f) => f.id !== newFile.id);
-              useFileStore.getState().setFiles(rolled);
-              await invoke("log_vault_state", {
-                state: `UPLOAD_INDEX_HARD_ERR rolled name=${item.name} err=${indexErr?.message ?? indexErr}`,
-              }).catch(() => {});
-              toast.error(
-                i18n.t("messages:upload.indexSaveFailed", { name: item.name })
-              );
-            } else {
-              await invoke("log_vault_state", {
-                state: `UPLOAD_INDEX_TRANSIENT_ERR name=${item.name} err=${indexErr?.message ?? indexErr}`,
-              }).catch(() => {});
-            }
+            console.error(`Store commit error for ${item.name}:`, indexErr);
+            await invoke("log_vault_state", {
+              state: `UPLOAD_STORE_COMMIT_ERR name=${item.name} err=${indexErr?.message ?? indexErr}`,
+            }).catch(() => {});
           }
         } catch (err: any) {
           console.error(`Upload error for ${item.name}:`, err);

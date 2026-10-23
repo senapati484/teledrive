@@ -36,6 +36,7 @@ import {
   computeRetryDelay,
   isHardError,
   parseFloodWaitSeconds,
+  FLOOD_WAIT_CAP_SECONDS,
 } from "../telegram/rateLimit";
 import { invoke } from "@tauri-apps/api/core";
 import i18n from "@/i18n";
@@ -307,7 +308,14 @@ class ChannelQueue {
       this.retryCountdownTimer = null;
     }
 
-    this.retryAttempt++;
+    const floodSeconds = parseFloodWaitSeconds(err);
+    // Non-flood errors (timeouts, network drops) count against MAX_TRANSIENT_RETRIES.
+    // For FLOOD_WAIT, Telegram explicitly dictates the wait duration. Waiting out
+    // Telegram's cooldown should not burn through retries unless it repeatedly exceeds
+    // the max cap (FLOOD_WAIT_CAP_SECONDS).
+    if (floodSeconds == null || floodSeconds > FLOOD_WAIT_CAP_SECONDS) {
+      this.retryAttempt++;
+    }
 
     if (this.retryAttempt > MAX_TRANSIENT_RETRIES) {
       const wrapped = new Error(
@@ -361,35 +369,11 @@ class ChannelQueue {
    */
   private async commitOnce(state: TeleFile[]): Promise<void> {
     const client = getClient();
+    const peer = await resolvePeerWithTimeout(client, this.channelId);
 
-    let peer: any;
-    try {
-      peer = await resolvePeerWithTimeout(client, this.channelId);
-    } catch (err) {
-      throw err;
-    }
-
-    // If we have a known existing chunk count, try to preserve that distribution
-    // so minor changes (star, rename) always use the fast in-place editMessage path.
-    const existingCount = this.cachedExistingMsgIds?.length ?? 0;
-    const chunks = existingCount > 0
-      ? chunkFilesStable(state, existingCount)
-      : chunkFiles(state);
-
-    const newChunkTexts: string[] = chunks.map((c, i) =>
-      JSON.stringify({
-        teledrive_index: true,
-        version: 1,
-        chunkIndex: i,
-        totalChunks: chunks.length,
-        files: c,
-      })
-    );
-
+    // 1. Discover existing index messages from Telegram if not cached
     let existingMsgIds = this.cachedExistingMsgIds;
-
-    // If cache is empty or length differs, discover existing index messages from Telegram
-    if (!existingMsgIds || existingMsgIds.length !== chunks.length) {
+    if (!existingMsgIds || existingMsgIds.length === 0) {
       let allMsgs: any[] = [];
       const [pinnedRes, recentRes] = await Promise.allSettled([
         withTimeout(
@@ -424,69 +408,46 @@ class ChannelQueue {
       }
 
       const coherentSet = pickCoherentIndexSet(allMsgs);
-
       if (coherentSet && coherentSet.length > 0) {
         existingMsgIds = coherentSet.map((c) => c.msgId);
         this.cachedExistingMsgIds = existingMsgIds;
-        // Re-chunk stably now that we know the actual existing count
-        if (existingMsgIds.length !== chunks.length) {
-          const stableChunks = chunkFilesStable(state, existingMsgIds.length);
-          // Only use stable chunks if count matches; otherwise keep dynamic chunks
-          if (stableChunks.length === existingMsgIds.length) {
-            // Re-derive texts with the stable chunk distribution
-            const stableTexts = stableChunks.map((c, i) =>
-              JSON.stringify({
-                teledrive_index: true,
-                version: 1,
-                chunkIndex: i,
-                totalChunks: stableChunks.length,
-                files: c,
-              })
-            );
-            // Recurse-avoid: inline the in-place edit check with stable chunks
-            let allEditsOk = true;
-            for (let i = 0; i < stableChunks.length; i++) {
-              const text = stableTexts[i];
-              if (this.cachedChunkTexts && this.cachedChunkTexts[i] === text) continue;
-              try {
-                await withTimeout(
-                  client.editMessage(peer, { message: existingMsgIds[i], text }),
-                  EDIT_TIMEOUT_MS,
-                  `editMessage(stable-chunk ${i})`
-                );
-              } catch (err: any) {
-                const errMsg = err?.message ?? String(err);
-                if (errMsg.includes("MESSAGE_NOT_MODIFIED")) continue;
-                allEditsOk = false;
-                break;
-              }
-            }
-            if (allEditsOk) {
-              this.cachedExistingMsgIds = existingMsgIds;
-              this.cachedChunkTexts = stableTexts;
-              await invoke("log_vault_state", {
-                state: `INDEX_STABLE_EDIT_OK chunks=${stableChunks.length} files=${state.length}`,
-              }).catch(() => {});
-              return;
-            }
-            // Stable edit failed — fall through to full fallback below
-            this.cachedExistingMsgIds = null;
-            this.cachedChunkTexts = null;
-          }
-        }
       } else {
         existingMsgIds = null;
       }
     }
 
-    // 2. In-place edit path: if chunk counts match, edit only modified chunks
-    if (existingMsgIds && existingMsgIds.length === chunks.length) {
-      let allEditsOk = true;
-      for (let i = 0; i < chunks.length; i++) {
+    // 2. Chunk distribution: if we know existing count, try stable distribution
+    const existingCount = existingMsgIds?.length ?? 0;
+    const chunks = existingCount > 0
+      ? chunkFilesStable(state, existingCount)
+      : chunkFiles(state);
+
+    const newChunkTexts: string[] = chunks.map((c, i) =>
+      JSON.stringify({
+        teledrive_index: true,
+        version: 1,
+        chunkIndex: i,
+        totalChunks: chunks.length,
+        files: c,
+      })
+    );
+
+    // 3. In-place & Incremental Path:
+    // If existing chunk messages exist, reuse them!
+    // - Edit overlapping chunks in-place (diff against cachedChunkTexts to skip unchanged calls)
+    // - If chunk count grew (chunks.length > existingMsgIds.length), send ONLY the new trailing chunks
+    // - If chunk count shrank (chunks.length < existingMsgIds.length), fire-and-forget delete extra trailing chunks
+    // Chunk 0 is ALREADY pinned in Telegram, so zero UpdatePinnedMessage flood waits occur!
+    if (existingMsgIds && existingMsgIds.length > 0) {
+      let editsAndSendsOk = true;
+      const updatedMsgIds: number[] = [...existingMsgIds];
+      const overlapCount = Math.min(existingMsgIds.length, chunks.length);
+
+      // (a) Edit overlapping chunks
+      for (let i = 0; i < overlapCount; i++) {
         const text = newChunkTexts[i];
-        // Diff against cached chunk text: if bit-for-bit identical, skip network call!
         if (this.cachedChunkTexts && this.cachedChunkTexts[i] === text) {
-          continue;
+          continue; // Identical content, zero network call needed
         }
 
         try {
@@ -501,10 +462,9 @@ class ChannelQueue {
         } catch (err: any) {
           const errMsg = err?.message ?? String(err);
           if (errMsg.includes("MESSAGE_NOT_MODIFIED")) {
-            // Already identical on Telegram, treat as success
             continue;
           }
-          allEditsOk = false;
+          editsAndSendsOk = false;
           await invoke("log_vault_state", {
             state: `INDEX_EDIT_FAIL chunk=${i} reason=${errMsg}`,
           }).catch(() => {});
@@ -512,26 +472,57 @@ class ChannelQueue {
         }
       }
 
-      if (allEditsOk) {
-        this.cachedExistingMsgIds = existingMsgIds;
+      // (b) Expand: send only new trailing chunks
+      if (editsAndSendsOk && chunks.length > existingMsgIds.length) {
+        for (let i = existingMsgIds.length; i < chunks.length; i++) {
+          const text = newChunkTexts[i];
+          try {
+            const result = await withTimeout(
+              client.sendMessage(peer, { message: text }),
+              EDIT_TIMEOUT_MS,
+              `sendMessage(new-chunk ${i})`
+            );
+            const msgId = Number((result as any).id);
+            updatedMsgIds.push(msgId);
+          } catch (err: any) {
+            editsAndSendsOk = false;
+            await invoke("log_vault_state", {
+              state: `INDEX_EXPAND_FAIL chunk=${i} reason=${err?.message ?? err}`,
+            }).catch(() => {});
+            break;
+          }
+        }
+      }
+
+      // (c) Shrink: delete extra trailing chunks
+      if (editsAndSendsOk && chunks.length < existingMsgIds.length) {
+        const extraIds = existingMsgIds.slice(chunks.length);
+        updatedMsgIds.splice(chunks.length);
+        client.deleteMessages(peer, extraIds, { revoke: true }).catch((err: any) => {
+          invoke("log_vault_state", {
+            state: `INDEX_DELETE_EXTRAS_FAIL reason=${err?.message ?? err}`,
+          }).catch(() => {});
+        });
+      }
+
+      if (editsAndSendsOk) {
+        this.cachedExistingMsgIds = updatedMsgIds;
         this.cachedChunkTexts = newChunkTexts;
         await invoke("log_vault_state", {
-          state: `INDEX_EDIT_OK chunks=${chunks.length} files=${state.length}`,
+          state: `INDEX_INCREMENTAL_OK chunks=${chunks.length} files=${state.length} msgIds=[${updatedMsgIds.join(",")}]`,
         }).catch(() => {});
         return;
       }
 
-      // If in-place edit failed, invalidate cache and proceed to fallback
+      // If incremental update failed (e.g. message was deleted in Telegram), invalidate cache and proceed to fallback
       this.cachedExistingMsgIds = null;
       this.cachedChunkTexts = null;
     }
 
-    // 3. Fallback path: fire-and-forget deletion of old messages, send fresh chunks, pin chunk 0
-    // Deletions are best-effort and run in background — a timeout here must NEVER block the save.
+    // 4. Fallback path (clean slate / recovery):
+    // Delete any old messages (fire-and-forget), send fresh chunks, pin chunk 0 (fire-and-forget).
     if (existingMsgIds && existingMsgIds.length > 0) {
       const idsToDelete = existingMsgIds;
-      // Fire-and-forget: do NOT await. Deletion failure is harmless — Telegram
-      // will serve the newer messages once we send them.
       client.deleteMessages(peer, idsToDelete, { revoke: true })
         .then(() => invoke("log_vault_state", { state: `INDEX_DELETE_OLD_OK count=${idsToDelete.length}` }).catch(() => {}))
         .catch((err: any) => invoke("log_vault_state", { state: `INDEX_DELETE_OLD_FAIL reason=${err?.message ?? err}` }).catch(() => {}));

@@ -53,25 +53,45 @@ Telegram 在私人頻道中提供了幾乎無限的免費雲端儲存空間，�
 
 ## 📥 下載
 
-目前最新版本：**v0.1.2** · 全平台預先編譯原生安裝包：
+目前最新版本：**v0.1.2** · 支援 5 大平台的預先編譯原生安裝包：
 
-| 作業系統 | 安裝包格式 | 直接下載連結 | 大小 |
-|:---|:---|:---|---:|
-| **Windows** | 安裝程式 (`.exe`) | [**teledrive-setup.exe**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive-setup.exe/download) | 5.5 MB |
-| **Windows** | MSI 安裝包 (`.msi`) | [**teledrive.msi**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.msi/download) | 7.2 MB |
-| **macOS** | 通用映像檔 (`.dmg`) | [**teledrive.dmg**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.dmg/download) | 15.8 MB |
-| **Linux** | 通用 AppImage (`.AppImage`) | [**teledrive.AppImage**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.AppImage/download) | 86.1 MB |
-| **Linux** | Debian / Ubuntu (`.deb`) | [**teledrive.deb**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.deb/download) | 8.4 MB |
-| **Linux** | Fedora / RHEL (`.rpm`) | [**teledrive.rpm**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.rpm/download) | 8.0 MB |
+| 作業系統 | 安裝包格式 | 直接下載連結 | 架構 / 相容性 | 大小 |
+|:---|:---|:---|:---|---:|
+| **Windows** | 安裝程式 (`.exe`) | [**teledrive-setup.exe**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive-setup.exe/download) | x64 64位元 (Windows 10 / 11) | 5.8 MB |
+| **Windows** | MSI 安裝包 (`.msi`) | [**teledrive.msi**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.msi/download) | 企業級安裝包 (Win 10 / 11) | 7.3 MB |
+| **macOS** | 通用映像檔 (`.dmg`) | [**teledrive.dmg**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.dmg/download) | Apple Silicon (M1–M4) 與 Intel x64 | 14.4 MB |
+| **Linux** | 通用 AppImage (`.AppImage`) | [**teledrive.AppImage**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.AppImage/download) | 獨立可攜版 (glibc 2.31+) | 85.5 MB |
+| **Linux** | Debian / Ubuntu (`.deb`) | [**teledrive.deb**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.deb/download) | x86_64 / amd64 | 7.5 MB |
+| **Linux** | Fedora / RHEL (`.rpm`) | [**teledrive.rpm**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.rpm/download) | x86_64 / amd64 | 7.5 MB |
+| **Android** | 通用 APK (`.apk`) | [**teledrive.apk**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.apk/download) | Android 8.0+ (ARM64, ARMv7a, x86_64) | 45.9 MB |
+| **iOS** | 側載安裝包 (`.ipa`) | [**teledrive.ipa**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.ipa/download) | iOS 15.0+ (AltStore / TrollStore) | 24.1 MB |
+| **iOS** | 模擬器組建包 (`.zip`) | [**teledrive-ios-simulator.zip**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive-ios-simulator.zip/download) | iOS 模擬器 (x86_64 / arm64) | 24.1 MB |
 
-> 🌐 所有套件、映像檔下載位址及校驗碼均可在 [**SourceForge**](https://sourceforge.net/projects/teledrive/files/) 或 [**teledrive.space**](https://teledrive.space) 取得。
+> 🌐 所有套件、映像檔下載位址及加密校驗碼均可在 [**SourceForge**](https://sourceforge.net/projects/teledrive/files/) 或 [**teledrive.space**](https://teledrive.space) 取得。
+
+<details>
+<summary>🔐 <b>驗證 SHA-256 加密雜湊校驗碼 (v0.1.2)</b></summary>
+
+```
+dfb353e361336ebbb8921982aa190b1a4e765f987d6558535582d837e2c3b633  teledrive.dmg
+3cfe950e5d64d80c8733586198bd6136fdfc19c3dcde0ee516b5e08eb7ba9491  teledrive-setup.exe
+fc433cf302a739b8a39a0ac95f85a86e6c2c9ad9e3fc11ae1eae89a49d52cbe3  teledrive.msi
+a13e910d62262038bca5203ca652636c738f78f55f25210d60a01c6aadee02dd  teledrive.AppImage
+fec9e1596ec35d49bebdbbae4579f2abdacb13bdde73156109cf3a4ac57286d2  teledrive.deb
+11ce69e7001fe62c8547f5b74f4237bfd3b57b49f723e5d9ad9a58e3200a7fe1  teledrive.rpm
+8368b7899484ccf820607df315071e86546c5c94c0534b7d1bf2eb081437cda8  teledrive.apk
+1ee38b2ae8900fdb5a9dbe7d2aded8ad04f719a048400453b02f009cd305c779  teledrive.ipa
+05797dcca05decc6ae463a560535ddd6cd013cd941b100e15e89351de6472745  teledrive-ios-simulator.zip
+```
+</details>
 
 ---
 
 ## ✨ 核心特性
 
 - **真正無限容量**：以您的專屬私人 Telegram 頻道為儲存底層，無月租、無訂閱、終身免費。
-- **輕量原生跨平台**：基於 Tauri v2 + Rust 構建，啟動飛快，記憶體佔用極低（通常低於 250MB）。
+- **輕量原生跨平台**：面向 5 大平台（macOS、Windows、Linux、Android 與 iOS）基於 Tauri v2 + Rust 構建，啟動飛快，記憶體佔用極低（通常低於 250MB）。
+- **11 種在地化語言**：原生全面支援繁體中文、簡體中文、英語、西班牙語、德語、法語、葡萄牙語、俄語、印地語、印尼語及日語。
 - **MTProto 並行分塊傳輸**：GramJS 核心驅動 512 KB 區塊直連傳輸，支援最高 4 個並行上傳通道。
 - **純粹隱私安全**：無任何追蹤程式碼、無使用者遙測、無第三方中介代理，檔案安全直達 Telegram 官方伺服器。
 - **專業級內建工具**：多頁 PDF 標註閱讀、互動式 CSV 表格排序、支援 20+ 種語言語法突顯的 CodeMirror 6 程式碼編輯器。
@@ -185,7 +205,7 @@ TeleDrive 已內建開發憑證，開箱即用。若需使用您自己的 Telegr
 
 ### 📦 最終使用者預編譯安裝包
 
-如果您不需要從源碼編譯，只想直接安裝使用 TeleDrive，請從上方的 [**下載列表**](#-下載) 取得對應作業系統的安裝包。提交 PR 規範請查閱我們的 [**貢獻指南 (CONTRIBUTING.md)**](../CONTRIBUTING.md)。
+如果您不需要從源碼編譯，只想直接安裝使用 TeleDrive，請從上方的 [**下載列表**](#-下載) 或前往 [**teledrive.space**](https://teledrive.space) 取得對應作業系統（macOS、Windows、Linux、Android 或 iOS）的安裝包。提交 PR 規範請查閱我們的 [**貢獻指南 (CONTRIBUTING.md)**](../CONTRIBUTING.md)。
 ---
 
 ## ⌨️ 常用快捷鍵

@@ -187,15 +187,15 @@ async function bootstrapTeleDriveInner(
     let recentMessages: any[] = [];
     try {
       recentMessages = await withTimeout(
-        client.getMessages(channelId, { limit: 300 }),
-        10000,
+        client.getMessages(channelId, { limit: 400 }),
+        12000,
         "client.getMessages(orphan scan)"
       );
     } catch (fetchErr: any) {
       console.warn("[bootstrap] Standard orphan scan timed out, attempting fast fallback:", fetchErr);
       try {
         recentMessages = await withTimeout(
-          client.getMessages(channelId, { limit: 100 }),
+          client.getMessages(channelId, { limit: 150 }),
           5000,
           "client.getMessages(orphan fallback)"
         );
@@ -230,7 +230,7 @@ async function bootstrapTeleDriveInner(
       // TeleDrive always tags uploaded files with `teledrive_file:{"folder":"..."}` caption.
       // Random files, bot messages, or channel noise without this caption must NEVER
       // be injected into the drive as unknown files.
-      const captionText = msg.message || msg.text || "";
+      const captionText = (msg.message || msg.text || "").trim();
       if (!captionText.startsWith("teledrive_file:")) {
         continue;
       }

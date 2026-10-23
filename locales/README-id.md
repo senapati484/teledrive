@@ -53,25 +53,45 @@ Telegram menyediakan penyimpanan cloud gratis yang hampir tak terbatas di salura
 
 ## 📥 Unduhan
 
-Versi terbaru: **v0.1.2** · Berkas biner native siap pakai untuk semua sistem operasi utama:
+Versi terbaru: **v0.1.2** · Berkas biner native siap pakai untuk semua 5 platform:
 
-| Sistem Operasi | Format Paket | Tautan Unduhan Langsung | Ukuran |
-|:---|:---|:---|---:|
-| **Windows** | Setup Installer (`.exe`) | [**teledrive-setup.exe**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive-setup.exe/download) | 5.5 MB |
-| **Windows** | Paket MSI (`.msi`) | [**teledrive.msi**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.msi/download) | 7.2 MB |
-| **macOS** | Universal Disk Image (`.dmg`) | [**teledrive.dmg**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.dmg/download) | 15.8 MB |
-| **Linux** | Universal AppImage (`.AppImage`) | [**teledrive.AppImage**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.AppImage/download) | 86.1 MB |
-| **Linux** | Debian / Ubuntu (`.deb`) | [**teledrive.deb**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.deb/download) | 8.4 MB |
-| **Linux** | Fedora / RHEL (`.rpm`) | [**teledrive.rpm**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.rpm/download) | 8.0 MB |
+| Sistem Operasi | Format Paket | Tautan Unduhan Langsung | Arsitektur / Kompatibilitas | Ukuran |
+|:---|:---|:---|:---|---:|
+| **Windows** | Setup Installer (`.exe`) | [**teledrive-setup.exe**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive-setup.exe/download) | x64 64-Bit (Windows 10 / 11) | 5.8 MB |
+| **Windows** | Paket MSI (`.msi`) | [**teledrive.msi**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.msi/download) | Installer Enterprise (Win 10 / 11) | 7.3 MB |
+| **macOS** | Universal Disk Image (`.dmg`) | [**teledrive.dmg**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.dmg/download) | Apple Silicon (M1–M4) & Intel x64 | 14.4 MB |
+| **Linux** | Universal AppImage (`.AppImage`) | [**teledrive.AppImage**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.AppImage/download) | Portabel mandiri (glibc 2.31+) | 85.5 MB |
+| **Linux** | Debian / Ubuntu (`.deb`) | [**teledrive.deb**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.deb/download) | x86_64 / amd64 | 7.5 MB |
+| **Linux** | Fedora / RHEL (`.rpm`) | [**teledrive.rpm**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.rpm/download) | x86_64 / amd64 | 7.5 MB |
+| **Android** | APK Universal (`.apk`) | [**teledrive.apk**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.apk/download) | Android 8.0+ (ARM64, ARMv7a, x86_64) | 45.9 MB |
+| **iOS** | Paket Sideload (`.ipa`) | [**teledrive.ipa**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.ipa/download) | iOS 15.0+ (AltStore / TrollStore) | 24.1 MB |
+| **iOS** | Build Simulator (`.zip`) | [**teledrive-ios-simulator.zip**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive-ios-simulator.zip/download) | Simulator iOS (x86_64 / arm64) | 24.1 MB |
 
-> 🌐 Katalog paket lengkap, tautan cermin (mirror), dan checksum tersedia di [**SourceForge**](https://sourceforge.net/projects/teledrive/files/) atau [**teledrive.space**](https://teledrive.space).
+> 🌐 Katalog paket lengkap, tautan cermin (mirror), dan checksum kriptografi tersedia di [**SourceForge**](https://sourceforge.net/projects/teledrive/files/) atau [**teledrive.space**](https://teledrive.space).
+
+<details>
+<summary>🔐 <b>Verifikasi Checksum Kriptografi SHA-256 (v0.1.2)</b></summary>
+
+```
+dfb353e361336ebbb8921982aa190b1a4e765f987d6558535582d837e2c3b633  teledrive.dmg
+3cfe950e5d64d80c8733586198bd6136fdfc19c3dcde0ee516b5e08eb7ba9491  teledrive-setup.exe
+fc433cf302a739b8a39a0ac95f85a86e6c2c9ad9e3fc11ae1eae89a49d52cbe3  teledrive.msi
+a13e910d62262038bca5203ca652636c738f78f55f25210d60a01c6aadee02dd  teledrive.AppImage
+fec9e1596ec35d49bebdbbae4579f2abdacb13bdde73156109cf3a4ac57286d2  teledrive.deb
+11ce69e7001fe62c8547f5b74f4237bfd3b57b49f723e5d9ad9a58e3200a7fe1  teledrive.rpm
+8368b7899484ccf820607df315071e86546c5c94c0534b7d1bf2eb081437cda8  teledrive.apk
+1ee38b2ae8900fdb5a9dbe7d2aded8ad04f719a048400453b02f009cd305c779  teledrive.ipa
+05797dcca05decc6ae463a560535ddd6cd013cd941b100e15e89351de6472745  teledrive-ios-simulator.zip
+```
+</details>
 
 ---
 
 ## ✨ Fitur Utama
 
 - **Penyimpanan Cloud Tanpa Batas**: Menggunakan saluran privat Telegram Anda sebagai media penyimpanan tanpa biaya berulang.
-- **Ringan & Multiplatform Asli**: Dibangun di atas Tauri v2 + Rust untuk kecepatan peluncuran tinggi dan penggunaan memori yang rendah (< 250 MB).
+- **Ringan & Multiplatform Asli**: Dibangun di atas Tauri v2 + Rust untuk 5 platform (macOS, Windows, Linux, Android, dan iOS) dengan kecepatan peluncuran tinggi dan penggunaan memori yang rendah (< 250 MB).
+- **11 Bahasa Terlokalisasi**: Dukungan antarmuka native untuk Bahasa Indonesia, Inggris, Spanyol, Jerman, Prancis, Portugis, Rusia, Tionghoa (Sederhana & Tradisional), Hindi, dan Jepang.
 - **Streaming MTProto Langsung**: Engine GramJS melakukan transmisi langsung pecahan 512 KB dengan dukungan hingga 4 thread unggahan bersamaan.
 - **Privasi Terjamin**: Tanpa pelacak, tanpa telemetri, tanpa server perantara. Berkas hanya berpindah antara Anda dan Telegram.
 - **Peralatan Bawaan Profesional**: Pembaca PDF multi-halaman, pengurutan tabel CSV interaktif, dan editor kode CodeMirror 6 dengan penyorotan sintaks untuk 20+ bahasa.
@@ -185,7 +205,7 @@ TeleDrive menyertakan kredensial default untuk pengujian lokal. Jika Anda ingin 
 
 ### 📦 Penginstal Siap Pakai untuk Pengguna Akhir
 
-Jika Anda hanya ingin menggunakan TeleDrive tanpa mengompilasi dari kode sumber, unduh paket penginstal yang sesuai untuk sistem operasi Anda dari [**tabel unduhan**](#-unduhan) di atas. Untuk pedoman kontribusi, lihat [**Contributing Guide (CONTRIBUTING.md)**](../CONTRIBUTING.md).
+Jika Anda hanya ingin menggunakan TeleDrive tanpa mengompilasi dari kode sumber, unduh paket penginstal yang sesuai untuk sistem operasi Anda (macOS, Windows, Linux, Android, atau iOS) langsung dari [**tabel unduhan**](#-unduhan) di atas atau di [**teledrive.space**](https://teledrive.space). Untuk pedoman kontribusi, lihat [**Contributing Guide (CONTRIBUTING.md)**](../CONTRIBUTING.md).
 ---
 
 ## ⌨️ Pintasan Papan Ketik

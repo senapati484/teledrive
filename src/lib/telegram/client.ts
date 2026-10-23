@@ -1,9 +1,13 @@
 import { TelegramClient } from "telegram";
 import { StringSession } from "telegram/sessions";
+import { getPlatform } from "../platform";
+import { APP_VERSION } from "./config";
 
 let clientInstance: TelegramClient | null = null;
 let isConnectedStatus = false;
 let activeApiId: number | null = null;
+let activeApiHash: string | null = null;
+let activeSessionString: string | null = null;
 
 export async function initClient(
   apiId: number,
@@ -11,8 +15,14 @@ export async function initClient(
   sessionString: string = "",
   forceNew: boolean = false
 ): Promise<void> {
-  // If already instantiated with the SAME credentials and no force-new requested, reuse or reconnect
-  if (!forceNew && clientInstance && activeApiId === apiId) {
+  // If already instantiated with the SAME credentials, session and no force-new requested, reuse or reconnect
+  if (
+    !forceNew &&
+    clientInstance &&
+    activeApiId === apiId &&
+    activeApiHash === apiHash &&
+    activeSessionString === sessionString
+  ) {
     if (!clientInstance.connected) {
       try {
         await clientInstance.connect();
@@ -32,16 +42,25 @@ export async function initClient(
     clientInstance = null;
     isConnectedStatus = false;
     activeApiId = null;
+    activeApiHash = null;
+    activeSessionString = null;
   }
 
   const stringSession = new StringSession(sessionString);
-  
+  const platform = getPlatform();
+  const deviceModel =
+    platform === "android"
+      ? "TeleDrive Android"
+      : platform === "ios"
+      ? "TeleDrive iOS"
+      : "TeleDrive Desktop";
+
   clientInstance = new TelegramClient(stringSession, apiId, apiHash, {
     connectionRetries: 5,
     useWSS: true,
-    deviceModel: "TeleDrive Desktop",
+    deviceModel,
     systemVersion: "1.0.0",
-    appVersion: "0.1.2",
+    appVersion: APP_VERSION,
     langCode: "en",
     systemLangCode: "en",
   });
@@ -52,6 +71,8 @@ export async function initClient(
   await clientInstance.connect();
   isConnectedStatus = true;
   activeApiId = apiId;
+  activeApiHash = apiHash;
+  activeSessionString = sessionString;
 }
 
 export function getClient(): TelegramClient {
@@ -62,15 +83,18 @@ export function getClient(): TelegramClient {
 }
 
 export async function disconnectClient(): Promise<void> {
-  if (clientInstance) {
+  const client = clientInstance;
+  clientInstance = null;
+  isConnectedStatus = false;
+  activeApiId = null;
+  activeApiHash = null;
+  activeSessionString = null;
+  if (client) {
     try {
-      await clientInstance.disconnect();
+      await client.disconnect();
     } catch (err) {
       console.warn("Error during TelegramClient disconnect:", err);
     }
-    clientInstance = null;
-    isConnectedStatus = false;
-    activeApiId = null;
   }
 }
 
@@ -79,6 +103,8 @@ export function resetClient(): void {
   clientInstance = null;
   isConnectedStatus = false;
   activeApiId = null;
+  activeApiHash = null;
+  activeSessionString = null;
 }
 
 export function isClientConnected(): boolean {

@@ -53,25 +53,45 @@ Telegram offre un espace de stockage cloud pratiquement illimité dans les canau
 
 ## 📥 Téléchargements
 
-Dernière version : **v0.1.2** · Fichiers binaires précompilés pour tous les systèmes d'exploitation :
+Dernière version : **v0.1.2** · Fichiers binaires natifs précompilés pour les 5 plateformes :
 
-| Système d'exploitation | Format du paquet | Téléchargement direct | Taille |
-|:---|:---|:---|---:|
-| **Windows** | Programme d'installation (`.exe`) | [**teledrive-setup.exe**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive-setup.exe/download) | 5.5 MB |
-| **Windows** | Paquet MSI (`.msi`) | [**teledrive.msi**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.msi/download) | 7.2 MB |
-| **macOS** | Image disque universelle (`.dmg`) | [**teledrive.dmg**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.dmg/download) | 15.8 MB |
-| **Linux** | AppImage universelle (`.AppImage`) | [**teledrive.AppImage**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.AppImage/download) | 86.1 MB |
-| **Linux** | Debian / Ubuntu (`.deb`) | [**teledrive.deb**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.deb/download) | 8.4 MB |
-| **Linux** | Fedora / RHEL (`.rpm`) | [**teledrive.rpm**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.rpm/download) | 8.0 MB |
+| Système d'exploitation | Format du paquet | Téléchargement direct | Architecture / Compatibilité | Taille |
+|:---|:---|:---|:---|---:|
+| **Windows** | Programme d'installation (`.exe`) | [**teledrive-setup.exe**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive-setup.exe/download) | x64 64-Bit (Windows 10 / 11) | 5.8 MB |
+| **Windows** | Paquet MSI (`.msi`) | [**teledrive.msi**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.msi/download) | Installateur Entreprise (Win 10 / 11) | 7.3 MB |
+| **macOS** | Image disque universelle (`.dmg`) | [**teledrive.dmg**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.dmg/download) | Apple Silicon (M1–M4) & Intel x64 | 14.4 MB |
+| **Linux** | AppImage universelle (`.AppImage`) | [**teledrive.AppImage**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.AppImage/download) | Portable autonome (glibc 2.31+) | 85.5 MB |
+| **Linux** | Debian / Ubuntu (`.deb`) | [**teledrive.deb**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.deb/download) | x86_64 / amd64 | 7.5 MB |
+| **Linux** | Fedora / RHEL (`.rpm`) | [**teledrive.rpm**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.rpm/download) | x86_64 / amd64 | 7.5 MB |
+| **Android** | APK Universel (`.apk`) | [**teledrive.apk**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.apk/download) | Android 8.0+ (ARM64, ARMv7a, x86_64) | 45.9 MB |
+| **iOS** | Paquet Sideload (`.ipa`) | [**teledrive.ipa**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.ipa/download) | iOS 15.0+ (AltStore / TrollStore) | 24.1 MB |
+| **iOS** | Build Simulateur (`.zip`) | [**teledrive-ios-simulator.zip**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive-ios-simulator.zip/download) | Simulateur iOS (x86_64 / arm64) | 24.1 MB |
 
-> 🌐 Le catalogue complet des paquets, miroirs de téléchargement et sommes de contrôle sont disponibles sur [**SourceForge**](https://sourceforge.net/projects/teledrive/files/) ou sur [**teledrive.space**](https://teledrive.space).
+> 🌐 Le catalogue complet des paquets, miroirs de téléchargement et sommes de contrôle cryptographiques sont disponibles sur [**SourceForge**](https://sourceforge.net/projects/teledrive/files/) ou sur [**teledrive.space**](https://teledrive.space).
+
+<details>
+<summary>🔐 <b>Vérifier les sommes de contrôle cryptographiques SHA-256 (v0.1.2)</b></summary>
+
+```
+dfb353e361336ebbb8921982aa190b1a4e765f987d6558535582d837e2c3b633  teledrive.dmg
+3cfe950e5d64d80c8733586198bd6136fdfc19c3dcde0ee516b5e08eb7ba9491  teledrive-setup.exe
+fc433cf302a739b8a39a0ac95f85a86e6c2c9ad9e3fc11ae1eae89a49d52cbe3  teledrive.msi
+a13e910d62262038bca5203ca652636c738f78f55f25210d60a01c6aadee02dd  teledrive.AppImage
+fec9e1596ec35d49bebdbbae4579f2abdacb13bdde73156109cf3a4ac57286d2  teledrive.deb
+11ce69e7001fe62c8547f5b74f4237bfd3b57b49f723e5d9ad9a58e3200a7fe1  teledrive.rpm
+8368b7899484ccf820607df315071e86546c5c94c0534b7d1bf2eb081437cda8  teledrive.apk
+1ee38b2ae8900fdb5a9dbe7d2aded8ad04f719a048400453b02f009cd305c779  teledrive.ipa
+05797dcca05decc6ae463a560535ddd6cd013cd941b100e15e89351de6472745  teledrive-ios-simulator.zip
+```
+</details>
 
 ---
 
 ## ✨ Fonctionnalités
 
 - **Stockage Cloud Illimité** : utilise votre canal privé Telegram comme support de stockage, sans frais récurrents.
-- **Léger et multiplateforme natif** : conçu avec Tauri v2 + Rust pour un lancement ultra-rapide et une empreinte mémoire minimale (< 250 Mo).
+- **Léger et multiplateforme natif** : conçu avec Tauri v2 + Rust pour 5 plateformes (macOS, Windows, Linux, Android et iOS) avec une réactivité instantanée et une empreinte mémoire minimale (< 250 Mo).
+- **11 Langues Localisées** : prise en charge native du français, anglais, espagnol, allemand, portugais, russe, chinois (simplifié et traditionnel), hindi, indonésien et japonais.
 - **Streaming MTProto direct** : le moteur GramJS envoie et reçoit directement des fragments de 512 Ko avec jusqu'à 4 flux d'envoi simultanés.
 - **Confidentialité absolue** : aucun pistage, aucune télémétrie, aucun intermédiaire. Vos fichiers ne transitent qu'entre vous et Telegram.
 - **Outils intégrés professionnels** : lecteur PDF multipages, affichage interactif de tableaux CSV et éditeur de code CodeMirror 6 avec coloration syntaxique de plus de 20 langages.
@@ -185,7 +205,7 @@ TeleDrive intègre des identifiants de test préconfigurés. Si vous souhaitez u
 
 ### 📦 Installateurs précompilés pour utilisateurs finaux
 
-Si vous souhaitez simplement utiliser TeleDrive sans compiler les sources, téléchargez le package correspondant à votre système depuis le [**tableau des téléchargements**](#-téléchargements) ci-dessus. Consultez notre [**Contributing Guide (CONTRIBUTING.md)**](../CONTRIBUTING.md) pour les règles de pull request.
+Si vous souhaitez simplement utiliser TeleDrive sans compiler les sources, téléchargez le package correspondant à votre système (macOS, Windows, Linux, Android ou iOS) directement depuis le [**tableau des téléchargements**](#-téléchargements) ci-dessus ou sur [**teledrive.space**](https://teledrive.space). Consultez notre [**Contributing Guide (CONTRIBUTING.md)**](../CONTRIBUTING.md) pour les règles de pull request.
 ---
 
 ## ⌨️ Raccourcis clavier

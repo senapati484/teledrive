@@ -77,10 +77,10 @@ export default function SettingsPage() {
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-      // Step 1: Disconnect and destroy the GramJS client singleton first.
-      // Without this, initClient() reuses the stale session → AUTH_RESTART.
-      const { disconnectClient } = await import("@/lib/telegram/client");
-      await disconnectClient();
+      // Step 1: Log out on the server first so Telegram returns a future auth
+      // token, then disconnect and destroy the GramJS client singleton.
+      const { logoutTelegram } = await import("@/lib/telegram/logout");
+      await logoutTelegram();
 
       // Step 2: Clear the Rust session file — but KEEP the phone number.
       //

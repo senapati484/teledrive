@@ -53,25 +53,50 @@ Telegram offers virtually unlimited cloud storage in private channels, but lacks
 
 ## 📥 Downloads
 
-Latest release: **v0.1.2** · Pre-compiled native binaries for all major operating systems:
+Latest release: **v0.1.2** · Pre-compiled native binaries across 5 platforms:
 
-| OS | Package Format | Direct Download | Size |
-|:---|:---|:---|---:|
-| **Windows** | Setup Installer (`.exe`) | [**teledrive-setup.exe**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive-setup.exe/download) | 5.5 MB |
-| **Windows** | MSI Package (`.msi`) | [**teledrive.msi**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.msi/download) | 7.2 MB |
-| **macOS** | Universal Disk Image (`.dmg`) | [**teledrive.dmg**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.dmg/download) | 15.8 MB |
-| **Linux** | Universal AppImage (`.AppImage`) | [**teledrive.AppImage**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.AppImage/download) | 86.1 MB |
-| **Linux** | Debian / Ubuntu (`.deb`) | [**teledrive.deb**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.deb/download) | 8.4 MB |
-| **Linux** | Fedora / RHEL (`.rpm`) | [**teledrive.rpm**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.rpm/download) | 8.0 MB |
+| OS | Package Format | Direct Download | Architecture / Compatibility | Size |
+|:---|:---|:---|:---|---:|
+| **Windows** | Setup Installer (`.exe`) | [**teledrive-setup.exe**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive-setup.exe/download) | x64 64-Bit (Windows 10 / 11) | 5.8 MB |
+| **Windows** | MSI Package (`.msi`) | [**teledrive.msi**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.msi/download) | Enterprise Installer (Win 10 / 11) | 7.3 MB |
+| **macOS** | Universal Disk Image (`.dmg`) | [**teledrive.dmg**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.dmg/download) | Apple Silicon (M1–M4) & Intel x64 | 14.4 MB |
+| **Linux** | Universal AppImage (`.AppImage`) | [**teledrive.AppImage**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.AppImage/download) | Standalone Portable (glibc 2.31+) | 85.5 MB |
+| **Linux** | Debian / Ubuntu (`.deb`) | [**teledrive.deb**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.deb/download) | x86_64 / amd64 | 7.5 MB |
+| **Linux** | Fedora / RHEL (`.rpm`) | [**teledrive.rpm**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.rpm/download) | x86_64 / amd64 | 7.5 MB |
+| **Android** | Universal APK (`.apk`) | [**teledrive.apk**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.apk/download) | Android 8.0+ (ARM64, ARMv7a, x86_64) | 45.9 MB |
+| **iOS** | Sideload Package (`.ipa`) | [**teledrive.ipa**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.ipa/download) | iOS 15.0+ (AltStore / TrollStore) | 24.1 MB |
+| **iOS** | Simulator Build (`.zip`) | [**teledrive-ios-simulator.zip**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive-ios-simulator.zip/download) | iOS Simulator (x86_64 / arm64) | 24.1 MB |
 
-> 🌐 Full package catalog, mirror links, and checksums are available on [**SourceForge**](https://sourceforge.net/projects/teledrive/files/) or [**teledrive.space**](https://teledrive.space).
+> 🌐 Full package catalog, mirror links, and cryptographic checksums are available on [**SourceForge**](https://sourceforge.net/projects/teledrive/files/) or [**teledrive.space**](https://teledrive.space).
+
+<details>
+<summary>🔐 <b>Verify SHA-256 Cryptographic Checksums (v0.1.2)</b></summary>
+
+```
+dfb353e361336ebbb8921982aa190b1a4e765f987d6558535582d837e2c3b633  teledrive.dmg
+3cfe950e5d64d80c8733586198bd6136fdfc19c3dcde0ee516b5e08eb7ba9491  teledrive-setup.exe
+fc433cf302a739b8a39a0ac95f85a86e6c2c9ad9e3fc11ae1eae89a49d52cbe3  teledrive.msi
+a13e910d62262038bca5203ca652636c738f78f55f25210d60a01c6aadee02dd  teledrive.AppImage
+fec9e1596ec35d49bebdbbae4579f2abdacb13bdde73156109cf3a4ac57286d2  teledrive.deb
+11ce69e7001fe62c8547f5b74f4237bfd3b57b49f723e5d9ad9a58e3200a7fe1  teledrive.rpm
+8368b7899484ccf820607df315071e86546c5c94c0534b7d1bf2eb081437cda8  teledrive.apk
+1ee38b2ae8900fdb5a9dbe7d2aded8ad04f719a048400453b02f009cd305c779  teledrive.ipa
+05797dcca05decc6ae463a560535ddd6cd013cd941b100e15e89351de6472745  teledrive-ios-simulator.zip
+```
+
+Verify binary integrity in terminal:
+```bash
+shasum -a 256 <filename>
+```
+</details>
 
 ---
 
 ## ✨ Features
 
 - **Unlimited Cloud**: Uses your private Telegram channel as the backing store with 0 recurring fees.
-- **Native Cross-Platform**: Ultra-lightweight binaries for macOS, Windows, and Linux built on Tauri v2.
+- **Native Cross-Platform**: Ultra-lightweight binaries across 5 platforms (macOS, Windows, Linux, Android, and iOS) built on Tauri v2 & Rust.
+- **11 Localized Languages**: Full native UI support for English, Portuguese, Spanish, Traditional Chinese, Simplified Chinese, Hindi, French, Indonesian, Russian, Japanese, and German.
 - **Direct MTProto Streaming**: GramJS engine streams 512 KB chunks directly with up to 4 concurrent upload threads.
 - **Privacy-First**: No TeleDrive tracking, telemetry, or middleman servers. Your files stay between you and Telegram.
 - **Instant Search & Organization**: Breadcrumbs, file type filters, grid/list view, and keyboard navigation.
@@ -207,7 +232,7 @@ TeleDrive includes built-in development credentials so you can log in immediatel
 
 ### 📦 End-User Pre-compiled Installers
 
-If you are an end user looking to use TeleDrive without compiling from source, download the latest official installers for Windows, macOS, or Linux directly from the [**Downloads table**](#-downloads) above.
+If you are an end user looking to use TeleDrive without compiling from source, download the latest official installers for macOS, Windows, Linux, Android, or iOS directly from the [**Downloads table**](#-downloads) above or [**teledrive.space**](https://teledrive.space).
 
 For pull request conventions, branch naming, and architectural guidelines, please review our [**Contributing Guide (CONTRIBUTING.md)**](CONTRIBUTING.md).
 

@@ -53,25 +53,45 @@
 
 ## 📥 डाउनलोड
 
-नवीनतम संस्करण: **v0.1.2** · सभी प्रमुख ऑपरेटिंग सिस्टम के लिए पूर्व-संकलित मूल बाइनरी:
+नवीनतम संस्करण: **v0.1.2** · सभी 5 प्लेटफ़ॉर्म के लिए पूर्व-संकलित मूल बाइनरी:
 
-| ऑपरेटिंग सिस्टम | पैकेज प्रारूप | सीधा डाउनलोड लिंक | आकार |
-|:---|:---|:---|---:|
-| **Windows** | सेटअप इंस्टॉलर (`.exe`) | [**teledrive-setup.exe**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive-setup.exe/download) | 5.5 MB |
-| **Windows** | MSI पैकेज (`.msi`) | [**teledrive.msi**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.msi/download) | 7.2 MB |
-| **macOS** | यूनिवर्सल डिस्क इमेज (`.dmg`) | [**teledrive.dmg**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.dmg/download) | 15.8 MB |
-| **Linux** | यूनिवर्सल AppImage (`.AppImage`) | [**teledrive.AppImage**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.AppImage/download) | 86.1 MB |
-| **Linux** | Debian / Ubuntu (`.deb`) | [**teledrive.deb**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.deb/download) | 8.4 MB |
-| **Linux** | Fedora / RHEL (`.rpm`) | [**teledrive.rpm**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.rpm/download) | 8.0 MB |
+| ऑपरेटिंग सिस्टम | पैकेज प्रारूप | सीधा डाउनलोड लिंक | आर्किटेक्चर / अनुकूलता | आकार |
+|:---|:---|:---|:---|---:|
+| **Windows** | सेटअप इंस्टॉलर (`.exe`) | [**teledrive-setup.exe**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive-setup.exe/download) | x64 64-Bit (Windows 10 / 11) | 5.8 MB |
+| **Windows** | MSI पैकेज (`.msi`) | [**teledrive.msi**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.msi/download) | एंटरप्राइज़ इंस्टॉलर (Win 10 / 11) | 7.3 MB |
+| **macOS** | यूनिवर्सल डिस्क इमेज (`.dmg`) | [**teledrive.dmg**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.dmg/download) | Apple Silicon (M1–M4) और Intel x64 | 14.4 MB |
+| **Linux** | यूनिवर्सल AppImage (`.AppImage`) | [**teledrive.AppImage**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.AppImage/download) | स्टैंडअलोन पोर्टेबल (glibc 2.31+) | 85.5 MB |
+| **Linux** | Debian / Ubuntu (`.deb`) | [**teledrive.deb**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.deb/download) | x86_64 / amd64 | 7.5 MB |
+| **Linux** | Fedora / RHEL (`.rpm`) | [**teledrive.rpm**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.rpm/download) | x86_64 / amd64 | 7.5 MB |
+| **Android** | यूनिवर्सल APK (`.apk`) | [**teledrive.apk**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.apk/download) | Android 8.0+ (ARM64, ARMv7a, x86_64) | 45.9 MB |
+| **iOS** | साइडलोड पैकेज (`.ipa`) | [**teledrive.ipa**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.ipa/download) | iOS 15.0+ (AltStore / TrollStore) | 24.1 MB |
+| **iOS** | सिम्युलेटर बिल्ड (`.zip`) | [**teledrive-ios-simulator.zip**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive-ios-simulator.zip/download) | iOS सिम्युलेटर (x86_64 / arm64) | 24.1 MB |
 
-> 🌐 संपूर्ण पैकेज कैटलॉग, मिरर लिंक और चेकसम [**SourceForge**](https://sourceforge.net/projects/teledrive/files/) या [**teledrive.space**](https://teledrive.space) पर उपलब्ध हैं।
+> 🌐 संपूर्ण पैकेज कैटलॉग, मिरर लिंक और क्रिप्टोग्राफ़िक चेकसम [**SourceForge**](https://sourceforge.net/projects/teledrive/files/) या [**teledrive.space**](https://teledrive.space) पर उपलब्ध हैं।
+
+<details>
+<summary>🔐 <b>SHA-256 क्रिप्टोग्राफ़िक चेकसम सत्यापित करें (v0.1.2)</b></summary>
+
+```
+dfb353e361336ebbb8921982aa190b1a4e765f987d6558535582d837e2c3b633  teledrive.dmg
+3cfe950e5d64d80c8733586198bd6136fdfc19c3dcde0ee516b5e08eb7ba9491  teledrive-setup.exe
+fc433cf302a739b8a39a0ac95f85a86e6c2c9ad9e3fc11ae1eae89a49d52cbe3  teledrive.msi
+a13e910d62262038bca5203ca652636c738f78f55f25210d60a01c6aadee02dd  teledrive.AppImage
+fec9e1596ec35d49bebdbbae4579f2abdacb13bdde73156109cf3a4ac57286d2  teledrive.deb
+11ce69e7001fe62c8547f5b74f4237bfd3b57b49f723e5d9ad9a58e3200a7fe1  teledrive.rpm
+8368b7899484ccf820607df315071e86546c5c94c0534b7d1bf2eb081437cda8  teledrive.apk
+1ee38b2ae8900fdb5a9dbe7d2aded8ad04f719a048400453b02f009cd305c779  teledrive.ipa
+05797dcca05decc6ae463a560535ddd6cd013cd941b100e15e89351de6472745  teledrive-ios-simulator.zip
+```
+</details>
 
 ---
 
 ## ✨ मुख्य विशेषताएं
 
 - **वास्तव में असीमित क्लाउड**: बिना किसी आवर्ती शुल्क के आपके निजी टेलीग्राम चैनल को बैकएंड के रूप में उपयोग करता है।
-- **हल्का और नेटिव क्रॉस-प्लेटफ़ॉर्म**: Tauri v2 + Rust पर निर्मित, अत्यधिक तेज़ और कम मेमोरी उपयोग (सामान्यतः 250MB से कम)।
+- **हल्का और नेटिव क्रॉस-प्लेटफ़ॉर्म**: 5 प्लेटफ़ॉर्म (macOS, Windows, Linux, Android और iOS) के लिए Tauri v2 + Rust पर निर्मित, अत्यधिक तेज़ और कम मेमोरी उपयोग (सामान्यतः 250MB से कम)।
+- **11 स्थानीय भाषाएं**: हिंदी, अंग्रेज़ी, स्पैनिश, जर्मन, फ्रेंच, पुर्तगाली, रूसी, चीनी (सरलीकृत और पारंपरिक), इंडोनेशियाई और जापानी के लिए पूर्ण नेटिव यूआई समर्थन।
 - **डायरेक्ट MTProto स्ट्रीमिंग**: GramJS इंजन 4 समवर्ती अपलोड थ्रेड तक 512 KB विखंडों को सीधे स्ट्रीम करता है।
 - **गोपनीयता सर्वोपरि**: कोई ट्रैकिंग नहीं, कोई टेलीमेट्री नहीं, कोई बिचौलिया सर्वर नहीं। आपकी फ़ाइलें केवल आपके और टेलीग्राम के बीच सुरक्षित रहती हैं।
 - **व्यावसायिक अंतर्निहित उपकरण**: बहु-पृष्ठ PDF व्यूअर, इंटरैक्टिव CSV सॉर्टिंग और 20+ भाषाओं के सिंटैक्स हाइलाइटिंग वाला CodeMirror 6 कोड एडिटर।
@@ -185,7 +205,7 @@ TeleDrive में स्थानीय परीक्षण के लिए
 
 ### 📦 अंतिम उपयोगकर्ताओं के लिए प्री-कंपाइल इंस्टॉलर
 
-यदि आप स्रोत कोड को कंपाइल किए बिना केवल TeleDrive का उपयोग करना चाहते हैं, तो ऊपर दी गई [**डाउनलोड तालिका**](#-डाउनलोड) से अपने ऑपरेटिंग सिस्टम के लिए इंस्टॉलर डाउनलोड करें। योगदान दिशानिर्देशों के लिए हमारा [**Contributing Guide (CONTRIBUTING.md)**](../CONTRIBUTING.md) देखें।
+यदि आप स्रोत कोड को कंपाइल किए बिना केवल TeleDrive का उपयोग करना चाहते हैं, तो ऊपर दी गई [**डाउनलोड तालिका**](#-डाउनलोड) या [**teledrive.space**](https://teledrive.space) से अपने ऑपरेटिंग सिस्टम (macOS, Windows, Linux, Android या iOS) के लिए इंस्टॉलर डाउनलोड करें। योगदान दिशानिर्देशों के लिए हमारा [**Contributing Guide (CONTRIBUTING.md)**](../CONTRIBUTING.md) देखें।
 ---
 
 ## ⌨️ कीबोर्ड शॉर्टकट

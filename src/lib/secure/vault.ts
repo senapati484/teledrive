@@ -29,38 +29,59 @@ export async function initVault(): Promise<void> {
 }
 
 /**
+ * The Rust vault commands read-modify-write a single JSON file and are not
+ * atomic. Serialising all vault access here prevents concurrent writes from
+ * losing keys and prevents reads from seeing a half-written file.
+ */
+let vaultQueue: Promise<unknown> = Promise.resolve();
+
+function runVaultOp<T>(op: () => Promise<T>): Promise<T> {
+  const result = vaultQueue.then(op, op);
+  vaultQueue = result.then(
+    () => undefined,
+    () => undefined
+  );
+  return result;
+}
+
+/**
  * Saves a secret key-value pair to the local file-backed JSON store.
  */
-export async function saveSecret(key: string, value: string): Promise<void> {
-  try {
-    await invoke("save_vault_value", { key, value });
-  } catch (error) {
-    console.error(`Failed to save secret for key ${key}:`, error);
-    throw error;
-  }
+export function saveSecret(key: string, value: string): Promise<void> {
+  return runVaultOp(async () => {
+    try {
+      await invoke("save_vault_value", { key, value });
+    } catch (error) {
+      console.error(`Failed to save secret for key ${key}:`, error);
+      throw error;
+    }
+  });
 }
 
 /**
  * Gets a secret value for a key from the local file-backed JSON store.
  */
-export async function getSecret(key: string): Promise<string | null> {
-  try {
-    const val = await invoke<string | null>("load_vault_value", { key });
-    return val;
-  } catch (error) {
-    console.warn(`Failed to get secret for key ${key}:`, error);
-    return null;
-  }
+export function getSecret(key: string): Promise<string | null> {
+  return runVaultOp(async () => {
+    try {
+      return await invoke<string | null>("load_vault_value", { key });
+    } catch (error) {
+      console.warn(`Failed to get secret for key ${key}:`, error);
+      return null;
+    }
+  });
 }
 
 /**
  * Deletes a secret key-value pair from the local file-backed JSON store.
  */
-export async function deleteSecret(key: string): Promise<void> {
-  try {
-    await invoke("delete_vault_value", { key });
-  } catch (error) {
-    console.error(`Failed to delete secret for key ${key}:`, error);
-    throw error;
-  }
+export function deleteSecret(key: string): Promise<void> {
+  return runVaultOp(async () => {
+    try {
+      await invoke("delete_vault_value", { key });
+    } catch (error) {
+      console.error(`Failed to delete secret for key ${key}:`, error);
+      throw error;
+    }
+  });
 }
