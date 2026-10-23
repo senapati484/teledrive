@@ -17,10 +17,10 @@
  * Cap on a single FLOOD_WAIT backoff. Telegram can demand 300s+; we
  * refuse to block the UI for that long. With the cap, a retry cycle
  * stays under FLOOD_WAIT_CAP_SECONDS × maxAttempts (worst case 30s × 5
- * = 150s per chunk), and the per-batch breather in the runner kicks
- * in once Telegram stops demanding a wait.
+ * stays within reasonable bounds, while respecting Telegram's cooldown
+ * timers so retries do not fail prematurely before the limit expires.
  */
-export const FLOOD_WAIT_CAP_SECONDS = 30;
+export const FLOOD_WAIT_CAP_SECONDS = 300;
 
 /**
  * Returns the FLOOD_WAIT delay (in seconds) Telegram is asking for, or null
@@ -56,8 +56,10 @@ export function parseFloodWaitSeconds(err: any): number | null {
 }
 
 /**
- * Cap the wait at FLOOD_WAIT_CAP_SECONDS so we never block the UI for many minutes.
- * Adds a small jitter so concurrent retries from the same queue don't pile up.
+ * Cap the wait at FLOOD_WAIT_CAP_SECONDS so we never block for hours.
+ * Telegram flood waits for user actions or index saves are typically 10s - 180s.
+ * Capping at 30s was causing premature retries that violated Telegram's wait timer
+ * and burned through all retry attempts before the cooldown elapsed.
  */
 export function clampFloodWait(seconds: number): number {
   return Math.min(seconds, FLOOD_WAIT_CAP_SECONDS);
