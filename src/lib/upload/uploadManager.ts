@@ -169,6 +169,16 @@ async function commitUploadedFileToStore(channelId: string, newFile: TeleFile): 
 }
 
 let isProcessing = false;
+let queueRetryTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleQueueRetry(delayMs = 5000): void {
+  if (queueRetryTimer) return;
+  queueRetryTimer = setTimeout(() => {
+    queueRetryTimer = null;
+    if (!useAuthStore.getState().isAuthenticated) return;
+    void processQueue();
+  }, delayMs);
+}
 
 /**
  * Triggers the upload queue processor.
@@ -180,14 +190,15 @@ export async function processQueue(): Promise<void> {
   isProcessing = true;
 
   try {
-    const { uploadQueue, updateQueueItem } = useFileStore.getState();
+    const { uploadQueue, updateQueueItem, bootstrapComplete } =
+      useFileStore.getState();
 
     const pendingItems = uploadQueue.filter((item) => item.status === "pending");
     const uploadingItems = uploadQueue.filter((item) => item.status === "uploading");
 
     // Never start uploads onto an unknown index. Items stay `pending`; the
     // bootstrap retry loop calls processQueue() as soon as discovery is ready.
-    if (pendingItems.length > 0 && !isIndexReady()) {
+    if (pendingItems.length > 0 && (!isIndexReady() || !bootstrapComplete)) {
       isProcessing = false;
       return;
     }
@@ -223,6 +234,7 @@ export async function processQueue(): Promise<void> {
         state: `PROCESS_QUEUE_VAULT_ERR: ${err?.message || JSON.stringify(err)}`
       }).catch(() => {});
       isProcessing = false;
+      scheduleQueueRetry();
       return;
     }
 
@@ -358,26 +370,47 @@ export async function processQueue(): Promise<void> {
           };
 
           // --- Phase 2: Save metadata to store and schedule coalesced index persistence ---
+          // The bytes are already on Telegram at this point. Never leave the
+          // queue item stuck in "uploading" if the local metadata commit fails;
+          // a retry would upload the same bytes again.
+          let optimisticFiles: TeleFile[] = [];
           try {
-            const optimisticFiles = await commitUploadedFileToStore(activeChannelId, newFile);
-
-            updateQueueItem(item.id, { status: "done", progress: 100 });
-            useSupportStore.getState().incrementUploadCount();
-            toast.success(i18n.t("messages:upload.success", { name: item.name }));
-
-            await invoke("log_vault_state", {
-              state: `UPLOAD_INDEX_OK name=${item.name} files=${optimisticFiles.length}`,
-            }).catch(() => {});
-            logEvent({
-              type: "file.uploaded",
-              payload: { name: item.name, size: Number(newFile.size) || 0 },
-            });
+            optimisticFiles = await commitUploadedFileToStore(activeChannelId, newFile);
           } catch (indexErr: any) {
             console.error(`Store commit error for ${item.name}:`, indexErr);
             await invoke("log_vault_state", {
               state: `UPLOAD_STORE_COMMIT_ERR name=${item.name} err=${indexErr?.message ?? indexErr}`,
             }).catch(() => {});
+            const current = useFileStore.getState().files;
+            const visible = current.some((f) => Number(f.messageId) === Number(message.id));
+            if (!visible) {
+              try {
+                const { healedFiles } = reconstructMissingFolders(
+                  [...current, newFile],
+                  activeChannelId,
+                );
+                useFileStore.getState().setFiles(healedFiles);
+                scheduleUploadIndexSave(activeChannelId, true);
+                optimisticFiles = healedFiles;
+              } catch (fallbackErr) {
+                console.error(`Store fallback error for ${item.name}:`, fallbackErr);
+              }
+            } else {
+              optimisticFiles = current;
+            }
           }
+
+          updateQueueItem(item.id, { status: "done", progress: 100 });
+          useSupportStore.getState().incrementUploadCount();
+          toast.success(i18n.t("messages:upload.success", { name: item.name }));
+
+          await invoke("log_vault_state", {
+            state: `UPLOAD_INDEX_OK name=${item.name} files=${optimisticFiles.length}`,
+          }).catch(() => {});
+          logEvent({
+            type: "file.uploaded",
+            payload: { name: item.name, size: Number(newFile.size) || 0 },
+          });
         } catch (err: any) {
           console.error(`Upload error for ${item.name}:`, err);
           await invoke("log_vault_state", {

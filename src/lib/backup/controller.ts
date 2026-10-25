@@ -73,7 +73,11 @@ export function startBackup(
       };
     } finally {
       opts.signal?.removeEventListener("abort", relayAbort);
-      useFileStore.getState().setIndexQueueState("idle");
+      // Don't overwrite a real index state (saving/retrying/failed) that the
+      // queue reported while the backup was finishing.
+      if (useFileStore.getState().indexQueueState === "backup-running") {
+        useFileStore.getState().setIndexQueueState("idle");
+      }
       active = null;
     }
   })();

@@ -71,6 +71,23 @@ describe("background writers", () => {
     expect(item.status).toBe("pending");
   });
 
+  it("waits for bootstrapComplete before starting queued uploads", async () => {
+    useFileStore.getState().setIndexLoadState("ready");
+    useFileStore.getState().setBootstrapComplete(false);
+    useFileStore.getState().addToQueue({
+      id: "u-wait",
+      name: "wait.txt",
+      size: 1,
+      progress: 0,
+      status: "pending",
+      folderPath: "/",
+    });
+
+    await processQueue();
+
+    expect(useFileStore.getState().uploadQueue[0].status).toBe("pending");
+  });
+
   it("does not run a remote-sync tick while incomplete", async () => {
     useFileStore.getState().setIndexLoadState("incomplete", "not_found");
     useFileStore.getState().setLastIndexMsgId(10);

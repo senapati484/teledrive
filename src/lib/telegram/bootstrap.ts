@@ -3,6 +3,7 @@ import { ensureStorageChannel } from "./channelManager";
 import {
   loadIndexOutcome,
   saveIndex,
+  deleteTelegramMessage,
   withTimeout,
   reconstructMissingFolders,
   collapseDuplicateFolders,
@@ -25,8 +26,37 @@ import {
   clearPendingMarker,
   resolvePendingIndex,
 } from "../storage/pendingIndex";
-import { filterDeletedMessages } from "../storage/tombstones";
+import {
+  filterDeletedMessages,
+  getDeletedMessageIds,
+} from "../storage/tombstones";
 import i18n from "@/i18n";
+
+/**
+ * Retry Telegram document deletion for local tombstones whose background
+ * cleanup failed earlier (crash, FLOOD_WAIT, network). Tombstones keep the
+ * entries invisible; this reclaims the channel storage once Telegram accepts
+ * the delete. Runs in the background after bootstrap.
+ */
+async function flushDeletionTombstones(channelId: string): Promise<void> {
+  const ids = [...getDeletedMessageIds(channelId)];
+  if (ids.length === 0) return;
+  let deleted = 0;
+  for (const id of ids) {
+    try {
+      await deleteTelegramMessage(channelId, id);
+      deleted++;
+    } catch (err) {
+      console.warn(`[bootstrap] tombstone delete failed for ${id}:`, err);
+      break;
+    }
+  }
+  if (deleted > 0) {
+    await invoke("log_vault_state", {
+      state: `BOOTSTRAP_TOMBSTONE_CLEANUP deleted=${deleted}/${ids.length}`,
+    }).catch(() => {});
+  }
+}
 
 /**
  * Bootstraps TeleDrive storage channel and loads the metadata.
@@ -78,10 +108,11 @@ async function bootstrapTeleDriveInner(
   const outcome = await loadIndexOutcome(channelId);
 
   if (outcome.status === "incomplete") {
-    // Do not touch the cached file list: an incomplete discovery means we do
-    // not know what the live index contains. The shell still renders, but every
-    // write path is gated by `indexLoadState !== "ready"` until a retry finds
-    // a complete epoch (or the user restores one explicitly).
+    // Keep the cached file list, but still honor permanent-deletion
+    // tombstones: an unclean shutdown can leave a deleted entry in the cache
+    // even though the live index is temporarily unreadable.
+    const cached = useFileStore.getState().files;
+    useFileStore.getState().setFiles(filterDeletedMessages(channelId, cached));
     useFileStore.getState().setBootstrapComplete(true);
     onStatusChange?.(i18n.t("messages:bootstrap.status.indexIncomplete"));
     scheduleIndexRetry(channelId, onStatusChange);
@@ -112,7 +143,7 @@ async function bootstrapTeleDriveInner(
     );
   }
 
-  let files = resolution.files;
+  let files = filterDeletedMessages(channelId, resolution.files);
   try {
     const { syncOfflineStatusWithDisk } = await import("../storage/offlineStorage");
     files = await syncOfflineStatusWithDisk(files);
@@ -273,6 +304,7 @@ async function bootstrapTeleDriveInner(
 
     // Read current files from store
     const currentFiles = useFileStore.getState().files;
+    const indexHighWater = useFileStore.getState().lastIndexMsgId;
     const indexedMsgIds = new Set(
       currentFiles
         .map((f) => Number(f.messageId))
@@ -288,6 +320,12 @@ async function bootstrapTeleDriveInner(
       const msgId = Number(msg.id);
       // Skip if already in the index
       if (indexedMsgIds.has(msgId)) continue;
+
+      // Telegram ids increase monotonically. A file message older than the
+      // newest index chunk was already visible when the current index was
+      // written; its absence is an intentional permanent deletion, not a
+      // failed index save. Recovering it would resurrect deleted files.
+      if (indexHighWater > 0 && msgId < indexHighWater) continue;
 
       // Only care about document media (uploaded files)
       const media = (msg as any).media;
@@ -463,6 +501,8 @@ async function bootstrapTeleDriveInner(
       state: `BOOTSTRAP_ORPHAN_SCAN_DONE files=${useFileStore.getState().files.length}`,
     }).catch(() => {});
 
+    void flushDeletionTombstones(channelId);
+
     // Record the highest Telegram message id observed during the scan so the
     // multi-device sync poller has a cursor to start from on its first tick.
     // The scan pulled up to 1000 recent messages — the max id among them is
@@ -607,9 +647,24 @@ async function mergeBackupManifestSync(
       `[bootstrap] manifest merge: ${conversionFailures}/${manifestEntries.length} entries failed conversion`,
     );
   }
-  if (fromManifest.length === 0) {
+  const visibleFromManifest = filterDeletedMessages(channelId, fromManifest);
+  if (visibleFromManifest.length === 0) {
     return { files: existingFiles, changed: false };
   }
+
+  // A completed index is authoritative for everything written before its
+  // newest chunk. Manifest entries older than that high-water mark are either
+  // already in the index or were deleted; re-adding them resurrects deleted
+  // backups. When discovery is incomplete, or the index is empty, the manifest
+  // is the only durable source and all entries are considered.
+  const store = useFileStore.getState();
+  const indexHighWater = store.lastIndexMsgId;
+  const eligibleFromManifest =
+    store.indexLoadState === "ready" && indexHighWater > 0
+      ? visibleFromManifest.filter(
+          (f) => Number(f.messageId) > indexHighWater,
+        )
+      : visibleFromManifest;
 
   // 3. dedupeByMessageId against existing files (the index version wins
   // on conflicts because it may carry richer metadata, e.g. an updated
@@ -617,7 +672,7 @@ async function mergeBackupManifestSync(
   const existingMsgIds = new Set(
     existingFiles.map((f) => Number(f.messageId)).filter((id) => Number.isFinite(id) && id > 0),
   );
-  const newFromManifest = fromManifest.filter(
+  const newFromManifest = eligibleFromManifest.filter(
     (f) => !existingMsgIds.has(Number(f.messageId)),
   );
   const added = newFromManifest.length;
@@ -813,9 +868,20 @@ async function runIndexRetry(): Promise<void> {
     if (outcome.status === "ready") {
       const status = indexRetryStatus;
       stopIndexRetries();
-      useFileStore.getState().setFiles(outcome.files);
+      const setFiles = useFileStore.getState().setFiles;
+      setFiles(outcome.files);
+      try {
+        const merged = await mergeBackupManifestSync(
+          channelId,
+          outcome.files,
+          setFiles,
+        );
+        if (merged.changed) fireAndForgetSaveIndex(channelId, merged.files);
+      } catch (manifestErr) {
+        console.warn("[bootstrap] manifest merge after retry failed:", manifestErr);
+      }
       await invoke("log_vault_state", {
-        state: `INDEX_RETRY_READY files=${outcome.files.length}`,
+        state: `INDEX_RETRY_READY files=${useFileStore.getState().files.length}`,
       }).catch(() => {});
       status?.(i18n.t("messages:bootstrap.status.initializingView"));
       // Resume uploads that were queued while writes were blocked.

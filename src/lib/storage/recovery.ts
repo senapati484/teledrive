@@ -25,7 +25,7 @@ import { useFileStore } from "../../stores/fileStore";
 import { clearPendingMarker, writePendingMarker } from "./pendingIndex";
 import type { TeleFile } from "../types";
 import { invoke } from "@tauri-apps/api/core";
-import { filterDeletedMessages } from "./tombstones";
+import { filterDeletedMessages, getDeletedMessageIds } from "./tombstones";
 
 const MAX_SCAN_CHUNKS = 5000;
 const MAX_SCAN_MS = 60_000;
@@ -423,11 +423,20 @@ export async function scanIndexHistory(
     recoverable.push(entry);
   }
 
+  const deleted = getDeletedMessageIds(channelId);
+  const visibleRecoverable =
+    deleted.size === 0
+      ? recoverable
+      : recoverable.filter((entry) => {
+          const messageId = Number(entry.file.messageId);
+          return !(Number.isFinite(messageId) && messageId > 0 && deleted.has(messageId));
+        });
+
   return {
     scannedEpochs: candidates.length,
     scannedChunks: parsed.size,
     scannedChannelMessages: raw.scanned,
-    recoverable,
+    recoverable: visibleRecoverable,
     cancelled:
       cancelled || raw.cancelled || signal?.aborted === true,
   };

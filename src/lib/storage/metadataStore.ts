@@ -955,12 +955,23 @@ export type IndexLoadOutcome =
  * Incomplete: keeps the cached files untouched, marks the store incomplete, and
  * never calls heal/save. Only `replaceIndexFromRecovery` may write in this state.
  */
-export async function loadIndexOutcome(channelId: string): Promise<IndexLoadOutcome> {
+export async function loadIndexOutcome(
+  channelId: string,
+  options: { preserveReadyOnIncomplete?: boolean } = {},
+): Promise<IndexLoadOutcome> {
   const result = await discoverIndex(channelId);
   const store = useFileStore.getState();
 
   if (result.status !== "ready") {
-    store.setIndexLoadState("incomplete", result.reason);
+    // A remote-sync refresh must not downgrade a previously healthy index
+    // because of one transient network failure — that would gate every local
+    // write until a later retry succeeds.
+    const preserveReady =
+      options.preserveReadyOnIncomplete === true &&
+      store.indexLoadState === "ready";
+    if (!preserveReady) {
+      store.setIndexLoadState("incomplete", result.reason);
+    }
     console.warn(
       `INDEX_DISCOVERY_INCOMPLETE reason=${result.reason}; keeping cached files and skipping heal/save.`
     );
@@ -1070,10 +1081,9 @@ export async function hasIndexRevisionChanged(
 // into the in-memory store via setRemoteDelta, which is read-only.
 //
 // Returns { files, highestMsgId } so the caller can update its
-// high-water mark for the next poll. When `sinceMsgId` is 0 (e.g. first
-// sync poll after bootstrap), this is equivalent to a recent-messages
-// scan; the caller should only invoke it after the bootstrap has set
-// lastIndexMsgId to a non-zero value.
+// high-water mark for the next poll. When `sinceMsgId` is 0 (a brand-new
+// or empty drive), this scans recent messages so an index created by
+// another device can still be discovered.
 //
 // Cost: 1x getMessages(peer, { minId }) per poll = 5s timeout. At the
 // default 30s poll cadence that's well under Telegram's FLOOD_WAIT

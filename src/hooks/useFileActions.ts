@@ -14,6 +14,8 @@ import {
   clearDeletedMessages,
   recordDeletedMessages,
 } from "../lib/storage/tombstones";
+import { isBackupItem } from "../lib/backup/visibility";
+import { removeManifestEntriesByMessageIds } from "../lib/backup/manifest";
 import { invoke } from "@tauri-apps/api/core";
 import {
   enqueueSave,
@@ -225,11 +227,25 @@ function messageIdsFor(files: TeleFile[]): number[] {
   )];
 }
 
+/** Remove durable manifest rows for backup files the user deleted. */
+async function forgetDeletedBackupEntries(
+  channelId: string,
+  targets: TeleFile[],
+): Promise<void> {
+  const backupIds = messageIdsFor(targets.filter((f) => isBackupItem(f)));
+  if (backupIds.length === 0) return;
+  try {
+    await removeManifestEntriesByMessageIds(channelId, backupIds);
+  } catch (err) {
+    console.warn("[useFileActions] Failed to prune backup manifest:", err);
+  }
+}
+
 /**
- * Permanently removing entries must also stop the orphan scan from treating
- * their still-existing Telegram messages as unindexed files. Record local
- * tombstones before the index commit; clear them again if the commit rolls
- * the optimistic state back.
+ * Permanently removing entries must also stop the orphan scan and manifest
+ * merge from treating their still-existing Telegram messages as live files.
+ * Record local tombstones before the index commit; clear them again if the
+ * commit rolls the optimistic state back.
  */
 async function applyDeletion(
   channelId: string,
@@ -559,6 +575,7 @@ export function useFileActions() {
         eventType: "file.deleted",
         eventPayload: { fileId },
       });
+      void forgetDeletedBackupEntries(channelId, targets);
 
       // After the index commits, asynchronously delete offline caches and
       // Telegram messages in the background. If the index save had failed,
@@ -605,6 +622,7 @@ export function useFileActions() {
         eventType: "files.deleted",
         eventPayload: { count: trashed.length },
       });
+      void forgetDeletedBackupEntries(channelId, trashed);
 
       // After the index commits, asynchronously clear cache & delete telegram messages in background
       void (async () => {
@@ -719,6 +737,7 @@ export function useFileActions() {
         eventType: "files.deleted",
         eventPayload: { count: fileIds.length },
       });
+      void forgetDeletedBackupEntries(channelId, targets);
 
       // After the index commits, asynchronously clear cache & delete telegram messages in background
       void (async () => {

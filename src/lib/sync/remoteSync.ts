@@ -22,6 +22,7 @@ import {
 } from "../storage/metadataStore";
 import { withTelegramRetry } from "../telegram/rateLimit";
 import { useFileStore } from "../../stores/fileStore";
+import { useBackupProgressStore } from "../../stores/backupProgressStore";
 import { logEvent } from "../events";
 import { isIndexReady } from "../telegram/indexReadiness";
 import { filterDeletedMessages } from "../storage/tombstones";
@@ -44,16 +45,31 @@ const state: CoordinatorState = {
 };
 
 function canReplaceLocalState(): boolean {
-  const queueState = useFileStore.getState().indexQueueState;
+  const store = useFileStore.getState();
   // Never replace a snapshot while local writes are pending or stuck: those
   // files are intentionally optimistic and would otherwise vanish until the
-  // next successful save.
+  // next successful save. Uploads set the file list before their debounced
+  // index save starts, so the queue state alone is not enough.
+  if (store.isSyncing) return false;
+  // The backup runner writes its file list before the debounced index save
+  // starts, so also honor the run-level flag rather than only queue state.
+  if (useBackupProgressStore.getState().active) return false;
+  if (
+    store.uploadQueue.some(
+      (item) => item.status === "pending" || item.status === "uploading",
+    )
+  ) {
+    return false;
+  }
+  const queueState = store.indexQueueState;
   return queueState === "idle" || queueState === "syncing-remote";
 }
 
 async function reloadAuthoritativeSnapshot(channelId: string): Promise<boolean> {
   const filesBefore = useFileStore.getState().files;
-  const outcome = await loadIndexOutcome(channelId);
+  const outcome = await loadIndexOutcome(channelId, {
+    preserveReadyOnIncomplete: true,
+  });
   if (outcome.status !== "ready") return false;
   if (!canReplaceLocalState()) return false;
   // A local action may have landed while the snapshot was loading. The
@@ -72,12 +88,9 @@ async function reloadAuthoritativeSnapshot(channelId: string): Promise<boolean> 
  */
 async function runOneTick(channelId: string): Promise<boolean> {
   if (!isIndexReady()) return false;
+  // A ready index with no chunks is valid (empty drive). Start from 0 so the
+  // first file uploaded by another device can still be discovered.
   const lastMsgId = useFileStore.getState().lastIndexMsgId;
-  if (lastMsgId <= 0) {
-    // Bootstrap hasn't recorded a cursor yet — skip. Next start() call
-    // (after bootstrap completes) will re-evaluate.
-    return false;
-  }
 
   let mergedAny = false;
   try {
@@ -178,8 +191,12 @@ export function startRemoteSync(channelId: string): void {
   state.currentChannelId = channelId;
   state.lastTickAt = 0;
 
-  // Don't start the loop until discovery is ready and a cursor exists.
-  if (!isIndexReady() || useFileStore.getState().lastIndexMsgId <= 0) {
+  // Don't start the loop until discovery is ready. An empty index has cursor
+  // 0; that is still pollable and must not leave the coordinator "running"
+  // without a timer (later start() calls would then be no-ops).
+  if (!isIndexReady()) {
+    state.isRunning = false;
+    state.currentChannelId = null;
     return;
   }
 
