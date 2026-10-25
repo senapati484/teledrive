@@ -63,6 +63,7 @@ interface LicenseState {
 
 const BACKUP_FOLDERS_KEY = 'teledrive_backup_folders';
 const BACKUP_SCHEDULE_KEY = 'teledrive_backup_schedule';
+const BACKUP_SCHEDULE_ENABLED_AT_KEY = 'teledrive_backup_schedule_enabled_at';
 
 function loadBackupFolders(): BackupFoldersPayload {
   try {
@@ -89,7 +90,23 @@ function loadBackupSchedule(): number | null {
 function saveBackupSchedule(intervalMinutes: number | null): void {
   try {
     localStorage.setItem(BACKUP_SCHEDULE_KEY, JSON.stringify(intervalMinutes));
+    if (intervalMinutes != null && intervalMinutes > 0) {
+      localStorage.setItem(BACKUP_SCHEDULE_ENABLED_AT_KEY, String(Date.now()));
+    } else {
+      localStorage.removeItem(BACKUP_SCHEDULE_ENABLED_AT_KEY);
+    }
   } catch { /* ignore */ }
+}
+
+export function getBackupScheduleEnabledAt(): number | null {
+  try {
+    const raw = localStorage.getItem(BACKUP_SCHEDULE_ENABLED_AT_KEY);
+    if (!raw) return null;
+    const value = Number(raw);
+    return Number.isFinite(value) && value > 0 ? value : null;
+  } catch {
+    return null;
+  }
 }
 
 export const useLicenseStore = create<LicenseState>((set, _get) => ({
@@ -150,4 +167,7 @@ export function __resetLicenseStoreForTests(): void {
     canActivateDevice: true,
     inFlightVerify: null,
   });
+  try {
+    localStorage.removeItem('teledrive_backup_schedule_enabled_at');
+  } catch { /* ignore */ }
 }

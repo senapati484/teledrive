@@ -4,10 +4,10 @@ import i18n from "@/i18n";
 
 import { useAuthStore } from "../../stores/authStore";
 import { useFileStore } from "../../stores/fileStore";
+import { isIndexReady } from "../telegram/indexReadiness";
 import { useSupportStore } from "../../stores/supportStore";
 import { logEvent } from "../events";
 import { channelIdKey, getSecret, VAULT_KEY_CHANNEL_ID } from "../secure/vault";
-import { isJunkFile } from "../storage/fileSanitizer";
 import { enqueueSave } from "../storage/indexQueue";
 import { loadIndex, reconstructMissingFolders } from "../storage/metadataStore";
 import { getClient } from "../telegram/client";
@@ -81,25 +81,6 @@ function getMimeFromExtension(fileName: string): string {
   return EXTENSION_MIME_MAP[ext] ?? "application/octet-stream";
 }
 
-/**
- * Wait until `bootstrapComplete=true` on the file store, capped at `timeoutMs`.
- * The orphan recovery scan in bootstrap.ts runs BEFORE it flips bootstrapComplete,
- * so the upload's optimistic-state merge won't miss files the scan is about to
- * discover. Without this gate, an upload that lands during the scan would write
- * a partial state (only the new file) to Telegram, silently overwriting the
- * previous full index — the bug that wiped the user's files on logout/relogin.
- */
-async function waitForBootstrap(timeoutMs: number = 2000): Promise<boolean> {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    if (useFileStore.getState().bootstrapComplete || useFileStore.getState().files.length > 0) {
-      return true;
-    }
-    await new Promise((r) => setTimeout(r, 100));
-  }
-  return useFileStore.getState().bootstrapComplete || useFileStore.getState().files.length > 0;
-}
-
 let uploadCommitChain = Promise.resolve();
 let indexSaveDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 let activeSavingChannelId: string | null = null;
@@ -149,12 +130,11 @@ async function commitUploadedFileToStore(channelId: string, newFile: TeleFile): 
       .catch(() => {})
       .then(async () => {
         try {
-          if (!useFileStore.getState().bootstrapComplete && useFileStore.getState().files.length === 0) {
-            await waitForBootstrap(2000);
-          }
-
+          // The bytes are already on Telegram. If the index is not ready we
+          // still keep the new entry visible locally; persistence happens once
+          // discovery is ready (pending snapshot + healing save cover it).
           let existingFiles = useFileStore.getState().files;
-          if (existingFiles.length === 0) {
+          if (existingFiles.length === 0 && isIndexReady()) {
             try {
               existingFiles = await loadIndex(channelId);
             } catch (err) {
@@ -174,9 +154,10 @@ async function commitUploadedFileToStore(channelId: string, newFile: TeleFile): 
           const { healedFiles } = reconstructMissingFolders(rawFiles, channelId);
 
           useFileStore.getState().setFiles(healedFiles);
-          useFileStore.getState().setBootstrapComplete(true);
 
-          // Schedule debounced / coalesced index persistence to Telegram
+          // Schedule debounced / coalesced index persistence to Telegram.
+          // `enqueueSave` rejects while the index is not ready; the catch in
+          // `runSave` logs it and the healing save after discovery persists it.
           scheduleUploadIndexSave(channelId);
 
           resolve(healedFiles);
@@ -203,6 +184,13 @@ export async function processQueue(): Promise<void> {
 
     const pendingItems = uploadQueue.filter((item) => item.status === "pending");
     const uploadingItems = uploadQueue.filter((item) => item.status === "uploading");
+
+    // Never start uploads onto an unknown index. Items stay `pending`; the
+    // bootstrap retry loop calls processQueue() as soon as discovery is ready.
+    if (pendingItems.length > 0 && !isIndexReady()) {
+      isProcessing = false;
+      return;
+    }
 
     await invoke("log_vault_state", {
       state: `PROCESS_QUEUE: pending=${pendingItems.length} uploading=${uploadingItems.length} total=${uploadQueue.length}`
@@ -433,10 +421,6 @@ export function addFilesToUploadQueue(
   let addedCount = 0;
 
   files.forEach((file) => {
-    if (isJunkFile({ name: file.name, size: file.size, folderPath: normalizedCurrentFolder })) {
-      return;
-    }
-
     if (file.size === 0) {
       toast.error(i18n.t("messages:upload.emptyFile", { name: file.name }), {
         duration: 4000,

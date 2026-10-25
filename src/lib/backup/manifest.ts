@@ -1,244 +1,368 @@
 /**
- * Device backup — incremental-upload manifest.
+ * Device backup manifest (v2).
  *
- * The walker produces a flat file list. Before uploading, the runner
- * diffs that list against this manifest: any file whose (mtime, size) pair
- * has changed since the last backup is re-uploaded; new files are uploaded;
- * unchanged files are skipped.
- *
- * Manifest storage
- * ----------------
- * Persisted to Tauri app-data dir at `teledrive_backup_manifest.json`.
- * We use the same save_vault_value / load_vault_value commands as the rest
- * of the desktop (see src-tauri/src/lib.rs). The manifest is per-device
- * (lives on the local disk only) and per-user-telegram-id.
- *
- * Schema
- * ------
- * {
- *   version: 1,
- *   deviceName: "MacBook Pro",   // human-readable, used in audit logs
- *   deviceOs:   "macos",
- *   lastRunAt:  1700000000000,    // unix ms; null = never
- *   entries: {
- *     "/Users/me/Documents/report.pdf": {
- *       mtimeMs: 1699999999999,
- *       size: 12345,
- *       messageId: 678,           // Telegram message id of the uploaded document
- *       folderPath: "/TeleDrive Backups/MacBook Pro/Documents"
- *     }
- *   }
- * }
- *
- * Conflict semantics
- * ------------------
- * If the same local path was uploaded in a previous run and is now
- * missing or skipped, the entry STAYS in the manifest. We don't garbage-
- * collect deleted files automatically — that's a future "cleanup" feature.
- * Keeping the entry means the user can find the old backup in the file
- * browser even after they delete the source.
+ * One file per storage channel under `<app-data>/backup_manifests/`.
+ * The manifest is local to this device and records which local file maps to
+ * which Telegram message. The runner appends every successful upload to a
+ * journal; the base file is compacted at run end.
  */
 
 import { invoke } from "@tauri-apps/api/core";
 import type { TeleFile } from "../types";
 
-const MANIFEST_KEY = "teledrive_backup_manifest_v1";
-const CURRENT_VERSION = 1 as const;
+const LEGACY_MANIFEST_KEY = "teledrive_backup_manifest_v1";
+export const CURRENT_MANIFEST_VERSION = 2 as const;
 
-// ---------------------------------------------------------------------------
-// Corruption sentinel (Tier 1 — T3.2)
-//
-// If `loadManifest` fails to parse the JSON or detects a schema mismatch,
-// we DON'T silently start fresh (that cascades into a full re-upload).
-// Instead we:
-//   1. Set this module-level sentinel.
-//   2. Move the corrupt value to a backup key in the vault.
-//   3. Return an empty manifest so the run can continue.
-//
-// The runner checks `isManifestCorrupt()` right after loading and refuses to
-// upload — it returns `status: "failed"` with an error message instead. The
-// user can later inspect the quarantined value via the backup key and either
-// manually repair it or delete it and start fresh.
-//
-// Listeners (via `onManifestCorruptChange`) let the UI surface a toast when
-// the corruption is detected — by then the runner has already short-circuited.
-// ---------------------------------------------------------------------------
-
-let manifestWasCorrupt = false;
-const corruptListeners = new Set<(quarantineKey: string | null) => void>();
-
-/** Returns true if the most recent `loadManifest` detected corruption. */
-export function isManifestCorrupt(): boolean {
-  return manifestWasCorrupt;
+export interface BackupRunSummary {
+  status: "success" | "partial" | "failed" | "cancelled";
+  uploaded: number;
+  skipped: number;
+  failed: number;
+  missingRoots: string[];
 }
 
-/**
- * Clears the corruption sentinel and notifies listeners. Call after the user
- * has reviewed the quarantined value and either deleted it or repaired it.
- */
-export function resetManifestCorrupt(): void {
-  if (!manifestWasCorrupt) return;
-  manifestWasCorrupt = false;
-  for (const listener of corruptListeners) listener(null);
+export interface ManifestEntryV2 {
+  mtimeMs: number;
+  size: number;
+  messageId: number;
+  folderPath: string;
+  uploadedAt: string;
+  hash?: string;
+  sourceMissing?: boolean;
+  previousMessageIds?: number[];
 }
 
-/**
- * Subscribes to corruption-sentinel changes. Returns an unsubscribe function.
- * The listener receives the vault backup key (where the corrupt value was
- * quarantined) when corruption is detected, or null when reset.
- */
+export interface BackupManifestV2 {
+  version: typeof CURRENT_MANIFEST_VERSION;
+  generation: number;
+  channelId: string;
+  deviceName: string;
+  deviceOs: string;
+  lastAttemptAt: number | null;
+  lastSuccessAt: number | null;
+  lastResult: BackupRunSummary | null;
+  entries: Record<string, ManifestEntryV2>;
+  garbage: { messageId: number; folderPath: string; since: number }[];
+}
+
+interface LegacyManifestV1 {
+  version: 1;
+  deviceName?: string;
+  deviceOs?: string;
+  lastRunAt?: number | null;
+  entries: Record<string, ManifestEntryV2>;
+}
+
+interface BackupManifestLoad {
+  base: string | null;
+  generation: number;
+  journal: string[];
+}
+
+interface JournalRecord {
+  generation: number;
+  absPath: string;
+  entry: ManifestEntryV2;
+}
+
+const corruptChannels = new Map<string, string>();
+const corruptListeners = new Set<
+  (channelId: string, quarantineKey: string | null) => void
+>();
+const ensuredChannels = new Set<string>();
+
+export function isManifestCorrupt(channelId: string): boolean {
+  return corruptChannels.has(channelId);
+}
+
+export function resetManifestCorrupt(channelId: string): void {
+  if (!corruptChannels.delete(channelId)) return;
+  for (const listener of corruptListeners) listener(channelId, null);
+}
+
 export function onManifestCorruptChange(
-  listener: (quarantineKey: string | null) => void,
+  listener: (channelId: string, quarantineKey: string | null) => void,
 ): () => void {
   corruptListeners.add(listener);
-  // Fire immediately with current state so a late subscriber learns the
-  // current sentinel value (useful for the UI's mount-time check).
-  listener(manifestWasCorrupt ? lastQuarantineKey : null);
-  return () => {
-    corruptListeners.delete(listener);
-  };
+  for (const [channelId, quarantineKey] of corruptChannels) {
+    listener(channelId, quarantineKey);
+  }
+  return () => corruptListeners.delete(listener);
 }
 
-/**
- * Move the corrupt manifest value to a backup key in the vault. Best-effort:
- * if the quarantine fails (e.g. the vault file itself is unreadable), we
- * still set the sentinel — the user has lost the corrupt value but the
- * runner is still gated, which is the safer failure mode.
- */
-async function quarantineCorruptManifest(reason: string): Promise<void> {
-  manifestWasCorrupt = true;
-  const quarantineKey = `${MANIFEST_KEY}.corrupt-${Date.now()}`;
-  lastQuarantineKey = quarantineKey;
+function markCorrupt(channelId: string, quarantineKey: string): void {
+  corruptChannels.set(channelId, quarantineKey);
+  for (const listener of corruptListeners) listener(channelId, quarantineKey);
+}
+
+async function quarantineBase(channelId: string, reason: string): Promise<void> {
+  const suffix = String(Date.now());
   console.warn(
-    `[backup.manifest] manifest corruption detected (${reason}); quarantining to ${quarantineKey}`,
+    `[backup.manifest] manifest corruption for ${channelId} (${reason}); quarantining`,
   );
   try {
-    await invoke("quarantine_vault_value", { key: MANIFEST_KEY, backupKey: quarantineKey });
+    await invoke("quarantine_backup_manifest", { channelId, suffix });
+    markCorrupt(channelId, `${channelId}.corrupt-${suffix}`);
   } catch (err) {
-    console.error("[backup.manifest] quarantine failed (sentinel still set):", err);
-  }
-  for (const listener of corruptListeners) listener(quarantineKey);
-}
-
-let lastQuarantineKey: string | null = null;
-
-/** Per-file entry — records where the local file went on Telegram. */
-export interface ManifestEntry {
-  /** Local file mtime in unix-ms (used to detect content changes). */
-  mtimeMs: number;
-  /** Local file size in bytes (second change-detector — catches mtime resets). */
-  size: number;
-  /** Telegram message id of the uploaded document. */
-  messageId: number;
-  /**
-   * Virtual folder path inside the storage channel where the file lives.
-   * Mirrors the source structure under `/TeleDrive Backups/<device>/...`.
-   */
-  folderPath: string;
-  /** ISO 8601 timestamp of the upload that produced this entry. */
-  uploadedAt: string;
-}
-
-/** Top-level shape persisted to disk. */
-export interface BackupManifest {
-  version: typeof CURRENT_VERSION;
-  /** Human-readable device name, e.g. "MacBook Pro (Sayan)". */
-  deviceName: string;
-  /** Detected OS: 'macos' | 'windows' | 'linux' | 'ios' | 'android'. */
-  deviceOs: string;
-  /** Unix-ms timestamp of the most recent run (null = never run). */
-  lastRunAt: number | null;
-  /** Map of absolute local path → ManifestEntry. */
-  entries: Record<string, ManifestEntry>;
-}
-
-/**
- * Load the manifest from disk.
- *
- * On success: returns the parsed manifest.
- *
- * On corruption (parse failure OR schema mismatch): quarantines the raw
- * value to a backup key in the vault, sets the module-level sentinel
- * (`isManifestCorrupt()`), and returns an empty manifest. The runner
- * gates on the sentinel and refuses to upload — see T3.2 in the Tier 1
- * plan. Without this gate, a corrupt manifest silently cascading into
- * "upload everything" is a real-world data loss risk: every file gets
- * re-uploaded, but the manifest's metadata about prior uploads is gone,
- * so dedup-by-content has nothing to dedup against.
- *
- * On missing-file: returns an empty manifest without setting the sentinel
- * (a never-existed file is not corruption).
- */
-export async function loadManifest(): Promise<BackupManifest> {
-  let raw: string | null;
-  try {
-    raw = await invoke<string | null>("load_vault_value", { key: MANIFEST_KEY });
-  } catch (err) {
-    // The vault file itself is unreadable — unusual, but treat as a
-    // soft failure (don't quarantine, don't gate) and start fresh.
-    console.warn("[backup.manifest] load_vault_value threw; starting empty:", err);
-    return emptyManifest();
-  }
-  if (!raw) return emptyManifest();
-
-  let parsed: BackupManifest;
-  try {
-    parsed = JSON.parse(raw) as BackupManifest;
-  } catch (err) {
-    await quarantineCorruptManifest(`json parse: ${(err as Error).message ?? err}`);
-    return emptyManifest();
-  }
-  if (parsed.version !== CURRENT_VERSION || typeof parsed.entries !== "object" || parsed.entries === null) {
-    await quarantineCorruptManifest(`schema drift: version=${parsed.version}`);
-    return emptyManifest();
-  }
-  return parsed;
-}
-
-/** Persist the manifest. Atomic-ish: writes via vault (overwrite). */
-export async function saveManifest(manifest: BackupManifest): Promise<void> {
-  try {
-    await invoke("save_vault_value", {
-      key: MANIFEST_KEY,
-      value: JSON.stringify(manifest),
-    });
-    // A successful save implies the corruption (if any) has been cleared —
-    // the next run will read the new value, which is well-formed.
-    if (manifestWasCorrupt) resetManifestCorrupt();
-  } catch (err) {
-    console.error("[backup.manifest] save failed (non-fatal):", err);
+    console.error("[backup.manifest] quarantine failed:", err);
+    markCorrupt(channelId, "");
   }
 }
 
-/** Construct an empty manifest with sensible defaults. */
-export function emptyManifest(): BackupManifest {
+function emptyResult(): BackupRunSummary {
+  return { status: "failed", uploaded: 0, skipped: 0, failed: 0, missingRoots: [] };
+}
+
+export function emptyManifest(channelId: string): BackupManifestV2 {
   return {
-    version: CURRENT_VERSION,
+    version: CURRENT_MANIFEST_VERSION,
+    generation: 0,
+    channelId,
     deviceName: "",
     deviceOs: "",
-    lastRunAt: null,
+    lastAttemptAt: null,
+    lastSuccessAt: null,
+    lastResult: null,
     entries: {},
+    garbage: [],
   };
 }
 
+function isValidEntry(value: unknown): value is ManifestEntryV2 {
+  if (!value || typeof value !== "object") return false;
+  const e = value as Partial<ManifestEntryV2>;
+  return (
+    Number.isFinite(e.messageId) &&
+    Number(e.messageId) > 0 &&
+    typeof e.folderPath === "string" &&
+    Number.isFinite(e.size) &&
+    Number.isFinite(e.mtimeMs)
+  );
+}
+
+function replayJournal(
+  manifest: BackupManifestV2,
+  lines: string[],
+): void {
+  for (const line of lines) {
+    if (!line.trim()) continue;
+    let record: JournalRecord;
+    try {
+      record = JSON.parse(line) as JournalRecord;
+    } catch {
+      console.warn("[backup.manifest] ignoring malformed journal line");
+      continue;
+    }
+    if (
+      record.generation !== manifest.generation ||
+      typeof record.absPath !== "string" ||
+      !isValidEntry(record.entry)
+    ) {
+      continue;
+    }
+    manifest.entries[record.absPath] = record.entry;
+  }
+}
+
+async function readManifest(
+  channelId: string,
+): Promise<{ manifest: BackupManifestV2; exists: boolean }> {
+  let loaded: BackupManifestLoad;
+  try {
+    loaded = await invoke<BackupManifestLoad>("load_backup_manifest", {
+      channelId,
+    });
+  } catch (err) {
+    console.warn("[backup.manifest] load failed; starting empty:", err);
+    return { manifest: emptyManifest(channelId), exists: false };
+  }
+
+  if (!loaded.base) {
+    return { manifest: emptyManifest(channelId), exists: false };
+  }
+
+  let parsed: BackupManifestV2;
+  try {
+    parsed = JSON.parse(loaded.base) as BackupManifestV2;
+  } catch (err) {
+    await quarantineBase(
+      channelId,
+      `json parse: ${(err as Error).message ?? err}`,
+    );
+    return { manifest: emptyManifest(channelId), exists: true };
+  }
+
+  if (
+    parsed.version !== CURRENT_MANIFEST_VERSION ||
+    !parsed.entries ||
+    typeof parsed.entries !== "object"
+  ) {
+    await quarantineBase(
+      channelId,
+      `schema drift: version=${(parsed as { version?: unknown }).version}`,
+    );
+    return { manifest: emptyManifest(channelId), exists: true };
+  }
+
+  const manifest: BackupManifestV2 = {
+    ...parsed,
+    version: CURRENT_MANIFEST_VERSION,
+    channelId,
+    generation: Number(loaded.generation) || 0,
+    entries: { ...parsed.entries },
+    garbage: Array.isArray(parsed.garbage) ? parsed.garbage : [],
+    lastAttemptAt: parsed.lastAttemptAt ?? null,
+    lastSuccessAt: parsed.lastSuccessAt ?? null,
+    lastResult: parsed.lastResult ?? null,
+  };
+  replayJournal(manifest, loaded.journal ?? []);
+  resetManifestCorrupt(channelId);
+  return { manifest, exists: true };
+}
+
+export async function loadManifest(channelId: string): Promise<BackupManifestV2> {
+  return (await readManifest(channelId)).manifest;
+}
+
+export async function saveManifest(
+  channelId: string,
+  manifest: BackupManifestV2,
+): Promise<number> {
+  const nextGeneration = await invoke<number>("save_backup_manifest", {
+    channelId,
+    value: JSON.stringify(manifest),
+    generation: manifest.generation,
+  });
+  resetManifestCorrupt(channelId);
+  return Number(nextGeneration) || manifest.generation + 1;
+}
+
+export async function appendManifestEntry(
+  channelId: string,
+  generation: number,
+  absPath: string,
+  entry: ManifestEntryV2,
+): Promise<void> {
+  const record: JournalRecord = { generation, absPath, entry };
+  await invoke("append_backup_manifest_journal", {
+    channelId,
+    generation,
+    line: JSON.stringify(record),
+  });
+}
+
 /**
- * Diff a fresh file list against the manifest. Returns:
- *   - toUpload: files that need a fresh upload (new or changed)
- *   - unchanged: files present in both, with the same (mtime, size)
- *
- * "Changed" = (mtime OR size differs). We don't try to detect content-only
- * changes that preserve mtime/size — the OS gives us those for free, and
- * the failure mode (a missed re-upload) is benign (user just keeps old content).
+ * Load v2, migrating the legacy vault manifest once per channel/session.
+ * The verifier must confirm every sampled message id is live before entries
+ * are adopted; otherwise the legacy value is quarantined and we start empty.
  */
+export async function ensureManifest(
+  channelId: string,
+  verifyMessageIds?: (ids: number[]) => Promise<Set<number>>,
+): Promise<BackupManifestV2> {
+  const existing = await readManifest(channelId);
+  if (existing.exists) {
+    ensuredChannels.add(channelId);
+    return existing.manifest;
+  }
+  if (ensuredChannels.has(channelId)) return existing.manifest;
+
+  let raw: string | null;
+  try {
+    raw = await invoke<string | null>("load_vault_value", {
+      key: LEGACY_MANIFEST_KEY,
+    });
+  } catch (err) {
+    console.warn("[backup.manifest] legacy load failed:", err);
+    return existing.manifest;
+  }
+  if (!raw) {
+    ensuredChannels.add(channelId);
+    return existing.manifest;
+  }
+
+  const quarantineLegacy = async () => {
+    try {
+      await invoke("quarantine_vault_value", {
+        key: LEGACY_MANIFEST_KEY,
+        backupKey: `${LEGACY_MANIFEST_KEY}.migrated-${Date.now()}`,
+      });
+    } catch (err) {
+      console.warn("[backup.manifest] legacy quarantine failed:", err);
+    }
+  };
+
+  let legacy: LegacyManifestV1;
+  try {
+    legacy = JSON.parse(raw) as LegacyManifestV1;
+  } catch {
+    await quarantineLegacy();
+    return existing.manifest;
+  }
+  if (legacy.version !== 1 || !legacy.entries) {
+    await quarantineLegacy();
+    return existing.manifest;
+  }
+
+  const entries = Object.fromEntries(
+    Object.entries(legacy.entries).filter(([, entry]) => isValidEntry(entry)),
+  );
+  const ids = [...new Set(Object.values(entries).map((e) => e.messageId))].slice(
+    0,
+    5,
+  );
+  let verified = ids.length === 0;
+  if (!verified && verifyMessageIds) {
+    try {
+      const live = await verifyMessageIds(ids);
+      verified = ids.every((id) => live.has(id));
+    } catch (err) {
+      console.warn("[backup.manifest] legacy verification failed:", err);
+    }
+  }
+
+  if (!verified) {
+    await quarantineLegacy();
+    return existing.manifest;
+  }
+
+  const manifest: BackupManifestV2 = {
+    ...emptyManifest(channelId),
+    deviceName: legacy.deviceName ?? "",
+    deviceOs: legacy.deviceOs ?? "",
+    lastAttemptAt: legacy.lastRunAt ?? null,
+    lastSuccessAt: legacy.lastRunAt ?? null,
+    entries,
+    lastResult:
+      ids.length > 0
+        ? { ...emptyResult(), status: "success" }
+        : null,
+  };
+  try {
+    manifest.generation = await saveManifest(channelId, manifest);
+    ensuredChannels.add(channelId);
+  } catch (err) {
+    console.warn("[backup.manifest] legacy migration save failed:", err);
+    return existing.manifest;
+  }
+  await quarantineLegacy();
+  return manifest;
+}
+
+/** Reset module-level migration state. Test-only. */
+export function resetManifestStateForTests(): void {
+  ensuredChannels.clear();
+  corruptChannels.clear();
+}
+
 export interface ManifestDiff {
   toUpload: { absPath: string; relPath: string; mtimeMs: number; size: number }[];
-  unchanged: { absPath: string; entry: ManifestEntry }[];
-  /** Files in manifest but not in this walk — kept in manifest, not deleted. */
-  missing: { absPath: string; entry: ManifestEntry }[];
+  unchanged: { absPath: string; entry: ManifestEntryV2 }[];
+  missing: { absPath: string; entry: ManifestEntryV2 }[];
 }
 
 export function diffAgainstManifest(
-  manifest: BackupManifest,
+  manifest: BackupManifestV2,
   walk: { absPath: string; relPath: string; mtimeMs: number; size: number }[],
 ): ManifestDiff {
   const toUpload: ManifestDiff["toUpload"] = [];
@@ -253,16 +377,12 @@ export function diffAgainstManifest(
       continue;
     }
     if (prior.mtimeMs !== f.mtimeMs || prior.size !== f.size) {
-      // Changed (or maybe just the user touched the file). Re-upload.
       toUpload.push(f);
     } else {
       unchanged.push({ absPath: f.absPath, entry: prior });
     }
   }
 
-  // Anything in the manifest not seen in the current walk = user deleted
-  // the source file. Don't delete the manifest entry — see comment at top
-  // of file. Just track them in the diff for telemetry / future cleanup.
   const missing: ManifestDiff["missing"] = [];
   for (const absPath of Object.keys(manifest.entries)) {
     if (!walkByPath.has(absPath)) {
@@ -273,21 +393,21 @@ export function diffAgainstManifest(
   return { toUpload, unchanged, missing };
 }
 
-/**
- * Record a successful upload. Returns a new manifest object (immutable
- * update — caller is responsible for persisting via saveManifest).
- *
- * Single-file update so the caller can stream uploads and persist after
- * each one, minimizing re-upload cost on crash.
- */
 export function recordUpload(
-  manifest: BackupManifest,
+  manifest: BackupManifestV2,
   absPath: string,
-  info: { mtimeMs: number; size: number; messageId: number; folderPath: string },
-): BackupManifest {
+  info: {
+    mtimeMs: number;
+    size: number;
+    messageId: number;
+    folderPath: string;
+    hash?: string;
+    previousMessageIds?: number[];
+  },
+): BackupManifestV2 {
   return {
     ...manifest,
-    lastRunAt: Date.now(),
+    lastAttemptAt: Date.now(),
     entries: {
       ...manifest.entries,
       [absPath]: {
@@ -296,23 +416,68 @@ export function recordUpload(
         messageId: info.messageId,
         folderPath: info.folderPath,
         uploadedAt: new Date().toISOString(),
+        ...(info.hash ? { hash: info.hash } : {}),
+        ...(info.previousMessageIds && info.previousMessageIds.length > 0
+          ? { previousMessageIds: info.previousMessageIds }
+          : {}),
       },
     },
   };
 }
 
-// ---------------------------------------------------------------------------
-// MIME helper (shared with the runner)
-// ---------------------------------------------------------------------------
 
 /**
- * Extension → MIME map. Mirrors `getMimeFromExtension` in uploadManager.ts
- * (kept as a separate copy because that file is browser-side and we want
- * this one usable from any context, including the bootstrap which doesn't
- * import uploadManager).
- *
- * Files without a known extension fall back to `application/octet-stream`.
+ * Drop superseded backup messages and collapse duplicate same-path entries.
+ * Runs after orphan recovery so the scan cannot re-add an old message id.
  */
+export function filterSupersededBackupFiles(
+  manifest: BackupManifestV2,
+  files: TeleFile[],
+): { files: TeleFile[]; changed: boolean } {
+  const currentIds = new Set(
+    Object.values(manifest.entries).map((entry) => Number(entry.messageId)),
+  );
+  const superseded = new Set<number>();
+  for (const entry of Object.values(manifest.entries)) {
+    for (const id of entry.previousMessageIds ?? []) superseded.add(Number(id));
+  }
+  for (const item of manifest.garbage) superseded.add(Number(item.messageId));
+
+  const filtered = files.filter((file) => {
+    const id = Number(file.messageId);
+    return !(superseded.has(id) && !currentIds.has(id));
+  });
+
+  const byPath = new Map<string, TeleFile>();
+  const passthrough: TeleFile[] = [];
+  for (const file of filtered) {
+    if (!file.folderPath?.startsWith("/TeleDrive Backups/") || !(Number(file.messageId) > 0)) {
+      passthrough.push(file);
+      continue;
+    }
+    const key = `${file.folderPath}\u0000${file.name}`;
+    const existing = byPath.get(key);
+    if (!existing) {
+      byPath.set(key, file);
+      continue;
+    }
+    const existingCurrent = currentIds.has(Number(existing.messageId));
+    const nextCurrent = currentIds.has(Number(file.messageId));
+    if (nextCurrent && !existingCurrent) {
+      byPath.set(key, file);
+    } else if (!existingCurrent && !nextCurrent && file.uploadedAt > existing.uploadedAt) {
+      byPath.set(key, file);
+    }
+  }
+
+  const next = [...passthrough, ...byPath.values()];
+  const before = new Set(files.map((f) => `${f.id}:${f.messageId}`));
+  const after = new Set(next.map((f) => `${f.id}:${f.messageId}`));
+  const changed =
+    before.size !== after.size || [...before].some((key) => !after.has(key));
+  return { files: next, changed };
+}
+
 const EXTENSION_MIME_MAP: Record<string, string> = {
   txt: "text/plain", md: "text/markdown", json: "application/json",
   pdf: "application/pdf", html: "text/html", htm: "text/html", css: "text/css", csv: "text/csv",
@@ -336,46 +501,18 @@ const EXTENSION_MIME_MAP: Record<string, string> = {
   dmg: "application/x-apple-diskimage",
 };
 
-/**
- * Best-effort MIME type for a file by its basename. Used by the runner
- * during upload and by the manifest-merge path in bootstrap to keep the
- * TeleFile shape consistent regardless of whether an entry arrived via
- * a live upload or via cold-start reconciliation.
- */
 export function guessMimeFromName(fileName: string): string {
   const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
   return EXTENSION_MIME_MAP[ext] ?? "application/octet-stream";
 }
 
-// ---------------------------------------------------------------------------
-// Manifest → TeleFile conversion
-// ---------------------------------------------------------------------------
-
-/**
- * Convert one manifest entry into a `TeleFile` ready to be merged into
- * `state.files`. The output mirrors what the runner writes for a live
- * upload (same `id = backup_<messageId>` convention, same `mime` lookup)
- * so the Backups view, deduplication chain, and reconstructor all treat
- * cold-start-recovered entries the same as live ones.
- *
- * `absPath` is the local file path the manifest was keyed under. We use
- * its basename as the `name` field — the channel-side folderPath already
- * encodes the directory structure, so the file name only needs to be the
- * leaf.
- *
- * Returns `null` if the entry is missing a usable messageId or folderPath
- * (defensive — older manifest versions might not have set them). Callers
- * should drop nulls and log a warning.
- */
 export function manifestEntryToTeleFile(
   absPath: string,
-  entry: ManifestEntry,
+  entry: ManifestEntryV2,
   channelId: string,
 ): TeleFile | null {
   if (!entry.messageId || entry.messageId <= 0) return null;
   if (!entry.folderPath) return null;
-  // The runner uses forward-slash paths; the manifest should mirror that.
-  // Defensive normalize in case a future version stored OS-native separators.
   const folderPath = entry.folderPath.replace(/\\/g, "/");
   const fileName =
     absPath.split(/[\\/]/).pop() ||

@@ -45,7 +45,8 @@ export interface BackupProgressState {
     filesUploaded: number;
     filesSkipped: number;
     filesFailed: number;
-    status: "success" | "partial" | "failed";
+    status: "success" | "partial" | "failed" | "cancelled";
+    missingRoots: string[];
   } | null;
   /** Error message if the run failed. */
   error: string | null;
@@ -81,8 +82,9 @@ export interface BackupProgressState {
     filesUploaded: number;
     filesSkipped: number;
     filesFailed: number;
-    status: "success" | "partial" | "failed";
+    status: "success" | "partial" | "failed" | "cancelled";
     error: string | null;
+    missingRoots?: string[];
   }) => void;
   fail: (error: string) => void;
   cancel: () => void;
@@ -129,13 +131,19 @@ export const useBackupProgressStore = create<BackupProgressState>((set) => ({
   finish: (result) =>
     set({
       active: false,
-      status: result.status === "failed" ? "failed" : "done",
+      status:
+        result.status === "cancelled"
+          ? "cancelled"
+          : result.status === "failed"
+            ? "failed"
+            : "done",
       finishedAt: Date.now(),
       lastResult: {
         filesUploaded: result.filesUploaded,
         filesSkipped: result.filesSkipped,
         filesFailed: result.filesFailed,
         status: result.status,
+        missingRoots: result.missingRoots ?? [],
       },
       error: result.error,
       uploaded: result.filesUploaded + result.filesFailed,

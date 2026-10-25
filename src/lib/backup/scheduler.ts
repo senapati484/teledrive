@@ -25,11 +25,16 @@
  */
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import { runBackup } from "./runner";
+import {
+  isBackupRunning,
+  startBackup,
+} from "./controller";
+import { isBackupDue, loadDueState } from "./schedule";
+import type { BackupRunSummary } from "./manifest";
+import { isIndexReady } from "../telegram/indexReadiness";
+import { getBackupScheduleEnabledAt, useLicenseStore } from "@/stores/licenseStore";
 import { useAuthStore } from "@/stores/authStore";
-import { useFileStore } from "@/stores/fileStore";
-import { useBackupProgressStore } from "@/stores/backupProgressStore";
-import { invoke as tauriInvoke } from "@tauri-apps/api/core";
+import { channelIdKey, getSecret } from "../secure/vault";
 
 let tickUnlisten: UnlistenFn | null = null;
 let currentIntervalMinutes: number | null = null;
@@ -83,7 +88,7 @@ export async function stopBackupSchedule(): Promise<void> {
     tickUnlisten = null;
   }
   try {
-    await tauriInvoke("stop_backup_scheduler");
+    await invoke("stop_backup_scheduler");
   } catch (err) {
     console.warn("[backup.scheduler] stop_backup_scheduler failed:", err);
   }
@@ -105,39 +110,69 @@ export async function stopBackupSchedule(): Promise<void> {
  * v1 because the manifest writes are sequential per-file.
  */
 async function onTick(): Promise<void> {
-  const setIndexQueueState = useFileStore.getState().setIndexQueueState;
-  const start = useBackupProgressStore.getState().start;
-  const setProgress = useBackupProgressStore.getState().setProgress;
-  const finish = useBackupProgressStore.getState().finish;
-  setIndexQueueState("backup-running");
-  start("auto");
+  await checkDueBackup();
+}
+
+async function resolveChannelId(): Promise<string | null> {
+  const phone = useAuthStore.getState().phoneNumber;
+  if (!phone) return null;
   try {
-    const result = await runBackup({
-      triggeredBy: "auto",
-      onProgress: (p) => setProgress(p),
-    });
-    finish({
-      filesUploaded: result.filesUploaded,
-      filesSkipped: result.filesSkipped,
-      filesFailed: result.filesFailed,
-      status: result.status,
-      error: result.error,
-    });
-  } catch (err) {
-    console.warn("[backup.scheduler] onTick failed:", err);
-    finish({
-      filesUploaded: 0,
-      filesSkipped: 0,
-      filesFailed: 0,
-      status: "failed",
-      error: err instanceof Error ? err.message : String(err),
-    });
-  } finally {
-    setIndexQueueState("idle");
+    return await getSecret(channelIdKey(phone));
+  } catch {
+    return null;
   }
-  // `useAuthStore` was previously used to resolve the phone for
-  // getStorageChannelId; the runner handles channel resolution itself.
-  void useAuthStore;
+}
+
+export interface BackupLastRun {
+  lastSuccessAt: number | null;
+  lastAttemptAt: number | null;
+  lastResult: BackupRunSummary | null;
+}
+
+/** Read the persisted last-run state for the active account, if signed in. */
+export async function loadBackupLastRun(): Promise<BackupLastRun | null> {
+  const channelId = await resolveChannelId();
+  if (!channelId) return null;
+  try {
+    return await loadDueState(channelId);
+  } catch (err) {
+    console.warn("[backup.scheduler] last-run state unavailable:", err);
+    return null;
+  }
+}
+
+/**
+ * Run one scheduled backup if (and only if) the interval is due. Used by the
+ * Rust tick, app launch, focus, and the 5-minute JS check.
+ */
+export async function checkDueBackup(): Promise<boolean> {
+  if (isBackupRunning()) return false;
+  const interval =
+    useLicenseStore.getState().license?.scheduledBackupIntervalMinutes ?? null;
+  const folders = useLicenseStore.getState().backupFolders;
+  if (!interval || interval <= 0 || !folders.paths?.length) return false;
+  if (!isIndexReady()) return false;
+
+  const channelId = await resolveChannelId();
+  if (!channelId) return false;
+
+  let state;
+  try {
+    state = await loadDueState(channelId);
+  } catch (err) {
+    console.warn("[backup.scheduler] due state unavailable:", err);
+    return false;
+  }
+
+  const due = isBackupDue({
+    now: Date.now(),
+    ...state,
+    scheduleEnabledAt: getBackupScheduleEnabledAt(),
+    intervalMinutes: interval,
+  });
+  if (!due) return false;
+  await startBackup({ triggeredBy: "auto", reason: "catch-up" });
+  return true;
 }
 
 /**
@@ -146,33 +181,5 @@ async function onTick(): Promise<void> {
  * orchestrator synchronously. Progress is piped into the overlay store.
  */
 export async function runBackupNow(): Promise<void> {
-  const setIndexQueueState = useFileStore.getState().setIndexQueueState;
-  const start = useBackupProgressStore.getState().start;
-  const setProgress = useBackupProgressStore.getState().setProgress;
-  const finish = useBackupProgressStore.getState().finish;
-  setIndexQueueState("backup-running");
-  start("manual");
-  try {
-    const result = await runBackup({
-      triggeredBy: "manual",
-      onProgress: (p) => setProgress(p),
-    });
-    finish({
-      filesUploaded: result.filesUploaded,
-      filesSkipped: result.filesSkipped,
-      filesFailed: result.filesFailed,
-      status: result.status,
-      error: result.error,
-    });
-  } catch (err) {
-    finish({
-      filesUploaded: 0,
-      filesSkipped: 0,
-      filesFailed: 0,
-      status: "failed",
-      error: err instanceof Error ? err.message : String(err),
-    });
-  } finally {
-    setIndexQueueState("idle");
-  }
+  await startBackup({ triggeredBy: "manual", reason: "manual" });
 }

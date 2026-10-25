@@ -27,10 +27,16 @@
 
 import { Api } from "telegram";
 import { getClient } from "../telegram/client";
+import { withTimeout, discoverIndex } from "./metadataStore";
 import {
-  withTimeout,
-  pickCoherentIndexSet,
-} from "./metadataStore";
+  packChunks,
+  serializeChunk,
+  isValidManifest,
+  parseIndexMessage,
+  epochTimestamp,
+  TELEGRAM_TEXT_LIMIT,
+  type ParsedIndexChunk,
+} from "./indexFormat";
 import { useFileStore } from "../../stores/fileStore";
 import {
   computeRetryDelay,
@@ -40,8 +46,24 @@ import {
 } from "../telegram/rateLimit";
 import { invoke } from "@tauri-apps/api/core";
 import i18n from "@/i18n";
+import { IndexNotReadyError, isIndexReady } from "../telegram/indexReadiness";
+
+export { IndexNotReadyError } from "../telegram/indexReadiness";
+
+export class IndexRetryExhaustedError extends Error {
+  readonly code = "INDEX_RETRY_EXHAUSTED";
+
+  constructor(message: string) {
+    super(message);
+    this.name = "IndexRetryExhaustedError";
+  }
+}
 
 import type { TeleFile } from "../types";
+import {
+  writePendingMarker,
+  clearPendingMarker,
+} from "./pendingIndex";
 
 /**
  * Splits state into chunks under Telegram's 4096-char message limit.
@@ -114,9 +136,20 @@ export function chunkFilesStable(files: TeleFile[], existingCount: number): Tele
 /** Legacy constant kept for external imports if any. */
 export const CHUNK_SIZE = 25;
 
-/** Fetch + edit timeouts (ms). */
-const FETCH_TIMEOUT_MS = 5000;
+/** Per-RPC edit/send timeout (ms). */
 const EDIT_TIMEOUT_MS = 5000;
+/**
+ * Telegram floods a channel after ~20 messages in a burst. A 460-file index
+ * used to send 47 chunks back-to-back and immediately enter a 5-minute
+ * FLOOD_WAIT. One second between chunks keeps structural writes under the
+ * limit without meaningfully slowing normal 1-3 chunk saves.
+ */
+const CHUNK_SEND_DELAY_MS =
+  import.meta.env.MODE === "test" ? 0 : 1_100;
+
+function sleep(ms: number): Promise<void> {
+  return ms <= 0 ? Promise.resolve() : new Promise((r) => setTimeout(r, ms));
+}
 
 /**
  * Cap on transient (FLOOD_WAIT / timeout / network) retries before the
@@ -129,30 +162,57 @@ interface QueueEntry {
   /** Resolve handler for the caller of `enqueue`. */
   resolve: () => void;
   reject: (err: any) => void;
+  /** Whether this entry owns the pending-index marker. */
+  recordPending: boolean;
+}
+
+interface EnqueueOptions {
+  /**
+   * Write the pending marker + flush the file cache. Internal maintenance
+   * writes (healing) pass false so they never masquerade as a user action.
+   */
+  recordPending?: boolean;
+}
+
+/**
+ * The writer's view of the live index on Telegram.
+ * `texts` are the exact payloads on Telegram, aligned with `ids` (chunk 0
+ * first), so unchanged chunks can be reused verbatim on a structural save.
+ */
+interface KnownIndex {
+  ids: number[];
+  texts: string[];
+  savedAt: number[];
+  epoch: number;
+  hasManifest: boolean;
 }
 
 class ChannelQueue {
   private pending: QueueEntry | null = null;
   private retryingEntry: QueueEntry | null = null;
+  /**
+   * Latest state that exhausted transient retries. It stays here (and is
+   * retried every 60s / on manual Retry) instead of being dropped. The caller
+   * was already rejected, but the optimistic UI is kept by useFileActions.
+   */
+  private stuckEntry: QueueEntry | null = null;
   private inflight: Promise<void> | null = null;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
   private retryCountdownTimer: ReturnType<typeof setInterval> | null = null;
+  private stuckTimer: ReturnType<typeof setTimeout> | null = null;
   private retryAttempt = 0;
   private lastError: any = null;
+  private successCount = 0;
+  private commitOverride: ((state: TeleFile[]) => Promise<void>) | null = null;
   private readonly channelId: string;
 
   /**
-   * Cached Telegram message IDs of the active coherent index set on Telegram.
-   * When known and chunk count matches, saves edit existing messages directly
-   * without having to query 100-200 messages from Telegram on every single action.
+   * Cached ids/texts of the live index on Telegram. Lets saves diff chunks and
+   * only rewrite what actually changed, without querying Telegram first.
    */
-  private cachedExistingMsgIds: number[] | null = null;
-
-  /**
-   * Cached serialized JSON strings of each chunk currently on Telegram.
-   * Allows commitOnce to diff chunks and only edit the chunk(s) that actually changed.
-   */
-  private cachedChunkTexts: string[] | null = null;
+  private known: KnownIndex | null = null;
+  /** Old epoch retained across a hard-error recovery so COW can clean it up. */
+  private recoveryOld: KnownIndex | null = null;
 
   constructor(channelId: string) {
     this.channelId = channelId;
@@ -160,47 +220,158 @@ class ChannelQueue {
 
   /**
    * Seeds the queue with known index message IDs and chunk payloads.
-   * Called by loadIndex or bootstrap when reading the index from Telegram.
+   * Called by loadIndexOutcome/bootstrap when reading the index from Telegram.
    */
-  setKnownIndex(msgIds: number[], chunkTexts?: string[]): void {
-    if (msgIds.length > 0) {
-      this.cachedExistingMsgIds = [...msgIds];
-      if (chunkTexts && chunkTexts.length === msgIds.length) {
-        this.cachedChunkTexts = [...chunkTexts];
-      } else {
-        this.cachedChunkTexts = null;
+  setKnownIndex(
+    msgIds: number[],
+    chunkTexts?: string[],
+    chunks?: ParsedIndexChunk[]
+  ): void {
+    if (msgIds.length === 0) return;
+    const texts =
+      chunkTexts && chunkTexts.length === msgIds.length ? [...chunkTexts] : [];
+    const parsedById = new Map<number, ParsedIndexChunk>();
+    for (const chunk of chunks ?? []) parsedById.set(chunk.msgId, chunk);
+    if (texts.length > 0) {
+      for (let i = 0; i < texts.length; i++) {
+        const parsed = parseIndexMessage({ id: msgIds[i], text: texts[i] });
+        if (parsed) parsedById.set(msgIds[i], parsed);
       }
     }
+    const savedAt = msgIds.map((id) => parsedById.get(id)?.savedAt ?? 0);
+    const zero = parsedById.get(msgIds[0]);
+    this.known = {
+      ids: [...msgIds],
+      texts,
+      savedAt,
+      epoch:
+        chunks && chunks.length > 0
+          ? Math.max(0, epochTimestamp(chunks))
+          : Math.max(0, ...savedAt),
+      hasManifest: zero ? isValidManifest(zero) : false,
+    };
   }
 
   getKnownIndexMsgIds(): number[] | null {
-    return this.cachedExistingMsgIds ? [...this.cachedExistingMsgIds] : null;
+    return this.known ? [...this.known.ids] : null;
   }
 
-  enqueue(state: TeleFile[]): Promise<void> {
+  /** Test-only seam so queue integrity can be tested without Telegram. */
+  setCommitImplForTests(impl: ((state: TeleFile[]) => Promise<void>) | null): void {
+    this.commitOverride = impl;
+  }
+
+  private commit(state: TeleFile[]): Promise<void> {
+    return this.commitOverride ? this.commitOverride(state) : this.commitOnce(state);
+  }
+
+  enqueue(state: TeleFile[], options: EnqueueOptions = {}): Promise<void> {
+    // Record the uncommitted state before anything async can fail. The file
+    // cache is flushed synchronously so a crash between here and the Telegram
+    // commit still leaves a complete optimistic snapshot on disk.
+    const recordPending = options.recordPending ?? true;
+    if (recordPending) {
+      writePendingMarker({
+        channelId: this.channelId,
+        baseSavedAt: this.known?.epoch ?? 0,
+        at: Date.now(),
+      });
+      useFileStore.getState().flushFileCacheNow();
+    }
+
     // Coalesce: replace any pending entry with the new state. If something is
-    // currently inflight, this becomes the *next* state to write.
+    // currently inflight (or waiting out a FLOOD_WAIT), this becomes the next
+    // state to write.
     return new Promise<void>((resolve, reject) => {
-      // Resolve any superseded pending entry — its state was overwritten by
-      // a newer call, so its caller can stop waiting on this exact snapshot.
-      // The new entry's promise will resolve when *its* state commits.
-      if (this.pending) {
-        this.pending.resolve();
+      // Resolve superseded pending and retrying entries: their callers were
+      // waiting on a snapshot that has been replaced, and leaving them
+      // unresolved leaks every action that overlaps a retry.
+      if (this.pending) this.pending.resolve();
+      if (this.retryingEntry) this.retryingEntry.resolve();
+      this.pending = null;
+      this.retryingEntry = null;
+
+      // A fresh action is a fresh attempt: drop a stuck state so the newest
+      // snapshot wins instead of waiting for the 60s retry timer.
+      if (this.stuckEntry) {
+        this.stuckEntry = null;
+        if (this.stuckTimer) {
+          clearTimeout(this.stuckTimer);
+          this.stuckTimer = null;
+        }
+        this.retryAttempt = 0;
+        this.lastError = null;
       }
+
       this.pending = {
         state,
         resolve,
         reject,
+        recordPending,
       };
       // Mirror the latest pending state to the store snapshot too — this is
       // what surfaces in the topbar's "Retrying" pill.
       this.updateStoreState();
+
+      // Respect an active FLOOD_WAIT/backoff window: the timer will drain the
+      // latest pending state when it fires instead of hammering Telegram now.
+      if (this.retryTimer || this.inflight) return;
       void this.drain();
     });
   }
 
-  /** Force an immediate drain — used on logout / shutdown. */
-  async flush(): Promise<void> {
+  /**
+   * Force the latest state out, bounded at 15s. Used on logout/shutdown.
+   * Failed flushes keep the state in `stuckEntry` (and keep the cached
+   * Telegram ids/texts) so a later manual retry can still commit it.
+   */
+  async flush(): Promise<{ status: "committed" | "empty" | "failed"; error?: any }> {
+    this.clearTimers();
+    const before = this.successCount;
+    if (this.inflight) {
+      try {
+        await this.inflight;
+      } catch {
+        // Drain handles its own errors; ignore.
+      }
+    }
+
+    const entry =
+      this.pending ?? this.retryingEntry ?? this.stuckEntry;
+    this.pending = null;
+    this.retryingEntry = null;
+    this.stuckEntry = null;
+    if (!entry) {
+      this.updateStoreState();
+      // The inflight drain may have committed the captured state already.
+      return { status: this.successCount > before ? "committed" : "empty" };
+    }
+
+    try {
+      await withTimeout(this.commit(entry.state), 15_000, "indexQueue.flush");
+      entry.resolve();
+      this.successCount++;
+      this.retryAttempt = 0;
+      this.lastError = null;
+      this.clearMarkerIfSettled(entry);
+      this.updateStoreState();
+      return { status: "committed" };
+    } catch (err) {
+      this.lastError = err;
+      this.stuckEntry = entry;
+      entry.reject(err);
+      this.updateStoreState();
+      return { status: "failed", error: err };
+    }
+  }
+
+  private clearMarkerIfSettled(entry: QueueEntry): void {
+    if (!entry.recordPending) return;
+    if (this.pending || this.retryingEntry || this.stuckEntry) return;
+    clearPendingMarker(this.channelId);
+  }
+
+  private clearTimers(): void {
     if (this.retryTimer) {
       clearTimeout(this.retryTimer);
       this.retryTimer = null;
@@ -209,28 +380,15 @@ class ChannelQueue {
       clearInterval(this.retryCountdownTimer);
       this.retryCountdownTimer = null;
     }
-    if (this.inflight) {
-      try {
-        await this.inflight;
-      } catch {
-        // Already failed; ignore.
-      }
+    if (this.stuckTimer) {
+      clearTimeout(this.stuckTimer);
+      this.stuckTimer = null;
     }
-    // Resolve any pending entries so callers don't hang.
-    if (this.pending) this.pending.resolve();
-    if (this.retryingEntry) this.retryingEntry.resolve();
-    this.pending = null;
-    this.retryingEntry = null;
-    this.retryAttempt = 0;
-    this.lastError = null;
-    this.cachedExistingMsgIds = null;
-    this.cachedChunkTexts = null;
-    this.updateStoreState();
   }
 
   private updateStoreState(): void {
     const store = useFileStore.getState();
-    if (this.lastError && this.retryTimer == null) {
+    if (this.stuckEntry) {
       store.setIndexQueueState("failed");
       store.setIndexQueueError(
         typeof this.lastError === "string"
@@ -238,7 +396,15 @@ class ChannelQueue {
           : this.lastError?.message ?? String(this.lastError)
       );
       store.setIndexQueueRetryInSec(0);
-    } else if (this.retryTimer != null) {
+    } else if (this.lastError && this.retryTimer == null) {
+      store.setIndexQueueState("failed");
+      store.setIndexQueueError(
+        typeof this.lastError === "string"
+          ? this.lastError
+          : this.lastError?.message ?? String(this.lastError)
+      );
+      store.setIndexQueueRetryInSec(0);
+    } else if (this.retryTimer != null || this.stuckTimer != null) {
       store.setIndexQueueState("retrying");
       // Error message stays so users can see *why* we're retrying.
       if (this.lastError) {
@@ -260,31 +426,41 @@ class ChannelQueue {
   }
 
   private async drain(): Promise<void> {
-    // If already draining, just return — the next entry has already replaced
-    // the pending slot and will be picked up when the current pass finishes.
-    if (this.inflight) return;
+    // If already draining or waiting out a backoff, return — the pending entry
+    // will be picked up by the timer/loop.
+    if (this.inflight || this.retryTimer) return;
     this.inflight = (async () => {
       try {
         // Drain loop: keep committing while there's something to commit.
-        while (this.retryingEntry || this.pending) {
-          const entry = this.retryingEntry ?? this.pending!;
-          this.retryingEntry = null;
+        // Pending always wins: it is the newest snapshot. A retrying entry is
+        // superseded by it (and resolved so its caller doesn't hang).
+        while (this.pending || this.retryingEntry) {
+          if (this.pending && this.retryingEntry) {
+            this.retryingEntry.resolve();
+            this.retryingEntry = null;
+          }
+          const entry = this.pending ?? this.retryingEntry;
+          if (!entry) break;
           this.pending = null;
+          this.retryingEntry = null;
           this.lastError = null;
           this.updateStoreState();
 
           try {
-            await this.commitOnce(entry.state);
+            await this.commit(entry.state);
             entry.resolve();
+            this.successCount++;
             this.retryAttempt = 0;
+            this.clearMarkerIfSettled(entry);
           } catch (err: any) {
             this.lastError = err;
             if (isHardError(err)) {
-              this.retryingEntry = null;
-              this.retryAttempt = 0;
+              // Reject only this caller; a newer pending snapshot (if any)
+              // still gets its turn.
               entry.reject(err);
+              this.retryAttempt = 0;
               this.updateStoreState();
-              return;
+              continue;
             }
             this.retryingEntry = entry;
             this.scheduleRetry(err);
@@ -296,6 +472,25 @@ class ChannelQueue {
         this.updateStoreState();
       }
     })();
+  }
+
+  retryNow(fallback: TeleFile[]): void {
+    const state =
+      this.stuckEntry?.state ??
+      this.pending?.state ??
+      this.retryingEntry?.state ??
+      fallback;
+    if (this.stuckTimer) {
+      clearTimeout(this.stuckTimer);
+      this.stuckTimer = null;
+    }
+    if (this.retryTimer) {
+      clearTimeout(this.retryTimer);
+      this.retryTimer = null;
+    }
+    this.retryAttempt = 0;
+    this.lastError = null;
+    void this.enqueue(state);
   }
 
   private scheduleRetry(err: any): void {
@@ -318,7 +513,7 @@ class ChannelQueue {
     }
 
     if (this.retryAttempt > MAX_TRANSIENT_RETRIES) {
-      const wrapped = new Error(
+      const wrapped = new IndexRetryExhaustedError(
         `Index save failed after ${MAX_TRANSIENT_RETRIES} transient retries: ${
           err?.message ?? String(err)
         }`
@@ -329,11 +524,16 @@ class ChannelQueue {
         }`,
       }).catch(() => {});
       if (this.retryingEntry) {
-        const entry = this.retryingEntry;
+        // Keep the newest state instead of dropping it. The caller is
+        // rejected so uploads/backups can pause, but the UI keeps the
+        // optimistic state and a 60s/manual retry can still commit it.
+        this.stuckEntry = this.retryingEntry;
         this.retryingEntry = null;
-        this.retryAttempt = 0;
-        entry.reject(wrapped);
+        this.stuckEntry.reject(wrapped);
       }
+      this.retryAttempt = 0;
+      this.lastError = wrapped;
+      this.scheduleStuckRetry();
       this.updateStoreState();
       return;
     }
@@ -364,205 +564,594 @@ class ChannelQueue {
   }
 
   /**
-   * One Telegram round-trip that writes the given file state to the channel.
-   * Throws on hard errors; throws on transient errors so the caller can retry.
+   * Exhausted transient retries: keep the newest state and try again every
+   * 60s, in addition to the manual Retry button. Never silently drop it.
+   */
+  private scheduleStuckRetry(): void {
+    if (this.stuckTimer) {
+      clearTimeout(this.stuckTimer);
+      this.stuckTimer = null;
+    }
+    if (!this.stuckEntry) return;
+    this.stuckTimer = setTimeout(() => {
+      this.stuckTimer = null;
+      if (!this.stuckEntry) {
+        this.updateStoreState();
+        return;
+      }
+      if (this.pending) {
+        // A newer snapshot already won; the stuck one is obsolete.
+        this.stuckEntry = null;
+        this.updateStoreState();
+        void this.drain();
+        return;
+      }
+      this.retryingEntry = this.stuckEntry;
+      this.stuckEntry = null;
+      this.retryAttempt = 0;
+      this.lastError = null;
+      void this.drain();
+      this.updateStoreState();
+    }, 60_000);
+  }
+
+  /**
+   * Writes the index atomically.
+   *
+   * Fast path: one changed chunk, stable chunk count -> one in-place edit
+   * (Telegram edits are atomic and keep the id).
+   *
+   * Structural path: every changed non-zero chunk is sent as a NEW message,
+   * then chunk 0 is edited last (the commit point). Old messages are deleted
+   * only after that edit succeeds, so a failure at any point leaves the old
+   * epoch fully readable.
+   *
+   * Hard errors invalidate the cache, re-discover once, and retry; a genuinely
+   * missing chunk 0 falls back to a full copy-on-write + repin. Timeouts retry
+   * the same RPC instead of deleting/resending the whole index.
    */
   private async commitOnce(state: TeleFile[]): Promise<void> {
+    try {
+      await this.commitAttempt(state);
+    } catch (err: any) {
+      await this.log(
+        `INDEX_COMMIT_FAIL hard=${isHardError(err) ? 1 : 0} reason=${errMsg(err)}`
+      );
+      if (!isHardError(err) || !isMissingMessageError(err)) throw err;
+      await this.log(
+        `INDEX_COMMIT_HARD_ERR rediscover=1 reason=${errMsg(err)}`
+      );
+      this.recoveryOld = this.known;
+      this.known = null;
+      const result = await discoverIndex(this.channelId).catch(() => null);
+      if (result && result.status === "ready" && result.ids.length > 0) {
+        this.recoveryOld = null;
+        this.setKnownIndex(result.ids, result.texts, result.chunks);
+        await this.commitAttempt(state, false);
+        return;
+      }
+      // No live chunk 0 (or discovery unavailable): send a complete new set
+      // and move the pin. Skip a second discovery attempt.
+      await this.commitAttempt(state, false);
+    }
+  }
+
+  private async commitAttempt(
+    state: TeleFile[],
+    allowDiscover = true
+  ): Promise<void> {
     const client = getClient();
     const peer = await resolvePeerWithTimeout(client, this.channelId);
 
-    // 1. Discover existing index messages from Telegram if not cached
-    let existingMsgIds = this.cachedExistingMsgIds;
-    if (!existingMsgIds || existingMsgIds.length === 0) {
-      let allMsgs: any[] = [];
-      const [pinnedRes, recentRes] = await Promise.allSettled([
-        withTimeout(
-          client.getMessages(peer, {
-            filter: new Api.InputMessagesFilterPinned(),
-            limit: 100,
-          }),
-          FETCH_TIMEOUT_MS,
-          "client.getMessages(pinned)"
-        ),
-        withTimeout(
-          client.getMessages(peer, { limit: 100 }),
-          FETCH_TIMEOUT_MS,
-          "client.getMessages(recent)"
-        ),
-      ]);
-
-      if (pinnedRes.status === "fulfilled" && Array.isArray(pinnedRes.value)) {
-        allMsgs = allMsgs.concat(pinnedRes.value);
-      } else if (pinnedRes.status === "rejected") {
-        await invoke("log_vault_state", {
-          state: `INDEX_FETCH_PINNED_FAIL reason=${pinnedRes.reason?.message ?? pinnedRes.reason}`,
-        }).catch(() => {});
-      }
-
-      if (recentRes.status === "fulfilled" && Array.isArray(recentRes.value)) {
-        allMsgs = allMsgs.concat(recentRes.value);
-      } else if (recentRes.status === "rejected") {
-        await invoke("log_vault_state", {
-          state: `INDEX_FETCH_RECENT_FAIL reason=${recentRes.reason?.message ?? recentRes.reason}`,
-        }).catch(() => {});
-      }
-
-      const coherentSet = pickCoherentIndexSet(allMsgs);
-      if (coherentSet && coherentSet.length > 0) {
-        existingMsgIds = coherentSet.map((c) => c.msgId);
-        this.cachedExistingMsgIds = existingMsgIds;
-      } else {
-        existingMsgIds = null;
+    if (!this.known && allowDiscover) {
+      const result = await discoverIndex(this.channelId).catch(() => null);
+      if (result && result.status === "ready" && result.ids.length > 0) {
+        this.setKnownIndex(result.ids, result.texts, result.chunks);
       }
     }
 
-    // 2. Chunk distribution: if we know existing count, try stable distribution
-    const existingCount = existingMsgIds?.length ?? 0;
-    const chunks = existingCount > 0
-      ? chunkFilesStable(state, existingCount)
-      : chunkFiles(state);
+    const { chunks, manifestOmitted } = packChunks(state);
+    const totalChunks = chunks.length;
+    if (manifestOmitted) {
+      await this.log(
+        `INDEX_MANIFEST_OMITTED chunks=${totalChunks} files=${state.length}`
+      );
+    }
+    const cache = this.known;
+    const nextSavedAt = Math.max(Date.now(), (cache?.epoch ?? 0) + 1);
 
-    const newChunkTexts: string[] = chunks.map((c, i) =>
-      JSON.stringify({
-        teledrive_index: true,
-        version: 1,
-        chunkIndex: i,
-        totalChunks: chunks.length,
-        files: c,
-      })
-    );
+    if (!cache) {
+      await this.sendAllNew(
+        client,
+        peer,
+        chunks,
+        nextSavedAt,
+        manifestOmitted,
+        state.length,
+        this.recoveryOld
+      );
+      this.recoveryOld = null;
+      return;
+    }
 
-    // 3. In-place & Incremental Path:
-    // If existing chunk messages exist, reuse them!
-    // - Edit overlapping chunks in-place (diff against cachedChunkTexts to skip unchanged calls)
-    // - If chunk count grew (chunks.length > existingMsgIds.length), send ONLY the new trailing chunks
-    // - If chunk count shrank (chunks.length < existingMsgIds.length), fire-and-forget delete extra trailing chunks
-    // Chunk 0 is ALREADY pinned in Telegram, so zero UpdatePinnedMessage flood waits occur!
-    if (existingMsgIds && existingMsgIds.length > 0) {
-      let editsAndSendsOk = true;
-      const updatedMsgIds: number[] = [...existingMsgIds];
-      const overlapCount = Math.min(existingMsgIds.length, chunks.length);
+    const sameCount = cache.ids.length === totalChunks;
+    const changed = this.changedChunks(cache, chunks, totalChunks);
 
-      // (a) Edit overlapping chunks
-      for (let i = 0; i < overlapCount; i++) {
-        const text = newChunkTexts[i];
-        if (this.cachedChunkTexts && this.cachedChunkTexts[i] === text) {
-          continue; // Identical content, zero network call needed
-        }
+    // Nothing changed and a manifest is already present: no write needed.
+    if (sameCount && changed.length === 0 && cache.hasManifest) return;
 
-        try {
-          await withTimeout(
-            client.editMessage(peer, {
-              message: existingMsgIds[i],
-              text,
-            }),
-            EDIT_TIMEOUT_MS,
-            `editMessage(chunk ${i})`
+    // Fast path: exactly one changed chunk, stable count, manifest present.
+    if (sameCount && cache.hasManifest && !manifestOmitted) {
+      if (changed.length === 0) return;
+      if (changed.length === 1) {
+        const i = changed[0];
+        const text =
+          i === 0
+            ? this.buildZeroText(
+                chunks[0],
+                totalChunks,
+                nextSavedAt,
+                cache.ids
+              )
+            : serializeChunk(
+                chunkPayload(chunks[i], i, totalChunks, nextSavedAt)
+              );
+        if (text !== null) {
+          await this.editChunk(
+            client,
+            peer,
+            cache.ids[i],
+            text,
+            `fast chunk ${i}`
           );
-        } catch (err: any) {
-          const errMsg = err?.message ?? String(err);
-          if (errMsg.includes("MESSAGE_NOT_MODIFIED")) {
-            continue;
-          }
-          editsAndSendsOk = false;
-          await invoke("log_vault_state", {
-            state: `INDEX_EDIT_FAIL chunk=${i} reason=${errMsg}`,
-          }).catch(() => {});
-          break;
+          cache.texts[i] = text;
+          cache.savedAt[i] = nextSavedAt;
+          cache.epoch = Math.max(cache.epoch, nextSavedAt);
+          await this.log(`INDEX_COMMIT_FAST chunk=${i} files=${state.length}`);
+          return;
         }
+        // Manifest unexpectedly no longer fits: fall through to COW.
       }
+    }
 
-      // (b) Expand: send only new trailing chunks
-      if (editsAndSendsOk && chunks.length > existingMsgIds.length) {
-        for (let i = existingMsgIds.length; i < chunks.length; i++) {
-          const text = newChunkTexts[i];
-          try {
-            const result = await withTimeout(
-              client.sendMessage(peer, { message: text }),
-              EDIT_TIMEOUT_MS,
-              `sendMessage(new-chunk ${i})`
-            );
-            const msgId = Number((result as any).id);
-            updatedMsgIds.push(msgId);
-          } catch (err: any) {
-            editsAndSendsOk = false;
-            await invoke("log_vault_state", {
-              state: `INDEX_EXPAND_FAIL chunk=${i} reason=${err?.message ?? err}`,
-            }).catch(() => {});
-            break;
-          }
+    // Legacy/partial cache with at most one changed chunk: update the content
+    // atomically, then edit chunk 0 to add the manifest. Unchanged chunks are
+    // reused verbatim (never reserialized just to upgrade).
+    if (sameCount && !cache.hasManifest && changed.length <= 1) {
+      const idx = changed[0];
+      if (idx !== undefined && idx !== 0) {
+        const text = serializeChunk(
+          chunkPayload(chunks[idx], idx, totalChunks, nextSavedAt)
+        );
+        await this.editChunk(
+          client,
+          peer,
+          cache.ids[idx],
+          text,
+          `legacy chunk ${idx}`
+        );
+        cache.texts[idx] = text;
+        cache.savedAt[idx] = nextSavedAt;
+        cache.epoch = Math.max(cache.epoch, nextSavedAt);
+      }
+      const zeroText = this.buildZeroText(
+        chunks[0],
+        totalChunks,
+        nextSavedAt,
+        cache.ids
+      );
+      if (zeroText !== null) {
+        try {
+          await this.editChunk(
+            client,
+            peer,
+            cache.ids[0],
+            zeroText,
+            "legacy manifest"
+          );
+        } catch (err) {
+          // The content edit (if any) is coherent as a legacy epoch; retry
+          // the upgrade on the next save.
+          await this.log(`INDEX_MANIFEST_UPGRADE_FAIL reason=${errMsg(err)}`);
+          throw err;
         }
-      }
-
-      // (c) Shrink: delete extra trailing chunks
-      if (editsAndSendsOk && chunks.length < existingMsgIds.length) {
-        const extraIds = existingMsgIds.slice(chunks.length);
-        updatedMsgIds.splice(chunks.length);
-        client.deleteMessages(peer, extraIds, { revoke: true }).catch((err: any) => {
-          invoke("log_vault_state", {
-            state: `INDEX_DELETE_EXTRAS_FAIL reason=${err?.message ?? err}`,
-          }).catch(() => {});
-        });
-      }
-
-      if (editsAndSendsOk) {
-        this.cachedExistingMsgIds = updatedMsgIds;
-        this.cachedChunkTexts = newChunkTexts;
-        await invoke("log_vault_state", {
-          state: `INDEX_INCREMENTAL_OK chunks=${chunks.length} files=${state.length} msgIds=[${updatedMsgIds.join(",")}]`,
-        }).catch(() => {});
+        cache.texts[0] = zeroText;
+        cache.savedAt[0] = nextSavedAt;
+        cache.epoch = Math.max(cache.epoch, nextSavedAt);
+        cache.hasManifest = true;
+        await this.log(
+          `INDEX_MANIFEST_OK chunks=${totalChunks} files=${state.length}`
+        );
         return;
       }
-
-      // If incremental update failed (e.g. message was deleted in Telegram), invalidate cache and proceed to fallback
-      this.cachedExistingMsgIds = null;
-      this.cachedChunkTexts = null;
+      // Manifest cannot fit: full COW without a manifest (below).
     }
 
-    // 4. Fallback path (clean slate / recovery):
-    // Delete any old messages (fire-and-forget), send fresh chunks, pin chunk 0 (fire-and-forget).
-    if (existingMsgIds && existingMsgIds.length > 0) {
-      const idsToDelete = existingMsgIds;
-      client.deleteMessages(peer, idsToDelete, { revoke: true })
-        .then(() => invoke("log_vault_state", { state: `INDEX_DELETE_OLD_OK count=${idsToDelete.length}` }).catch(() => {}))
-        .catch((err: any) => invoke("log_vault_state", { state: `INDEX_DELETE_OLD_FAIL reason=${err?.message ?? err}` }).catch(() => {}));
-    }
+    await this.structuralCommit(
+      client,
+      peer,
+      chunks,
+      nextSavedAt,
+      manifestOmitted,
+      state.length
+    );
+  }
 
-    const newMsgIds: number[] = [];
-    for (let i = 0; i < chunks.length; i++) {
-      const text = newChunkTexts[i];
-      const result = await withTimeout(
-        client.sendMessage(peer, { message: text }),
-        EDIT_TIMEOUT_MS,
-        `sendMessage(chunk ${i})`
+  private changedChunks(
+    cache: KnownIndex,
+    chunks: TeleFile[][],
+    totalChunks: number
+  ): number[] {
+    const changed: number[] = [];
+    for (let i = 0; i < totalChunks; i++) {
+      const text = cache.texts[i];
+      if (!text || cache.ids[i] == null) {
+        changed.push(i);
+        continue;
+      }
+      const parsed = parseIndexMessage({ id: cache.ids[i], text });
+      if (
+        !parsed ||
+        parsed.chunkIndex !== i ||
+        parsed.totalChunks !== totalChunks ||
+        canonicalJson(parsed.files) !== canonicalJson(chunks[i])
+      ) {
+        changed.push(i);
+      }
+    }
+    return changed;
+  }
+
+  private buildZeroText(
+    files: TeleFile[],
+    totalChunks: number,
+    savedAt: number,
+    ids: number[]
+  ): string | null {
+    if (ids.length !== totalChunks) return null;
+    const text = serializeChunk({
+      ...chunkPayload(files, 0, totalChunks, savedAt),
+      chunkMsgIds: ids.slice(1),
+    });
+    if (text.length > TELEGRAM_TEXT_LIMIT) return null;
+    return text;
+  }
+
+  private async structuralCommit(
+    client: any,
+    peer: any,
+    chunks: TeleFile[][],
+    savedAt: number,
+    manifestOmitted: boolean,
+    fileCount: number
+  ): Promise<void> {
+    await this.log(
+      `INDEX_COMMIT_STRUCTURAL chunks=${chunks.length} files=${fileCount} manifest=${manifestOmitted ? 0 : 1}`
+    );
+    const cache = this.known;
+    if (!cache) {
+      await this.sendAllNew(
+        client,
+        peer,
+        chunks,
+        savedAt,
+        manifestOmitted,
+        fileCount,
+        null
       );
-      const msgId = Number((result as any).id);
-      newMsgIds.push(msgId);
+      return;
+    }
 
-      // Best-effort pin ONLY chunk 0 (fire-and-forget — pin timeout must never block the save)
-      if (i === 0) {
-        client.invoke(
-          new Api.messages.UpdatePinnedMessage({
-            peer,
-            id: msgId,
-            unpin: false,
-            silent: true,
-          })
-        ).catch((err: any) => {
-          invoke("log_vault_state", {
-            state: `INDEX_PIN_FAIL chunk=0 reason=${err?.message ?? err}`,
-          }).catch(() => {});
-        });
+    const totalChunks = chunks.length;
+    const sameCount = cache.ids.length === totalChunks;
+    const changed = this.changedChunks(cache, chunks, totalChunks);
+
+    // Above the manifest bound a partial write would reintroduce mixed epochs.
+    if (manifestOmitted) {
+      await this.sendAllNew(
+        client,
+        peer,
+        chunks,
+        savedAt,
+        true,
+        fileCount,
+        cache
+      );
+      return;
+    }
+
+    const ids: number[] = [cache.ids[0]];
+    const texts: string[] = new Array(totalChunks);
+    const savedAts: number[] = new Array(totalChunks).fill(0);
+    texts[0] = cache.texts[0] ?? "";
+    savedAts[0] = cache.savedAt[0] ?? 0;
+    const orphans: number[] = [];
+
+    for (let i = 1; i < totalChunks; i++) {
+      const reuse =
+        sameCount && cache.ids[i] != null && !changed.includes(i);
+      if (reuse) {
+        ids.push(cache.ids[i]);
+        texts[i] = cache.texts[i];
+        savedAts[i] = cache.savedAt[i];
+        continue;
+      }
+      const text = serializeChunk(
+        chunkPayload(chunks[i], i, totalChunks, savedAt)
+      );
+      await sleep(CHUNK_SEND_DELAY_MS);
+      try {
+        const id = await this.sendChunk(client, peer, text, `new chunk ${i}`);
+        ids.push(id);
+        orphans.push(id);
+        texts[i] = text;
+        savedAts[i] = savedAt;
+      } catch (err) {
+        await this.logOrphans(orphans);
+        throw err;
       }
     }
 
-    this.cachedExistingMsgIds = newMsgIds;
-    this.cachedChunkTexts = newChunkTexts;
+    const zeroText = this.buildZeroText(chunks[0], totalChunks, savedAt, ids);
+    if (zeroText === null) {
+      // The manifest outgrew its budget: send a complete new set instead of
+      // writing a no-manifest structural epoch.
+      await this.logOrphans(orphans);
+      await this.sendAllNew(
+        client,
+        peer,
+        chunks,
+        savedAt,
+        true,
+        fileCount,
+        cache
+      );
+      return;
+    }
 
-    await invoke("log_vault_state", {
-      state: `INDEX_FALLBACK_OK chunks=${chunks.length} files=${state.length} msgIds=[${newMsgIds.join(",")}]`,
-    }).catch(() => {});
+    try {
+      await this.editChunk(
+        client,
+        peer,
+        cache.ids[0],
+        zeroText,
+        "chunk 0 commit"
+      );
+    } catch (err) {
+      // Old chunk 0 is intact; new chunks are harmless orphans.
+      await this.logOrphans(orphans);
+      throw err;
+    }
+
+    // Commit point passed. Cache the new epoch, then clean up what it replaced.
+    const oldIds = cache.ids;
+    texts[0] = zeroText;
+    savedAts[0] = savedAt;
+    this.known = {
+      ids,
+      texts,
+      savedAt: savedAts,
+      epoch: Math.max(cache.epoch, savedAt),
+      hasManifest: true,
+    };
+    this.deleteUnreferenced(client, peer, oldIds, ids);
+    await this.log(
+      `INDEX_COMMIT_STRUCTURAL_OK chunks=${totalChunks} files=${fileCount} new=${orphans.length}`
+    );
   }
+
+  /**
+   * Full copy-on-write: send every chunk as a new message (chunk 0 last),
+   * delete the old set after the new chunk 0 exists, and repin best-effort.
+   * This is the no-cache path and the above-manifest-bound path.
+   */
+  private async sendAllNew(
+    client: any,
+    peer: any,
+    chunks: TeleFile[][],
+    savedAt: number,
+    manifestOmitted: boolean,
+    fileCount: number,
+    old: KnownIndex | null
+  ): Promise<void> {
+    const totalChunks = chunks.length;
+    const ids: number[] = new Array(totalChunks).fill(0);
+    const texts: string[] = new Array(totalChunks);
+    const savedAts: number[] = new Array(totalChunks).fill(savedAt);
+    const orphans: number[] = [];
+
+    for (let i = 1; i < totalChunks; i++) {
+      const text = serializeChunk(
+        chunkPayload(chunks[i], i, totalChunks, savedAt)
+      );
+      if (i > 1) await sleep(CHUNK_SEND_DELAY_MS);
+      try {
+        const id = await this.sendChunk(client, peer, text, `chunk ${i}`);
+        ids[i] = id;
+        texts[i] = text;
+        orphans.push(id);
+      } catch (err) {
+        await this.logOrphans(orphans);
+        throw err;
+      }
+    }
+
+    let zeroText: string | null = null;
+    let hasManifest = false;
+    if (!manifestOmitted) {
+      zeroText = this.buildZeroText(chunks[0], totalChunks, savedAt, ids);
+      hasManifest = zeroText !== null;
+    }
+    if (zeroText === null) {
+      zeroText = serializeChunk(chunkPayload(chunks[0], 0, totalChunks, savedAt));
+      if (zeroText.length > TELEGRAM_TEXT_LIMIT) {
+        await this.logOrphans(orphans);
+        throw new Error("Index chunk 0 exceeds Telegram's text limit");
+      }
+    }
+
+    if (totalChunks > 1) await sleep(CHUNK_SEND_DELAY_MS);
+    try {
+      ids[0] = await this.sendChunk(client, peer, zeroText, "chunk 0");
+      texts[0] = zeroText;
+    } catch (err) {
+      await this.logOrphans(orphans);
+      throw err;
+    }
+
+    this.known = {
+      ids,
+      texts,
+      savedAt: savedAts,
+      epoch: Math.max(0, savedAt),
+      hasManifest,
+    };
+    this.pinChunk(client, peer, ids[0]);
+    if (old) this.deleteUnreferenced(client, peer, old.ids, ids);
+    this.recoveryOld = null;
+    await this.log(
+      `INDEX_COMMIT_COW_OK chunks=${totalChunks} files=${fileCount} manifest=${hasManifest ? 1 : 0}`
+    );
+  }
+
+  /** Fire-and-forget delete of messages no longer part of the live epoch. */
+  private deleteUnreferenced(
+    client: any,
+    peer: any,
+    oldIds: number[],
+    newIds: number[]
+  ): void {
+    const keep = new Set(newIds);
+    const toDelete = oldIds.filter((id) => !keep.has(id));
+    if (toDelete.length === 0) return;
+    client
+      .deleteMessages(peer, toDelete, { revoke: true })
+      .then(() =>
+        this.log(`INDEX_DELETE_OLD_OK count=${toDelete.length}`)
+      )
+      .catch((err: any) =>
+        this.log(`INDEX_DELETE_OLD_FAIL reason=${errMsg(err)}`)
+      );
+  }
+
+  private pinChunk(client: any, peer: any, id: number): void {
+    client
+      .invoke(
+        new Api.messages.UpdatePinnedMessage({
+          peer,
+          id,
+          unpin: false,
+          silent: true,
+        })
+      )
+      .catch((err: any) => this.log(`INDEX_PIN_FAIL reason=${errMsg(err)}`));
+  }
+
+  private async logOrphans(ids: number[]): Promise<void> {
+    if (ids.length === 0) return;
+    await this.log(`INDEX_ORPHANS ids=[${ids.join(",")}]`);
+  }
+
+  /**
+   * Retry the SAME RPC once on a timeout. Never trigger a delete/resend here:
+   * a timed-out send may still have landed, so a retry can at worst create a
+   * harmless orphan, never a corrupted epoch.
+   */
+  private async rpc<T>(fn: () => Promise<T>, label: string): Promise<T> {
+    try {
+      return await fn();
+    } catch (err: any) {
+      if (!isTimeoutError(err)) throw err;
+      await this.log(`INDEX_RPC_TIMEOUT_RETRY label=${label}`);
+      return await fn();
+    }
+  }
+
+  private async editChunk(
+    client: any,
+    peer: any,
+    id: number,
+    text: string,
+    label: string
+  ): Promise<void> {
+    try {
+      await this.rpc(
+        () =>
+          withTimeout(
+            client.editMessage(peer, { message: id, text }),
+            EDIT_TIMEOUT_MS,
+            `editMessage(${label})`
+          ),
+        label
+      );
+    } catch (err: any) {
+      if (/MESSAGE_NOT_MODIFIED/i.test(errMsg(err))) return;
+      throw err;
+    }
+  }
+
+  private async sendChunk(
+    client: any,
+    peer: any,
+    text: string,
+    label: string
+  ): Promise<number> {
+    const result = await this.rpc(
+      () =>
+        withTimeout(
+          client.sendMessage(peer, { message: text }),
+          EDIT_TIMEOUT_MS,
+          `sendMessage(${label})`
+        ),
+      label
+    );
+    return Number((result as any).id);
+  }
+
+  private async log(state: string): Promise<void> {
+    await invoke("log_vault_state", { state }).catch(() => {});
+  }
+}
+
+function errMsg(err: any): string {
+  return typeof err === "string" ? err : err?.message ?? String(err);
+}
+
+function isTimeoutError(err: any): boolean {
+  return /Timeout of .* exceeded/i.test(errMsg(err));
+}
+
+function isMissingMessageError(err: any): boolean {
+  return /MSG_ID_INVALID|MESSAGE_ID_INVALID|MESSAGE_NOT_FOUND|MESSAGE_EMPTY|MESSAGE_DELETE/i.test(
+    errMsg(err)
+  );
+}
+
+function canonicalJson(value: any): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (value && typeof value === "object") {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(value) ?? "null";
+}
+
+function chunkPayload(
+  files: TeleFile[],
+  chunkIndex: number,
+  totalChunks: number,
+  savedAt: number
+) {
+  return {
+    teledrive_index: true as const,
+    version: 3,
+    chunkIndex,
+    totalChunks,
+    savedAt,
+    files,
+  };
 }
 
 async function resolvePeerWithTimeout(client: any, channelId: string): Promise<any> {
@@ -597,20 +1186,63 @@ export function getIndexQueue(channelId: string): ChannelQueue {
  * Resolves once the state has been durably written to Telegram.
  * Rejects with the original error if the write failed terminally (hard error).
  */
-export function enqueueSave(channelId: string, state: TeleFile[]): Promise<void> {
-  return getIndexQueue(channelId).enqueue(state);
+export function enqueueSave(
+  channelId: string,
+  state: TeleFile[],
+  options: EnqueueOptions = {}
+): Promise<void> {
+  if (!isIndexReady()) {
+    return Promise.reject(new IndexNotReadyError());
+  }
+  return getIndexQueue(channelId).enqueue(state, options);
 }
 
-/** Flush all queues (used on logout). */
-export async function flushAllQueues(): Promise<void> {
-  await Promise.all(Array.from(queues.values()).map((q) => q.flush()));
-  queues.clear();
+/**
+ * The only write allowed while discovery is incomplete. Used exclusively by
+ * the explicit recovery-replace path (a complete candidate set chosen by the
+ * user), never by normal user actions.
+ */
+export function enqueueSaveDuringRecovery(channelId: string, state: TeleFile[]): Promise<void> {
+  return getIndexQueue(channelId).enqueue(state, { recordPending: false });
 }
 
-/** Force an immediate retry on a currently-failed queue. */
+/**
+ * Flush all queues (used on logout). Commits the latest state of each queue
+ * with a 15s bound before clearing them; failures are returned for logging.
+ */
+export async function flushAllQueues(): Promise<
+  Array<{ channelId: string; status: "committed" | "empty" | "failed"; error?: any }>
+> {
+  const results = await Promise.all(
+    Array.from(queues.entries()).map(async ([channelId, q]) => ({
+      channelId,
+      ...(await q.flush()),
+    }))
+  );
+  // Keep failed queues (and their stuck state) alive so a manual retry in the
+  // same session can still commit them. Successful/empty ones are done.
+  for (const result of results) {
+    if (result.status !== "failed") queues.delete(result.channelId);
+  }
+  return results;
+}
+
+/** Force an immediate retry on a currently-failed/stuck queue. */
 export function retryQueue(channelId: string): void {
   const q = queues.get(channelId);
-  if (!q) return;
-  const cur = useFileStore.getState().files;
-  void q.enqueue(cur);
+  if (!q || !isIndexReady()) return;
+  q.retryNow(useFileStore.getState().files);
+}
+
+/** Test-only: inject a commit implementation for a channel. */
+export function setCommitImplForTests(
+  channelId: string,
+  impl: ((state: TeleFile[]) => Promise<void>) | null
+): void {
+  getIndexQueue(channelId).setCommitImplForTests(impl);
+}
+
+/** Test-only: forget all channel queues. */
+export function resetQueuesForTests(): void {
+  queues.clear();
 }

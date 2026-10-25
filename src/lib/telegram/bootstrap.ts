@@ -1,7 +1,7 @@
 import { getClient } from "./client";
 import { ensureStorageChannel } from "./channelManager";
 import {
-  loadIndex,
+  loadIndexOutcome,
   saveIndex,
   withTimeout,
   reconstructMissingFolders,
@@ -9,16 +9,22 @@ import {
   dedupeByContentKey,
   dedupeByMessageId,
 } from "../storage/metadataStore";
+import { useAuthStore } from "../../stores/authStore";
 import { useFileStore } from "../../stores/fileStore";
 import { TeleFile } from "../types";
 import { invoke } from "@tauri-apps/api/core";
-import { isJunkFile, filterJunkFiles } from "../storage/fileSanitizer";
 import {
+  ensureManifest,
+  filterSupersededBackupFiles,
   isManifestCorrupt,
-  loadManifest,
   manifestEntryToTeleFile,
 } from "../backup/manifest";
 import { normalizeFolderPath } from "../utils";
+import {
+  readPendingMarker,
+  clearPendingMarker,
+  resolvePendingIndex,
+} from "../storage/pendingIndex";
 import i18n from "@/i18n";
 
 /**
@@ -68,15 +74,50 @@ async function bootstrapTeleDriveInner(
   const channelId = await ensureStorageChannel(phone);
 
   onStatusChange?.(i18n.t("messages:bootstrap.status.loadingIndex"));
-  let files = await loadIndex(channelId);
+  const outcome = await loadIndexOutcome(channelId);
+
+  if (outcome.status === "incomplete") {
+    // Do not touch the cached file list: an incomplete discovery means we do
+    // not know what the live index contains. The shell still renders, but every
+    // write path is gated by `indexLoadState !== "ready"` until a retry finds
+    // a complete epoch (or the user restores one explicitly).
+    useFileStore.getState().setBootstrapComplete(true);
+    onStatusChange?.(i18n.t("messages:bootstrap.status.indexIncomplete"));
+    scheduleIndexRetry(channelId, onStatusChange);
+    return channelId;
+  }
+
+  // A pending marker means the local cache may contain an action that never
+  // reached Telegram (crash, failed logout, killed window). Resolve it before
+  // overwriting the store with the loaded index.
+  const cachedFiles = useFileStore.getState().files;
+  const marker = readPendingMarker(channelId);
+  const resolution = resolvePendingIndex(
+    marker,
+    cachedFiles,
+    outcome.files,
+    outcome.savedAt
+  );
+  if (marker && !resolution.replay) {
+    clearPendingMarker(channelId);
+  }
+  if (resolution.kind === "keep-cache") {
+    console.log(
+      `[bootstrap] Keeping ${cachedFiles.length} cached files over index savedAt=${outcome.savedAt}`
+    );
+  } else if (resolution.kind === "merge") {
+    console.log(
+      `[bootstrap] Additive pending merge: ${outcome.files.length} loaded + local-only entries`
+    );
+  }
+
+  let files = resolution.files;
   try {
     const { syncOfflineStatusWithDisk } = await import("../storage/offlineStorage");
     files = await syncOfflineStatusWithDisk(files);
   } catch (err) {
     console.warn("[bootstrap] Failed to sync offline status with disk:", err);
   }
-  files = filterJunkFiles(files);
-
   // Initialize the local view immediately and RELEASE THE GATE. We do NOT
   // wait for the orphan scan or manifest-merge before allowing user
   // actions — the previous "wait for everything" design caused a 20s+
@@ -104,6 +145,32 @@ async function bootstrapTeleDriveInner(
   const { setFiles } = useFileStore.getState();
   setFiles(files);
   useFileStore.getState().setBootstrapComplete(true);
+
+  if (resolution.replay) {
+    // The marker stays until this commits; a failure is retried by the queue
+    // and, if the app dies, by the next bootstrap.
+    saveIndex(channelId, files).catch((err) => {
+      console.warn("[bootstrap] Pending local snapshot replay failed:", err);
+    });
+  }
+
+  // If the index was lost *and* there is no local cache to fall back on,
+  // quietly scan channel history for older snapshots and offer recovery.
+  // Never restores automatically; the user reviews the list first.
+  if (files.length === 0) {
+    import("../storage/recovery").then(({ maybeOfferRecovery }) => {
+      maybeOfferRecovery(channelId, (report) => {
+        if (report.recoverable.length === 0) return;
+        import("../../stores/recoveryStore").then(({ useRecoveryStore }) => {
+          useRecoveryStore
+            .getState()
+            .offer(channelId, report.recoverable.length);
+        });
+      }).catch((err) => {
+        console.warn("[bootstrap] Recovery scan failed:", err);
+      });
+    });
+  }
 
 
   // ── Manifest-merge step ───────────────────────────────────────────────
@@ -142,11 +209,10 @@ async function bootstrapTeleDriveInner(
     // is updated immediately and the Backups view can render before
     // bootstrap completes. The helper does its own setFiles internally.
     const merged = await mergeBackupManifestSync(channelId, files, setFiles);
-    // Persist to Telegram after the merge ONLY if new entries were actually merged.
-    // If no entries were added, we do not fire a premature save — orphan recovery right below
-    // will merge any discovered uploads and persist a clean, comprehensive index.
-    if (merged.length > files.length) {
-      fireAndForgetSaveIndex(channelId, merged);
+    // Persist only when the merge actually changed the file set. Comparing
+    // lengths misses an equal-size remove+add.
+    if (merged.changed) {
+      fireAndForgetSaveIndex(channelId, merged.files);
     }
   } catch (manifestErr) {
     console.warn("[bootstrap] manifest merge failed (continuing):", manifestErr);
@@ -262,10 +328,6 @@ async function bootstrapTeleDriveInner(
         name = filenameAttr.fileName;
       }
 
-      if (isJunkFile({ name, folderPath, mime: mimeType, size })) {
-        continue;
-      }
-
       orphans.push({
         id: `recovered_${msgId}`,
         name,
@@ -365,6 +427,29 @@ async function bootstrapTeleDriveInner(
         }).catch(() => {});
         fireAndForgetSaveIndex(channelId, cleaned);
       }
+    }
+
+    // Reconciliation runs AFTER the orphan scan: drop superseded message ids
+    // and collapse same-path duplicates. Running it before the scan lets the
+    // scan re-add an old id that the manifest already replaced.
+    try {
+      const manifest = await ensureManifest(channelId, async (ids) => {
+        const messages = await client.getMessages(channelId, { ids });
+        const live = new Set<number>();
+        for (const message of messages ?? []) {
+          const id = Number((message as { id?: unknown })?.id);
+          if (Number.isFinite(id) && id > 0) live.add(id);
+        }
+        return live;
+      });
+      const current = useFileStore.getState().files;
+      const reconciled = filterSupersededBackupFiles(manifest, current);
+      if (reconciled.changed) {
+        useFileStore.getState().setFiles(reconciled.files);
+        fireAndForgetSaveIndex(channelId, reconciled.files);
+      }
+    } catch (reconcileErr) {
+      console.warn("[bootstrap] backup reconciliation failed:", reconcileErr);
     }
 
     await invoke("log_vault_state", {
@@ -473,23 +558,32 @@ async function mergeBackupManifestSync(
   channelId: string,
   existingFiles: TeleFile[],
   setFiles: (files: TeleFile[]) => void,
-): Promise<TeleFile[]> {
+): Promise<{ files: TeleFile[]; changed: boolean }> {
   // 1. Load the manifest. Skip cleanly if it's corrupt — the runner
   // gates on the same sentinel and we want consistent behavior.
   let manifest;
   try {
-    manifest = await loadManifest();
+    manifest = await ensureManifest(channelId, async (ids) => {
+      const client = getClient();
+      const messages = await client.getMessages(channelId, { ids });
+      const live = new Set<number>();
+      for (const message of messages ?? []) {
+        const id = Number((message as { id?: unknown })?.id);
+        if (Number.isFinite(id) && id > 0) live.add(id);
+      }
+      return live;
+    });
   } catch (err) {
     console.warn("[bootstrap] manifest load threw; skipping merge:", err);
-    return existingFiles;
+    return { files: existingFiles, changed: false };
   }
-  if (isManifestCorrupt()) {
+  if (isManifestCorrupt(channelId)) {
     console.warn("[bootstrap] manifest corrupt; skipping merge (runner will refuse to upload too)");
-    return existingFiles;
+    return { files: existingFiles, changed: false };
   }
   const manifestEntries = Object.entries(manifest.entries ?? {});
   if (manifestEntries.length === 0) {
-    return existingFiles;
+    return { files: existingFiles, changed: false };
   }
 
   // 2. Convert entries to TeleFiles. Drop ones that fail the conversion
@@ -498,7 +592,7 @@ async function mergeBackupManifestSync(
   let conversionFailures = 0;
   for (const [absPath, entry] of manifestEntries) {
     const tf = manifestEntryToTeleFile(absPath, entry, channelId);
-    if (tf && !isJunkFile(tf)) fromManifest.push(tf);
+    if (tf) fromManifest.push(tf);
     else conversionFailures++;
   }
   if (conversionFailures > 0) {
@@ -507,7 +601,7 @@ async function mergeBackupManifestSync(
     );
   }
   if (fromManifest.length === 0) {
-    return existingFiles;
+    return { files: existingFiles, changed: false };
   }
 
   // 3. dedupeByMessageId against existing files (the index version wins
@@ -521,7 +615,7 @@ async function mergeBackupManifestSync(
   );
   const added = newFromManifest.length;
   if (added === 0) {
-    return existingFiles;
+    return { files: existingFiles, changed: false };
   }
 
   // 4. Reconstruct missing parent folders BEFORE setFiles so the Backups
@@ -540,7 +634,7 @@ async function mergeBackupManifestSync(
     state: `BOOTSTRAP_MANIFEST_MERGE added=${added} total=${healedFiles.length}`,
   }).catch(() => {});
 
-  return healedFiles;
+  return { files: healedFiles, changed: true };
 }
 
 /**
@@ -635,3 +729,135 @@ function mergeWithUserPreference(
   return merged;
 }
 
+
+// ---------------------------------------------------------------------------
+// Incomplete-index retry loop
+// ---------------------------------------------------------------------------
+//
+// Discovery can fail transiently (network loss, Telegram inconsistency right
+// after a save) or permanently (a manifest names a deleted chunk). While the
+// store is incomplete every write is blocked, so we keep retrying with bounded
+// backoff and also wake up immediately when the OS reports the network is back
+// or the window regains focus. No retry ever writes to Telegram: it only calls
+// `loadIndexOutcome`, which is read-only until a complete epoch is found.
+
+const INDEX_RETRY_DELAYS_MS = [5_000, 15_000, 30_000, 60_000];
+
+let indexRetryTimer: ReturnType<typeof setTimeout> | null = null;
+let indexRetryAttempt = 0;
+let indexRetryChannelId: string | null = null;
+let indexRetryRunning = false;
+let indexRetryListenersAttached = false;
+let indexRetryStatus: ((status: string) => void) | undefined;
+
+const retryOnConnectivity = () => {
+  if (indexRetryChannelId) retryIndexNow();
+};
+
+function attachIndexRetryListeners(): void {
+  if (indexRetryListenersAttached || typeof window === "undefined") return;
+  window.addEventListener("online", retryOnConnectivity);
+  window.addEventListener("focus", retryOnConnectivity);
+  indexRetryListenersAttached = true;
+}
+
+function detachIndexRetryListeners(): void {
+  if (!indexRetryListenersAttached || typeof window === "undefined") return;
+  window.removeEventListener("online", retryOnConnectivity);
+  window.removeEventListener("focus", retryOnConnectivity);
+  indexRetryListenersAttached = false;
+}
+
+export function stopIndexRetries(): void {
+  if (indexRetryTimer) {
+    clearTimeout(indexRetryTimer);
+    indexRetryTimer = null;
+  }
+  detachIndexRetryListeners();
+  indexRetryChannelId = null;
+  indexRetryAttempt = 0;
+  indexRetryStatus = undefined;
+}
+
+function queueIndexRetry(): void {
+  if (!indexRetryChannelId) return;
+  if (indexRetryTimer) clearTimeout(indexRetryTimer);
+  const delay =
+    INDEX_RETRY_DELAYS_MS[Math.min(indexRetryAttempt, INDEX_RETRY_DELAYS_MS.length - 1)];
+  indexRetryTimer = setTimeout(() => {
+    indexRetryTimer = null;
+    void runIndexRetry();
+  }, delay);
+}
+
+async function runIndexRetry(): Promise<void> {
+  const channelId = indexRetryChannelId;
+  if (!channelId || indexRetryRunning) return;
+  if (!useAuthStore.getState().isAuthenticated) {
+    stopIndexRetries();
+    return;
+  }
+
+  indexRetryRunning = true;
+  try {
+    const outcome = await loadIndexOutcome(channelId);
+    if (indexRetryChannelId !== channelId) return;
+
+    if (outcome.status === "ready") {
+      const status = indexRetryStatus;
+      stopIndexRetries();
+      useFileStore.getState().setFiles(outcome.files);
+      await invoke("log_vault_state", {
+        state: `INDEX_RETRY_READY files=${outcome.files.length}`,
+      }).catch(() => {});
+      status?.(i18n.t("messages:bootstrap.status.initializingView"));
+      // Resume uploads that were queued while writes were blocked.
+      void import("../upload/uploadManager")
+        .then((mod) => mod.processQueue())
+        .catch((err) => console.warn("[bootstrap] processQueue after retry failed:", err));
+      return;
+    }
+
+    indexRetryAttempt++;
+    queueIndexRetry();
+  } catch (err) {
+    console.warn("[bootstrap] index retry failed:", err);
+    indexRetryAttempt++;
+    queueIndexRetry();
+  } finally {
+    indexRetryRunning = false;
+  }
+}
+
+/** Retry immediately (banner button, online/focus events). */
+export function retryIndexNow(): void {
+  if (!indexRetryChannelId) return;
+  if (indexRetryTimer) {
+    clearTimeout(indexRetryTimer);
+    indexRetryTimer = null;
+  }
+  indexRetryAttempt = 0;
+  void runIndexRetry();
+}
+
+/**
+ * Start (or kick) the retry loop for a channel. Used when a non-bootstrap
+ * caller (Settings → recalculate) discovers an incomplete index.
+ */
+export function retryIndexDiscovery(channelId: string): void {
+  if (!indexRetryChannelId) {
+    scheduleIndexRetry(channelId);
+  }
+  retryIndexNow();
+}
+
+function scheduleIndexRetry(
+  channelId: string,
+  onStatusChange?: (status: string) => void
+): void {
+  stopIndexRetries();
+  indexRetryChannelId = channelId;
+  indexRetryStatus = onStatusChange;
+  attachIndexRetryListeners();
+  queueIndexRetry();
+}

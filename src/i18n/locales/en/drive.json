@@ -90,6 +90,7 @@
     "completeUploaded_one": "Backup complete — {{count}} file uploaded",
     "completeUploaded_other": "Backup complete — {{count}} files uploaded",
     "completeNothingChanged": "Backup complete — nothing changed",
+    "partial": "Backup finished with warnings",
     "cancelled": "Backup cancelled",
     "failed": "Backup failed",
     "retryRateLimit": "Retrying {{attempt}}/{{maxAttempts}} — Telegram rate limit, waiting {{seconds}}s",
@@ -101,7 +102,10 @@
     "summaryUnchanged_other": "{{count}} unchanged",
     "summaryFailed_one": "{{count}} failed",
     "summaryFailed_other": "{{count}} failed",
+    "summaryMissing_one": "{{count}} folder unavailable",
+    "summaryMissing_other": "{{count}} folders unavailable",
     "resumeAnytime": "You can resume anytime.",
+    "cancel": "Cancel backup",
     "dismiss": "Dismiss"
   },
   "errorBoundary": {

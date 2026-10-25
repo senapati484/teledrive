@@ -36,43 +36,7 @@ export function isJunkFile(
     return true;
   }
 
-  // 3. Git internal object blobs (38-40 char SHA1 or 64 char SHA256 hex hashes)
-  if (/^[0-9a-f]{38,64}$/i.test(name)) {
-    return true;
-  }
-
-  // 4. Git plumbing files
-  if (
-    [
-      "HEAD",
-      "ORIG_HEAD",
-      "FETCH_HEAD",
-      "COMMIT_EDITMSG",
-      "config",
-      "description",
-      "index",
-      "exclude",
-      "packed-refs",
-    ].includes(name)
-  ) {
-    return true;
-  }
-
-  // 5. Git sample hooks
-  if (name.endsWith(".sample")) {
-    return true;
-  }
-
-  // 6. Git ref/log files like "main" with application/octet-stream and small size
-  if (
-    (name === "main" || name === "master") &&
-    (file.mime === "application/octet-stream" || !file.mime) &&
-    (file.size ?? 0) < 5000
-  ) {
-    return true;
-  }
-
-  // 7. Temporary / partial lock files
+  // 3. Temporary / partial lock files
   if (name.startsWith("~$") || name.endsWith(".crdownload") || name.endsWith(".tmp")) {
     return true;
   }

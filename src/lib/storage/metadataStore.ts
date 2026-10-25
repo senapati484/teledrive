@@ -3,8 +3,13 @@ import { getClient } from "../telegram/client";
 import { TeleFile } from "../types";
 import { useFileStore } from "../../stores/fileStore";
 import { enqueueSave, getIndexQueue } from "./indexQueue";
-import { filterJunkFiles } from "./fileSanitizer";
 import { normalizeFolderPath } from "../utils";
+import {
+  epochTimestamp,
+  isValidManifest,
+  parseIndexMessage,
+  type ParsedIndexChunk,
+} from "./indexFormat";
 
 // ---------------------------------------------------------------------------
 // Internal helpers
@@ -270,8 +275,13 @@ export async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, lab
 export async function resolveChannelInputPeer(channelId: string) {
   const client = getClient();
   try {
-    // Try local session cache first (fast, non-blocking)
-    return await client.getInputEntity(channelId);
+    // Session cache is normally instant. Bound it anyway: a half-open
+    // connection must never leave recovery or bootstrap on a spinner forever.
+    return await withTimeout(
+      client.getInputEntity(channelId),
+      5000,
+      "client.getInputEntity"
+    );
   } catch (err) {
     console.warn("[metadataStore] getInputEntity failed, falling back to getEntity with timeout:", err);
     return withTimeout(client.getEntity(channelId), 5000, "client.getEntity");
@@ -355,17 +365,13 @@ export function reconstructMissingFolders(
 }
 
 async function healAndSave(channelId: string, files: TeleFile[]): Promise<TeleFile[]> {
-  // First, strip all system and git junk (.DS_Store, git objects, hooks, refs, etc.)
-  const cleanSource = filterJunkFiles(files);
-  const hadJunk = cleanSource.length !== files.length;
-
   // Reconstruct first (so folder entries exist for any folderPath references),
   // THEN dedupe. Order matters: reconstructMissingFolders creates folder
   // entries with deterministic ids, and dedupeByMessageId / collapseDuplicateFolders
   // would otherwise drop folder duplicates that have the same id but different
   // random metadata. Doing it this way means duplicate folders from previous
   // cold starts collapse to one canonical entry before they hit the queue.
-  const { healedFiles, changed } = reconstructMissingFolders(cleanSource, channelId);
+  const { healedFiles, changed } = reconstructMissingFolders(files, channelId);
   // Order: dedupeByMessageId → dedupeByContentKey → collapseDuplicateFolders.
   // - dedupeByMessageId handles single-message races (same Telegram message
   //   represented twice).
@@ -374,15 +380,17 @@ async function healAndSave(channelId: string, files: TeleFile[]): Promise<TeleFi
   // - collapseDuplicateFolders finally handles folder-entry duplicates by
   //   full path.
   const cleaned = collapseDuplicateFolders(dedupeByContentKey(dedupeByMessageId(healedFiles)));
-  if (changed || hadJunk || cleaned.length !== files.length) {
+  if (changed || cleaned.length !== files.length) {
     console.log(
-      `[metadataStore] Healed ${hadJunk ? `(removed ${files.length - cleanSource.length} junk) ` : ""}${
-        changed ? "folders" : ""
-      }${changed && cleaned.length !== cleanSource.length ? " + " : ""}${
-        cleaned.length !== cleanSource.length ? `dedup removed ${cleanSource.length - cleaned.length}` : ""
+      `[metadataStore] Healed ${changed ? "folders" : ""}${
+        changed && cleaned.length !== files.length ? " + " : ""
+      }${
+        cleaned.length !== files.length
+          ? `dedup removed ${files.length - cleaned.length}`
+          : ""
       }. Saving updated index to Telegram...`
     );
-    enqueueSave(channelId, cleaned).catch((err) => {
+    enqueueSave(channelId, cleaned, { recordPending: false }).catch((err) => {
       console.error("[metadataStore] Failed to save healed index to Telegram:", err);
     });
   }
@@ -390,66 +398,45 @@ async function healAndSave(channelId: string, files: TeleFile[]): Promise<TeleFi
 }
 
 // ---------------------------------------------------------------------------
-// loadIndex
+// Index discovery
 // ---------------------------------------------------------------------------
 
-/**
- * Loads the virtual file metadata index from the Telegram channel.
- *
- * Reads ALL pinned messages that look like teledrive_index entries,
- * merges their file arrays, then deduplicates by `id` (keeping the latest
- * entry per id) so that duplicate/stale pinned messages never show ghost files.
- *
- * Falls back to scanning the last 200 messages if no pinned index is found
- * (handles the case where the pin was blocked by Telegram's new-channel lock).
- */
-export interface ParsedIndexChunk {
-  msgId: number;
-  chunkIndex: number;
-  totalChunks: number;
-  files: TeleFile[];
-}
+export type { ParsedIndexChunk } from "./indexFormat";
 
 /**
  * Parses a list of Telegram messages into ParsedIndexChunk records.
  * Filters out non-index messages and malformed chunks.
  */
-function parseIndexMessages(messages: any[]): ParsedIndexChunk[] {
-  const indexMsgs = messages
-    .filter((m: any) => {
-      const txt = m?.text || m?.message;
-      return typeof txt === "string" && txt.includes("teledrive_index");
-    })
-    .sort((a: any, b: any) => a.id - b.id);
+export function parseIndexMessages(messages: any[]): ParsedIndexChunk[] {
   const parsed: ParsedIndexChunk[] = [];
-  for (const msg of indexMsgs) {
-    try {
-      const txt = msg.text || msg.message || "";
-      const data = JSON.parse(txt);
-      if (
-        data &&
-        Array.isArray(data.files) &&
-        typeof data.chunkIndex === "number" &&
-        typeof data.totalChunks === "number" &&
-        data.totalChunks > 0 &&
-        data.chunkIndex >= 0 &&
-        data.chunkIndex < data.totalChunks
-      ) {
-        const files = (data.files as TeleFile[])
-          .filter((f) => f?.id)
-          .map((f) => ({ ...f, folderPath: normalizeFolderPath(f.folderPath) }));
-        parsed.push({
-          msgId: Number(msg.id),
-          chunkIndex: data.chunkIndex,
-          totalChunks: data.totalChunks,
-          files,
-        });
-      }
-    } catch (e) {
-      // Skip malformed chunks; they're a normal consequence of partial saves.
-    }
+  const sorted = [...messages].sort((a: any, b: any) => Number(a?.id) - Number(b?.id));
+  for (const msg of sorted) {
+    const chunk = parseIndexMessage(msg);
+    if (chunk) parsed.push(chunk);
   }
   return parsed;
+}
+
+/**
+ * Returns the chunks of a complete epoch in chunkIndex order, or null when
+ * the window contains duplicates, mismatched totalChunks, or gaps.
+ */
+function coherentEpoch(chunks: ParsedIndexChunk[]): ParsedIndexChunk[] | null {
+  const total = chunks[0]?.totalChunks;
+  if (!total || chunks.length !== total) return null;
+  const byIndex = new Map<number, ParsedIndexChunk>();
+  for (const chunk of chunks) {
+    if (chunk.totalChunks !== total) return null;
+    if (byIndex.has(chunk.chunkIndex)) return null;
+    byIndex.set(chunk.chunkIndex, chunk);
+  }
+  const ordered: ParsedIndexChunk[] = [];
+  for (let i = 0; i < total; i++) {
+    const chunk = byIndex.get(i);
+    if (!chunk) return null;
+    ordered.push(chunk);
+  }
+  return ordered;
 }
 
 /**
@@ -486,38 +473,13 @@ export function findMostRecentCoherentEpoch(
   epochs.push(current);
 
   for (let i = epochs.length - 1; i >= 0; i--) {
-    const epoch = epochs[i];
-    const total = epoch[0]?.totalChunks;
-    if (!total) continue;
-    const present = new Set(epoch.map((c) => c.chunkIndex));
-    let complete = true;
-    for (let k = 0; k < total; k++) {
-      if (!present.has(k)) {
-        complete = false;
-        break;
-      }
-    }
-    if (complete) return [...epoch].sort((a, b) => a.chunkIndex - b.chunkIndex);
+    const epoch = coherentEpoch(epochs[i]);
+    if (epoch) return epoch;
   }
   return null;
 }
 
-/**
- * Picks the most-recent fully-coherent set of index chunks from a list of
- * Telegram messages. Groups by totalChunks, finds the latest complete
- * epoch in each group, then picks the set with the LARGEST totalChunks
- * (tie-break by highest minimum message id).
- *
- * Returns the chosen set's ParsedIndexChunks (sorted by chunkIndex),
- * or null if no coherent set exists.
- *
- * Exported so the IndexQueue's commitOnce can reuse the same selection
- * logic to identify the current "live" index for edit/delete targets.
- */
-export function pickCoherentIndexSet(
-  messages: any[]
-): ParsedIndexChunk[] | null {
-  const parsed = parseIndexMessages(messages);
+function coherentFromParsed(parsed: ParsedIndexChunk[]): ParsedIndexChunk[] | null {
   if (parsed.length === 0) return null;
 
   const byTotal = new Map<number, ParsedIndexChunk[]>();
@@ -527,26 +489,14 @@ export function pickCoherentIndexSet(
     else byTotal.set(p.totalChunks, [p]);
   }
 
-  // Selection rule:
-  // An epoch's freshness in Telegram is strictly determined by its message IDs.
-  // Because Telegram message IDs are strictly monotonic and sequential, the complete
-  // epoch with the HIGHEST maxMsgId represents the latest successful index save.
-  // We must not prefer larger totalChunks over recency, because doing so breaks
-  // deletions, file organization, and cleanups when an index shrinks in chunk count.
   let best: ParsedIndexChunk[] | null = null;
   let bestMaxId = -Infinity;
   let bestMinId = -Infinity;
-  for (const [, chunks] of byTotal) {
+  for (const chunks of byTotal.values()) {
     const coherent = findMostRecentCoherentEpoch(chunks);
     if (!coherent) continue;
-    const maxId = coherent.reduce(
-      (m, c) => Math.max(m, c.msgId),
-      -Infinity
-    );
-    const minId = coherent.reduce(
-      (m, c) => Math.min(m, c.msgId),
-      Infinity
-    );
+    const maxId = coherent.reduce((m, c) => Math.max(m, c.msgId), -Infinity);
+    const minId = coherent.reduce((m, c) => Math.min(m, c.msgId), Infinity);
     if (maxId > bestMaxId || (maxId === bestMaxId && minId > bestMinId)) {
       best = coherent;
       bestMaxId = maxId;
@@ -557,116 +507,495 @@ export function pickCoherentIndexSet(
 }
 
 /**
- * Loads the virtual file metadata index from the Telegram channel.
+ * Picks the most-recent fully-coherent set of index chunks from a list of
+ * Telegram messages.
  *
- * Reads ALL pinned messages that look like teledrive_index entries AND
- * the last 200 recent messages, then picks the most-recent coherent
- * chunk-set across both sources. This is robust against:
- *   - pin failures (FLOOD_WAIT): unpinned-but-sent chunks are still found
- *     via the recent scan, and their higher message ids make them win
- *     over any older pinned set.
- *   - partial saves: an epoch with a missing chunk (e.g. chunk=3 dropped)
- *     is skipped in favor of the latest COMPLETE epoch.
- *   - mixed-version channels: Frankenstein-merging across epochs is
- *     avoided — only fully-coherent sets are considered.
+ * Exported so the IndexQueue's commitOnce can reuse the same selection
+ * logic to identify the current "live" index for edit/delete targets.
  */
-export async function loadIndex(channelId: string): Promise<TeleFile[]> {
+export function pickCoherentIndexSet(messages: any[]): ParsedIndexChunk[] | null {
+  return coherentFromParsed(parseIndexMessages(messages));
+}
+
+/**
+ * Parses one message into a chunk, keeping the original text in a side map so
+ * the writer can reuse unchanged payloads verbatim.
+ */
+function collectIndexChunks(
+  messages: any[],
+  texts: Map<number, string>
+): ParsedIndexChunk[] {
+  const parsed: ParsedIndexChunk[] = [];
+  for (const msg of messages) {
+    const chunk = parseIndexMessage(msg);
+    if (!chunk) continue;
+    const text = msg?.text ?? msg?.message;
+    if (typeof text === "string") texts.set(chunk.msgId, text);
+    parsed.push(chunk);
+  }
+  return parsed;
+}
+
+interface ManifestCandidate {
+  kind: "manifest";
+  chunk0: ParsedIndexChunk;
+  ids: number[];
+  timestamp: number;
+  maxMsgId: number;
+}
+
+interface LegacyCandidate {
+  kind: "legacy";
+  chunks: ParsedIndexChunk[];
+  timestamp: number;
+  maxMsgId: number;
+  format: 1 | 2;
+}
+
+type IndexCandidate = ManifestCandidate | LegacyCandidate;
+
+function collectCandidates(parsed: ParsedIndexChunk[]): IndexCandidate[] {
+  const manifestCandidates: ManifestCandidate[] = [];
+  for (const chunk of parsed) {
+    if (chunk.chunkIndex !== 0) continue;
+    if (!isValidManifest(chunk)) continue;
+    if (!chunk.savedAt) continue;
+    manifestCandidates.push({
+      kind: "manifest",
+      chunk0: chunk,
+      ids: [...(chunk.chunkMsgIds ?? [])],
+      timestamp: chunk.savedAt,
+      maxMsgId: chunk.msgId,
+    });
+  }
+
+  // A v2 chunk 0 that carries a manifest must never be assembled as a legacy
+  // epoch: its named ids are the only source of truth. If they are missing,
+  // discovery is incomplete rather than presenting a Frankenstein merge.
+  const legacyParsed = parsed.filter(
+    (chunk) => !(chunk.chunkIndex === 0 && Array.isArray(chunk.chunkMsgIds))
+  );
+  const legacySet = coherentFromParsed(legacyParsed);
+  const legacyCandidates: LegacyCandidate[] = legacySet
+    ? [
+        {
+          kind: "legacy",
+          chunks: legacySet,
+          timestamp: epochTimestamp(legacySet),
+          maxMsgId: legacySet.reduce((m, c) => Math.max(m, c.msgId), 0),
+          format: legacySet[0]?.version >= 2 ? 2 : 1,
+        },
+      ]
+    : [];
+
+  return [...manifestCandidates, ...legacyCandidates].sort(
+    (a, b) => b.timestamp - a.timestamp || b.maxMsgId - a.maxMsgId
+  );
+}
+
+export type DiscoveryIncompleteReason =
+  | "not_found"
+  | "partial_manifest"
+  | "timeout"
+  | "network";
+
+export type DiscoveryResult =
+  | {
+      status: "ready";
+      files: TeleFile[];
+      /** Ordered (chunk 0 first) Telegram message ids of the live index. */
+      ids: number[];
+      /** Original chunk texts, aligned with `ids`. */
+      texts: string[];
+      /** Effective epoch timestamp in ms (max savedAt, else max editDate). */
+      savedAt: number;
+      format: 1 | 2;
+      chunks: ParsedIndexChunk[];
+    }
+  | { status: "incomplete"; reason: DiscoveryIncompleteReason };
+
+function mergeChunkFiles(chunks: ParsedIndexChunk[]): TeleFile[] {
+  const byId = new Map<string, TeleFile>();
+  for (const chunk of chunks) {
+    for (const file of chunk.files) byId.set(file.id, file);
+  }
+  return Array.from(byId.values());
+}
+
+function readyFromChunks(
+  chunks: ParsedIndexChunk[],
+  texts: Map<number, string>,
+  format: 1 | 2
+): DiscoveryResult {
+  const ordered = [...chunks].sort((a, b) => a.chunkIndex - b.chunkIndex);
+  return {
+    status: "ready",
+    files: mergeChunkFiles(ordered),
+    ids: ordered.map((c) => c.msgId),
+    texts: ordered.map((c) => texts.get(c.msgId) ?? ""),
+    savedAt: epochTimestamp(ordered),
+    format,
+    chunks: ordered,
+  };
+}
+
+function messageTextOf(msg: any): string {
+  const text = msg?.text ?? msg?.message;
+  return typeof text === "string" ? text : "";
+}
+
+const INITIAL_FETCH_TIMEOUT_MS = 5000;
+const MANIFEST_FETCH_TIMEOUT_MS = 5000;
+const SEARCH_BUDGET_MS = 15_000;
+const HISTORY_BUDGET_MS = 30_000;
+const SEARCH_MAX_PAGES = 20;
+const HISTORY_MAX_MESSAGES = 10_000;
+const MAX_MANIFEST_ATTEMPTS = 3;
+
+/**
+ * Discovers the live index. Reads pinned + recent messages, then follows the
+ * manifest of the newest valid v2 chunk 0, then falls back to Telegram search
+ * and finally paginated history. Never writes to Telegram and never mutates
+ * the store, so an incomplete result cannot damage the cached index.
+ */
+export async function discoverIndex(channelId: string): Promise<DiscoveryResult> {
+  console.log("INDEX_DISCOVERY_START");
   const client = getClient();
   let peer: any;
-
   try {
     peer = await resolveChannelInputPeer(channelId);
   } catch (err) {
-    console.error("[metadataStore] Failed to resolve channel entity:", err);
-    throw err;
+    console.warn("[metadataStore] discoverIndex: resolve failed:", err);
+    return { status: "incomplete", reason: "network" };
   }
 
-  // Fetch both pinned messages AND recent messages in parallel.
-  // Pinned messages may contain a stale epoch if Telegram rate-limited UpdatePinnedMessage (FLOOD_WAIT),
-  // while recent messages contain the newly posted chunks with higher message IDs.
-  // Querying both concurrently guarantees pickCoherentIndexSet selects the freshest coherent epoch.
-  let allMsgs: any[] = [];
+  const messagesById = new Map<number, any>();
+  const texts = new Map<number, string>();
+  let sawIndexMarker = false;
+  let fetchSucceeded = false;
+  let fetchFailed = false;
+  let timedOut = false;
+
+  const addMessages = (messages: any[] | undefined | null) => {
+    for (const msg of messages ?? []) {
+      const id = Number(msg?.id);
+      if (!Number.isFinite(id) || id <= 0) continue;
+      if (!messagesById.has(id)) messagesById.set(id, msg);
+      const text = messageTextOf(msg);
+      if (text.includes("teledrive_index")) {
+        texts.set(id, text);
+        sawIndexMarker = true;
+      }
+    }
+  };
+
   const [pinnedRes, recentRes] = await Promise.allSettled([
     withTimeout(
       client.getMessages(peer, {
         filter: new Api.InputMessagesFilterPinned(),
         limit: 100,
       }),
-      5000,
+      INITIAL_FETCH_TIMEOUT_MS,
       "client.getMessages(pinned)"
     ),
     withTimeout(
       client.getMessages(peer, { limit: 100 }),
-      5000,
+      INITIAL_FETCH_TIMEOUT_MS,
       "client.getMessages(recent)"
     ),
   ]);
 
+  let pinned: any[] = [];
+  let recent: any[] = [];
   if (pinnedRes.status === "fulfilled" && Array.isArray(pinnedRes.value)) {
-    allMsgs = allMsgs.concat(pinnedRes.value);
+    pinned = pinnedRes.value;
+    fetchSucceeded = true;
+    addMessages(pinned);
   } else if (pinnedRes.status === "rejected") {
-    console.warn("[metadataStore] Failed to load pinned messages:", pinnedRes.reason);
+    fetchFailed = true;
+    console.warn("[metadataStore] discoverIndex: pinned fetch failed:", pinnedRes.reason);
   }
-
   if (recentRes.status === "fulfilled" && Array.isArray(recentRes.value)) {
-    allMsgs = allMsgs.concat(recentRes.value);
+    recent = recentRes.value;
+    fetchSucceeded = true;
+    addMessages(recent);
   } else if (recentRes.status === "rejected") {
-    console.warn("[metadataStore] Failed to scan recent messages:", recentRes.reason);
+    fetchFailed = true;
+    console.warn("[metadataStore] discoverIndex: recent fetch failed:", recentRes.reason);
   }
 
-  let chosenSet = pickCoherentIndexSet(allMsgs);
+  const fetchedManifestRounds = new Map<number, number>();
 
-  if (allMsgs.length === 0) {
-    console.error("[metadataStore] No messages loaded from channel");
-    return [];
+  const fetchChunkMessages = async (ids: number[]): Promise<void> => {
+    const missing = ids.filter((id) => !messagesById.has(id));
+    for (let i = 0; i < missing.length; i += 100) {
+      const batch = missing.slice(i, i + 100);
+      try {
+        const result = await withTimeout(
+          client.getMessages(peer, { ids: batch }),
+          MANIFEST_FETCH_TIMEOUT_MS,
+          "client.getMessages(ids)"
+        );
+        if (Array.isArray(result)) addMessages(result);
+      } catch (err) {
+        console.warn("[metadataStore] discoverIndex: chunk id fetch failed:", err);
+      }
+    }
+  };
+
+  const validateManifest = (
+    candidate: ManifestCandidate,
+    chunks: ParsedIndexChunk[]
+  ): ParsedIndexChunk[] | null => {
+    const total = candidate.ids.length + 1;
+    if (candidate.chunk0.totalChunks !== total) return null;
+    const byId = new Map(chunks.map((c) => [c.msgId, c]));
+    if (byId.size !== chunks.length) return null;
+    const ordered: ParsedIndexChunk[] = [candidate.chunk0];
+    for (let i = 0; i < candidate.ids.length; i++) {
+      const chunk = byId.get(candidate.ids[i]);
+      if (!chunk) return null;
+      if (chunk.chunkIndex !== i + 1) return null;
+      if (chunk.totalChunks !== total) return null;
+      ordered.push(chunk);
+    }
+    return ordered;
+  };
+
+  const evaluate = async (): Promise<DiscoveryResult | null> => {
+    const parsed = collectIndexChunks(Array.from(messagesById.values()), texts);
+    const candidates = collectCandidates(parsed);
+    const legacy = candidates.find((c): c is LegacyCandidate => c.kind === "legacy");
+    if (legacy && candidates[0] === legacy) {
+      return readyFromChunks(legacy.chunks, texts, legacy.format);
+    }
+
+    const manifests = candidates.filter(
+      (c): c is ManifestCandidate => c.kind === "manifest"
+    );
+    let partialManifestAt = -Infinity;
+
+    for (const candidate of manifests.slice(0, MAX_MANIFEST_ATTEMPTS)) {
+      const missing = candidate.ids.filter((id) => !messagesById.has(id));
+      if (missing.length > 0) {
+        const rounds = fetchedManifestRounds.get(candidate.chunk0.msgId) ?? 0;
+        if (rounds < 2) {
+          fetchedManifestRounds.set(candidate.chunk0.msgId, rounds + 1);
+          await fetchChunkMessages(candidate.ids);
+        }
+      }
+
+      const parsedNow = collectIndexChunks(Array.from(messagesById.values()), texts);
+      const chunkById = new Map(parsedNow.map((c) => [c.msgId, c]));
+      const named = candidate.ids
+        .map((id) => chunkById.get(id))
+        .filter((c): c is ParsedIndexChunk => Boolean(c));
+      const ordered = validateManifest(candidate, named);
+      if (ordered) {
+        const effective = epochTimestamp(ordered);
+        if (legacy && legacy.timestamp > effective) {
+          return readyFromChunks(legacy.chunks, texts, legacy.format);
+        }
+        return readyFromChunks(ordered, texts, 2);
+      }
+      partialManifestAt = Math.max(partialManifestAt, candidate.timestamp);
+    }
+
+    if (legacy && legacy.timestamp > partialManifestAt) {
+      return readyFromChunks(legacy.chunks, texts, legacy.format);
+    }
+    return null;
+  };
+
+  let result = await evaluate();
+  if (result) return result;
+
+  // Search is an accelerator. Correctness comes from paginated history below.
+  const searchDeadline = Date.now() + SEARCH_BUDGET_MS;
+  let searchOffset = 0;
+  for (let page = 0; page < SEARCH_MAX_PAGES && Date.now() < searchDeadline; page++) {
+    let pageMessages: any[] = [];
+    try {
+      pageMessages = await withTimeout(
+        client.getMessages(peer, {
+          search: "teledrive_index",
+          limit: 100,
+          ...(searchOffset > 0 ? { offsetId: searchOffset } : {}),
+        }),
+        INITIAL_FETCH_TIMEOUT_MS,
+        "client.getMessages(search)"
+      );
+    } catch (err: any) {
+      if (String(err?.message ?? err).includes("Timeout")) timedOut = true;
+      console.warn("[metadataStore] discoverIndex: search failed:", err);
+      break;
+    }
+    if (!Array.isArray(pageMessages) || pageMessages.length === 0) break;
+    const before = messagesById.size;
+    addMessages(pageMessages);
+    const ids = pageMessages
+      .map((m: any) => Number(m?.id))
+      .filter((id: number) => Number.isFinite(id) && id > 0);
+    if (ids.length === 0) break;
+    const nextOffset = Math.min(...ids);
+    if (messagesById.size === before && nextOffset >= searchOffset && searchOffset > 0) break;
+    searchOffset = nextOffset;
+
+    result = await evaluate();
+    if (result) return result;
+  }
+  if (Date.now() >= searchDeadline) timedOut = true;
+
+  // Deterministic fallback: walk history backwards until a complete epoch is
+  // found or the budget is exhausted.
+  const historyDeadline = Date.now() + HISTORY_BUDGET_MS;
+  let historyOffset =
+    recent.length > 0
+      ? Math.min(
+          ...recent
+            .map((m: any) => Number(m?.id))
+            .filter((id: number) => Number.isFinite(id) && id > 0)
+        )
+      : 0;
+  let scanned = messagesById.size;
+
+  while (scanned < HISTORY_MAX_MESSAGES && Date.now() < historyDeadline) {
+    let pageMessages: any[] = [];
+    try {
+      pageMessages = await withTimeout(
+        client.getMessages(peer, {
+          limit: 100,
+          ...(historyOffset > 0 ? { offsetId: historyOffset } : {}),
+        }),
+        INITIAL_FETCH_TIMEOUT_MS,
+        "client.getMessages(history)"
+      );
+    } catch (err: any) {
+      if (String(err?.message ?? err).includes("Timeout")) timedOut = true;
+      console.warn("[metadataStore] discoverIndex: history page failed:", err);
+      break;
+    }
+    if (!Array.isArray(pageMessages) || pageMessages.length === 0) break;
+
+    const fresh = pageMessages.filter((m: any) => {
+      const id = Number(m?.id);
+      return Number.isFinite(id) && id > 0 && !messagesById.has(id);
+    });
+    if (fresh.length === 0) break;
+    addMessages(fresh);
+    scanned += fresh.length;
+
+    const ids = fresh
+      .map((m: any) => Number(m?.id))
+      .filter((id: number) => Number.isFinite(id) && id > 0);
+    const nextOffset = Math.min(...ids);
+    if (historyOffset > 0 && nextOffset >= historyOffset) break;
+    historyOffset = nextOffset;
+
+    result = await evaluate();
+    if (result) return result;
+  }
+  if (Date.now() >= historyDeadline) timedOut = true;
+
+  result = await evaluate();
+  if (result) return result;
+
+  const manifestWasSeen = collectCandidates(
+    collectIndexChunks(Array.from(messagesById.values()), texts)
+  ).some((c) => c.kind === "manifest");
+  if (manifestWasSeen) {
+    return { status: "incomplete", reason: "partial_manifest" };
   }
 
-  if (!chosenSet) {
+  const channelIsEmpty =
+    fetchSucceeded &&
+    !fetchFailed &&
+    recent.length === 0 &&
+    pinned.length === 0 &&
+    !sawIndexMarker &&
+    useFileStore.getState().files.length === 0;
+  if (channelIsEmpty) {
+    return {
+      status: "ready",
+      files: [],
+      ids: [],
+      texts: [],
+      savedAt: 0,
+      format: 2,
+      chunks: [],
+    };
+  }
+
+  if (!fetchSucceeded) {
+    return { status: "incomplete", reason: "network" };
+  }
+  if (timedOut) {
+    return { status: "incomplete", reason: "timeout" };
+  }
+  return { status: "incomplete", reason: "not_found" };
+}
+
+export type IndexLoadOutcome =
+  | { status: "ready"; files: TeleFile[]; savedAt: number }
+  | {
+      status: "incomplete";
+      reason: DiscoveryIncompleteReason;
+      files: TeleFile[];
+    };
+
+/**
+ * Loads the index and records discovery status in the store.
+ *
+ * Ready: seeds the writer cache (ids + original texts), advances
+ * `lastIndexMsgId`, marks the store ready *before* healing (so the healing save
+ * passes the write gate), then heals/dedupes.
+ *
+ * Incomplete: keeps the cached files untouched, marks the store incomplete, and
+ * never calls heal/save. Only `replaceIndexFromRecovery` may write in this state.
+ */
+export async function loadIndexOutcome(channelId: string): Promise<IndexLoadOutcome> {
+  const result = await discoverIndex(channelId);
+  const store = useFileStore.getState();
+
+  if (result.status !== "ready") {
+    store.setIndexLoadState("incomplete", result.reason);
     console.warn(
-      `[metadataStore] No coherent index set found across ${allMsgs.length} message(s); falling back to best-effort merge.`
+      `INDEX_DISCOVERY_INCOMPLETE reason=${result.reason}; keeping cached files and skipping heal/save.`
     );
-    // Best-effort: dedup by file id across ALL parsed chunks.
-    const allParsed = parseIndexMessages(allMsgs);
-    const byId = new Map<string, TeleFile>();
-    for (const c of allParsed) {
-      for (const f of c.files) byId.set(f.id, f);
-    }
-    return healAndSave(
-      channelId,
-      collapseDuplicateFolders(dedupeByContentKey(dedupeByMessageId(Array.from(byId.values()))))
-    );
+    return { status: "incomplete", reason: result.reason, files: store.files };
   }
 
-  const maxChosenMsgId = chosenSet.reduce((max, c) => Math.max(max, c.msgId), 0);
-  if (maxChosenMsgId > 0) {
-    useFileStore.getState().setLastIndexMsgId(maxChosenMsgId);
-  }
-
-  // Register coherent set with indexQueue so subsequent user actions (like starring)
-  // have the message IDs in memory and don't need to query Telegram!
-  const chosenMsgIds = chosenSet.map((c) => c.msgId);
-  const chosenPayloads = chosenSet.map((c) =>
-    JSON.stringify({
-      teledrive_index: true,
-      version: 1,
-      chunkIndex: c.chunkIndex,
-      totalChunks: c.totalChunks,
-      files: c.files,
-    })
+  store.setIndexLoadState("ready", null);
+  console.log(
+    `INDEX_DISCOVERY_OK chunks=${result.ids.length} files=${result.files.length}`
   );
-  getIndexQueue(channelId).setKnownIndex(chosenMsgIds, chosenPayloads);
 
-  // Merge chosen set into a single TeleFile list, deduping by id.
-  const byId = new Map<string, TeleFile>();
-  for (const c of chosenSet) {
-    for (const f of c.files) {
-      byId.set(f.id, f);
+  if (result.ids.length > 0) {
+    const maxChosenMsgId = result.ids.reduce((max, id) => Math.max(max, id), 0);
+    if (maxChosenMsgId > 0) {
+      store.setLastIndexMsgId(maxChosenMsgId);
     }
+    getIndexQueue(channelId).setKnownIndex(result.ids, result.texts, result.chunks);
   }
-  return healAndSave(
+
+  const files = await healAndSave(
     channelId,
-    collapseDuplicateFolders(dedupeByContentKey(dedupeByMessageId(Array.from(byId.values()))))
+    collapseDuplicateFolders(dedupeByContentKey(dedupeByMessageId(result.files)))
   );
+  return { status: "ready", files, savedAt: result.savedAt };
+}
+
+/**
+ * Loads the virtual file metadata index from the Telegram channel.
+ *
+ * Uses `discoverIndex` (manifest → legacy → search → paginated history) so the
+ * result no longer depends on the last-100-messages window. Only a ready
+ * discovery is healed/saved; an incomplete discovery returns the cached files
+ * unchanged and never writes a partial state.
+ */
+export async function loadIndex(channelId: string): Promise<TeleFile[]> {
+  const outcome = await loadIndexOutcome(channelId);
+  return outcome.files;
 }
 
 // ---------------------------------------------------------------------------

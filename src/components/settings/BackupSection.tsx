@@ -32,6 +32,7 @@ import {
   Plus,
   ArrowRight,
   Shield,
+  AlertTriangle,
 } from "lucide-react";
 import { open as tauriOpenDialog } from "@tauri-apps/plugin-dialog";
 import { Button } from "@/components/ui/button";
@@ -70,6 +71,8 @@ export default function BackupSection() {
   const {
     intervalMinutes,
     lastBackupAt,
+    lastAttemptAt,
+    lastResult: persistedResult,
     isRunning: scheduleIsRunning,
     setIntervalMinutes,
   } = useBackupSchedule();
@@ -90,7 +93,23 @@ export default function BackupSection() {
 
   // Read the latest result from the global progress store so we can
   // show it inline below the Run-now button.
-  const lastResult = useBackupProgressStore((s) => s.lastResult);
+  const liveResult = useBackupProgressStore((s) => s.lastResult);
+  const runCounts = liveResult
+    ? {
+        uploaded: liveResult.filesUploaded,
+        skipped: liveResult.filesSkipped,
+        failed: liveResult.filesFailed,
+      }
+    : persistedResult
+      ? {
+          uploaded: persistedResult.uploaded,
+          skipped: persistedResult.skipped,
+          failed: persistedResult.failed,
+        }
+      : null;
+  const runStatus = liveResult?.status ?? persistedResult?.status ?? null;
+  const missingRoots =
+    liveResult?.missingRoots ?? persistedResult?.missingRoots ?? [];
 
   const [excludeDraft, setExcludeDraft] = useState("");
   const [pendingInterval, setPendingInterval] = useState<string | null>(null);
@@ -159,6 +178,9 @@ export default function BackupSection() {
   const lastBackupLabel = lastBackupAt
     ? t("backup.lastBackupAgo", { time: formatDistanceToNow(lastBackupAt) })
     : t("backup.never");
+  const lastAttemptLabel = lastAttemptAt
+    ? t("backup.lastAttemptAgo", { time: formatDistanceToNow(lastAttemptAt) })
+    : null;
 
   const currentLabelKey =
     INTERVAL_PRESETS.find((p) => p.value === currentPreset)?.labelKey ?? "backup.cadence.off";
@@ -175,7 +197,9 @@ export default function BackupSection() {
       </div>
 
       {/* Source folders Card */}
-      <div className="p-6 bg-white dark:bg-[#0c0d0f] border border-slate-200/90 dark:border-white/[0.06] rounded-2xl space-y-4 shadow-xs">
+      <div
+        id="backup-folders"
+        className="p-6 bg-white dark:bg-[#0c0d0f] border border-slate-200/90 dark:border-white/[0.06] rounded-2xl space-y-4 shadow-xs">
         <div className="flex items-start gap-3.5">
           <div className="h-10 w-10 rounded-full bg-[#C2E7FF]/60 dark:bg-[#004A77]/40 border border-[#0B57D0]/20 dark:border-[#1a73e8]/20 flex items-center justify-center text-[#0B57D0] dark:text-[#8ab4f8] shrink-0 mt-0.5">
             <Folder className="h-5 w-5" />
@@ -401,19 +425,55 @@ export default function BackupSection() {
                 {lastBackupLabel}
               </span>
             </div>
-            {lastResult && (
+            {lastAttemptLabel && runStatus && (
               <div className="pl-5 text-[11px]">
-                {lastResult.filesUploaded > 0 && (
-                  <span>{t("backup.lastResult.uploaded", { count: lastResult.filesUploaded })}</span>
+                {t("backup.lastAttempt")} {lastAttemptLabel} ·{" "}
+                <span
+                  className={
+                    runStatus === "failed"
+                      ? "text-rose-600 dark:text-rose-400"
+                      : runStatus === "cancelled"
+                        ? "text-slate-500"
+                        : "text-[#444746] dark:text-[#C4C7C5]"
+                  }
+                >
+                  {t(`backup.runStatus.${runStatus}`)}
+                </span>
+              </div>
+            )}
+            {runCounts && (
+              <div className="pl-5 text-[11px]">
+                {runCounts.uploaded > 0 && (
+                  <span>{t("backup.lastResult.uploaded", { count: runCounts.uploaded })}</span>
                 )}
-                {lastResult.filesSkipped > 0 && (
-                  <span>{t("backup.lastResult.unchanged", { count: lastResult.filesSkipped })}</span>
+                {runCounts.skipped > 0 && (
+                  <span>{t("backup.lastResult.unchanged", { count: runCounts.skipped })}</span>
                 )}
-                {lastResult.filesFailed > 0 && (
+                {runCounts.failed > 0 && (
                   <span className="text-amber-600 dark:text-amber-400">
-                    {t("backup.lastResult.failed", { count: lastResult.filesFailed })}
+                    {t("backup.lastResult.failed", { count: runCounts.failed })}
                   </span>
                 )}
+              </div>
+            )}
+            {missingRoots.length > 0 && (
+              <div
+                role="alert"
+                className="mt-1 ml-5 flex flex-wrap items-center gap-2 rounded-xl border border-amber-300/60 bg-amber-50/80 dark:border-amber-700/40 dark:bg-amber-950/30 px-2.5 py-1.5 text-[11px] text-amber-800 dark:text-amber-200"
+              >
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                <span>{t("backup.missingRoots", { count: missingRoots.length })}</span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    document
+                      .getElementById("backup-folders")
+                      ?.scrollIntoView({ behavior: "smooth", block: "center" })
+                  }
+                  className="font-semibold underline underline-offset-2 hover:no-underline"
+                >
+                  {t("backup.editFolders")}
+                </button>
               </div>
             )}
             {isRunning && (

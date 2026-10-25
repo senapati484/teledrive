@@ -32,7 +32,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 import { cn } from "@/lib/utils";
-import { bootstrapTeleDrive } from "@/lib/telegram/bootstrap";
+import { bootstrapTeleDrive, retryIndexNow } from "@/lib/telegram/bootstrap";
 import { isBackupItem } from "@/lib/backup/visibility";
 import { triggerFilePicker, triggerFolderPicker } from "@/lib/upload/fileSelector";
 import { addFilesToUploadQueue } from "@/lib/upload/uploadManager";
@@ -40,6 +40,7 @@ import { UploadProgressPanel } from "@/components/upload/UploadProgressPanel";
 import { BackupProgressOverlay } from "@/components/backup/BackupProgressOverlay";
 import { downloadFileFromTelegram } from "@/lib/telegram/downloader";
 import { FilePreviewModal } from "@/components/preview/FilePreviewModal";
+import RecoveryDialog from "@/components/settings/RecoveryDialog";
 import { TeleFile } from "@/lib/types";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { useIsPro } from "@/hooks/useIsPro";
@@ -52,6 +53,61 @@ import {
 import { getModKey } from "@/lib/os";
 
 const DND_PAYLOAD_MIME = "application/x-teledrive-item-ids";
+
+/**
+ * Persistent banner shown while discovery cannot verify a complete index.
+ * Writes are blocked in this state; the Retry button triggers an immediate
+ * discovery attempt instead of waiting for the backoff timer.
+ */
+const IndexLoadBanner = React.memo(function IndexLoadBanner() {
+  const indexLoadState = useFileStore((state) => state.indexLoadState);
+  const indexLoadError = useFileStore((state) => state.indexLoadError);
+  const hasCachedFiles = useFileStore((state) => state.files.length > 0);
+  const [retrying, setRetrying] = useState(false);
+  const { t } = useTranslation("messages");
+
+  if (indexLoadState !== "incomplete") return null;
+
+  const reason =
+    indexLoadError &&
+    ["not_found", "partial_manifest", "timeout", "network"].includes(indexLoadError)
+      ? t(`indexLoad.reason.${indexLoadError}`)
+      : null;
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="m-3 md:m-4 mb-0 rounded-2xl border border-amber-300/70 dark:border-amber-800/50 bg-amber-50 dark:bg-amber-950/40 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3"
+    >
+      <div className="flex items-start gap-2.5 flex-1 min-w-0">
+        <AlertTriangle className="h-4.5 w-4.5 shrink-0 text-amber-700 dark:text-amber-300 mt-0.5" />
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">
+            {t("indexLoad.bannerTitle")}
+          </p>
+          <p className="text-xs text-amber-800/90 dark:text-amber-200/80">
+            {hasCachedFiles ? t("indexLoad.bannerBodyCached") : t("indexLoad.bannerBodyEmpty")}
+            {reason ? ` ${reason}` : ""}
+          </p>
+        </div>
+      </div>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => {
+          setRetrying(true);
+          retryIndexNow();
+          setTimeout(() => setRetrying(false), 2000);
+        }}
+        className="shrink-0 border-amber-300 dark:border-amber-700 bg-white/70 dark:bg-transparent text-amber-900 dark:text-amber-100 hover:bg-white dark:hover:bg-amber-900/30"
+      >
+        <RefreshCw className={cn("h-3.5 w-3.5 mr-1.5", retrying && "animate-spin")} />
+        {retrying ? t("indexLoad.retrying") : t("indexLoad.retry")}
+      </Button>
+    </div>
+  );
+});
 
 const IndexQueuePill = React.memo(function IndexQueuePill() {
   const isSyncing = useFileStore((state) => state.isSyncing);
@@ -811,6 +867,7 @@ export default function DriveLayout() {
           onTouchEnd={handleTouchEnd}
           className="flex-1 overflow-y-auto bg-surface dark:bg-surface md:mr-4 md:mb-4 md:rounded-3xl md:border md:border-slate-200/60 md:dark:border-white/[0.03] md:shadow-xs border-0 pb-[calc(3.75rem+max(var(--safe-area-bottom,0px),16px)+80px)] md:pb-6 relative z-10"
         >
+          <IndexLoadBanner />
           {/* Mobile FAB */}
           {isMobile && <NewActionButton isFab />}
           {/* Pull to refresh spinner */}
@@ -947,6 +1004,7 @@ export default function DriveLayout() {
           </div>
         </DialogContent>
       </Dialog>
+      <RecoveryDialog />
     </div>
   );
 }

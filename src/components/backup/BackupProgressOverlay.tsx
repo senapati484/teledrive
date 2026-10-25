@@ -27,8 +27,10 @@ import {
   Loader2,
   X,
   AlertCircle,
+  AlertTriangle,
 } from "lucide-react";
 import { useBackupProgressStore } from "@/stores/backupProgressStore";
+import { cancelBackup } from "@/lib/backup/controller";
 import { cn } from "@/lib/utils";
 
 const AUTO_DISMISS_MS = 6000;
@@ -73,14 +75,19 @@ export function BackupProgressOverlay() {
 
   const isActive = state.status === "walking" || state.status === "uploading";
 
+  const isPartial =
+    state.status === "done" && state.lastResult?.status === "partial";
+
   const title = isActive
     ? state.status === "walking"
       ? t("backup.scanning")
       : t("backup.backingUp", { uploaded: state.uploaded, total: state.total })
     : state.status === "done"
-      ? state.lastResult && state.lastResult.filesUploaded > 0
-        ? t("backup.completeUploaded", { count: state.lastResult.filesUploaded })
-        : t("backup.completeNothingChanged")
+      ? isPartial
+        ? t("backup.partial")
+        : state.lastResult && state.lastResult.filesUploaded > 0
+          ? t("backup.completeUploaded", { count: state.lastResult.filesUploaded })
+          : t("backup.completeNothingChanged")
       : state.status === "cancelled"
         ? t("backup.cancelled")
         : t("backup.failed");
@@ -112,6 +119,9 @@ export function BackupProgressOverlay() {
       if (state.lastResult.filesUploaded > 0) parts.push(t("backup.summaryUploaded", { count: state.lastResult.filesUploaded }));
       if (state.lastResult.filesSkipped > 0) parts.push(t("backup.summaryUnchanged", { count: state.lastResult.filesSkipped }));
       if (state.lastResult.filesFailed > 0) parts.push(t("backup.summaryFailed", { count: state.lastResult.filesFailed }));
+      if (state.lastResult.missingRoots.length > 0) {
+        parts.push(t("backup.summaryMissing", { count: state.lastResult.missingRoots.length }));
+      }
       return parts.join(" · ");
     }
     if (state.status === "failed" && state.error) return state.error;
@@ -125,6 +135,8 @@ export function BackupProgressOverlay() {
       ? "border-rose-300 dark:border-rose-800 bg-rose-50/95 dark:bg-rose-950/70"
       : state.status === "cancelled"
         ? "border-slate-200 dark:border-white/[0.06] bg-white dark:bg-[#141518]"
+        : isPartial
+        ? "border-amber-300 dark:border-amber-800 bg-amber-50/95 dark:bg-amber-950/70"
         : state.status === "done"
           ? "border-emerald-300 dark:border-emerald-800 bg-emerald-50/95 dark:bg-emerald-950/70"
           : "border-slate-200 dark:border-white/[0.06] bg-white dark:bg-[#141518]";
@@ -132,9 +144,11 @@ export function BackupProgressOverlay() {
   const iconColor =
     state.status === "failed"
       ? "text-rose-600 dark:text-rose-400"
-      : state.status === "done"
-        ? "text-emerald-600 dark:text-emerald-400"
-        : state.status === "cancelled"
+      : isPartial
+        ? "text-amber-600 dark:text-amber-400"
+        : state.status === "done"
+          ? "text-emerald-600 dark:text-emerald-400"
+          : state.status === "cancelled"
           ? "text-slate-500 dark:text-slate-400"
           : "text-[#0B57D0] dark:text-[#A8C7FA]";
 
@@ -159,6 +173,8 @@ export function BackupProgressOverlay() {
               ) : (
                 <Cloud className="h-5 w-5 animate-pulse" />
               )
+            ) : isPartial ? (
+              <AlertTriangle className="h-5 w-5" />
             ) : state.status === "done" ? (
               <CheckCircle2 className="h-5 w-5" />
             ) : state.status === "cancelled" ? (
@@ -215,11 +231,22 @@ export function BackupProgressOverlay() {
                 />
               )}
             </div>
-            {state.total > 0 && (
-              <p className="text-[10px] font-medium uppercase tracking-wider text-[#747775] mt-1.5">
-                {percent}%
-              </p>
-            )}
+            <div className="flex items-center justify-between mt-1.5">
+              {state.total > 0 ? (
+                <p className="text-[10px] font-medium uppercase tracking-wider text-[#747775]">
+                  {percent}%
+                </p>
+              ) : (
+                <span />
+              )}
+              <button
+                type="button"
+                onClick={() => cancelBackup()}
+                className="text-[10px] font-semibold uppercase tracking-wider text-rose-600 dark:text-rose-400 hover:underline cursor-pointer"
+              >
+                {t("backup.cancel")}
+              </button>
+            </div>
           </div>
         )}
         {state.status === "failed" && state.error && (

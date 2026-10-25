@@ -20,6 +20,7 @@ import { useLicenseStore } from "@/stores/licenseStore";
 import { startRemoteSync, stopRemoteSync } from "@/lib/sync/remoteSync";
 import {
   applyIntervalChange,
+  checkDueBackup,
   ensureTickListenerStarted,
   stopBackupSchedule,
 } from "@/lib/backup/scheduler";
@@ -27,7 +28,7 @@ import { getStorageChannelId } from "@/lib/telegram/channelManager";
 
 export default function RemoteSyncOrchestrator(): null {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const bootstrapComplete = useFileStore((s) => s.bootstrapComplete);
+  const indexLoadState = useFileStore((s) => s.indexLoadState);
   const lastIndexMsgId = useFileStore((s) => s.lastIndexMsgId);
   const intervalMinutes =
     useLicenseStore((s) => s.license?.scheduledBackupIntervalMinutes) ?? null;
@@ -60,11 +61,12 @@ export default function RemoteSyncOrchestrator(): null {
     void applyIntervalChange(intervalMinutes);
   }, [isAuthenticated, intervalMinutes]);
 
-  // Effect 3 — react to auth + bootstrap changes. Start the remote sync
-  // loop when all pre-conditions are met; stop on any pre-condition failing.
+  // Effect 3 — react to auth + discovery changes. Start the remote sync loop
+  // only when the index is complete/writable; stop while it is loading or
+  // incomplete (independent reads would otherwise race an unknown base).
   // Multi-device sync is now available to ALL authenticated users.
   useEffect(() => {
-    if (!isAuthenticated || !bootstrapComplete) {
+    if (!isAuthenticated || indexLoadState !== "ready") {
       stopRemoteSync();
       return;
     }
@@ -97,7 +99,30 @@ export default function RemoteSyncOrchestrator(): null {
       if (retryHandle) clearTimeout(retryHandle);
       stopRemoteSync();
     };
-  }, [isAuthenticated, bootstrapComplete, lastIndexMsgId]);
+  }, [isAuthenticated, indexLoadState, lastIndexMsgId]);
+
+  // Effect 4 — due checks on launch, focus, and a 5-minute heartbeat.
+  // The Rust tick is only a hint; every path re-checks the manifest anchor.
+  useEffect(() => {
+    if (!isAuthenticated || indexLoadState !== "ready") return;
+
+    const check = () => {
+      void checkDueBackup();
+    };
+    check();
+
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") check();
+    };
+    const timer = setInterval(check, 5 * 60 * 1000);
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", check);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", check);
+    };
+  }, [isAuthenticated, indexLoadState, intervalMinutes]);
 
   return null;
 }

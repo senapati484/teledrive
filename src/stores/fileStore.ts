@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { TeleFile, UploadItem } from "../lib/types";
-import { filterJunkFiles } from "../lib/storage/fileSanitizer";
 import { normalizeFolderPath } from "../lib/utils";
 
 export type IndexQueueState =
@@ -12,6 +11,13 @@ export type IndexQueueState =
   | "syncing-remote"
   /** A backup snapshot send is currently in flight. */
   | "backup-running";
+
+/**
+ * Coarse state of index discovery. Writes are only permitted in `ready`.
+ * `bootstrapComplete` means "the first discovery attempt finished", not
+ * "the index is writable".
+ */
+export type IndexLoadState = "loading" | "ready" | "incomplete";
 
 interface FileState {
   files: TeleFile[];
@@ -41,6 +47,10 @@ interface FileState {
    * resave and create a third index message set.
    */
   bootstrapComplete: boolean;
+  /** Whether discovery found a complete, writable index. */
+  indexLoadState: IndexLoadState;
+  /** Reason for an incomplete load (discovery reason string), else null. */
+  indexLoadError: string | null;
   /**
    * Highest Telegram message id observed during the most recent index load
    * (cold start or sync poll). Used by the multi-device sync poller as the
@@ -77,6 +87,10 @@ interface FileState {
   setIndexQueueError: (err: string | null) => void;
   /** Mark initial bootstrap (loadIndex → setFiles) as complete. */
   setBootstrapComplete: (v: boolean) => void;
+  /** Update discovery status; `error` is the incomplete reason (if any). */
+  setIndexLoadState: (state: IndexLoadState, error?: string | null) => void;
+  /** Write the debounced localStorage cache immediately (logout/quota). */
+  flushFileCacheNow: () => void;
   /**
    * Merge remote deltas (multi-device sync) into the in-memory file list
    * WITHOUT triggering a Telegram index write. Resolves when the merge
@@ -96,7 +110,7 @@ const getInitialFiles = (): TeleFile[] => {
     if (!cached) return [];
     const parsed = JSON.parse(cached);
     if (!Array.isArray(parsed)) return [];
-    return filterJunkFiles(parsed).map((f) => ({
+    return parsed.map((f) => ({
       ...f,
       folderPath: normalizeFolderPath(f.folderPath),
     }));
@@ -141,11 +155,13 @@ export const useFileStore = create<FileState>((set, get) => ({
   indexQueueRetryInSec: 0,
   indexQueueError: null,
   bootstrapComplete: initialFiles.length > 0 || wasBootstrapCompleted,
+  indexLoadState: "loading",
+  indexLoadError: null,
   lastIndexMsgId: 0,
   lastRemoteSyncAt: null,
   lastBackupAt: null,
   setFiles: (rawFiles) => {
-    const files = filterJunkFiles(rawFiles).map((f) => ({
+    const files = rawFiles.map((f) => ({
       ...f,
       folderPath: normalizeFolderPath(f.folderPath),
     }));
@@ -214,6 +230,20 @@ export const useFileStore = create<FileState>((set, get) => ({
     }
     set({ bootstrapComplete });
   },
+  setIndexLoadState: (indexLoadState, indexLoadError = null) =>
+    set({ indexLoadState, indexLoadError }),
+  flushFileCacheNow: () => {
+    if (cacheTimeout) {
+      clearTimeout(cacheTimeout);
+      cacheTimeout = null;
+    }
+    if (typeof localStorage === "undefined") return;
+    try {
+      localStorage.setItem("teledrive_cached_files", JSON.stringify(get().files));
+    } catch (err) {
+      console.warn("[fileStore] Failed to flush files cache:", err);
+    }
+  },
   /**
    * Merge new files arriving from another device's sync poll (or any other
    * read-only delta source) into the in-memory file list WITHOUT triggering
@@ -229,13 +259,12 @@ export const useFileStore = create<FileState>((set, get) => ({
    * so callers don't need to handle any queueing.
    */
   setRemoteDelta: async (remoteFiles: TeleFile[]) => {
-    const cleanRemote = filterJunkFiles(remoteFiles);
-    if (cleanRemote.length === 0) return;
+    if (remoteFiles.length === 0) return;
     const { dedupeByMessageId, collapseDuplicateFolders, reconstructMissingFolders } = await import(
       "../lib/storage/metadataStore"
     );
     set((state) => {
-      const merged = filterJunkFiles(collapseDuplicateFolders(dedupeByMessageId([...state.files, ...cleanRemote])));
+      const merged = collapseDuplicateFolders(dedupeByMessageId([...state.files, ...remoteFiles]));
       const channelId = state.files[0]?.channelId || remoteFiles[0]?.channelId || "";
       const { healedFiles } = reconstructMissingFolders(merged, channelId);
       if (healedFiles.length === state.files.length) return state;

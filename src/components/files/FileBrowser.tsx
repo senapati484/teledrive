@@ -20,6 +20,8 @@ import {
   Plus,
   MoreHorizontal,
   Shield,
+  AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -57,6 +59,7 @@ import { isBackupItem, BACKUP_ROOT, BACKUP_ROOT_PREFIX } from "@/lib/backup/visi
 import { toast } from "sonner";
 import { Trans, useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
+import { retryIndexNow } from "@/lib/telegram/bootstrap";
 
 // ---------------------------------------------------------------------------
 // Utility: human-readable file size
@@ -162,6 +165,9 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
   const selectedIdsSet = useFileStore((state) => state.selectedIdsSet);
   const isLoading = useFileStore((state) => state.isLoading);
   const bootstrapComplete = useFileStore((state) => state.bootstrapComplete);
+  const indexLoadState = useFileStore((state) => state.indexLoadState);
+  const indexLoadError = useFileStore((state) => state.indexLoadError);
+  const [retryingIndex, setRetryingIndex] = useState(false);
   const setFolder = useFileStore((state) => state.setFolder);
   const toggleSelect = useFileStore((state) => state.toggleSelect);
   const setSelectedIds = useFileStore((state) => state.setSelectedIds);
@@ -765,15 +771,56 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
 
   // Render helpers (headerTitle is now memoized above)
 
-  const renderEmptyState = () => (
-    <EmptyState
-      mode={mode}
-      folderPath={folderPath}
-      searchQuery={searchQuery}
-      onUploadFiles={mode === "drive" ? triggerUpload : undefined}
-      onCreateFolder={mode === "drive" ? () => setCreateDialogOpen(true) : undefined}
-    />
-  );
+  const renderEmptyState = () => {
+    // A non-empty channel with no complete index is damaged, not an empty
+    // drive. Never invite uploads into that state (they would be persisted on
+    // top of an unknown base once discovery falsely "succeeds").
+    if (indexLoadState === "incomplete") {
+      const reason =
+        indexLoadError &&
+        ["not_found", "partial_manifest", "timeout", "network"].includes(indexLoadError)
+          ? i18n.t(`messages:indexLoad.reason.${indexLoadError}`)
+          : null;
+      return (
+        <div className="flex flex-col items-center justify-center py-20 px-6 text-center gap-3">
+          <div className="h-12 w-12 rounded-full bg-amber-50 dark:bg-amber-950/40 flex items-center justify-center">
+            <AlertTriangle className="h-6 w-6 text-amber-700 dark:text-amber-300" />
+          </div>
+          <h2 className="text-lg font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">
+            {i18n.t("messages:indexLoad.bannerTitle")}
+          </h2>
+          <p className="max-w-md text-sm text-[#444746] dark:text-[#c4c7c5]">
+            {i18n.t("messages:indexLoad.bannerBodyEmpty")}
+          </p>
+          {reason && (
+            <p className="text-xs text-[#747775] dark:text-[#8e918f]">{reason}</p>
+          )}
+          <Button
+            onClick={() => {
+              setRetryingIndex(true);
+              retryIndexNow();
+              setTimeout(() => setRetryingIndex(false), 2000);
+            }}
+            className="mt-2"
+          >
+            <RefreshCw className={cn("h-4 w-4 mr-2", retryingIndex && "animate-spin")} />
+            {retryingIndex
+              ? i18n.t("messages:indexLoad.retrying")
+              : i18n.t("messages:indexLoad.retry")}
+          </Button>
+        </div>
+      );
+    }
+    return (
+      <EmptyState
+        mode={mode}
+        folderPath={folderPath}
+        searchQuery={searchQuery}
+        onUploadFiles={mode === "drive" ? triggerUpload : undefined}
+        onCreateFolder={mode === "drive" ? () => setCreateDialogOpen(true) : undefined}
+      />
+    );
+  };
 
   return (
     <div className={cn("flex flex-col h-full px-3 pt-2 pb-4 md:p-6 lg:p-7 space-y-4", isDraggingActive && "dragging-active")}>
