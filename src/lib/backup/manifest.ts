@@ -355,12 +355,33 @@ export function resetManifestStateForTests(): void {
   corruptChannels.clear();
 }
 
+/**
+ * Update only the cheap stat fields after content hashing proved a touched
+ * file is unchanged. The message id, upload time, and hash stay intact.
+ */
+export function updateEntryStats(
+  entry: ManifestEntryV2,
+  stats: { mtimeMs: number; size: number },
+): ManifestEntryV2 {
+  return {
+    ...entry,
+    mtimeMs: stats.mtimeMs,
+    size: stats.size,
+    sourceMissing: false,
+  };
+}
+
 export interface ManifestDiff {
   toUpload: { absPath: string; relPath: string; mtimeMs: number; size: number }[];
   unchanged: { absPath: string; entry: ManifestEntryV2 }[];
   missing: { absPath: string; entry: ManifestEntryV2 }[];
 }
 
+/**
+ * Fast path only. A same-mtime/same-size content change is intentionally
+ * undetected here; content hashes are consulted by the runner only when the
+ * stat pair changed. This keeps normal runs from reading every file.
+ */
 export function diffAgainstManifest(
   manifest: BackupManifestV2,
   walk: { absPath: string; relPath: string; mtimeMs: number; size: number }[],

@@ -22,7 +22,14 @@ vi.mock("@tauri-apps/api/core", () => ({
   invoke: (...args: any[]) => h.backend!.invoke(...args),
 }));
 vi.mock("../walker", () => ({ walkSourceFolders: vi.fn(), sanitizeFolderSegment: (s: string) => s }));
-vi.mock("../../telegram/uploader", () => ({ uploadFileToTelegram: vi.fn() }));
+vi.mock("../../telegram/uploader", () => ({
+  uploadFileToTelegram: vi.fn(),
+  isHashedUploadResult: (value: any) =>
+    Boolean(value) &&
+    typeof value === "object" &&
+    "message" in value &&
+    "hash" in value,
+}));
 vi.mock("../../telegram/client", () => ({
   getClient: () => ({
     connected: true,

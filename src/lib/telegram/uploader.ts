@@ -11,6 +11,8 @@ import { Buffer } from "buffer";
 import { invoke } from "@tauri-apps/api/core";
 import { withTimeout } from "../storage/metadataStore";
 import { withTelegramRetry } from "./rateLimit";
+import { sha256 } from "@noble/hashes/sha256";
+import { bytesToHex } from "@noble/hashes/utils";
 
 const CHUNK_SIZE = 512 * 1024; // 512KB recommended chunk size for Telegram
 const CHUNK_TIMEOUT_MS = 20_000;
@@ -18,6 +20,24 @@ const SENDFILE_TIMEOUT_MS = 30_000;
 
 interface UploadProgressCallback {
   (uploadedBytes: number, totalBytes: number): void;
+}
+
+export interface HashedUploadResult {
+  message: any;
+  hash: string | null;
+}
+
+/**
+ * Distinguish the hashed wrapper from a raw GramJS message. Regular callers
+ * still receive the message object unchanged.
+ */
+export function isHashedUploadResult(value: unknown): value is HashedUploadResult {
+  return (
+    Boolean(value) &&
+    typeof value === "object" &&
+    "message" in (value as Record<string, unknown>) &&
+    "hash" in (value as Record<string, unknown>)
+  );
 }
 
 /**
@@ -48,8 +68,18 @@ export async function uploadFileToTelegram(
   folderPath: string = "/",
   onProgress?: UploadProgressCallback,
   onRetry?: UploadRetryCallback,
+  hash = false,
 ): Promise<any> {
   const client = getClient();
+
+  let hasher: ReturnType<typeof sha256.create> | null = null;
+  if (hash) {
+    try {
+      hasher = sha256.create();
+    } catch (err) {
+      console.warn("[uploader] SHA-256 init failed; uploading without hash:", err);
+    }
+  }
   
   // Setup file ID using bigInt which is required by GramJS API
   const fileId = bigInt(Math.floor(Math.random() * 1e15));
@@ -94,6 +124,15 @@ export async function uploadFileToTelegram(
         chunkBytes = new Uint8Array(arrayBuffer);
       }
       
+      if (hasher) {
+        try {
+          hasher.update(chunkBytes);
+        } catch (err) {
+          console.warn("[uploader] SHA-256 update failed; uploading without hash:", err);
+          hasher = null;
+        }
+      }
+
       // Upload part through the shared retry helper. The chunk is re-read
       // from disk on each attempt via the closure — important because the
       // seek/read may have advanced the handle position mid-failure.
@@ -187,7 +226,17 @@ export async function uploadFileToTelegram(
         : undefined,
     );
     
-    return result;
+    if (!hash) return result;
+
+    let contentHash: string | null = null;
+    if (hasher) {
+      try {
+        contentHash = bytesToHex(hasher.digest());
+      } catch (err) {
+        console.warn("[uploader] SHA-256 digest failed; uploading without hash:", err);
+      }
+    }
+    return { message: result, hash: contentHash } satisfies HashedUploadResult;
   } catch (err) {
     // No file handle to close — we read each chunk via a fresh Rust
     // command invocation, which has its own open/read/close lifecycle.
