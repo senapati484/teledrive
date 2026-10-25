@@ -10,6 +10,7 @@ import LanguageSection from "@/components/settings/LanguageSection";
 import StorageSection from "@/components/settings/StorageSection";
 import BackupSection from "@/components/settings/BackupSection";
 import AboutSection from "@/components/settings/AboutSection";
+import RecoveryDialog from "@/components/settings/RecoveryDialog";
 
 type SectionType = "account" | "appearance" | "language" | "storage" | "backup" | "about";
 
@@ -77,6 +78,15 @@ export default function SettingsPage() {
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
+      // Step 0: Push any queued index state while the client is still alive.
+      // A failed flush keeps the queue/stuck state for a later retry.
+      const { flushAllQueues } = await import("@/lib/storage/indexQueue");
+      const flushResults = await flushAllQueues();
+      const flushFailed = flushResults.filter((r) => r.status === "failed");
+      if (flushFailed.length > 0) {
+        console.error("Index flush failed on logout:", flushFailed);
+      }
+
       // Step 1: Log out on the server first so Telegram returns a future auth
       // token, then disconnect and destroy the GramJS client singleton.
       const { logoutTelegram } = await import("@/lib/telegram/logout");
@@ -112,16 +122,18 @@ export default function SettingsPage() {
       // Step 4: Reset in-memory stores
       const { useAuthStore } = await import("@/stores/authStore");
       const { useFileStore } = await import("@/stores/fileStore");
-      useAuthStore.getState().logout();
-      // Reset bootstrapComplete too — see TelegramAccountSection.handleDisconnect
-      // for the same fix; without it, the next login's bootstrap gate is
-      // already true and uploads could race the orphan scan.
+      const { stopIndexRetries } = await import("@/lib/telegram/bootstrap");
+      useAuthStore.getState().logout({ preserveCache: flushFailed.length > 0 });
+      stopIndexRetries();
+      // Reset both gates — see TelegramAccountSection.handleDisconnect.
       useFileStore.setState({
         files: [],
         selectedIds: [],
         selectedIdsSet: new Set(),
         currentFolder: "/",
         bootstrapComplete: false,
+        indexLoadState: "loading",
+        indexLoadError: null,
       });
 
       // (Backend license session removed — nothing to wipe)
@@ -293,6 +305,7 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
+      <RecoveryDialog />
     </div>
   );
 }

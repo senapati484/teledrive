@@ -1,5 +1,6 @@
-use std::path::PathBuf;
-use std::sync::OnceLock;
+use std::io::Write as _;
+use std::path::{Path, PathBuf};
+use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 use tauri::async_runtime::JoinHandle;
 use tauri::{AppHandle, Emitter, Manager};
@@ -109,9 +110,52 @@ fn clear_session_only(app: tauri::AppHandle) -> Result<(), String> {
         .map_err(|e| format!("Failed to write session file: {e}"))
 }
 
+static VAULT_LOCK: Mutex<()> = Mutex::new(());
+
+fn lock_vault() -> Result<std::sync::MutexGuard<'static, ()>, String> {
+    VAULT_LOCK
+        .lock()
+        .map_err(|_| "vault lock poisoned".to_string())
+}
+
+/// Write bytes by replacing the destination with a synced temp file.
+/// `rename` is atomic on Unix; on Windows it can fail when the destination
+/// exists, so fall back to copy + remove without deleting the old file first.
+fn atomic_write(path: &Path, bytes: &[u8]) -> Result<(), String> {
+    let parent = path
+        .parent()
+        .ok_or_else(|| format!("no parent directory for {}", path.display()))?;
+    std::fs::create_dir_all(parent)
+        .map_err(|e| format!("Failed to create directory {}: {e}", parent.display()))?;
+    let name = path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("file");
+    let tmp = parent.join(format!(".{name}.tmp-{}", std::process::id()));
+    {
+        let mut file = std::fs::File::create(&tmp)
+            .map_err(|e| format!("Failed to create {}: {e}", tmp.display()))?;
+        file.write_all(bytes)
+            .map_err(|e| format!("Failed to write {}: {e}", tmp.display()))?;
+        file.sync_all()
+            .map_err(|e| format!("Failed to sync {}: {e}", tmp.display()))?;
+    }
+    if let Err(rename_err) = std::fs::rename(&tmp, path) {
+        std::fs::copy(&tmp, path).map_err(|copy_err| {
+            format!(
+                "Failed to replace {}: rename={rename_err}; copy={copy_err}",
+                path.display()
+            )
+        })?;
+        let _ = std::fs::remove_file(&tmp);
+    }
+    Ok(())
+}
+
 /// Saves a key-value pair to a vault file in the app data directory.
 #[tauri::command]
 fn save_vault_value(app: tauri::AppHandle, key: String, value: String) -> Result<(), String> {
+    let _guard = lock_vault()?;
     let vault_path = get_vault_path(&app)?;
     let mut data = if vault_path.exists() {
         let contents = std::fs::read_to_string(&vault_path)
@@ -121,16 +165,16 @@ fn save_vault_value(app: tauri::AppHandle, key: String, value: String) -> Result
     } else {
         serde_json::Map::new()
     };
-    
+
     data.insert(key, serde_json::Value::String(value));
-    
-    std::fs::write(&vault_path, serde_json::to_string(&data).unwrap())
-        .map_err(|e| format!("Failed to write vault file: {e}"))
+    let bytes = serde_json::to_vec(&data).map_err(|e| format!("Failed to encode vault: {e}"))?;
+    atomic_write(&vault_path, &bytes)
 }
 
 /// Loads a value for a key from the vault file.
 #[tauri::command]
 fn load_vault_value(app: tauri::AppHandle, key: String) -> Result<Option<String>, String> {
+    let _guard = lock_vault()?;
     let vault_path = get_vault_path(&app)?;
     if !vault_path.exists() {
         return Ok(None);
@@ -151,6 +195,7 @@ fn load_vault_value(app: tauri::AppHandle, key: String) -> Result<Option<String>
 /// Deletes a key-value pair from the vault file.
 #[tauri::command]
 fn delete_vault_value(app: tauri::AppHandle, key: String) -> Result<(), String> {
+    let _guard = lock_vault()?;
     let vault_path = get_vault_path(&app)?;
     if !vault_path.exists() {
         return Ok(());
@@ -161,9 +206,8 @@ fn delete_vault_value(app: tauri::AppHandle, key: String) -> Result<(), String> 
         .map_err(|e| format!("Failed to parse vault file: {e}"))?;
 
     data.remove(&key);
-
-    std::fs::write(&vault_path, serde_json::to_string(&data).unwrap())
-        .map_err(|e| format!("Failed to write vault file: {e}"))
+    let bytes = serde_json::to_vec(&data).map_err(|e| format!("Failed to encode vault: {e}"))?;
+    atomic_write(&vault_path, &bytes)
 }
 
 /// Quarantines a vault value: reads the value at `key` and copies it under
@@ -180,6 +224,7 @@ fn quarantine_vault_value(
     key: String,
     backup_key: String,
 ) -> Result<(), String> {
+    let _guard = lock_vault()?;
     let vault_path = get_vault_path(&app)?;
     if !vault_path.exists() {
         return Ok(());
@@ -192,9 +237,207 @@ fn quarantine_vault_value(
     if let Some(value) = data.remove(&key) {
         data.insert(backup_key, value);
     }
+    let bytes = serde_json::to_vec(&data).map_err(|e| format!("Failed to encode vault: {e}"))?;
+    atomic_write(&vault_path, &bytes)
+}
 
-    std::fs::write(&vault_path, serde_json::to_string(&data).unwrap())
-        .map_err(|e| format!("Failed to write vault file: {e}"))
+// ============================================================================
+// Device backup manifest + journal (v2)
+//
+// One base JSON file and one append-only JSONL journal per storage channel.
+// The journal carries the base generation; a save bumps the generation and
+// truncates the journal. Lines from an older generation are ignored, so a
+// crash between the rename and the truncate cannot resurrect superseded ids.
+// ============================================================================
+
+static BACKUP_MANIFEST_LOCK: Mutex<()> = Mutex::new(());
+
+#[derive(serde::Serialize)]
+struct BackupManifestLoad {
+    base: Option<String>,
+    generation: u64,
+    journal: Vec<String>,
+}
+
+fn manifest_lock() -> Result<std::sync::MutexGuard<'static, ()>, String> {
+    BACKUP_MANIFEST_LOCK
+        .lock()
+        .map_err(|_| "backup manifest lock poisoned".to_string())
+}
+
+fn safe_manifest_segment(channel_id: &str) -> String {
+    use std::hash::{Hash, Hasher};
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    channel_id.hash(&mut hasher);
+    let cleaned: String = channel_id
+        .chars()
+        .take(64)
+        .map(|c| {
+            if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+                c
+            } else {
+                '_'
+            }
+        })
+        .collect();
+    let prefix = if cleaned.is_empty() { "channel" } else { &cleaned };
+    format!("{prefix}-{:016x}", hasher.finish())
+}
+
+fn backup_manifest_paths(
+    app: &tauri::AppHandle,
+    channel_id: &str,
+) -> Result<(PathBuf, PathBuf), String> {
+    let dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| format!("Failed to get app data dir: {e}"))?
+        .join("backup_manifests");
+    std::fs::create_dir_all(&dir)
+        .map_err(|e| format!("Failed to create backup manifest dir: {e}"))?;
+    let safe = safe_manifest_segment(channel_id);
+    Ok((
+        dir.join(format!("{safe}.json")),
+        dir.join(format!("{safe}.journal.jsonl")),
+    ))
+}
+
+fn manifest_generation_at(path: &Path) -> Result<u64, String> {
+    match std::fs::read_to_string(path) {
+        Ok(contents) => Ok(serde_json::from_str::<serde_json::Value>(&contents)
+            .ok()
+            .and_then(|v| v.get("generation").and_then(|g| g.as_u64()))
+            .unwrap_or(0)),
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => Ok(0),
+        Err(err) => Err(format!("Failed to read {}: {err}", path.display())),
+    }
+}
+
+#[tauri::command]
+fn load_backup_manifest(
+    app: tauri::AppHandle,
+    channel_id: String,
+) -> Result<BackupManifestLoad, String> {
+    let _guard = manifest_lock()?;
+    let (base_path, journal_path) = backup_manifest_paths(&app, &channel_id)?;
+    let base = match std::fs::read_to_string(&base_path) {
+        Ok(contents) => Some(contents),
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => None,
+        Err(err) => return Err(format!("Failed to read manifest: {err}")),
+    };
+    let generation = manifest_generation_at(&base_path)?;
+    let journal = match std::fs::read_to_string(&journal_path) {
+        Ok(contents) => contents.lines().map(|l| l.to_string()).collect(),
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => Vec::new(),
+        Err(err) => return Err(format!("Failed to read manifest journal: {err}")),
+    };
+    Ok(BackupManifestLoad {
+        base,
+        generation,
+        journal,
+    })
+}
+
+#[tauri::command]
+fn save_backup_manifest(
+    app: tauri::AppHandle,
+    channel_id: String,
+    value: String,
+    generation: u64,
+) -> Result<u64, String> {
+    let _guard = manifest_lock()?;
+    let (base_path, journal_path) = backup_manifest_paths(&app, &channel_id)?;
+    let current = manifest_generation_at(&base_path)?;
+    if current != generation {
+        return Err(format!(
+            "manifest generation changed (expected {generation}, found {current})"
+        ));
+    }
+    let mut parsed: serde_json::Value = serde_json::from_str(&value)
+        .map_err(|e| format!("Failed to parse manifest JSON: {e}"))?;
+    let next = generation.saturating_add(1);
+    if let Some(obj) = parsed.as_object_mut() {
+        obj.insert("generation".to_string(), serde_json::json!(next));
+    } else {
+        return Err("manifest JSON is not an object".to_string());
+    }
+    let bytes = serde_json::to_vec(&parsed)
+        .map_err(|e| format!("Failed to encode manifest: {e}"))?;
+    atomic_write(&base_path, &bytes)?;
+    if let Ok(file) = std::fs::OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(true)
+        .open(&journal_path)
+    {
+        let _ = file.sync_all();
+    }
+    Ok(next)
+}
+
+#[tauri::command]
+fn append_backup_manifest_journal(
+    app: tauri::AppHandle,
+    channel_id: String,
+    generation: u64,
+    line: String,
+) -> Result<(), String> {
+    let _guard = manifest_lock()?;
+    let (base_path, journal_path) = backup_manifest_paths(&app, &channel_id)?;
+    let current = manifest_generation_at(&base_path)?;
+    if current != generation {
+        return Err(format!(
+            "manifest generation changed (expected {generation}, found {current})"
+        ));
+    }
+    let mut file = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&journal_path)
+        .map_err(|e| format!("Failed to open manifest journal: {e}"))?;
+    file.write_all(line.as_bytes())
+        .and_then(|_| file.write_all(b"\n"))
+        .map_err(|e| format!("Failed to append manifest journal: {e}"))?;
+    file.sync_all()
+        .map_err(|e| format!("Failed to sync manifest journal: {e}"))
+}
+
+#[tauri::command]
+fn quarantine_backup_manifest(
+    app: tauri::AppHandle,
+    channel_id: String,
+    suffix: String,
+) -> Result<Option<String>, String> {
+    let _guard = manifest_lock()?;
+    let (base_path, journal_path) = backup_manifest_paths(&app, &channel_id)?;
+    let base = match std::fs::read_to_string(&base_path) {
+        Ok(contents) => contents,
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => return Ok(None),
+        Err(err) => return Err(format!("Failed to read manifest: {err}")),
+    };
+    let safe_suffix: String = suffix
+        .chars()
+        .take(48)
+        .map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
+        .collect();
+    let name = base_path
+        .file_stem()
+        .and_then(|n| n.to_str())
+        .unwrap_or("manifest");
+    let dir = base_path
+        .parent()
+        .ok_or_else(|| "manifest has no parent directory".to_string())?;
+    let quarantine_base = dir.join(format!("{name}-corrupt-{safe_suffix}.json"));
+    let quarantine_journal = dir.join(format!("{name}-corrupt-{safe_suffix}.jsonl"));
+    std::fs::copy(&base_path, &quarantine_base)
+        .map_err(|e| format!("Failed to quarantine manifest: {e}"))?;
+    if journal_path.exists() {
+        let _ = std::fs::copy(&journal_path, &quarantine_journal);
+    }
+    std::fs::remove_file(&base_path)
+        .map_err(|e| format!("Failed to remove corrupt manifest: {e}"))?;
+    let _ = std::fs::remove_file(&journal_path);
+    Ok(Some(base))
 }
 
 fn get_vault_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
@@ -316,7 +559,7 @@ async fn stop_backup_scheduler_internal(_app: &AppHandle) {
 // ============================================================================
 
 use serde::Serialize;
-use std::path::Path;
+use std::collections::HashSet;
 use std::time::SystemTime;
 
 #[derive(Serialize)]
@@ -328,66 +571,142 @@ struct DirEntry {
     mtime_ms: u64,
 }
 
+#[derive(Serialize)]
+struct WalkRoot {
+    path: String,
+    status: String,
+    skipped: u32,
+}
+
+#[derive(Serialize)]
+struct WalkError {
+    path: String,
+    code: String,
+}
+
+#[derive(Serialize)]
+struct WalkOutput {
+    entries: Vec<DirEntry>,
+    roots: Vec<WalkRoot>,
+    cancelled: bool,
+    complete: bool,
+    errors: Vec<WalkError>,
+}
+
+static WALK_CANCELS: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
+const WALK_ENTRY_CAP: usize = 250_000;
+
+fn walk_cancels() -> &'static Mutex<HashSet<String>> {
+    WALK_CANCELS.get_or_init(|| Mutex::new(HashSet::new()))
+}
+
+fn walk_cancelled(run_id: &str) -> bool {
+    walk_cancels()
+        .lock()
+        .map(|set| set.contains(run_id))
+        .unwrap_or(false)
+}
+
+#[tauri::command]
+fn cancel_backup_walk(run_id: String) {
+    if let Ok(mut set) = walk_cancels().lock() {
+        set.insert(run_id);
+    }
+}
+
 fn unix_ms(t: SystemTime) -> u64 {
     t.duration_since(SystemTime::UNIX_EPOCH)
         .map(|d| d.as_millis() as u64)
         .unwrap_or(0)
 }
 
-fn walk_recursive(root: &Path, current: &Path, out: &mut Vec<DirEntry>) {
+struct WalkState {
+    entries: Vec<DirEntry>,
+    errors: Vec<WalkError>,
+    cancelled: bool,
+    truncated: bool,
+}
+
+fn walk_recursive(root: &Path, current: &Path, run_id: &str, state: &mut WalkState) {
+    if state.cancelled || state.truncated {
+        return;
+    }
+    if walk_cancelled(run_id) {
+        state.cancelled = true;
+        return;
+    }
     let entries = match std::fs::read_dir(current) {
         Ok(it) => it,
         Err(err) => {
-            eprintln!("[read_dir_recursive] read_dir({current:?}) failed: {err}");
+            let code = if err.kind() == std::io::ErrorKind::NotFound {
+                "not_found"
+            } else if err.kind() == std::io::ErrorKind::PermissionDenied {
+                "permission_denied"
+            } else {
+                "io_error"
+            };
+            state.errors.push(WalkError {
+                path: current.to_string_lossy().into_owned(),
+                code: code.to_string(),
+            });
             return;
         }
     };
 
     for entry in entries.flatten() {
+        if state.cancelled || state.truncated {
+            return;
+        }
+        if walk_cancelled(run_id) {
+            state.cancelled = true;
+            return;
+        }
+        if state.entries.len() >= WALK_ENTRY_CAP {
+            state.truncated = true;
+            return;
+        }
         let path = entry.path();
         let file_name = match entry.file_name().into_string() {
             Ok(s) => s,
-            Err(_) => continue, // skip non-UTF8 names
+            Err(_) => continue,
         };
-
-        // Symlink check via metadata — read_link would also work but we
-        // want to skip BEFORE stat so we don't follow the link.
         let meta = match std::fs::symlink_metadata(&path) {
             Ok(m) => m,
-            Err(_) => continue, // dangling or unreadable — skip
+            Err(_) => continue,
         };
-
-        let is_dir = meta.is_dir();
+        let file_type = meta.file_type();
+        if file_type.is_symlink() {
+            continue;
+        }
+        let is_dir = file_type.is_dir();
+        if !is_dir && !file_type.is_file() {
+            continue;
+        }
         let size = if is_dir { 0 } else { meta.len() };
         let mtime_ms = unix_ms(meta.modified().unwrap_or(SystemTime::UNIX_EPOCH));
-
-        // Compute relPath relative to the source root.
         let rel_path = match path.strip_prefix(root) {
             Ok(p) => p.to_string_lossy().replace('\\', "/"),
             Err(_) => file_name.clone(),
         };
-
-        out.push(DirEntry {
+        state.entries.push(DirEntry {
             abs_path: path.to_string_lossy().into_owned(),
             rel_path,
             is_dir,
             size,
             mtime_ms,
         });
-
-        // Recurse into directories. We push the dir entry FIRST so the JS
-        // layer can prune it via exclude globs before processing children.
         if is_dir {
-            walk_recursive(root, &path, out);
+            walk_recursive(root, &path, run_id, state);
         }
     }
 }
 
 #[tauri::command]
-async fn read_dir_recursive(app: tauri::AppHandle, path: String) -> Result<Vec<DirEntry>, String> {
-    // On mobile, restrict directory walking to the app data directory only.
-    // Android scoped storage (API 29+) prevents arbitrary filesystem access;
-    // broad access requires SAF which must go through the dialog file picker.
+async fn read_dir_recursive(
+    app: tauri::AppHandle,
+    path: String,
+    run_id: Option<String>,
+) -> Result<WalkOutput, String> {
     #[cfg(mobile)]
     {
         let data_dir = app
@@ -401,26 +720,102 @@ async fn read_dir_recursive(app: tauri::AppHandle, path: String) -> Result<Vec<D
             ));
         }
     }
-    // Suppress unused-variable warning on desktop builds
     #[cfg(not(mobile))]
     let _ = &app;
 
+    let run_id = run_id.unwrap_or_else(|| "default".to_string());
     let root = Path::new(&path);
-    let meta = std::fs::metadata(root).map_err(|e| format!("stat({path}) failed: {e}"))?;
+    let meta = match std::fs::metadata(root) {
+        Ok(m) => m,
+        Err(err) => {
+            let status = if err.kind() == std::io::ErrorKind::NotFound {
+                "missing"
+            } else {
+                "unreadable"
+            };
+            return Ok(WalkOutput {
+                entries: Vec::new(),
+                roots: vec![WalkRoot {
+                    path: path.clone(),
+                    status: status.to_string(),
+                    skipped: 0,
+                }],
+                cancelled: false,
+                complete: false,
+                errors: vec![WalkError {
+                    path: path.clone(),
+                    code: status.to_string(),
+                }],
+            });
+        }
+    };
     if !meta.is_dir() {
-        return Err(format!("not a directory: {path}"));
+        return Ok(WalkOutput {
+            entries: Vec::new(),
+            roots: vec![WalkRoot {
+                path: path.clone(),
+                status: "unreadable".to_string(),
+                skipped: 0,
+            }],
+            cancelled: false,
+            complete: false,
+            errors: vec![WalkError {
+                path: path.clone(),
+                code: "not_a_directory".to_string(),
+            }],
+        });
     }
-    // Run the walk on a blocking thread — std::fs::read_dir is sync and
-    // can be slow on huge trees. Tokio would block the runtime otherwise.
+
     let path_owned = path.clone();
-    let entries = tauri::async_runtime::spawn_blocking(move || {
-        let mut out: Vec<DirEntry> = Vec::new();
-        walk_recursive(Path::new(&path_owned), Path::new(&path_owned), &mut out);
-        out
+    let run_id_owned = run_id.clone();
+    let output = tauri::async_runtime::spawn_blocking(move || {
+        let mut state = WalkState {
+            entries: Vec::new(),
+            errors: Vec::new(),
+            cancelled: false,
+            truncated: false,
+        };
+        walk_recursive(
+            Path::new(&path_owned),
+            Path::new(&path_owned),
+            &run_id_owned,
+            &mut state,
+        );
+        let has_files = state.entries.iter().any(|e| !e.is_dir);
+        let status = if state.truncated {
+            "truncated"
+        } else if has_files {
+            "ok"
+        } else {
+            "empty"
+        };
+        WalkOutput {
+            entries: state.entries,
+            roots: vec![WalkRoot {
+                path: path_owned,
+                status: status.to_string(),
+                skipped: state.errors.len() as u32,
+            }],
+            cancelled: state.cancelled,
+            complete: !state.cancelled && !state.truncated && state.errors.is_empty(),
+            errors: state.errors,
+        }
     })
     .await
     .map_err(|e| format!("walker join failed: {e}"))?;
-    Ok(entries)
+
+    if let Ok(mut set) = walk_cancels().lock() {
+        set.remove(&run_id);
+    }
+    Ok(output)
+}
+
+#[tauri::command]
+fn get_app_data_dir(app: tauri::AppHandle) -> Result<String, String> {
+    app.path()
+        .app_data_dir()
+        .map(|p| p.to_string_lossy().into_owned())
+        .map_err(|e| format!("Failed to get app data dir: {e}"))
 }
 
 /// Reads `length` bytes from `path` starting at `offset`. Returns the bytes
@@ -641,9 +1036,15 @@ pub fn run() {
             load_vault_value,
             delete_vault_value,
             quarantine_vault_value,
+            load_backup_manifest,
+            save_backup_manifest,
+            append_backup_manifest_journal,
+            quarantine_backup_manifest,
             start_backup_scheduler,
             stop_backup_scheduler,
             read_dir_recursive,
+            cancel_backup_walk,
+            get_app_data_dir,
             read_file_chunk,
             write_file_binary,
             write_file_chunk,
@@ -662,4 +1063,64 @@ pub fn run() {
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn temp_path(tag: &str) -> PathBuf {
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        std::env::temp_dir().join(format!(
+            "teledrive-{tag}-{}-{nanos}",
+            std::process::id()
+        ))
+    }
+
+    #[test]
+    fn atomic_write_replaces_existing_file_without_leftover_temp() {
+        let dir = temp_path("atomic");
+        let path = dir.join("manifest.json");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(&path, b"old").unwrap();
+
+        atomic_write(&path, b"new").unwrap();
+
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "new");
+        let entries: Vec<_> = std::fs::read_dir(&dir).unwrap().collect();
+        assert_eq!(entries.len(), 1);
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn atomic_write_creates_missing_parent_directories() {
+        let dir = temp_path("nested");
+        let path = dir.join("a/b/manifest.json");
+
+        atomic_write(&path, b"payload").unwrap();
+
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "payload");
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn manifest_generation_is_zero_when_file_is_missing() {
+        let path = temp_path("missing").join("manifest.json");
+        assert_eq!(manifest_generation_at(&path).unwrap(), 0);
+    }
+
+    #[test]
+    fn manifest_generation_reads_the_persisted_value() {
+        let dir = temp_path("generation");
+        let path = dir.join("manifest.json");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(&path, br#"{"generation":7}"#).unwrap();
+
+        assert_eq!(manifest_generation_at(&path).unwrap(), 7);
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
 }

@@ -90,6 +90,14 @@ export default function TelegramAccountSection() {
 
   const handleDisconnect = async () => {
     try {
+      // Push any queued index state before the client is destroyed.
+      const { flushAllQueues } = await import("@/lib/storage/indexQueue");
+      const flushResults = await flushAllQueues();
+      const flushFailed = flushResults.filter((r) => r.status === "failed");
+      if (flushFailed.length > 0) {
+        console.error("Index flush failed on logout:", flushFailed);
+      }
+
       const { logoutTelegram } = await import("@/lib/telegram/logout");
       await logoutTelegram();
 
@@ -99,7 +107,9 @@ export default function TelegramAccountSection() {
 
       await deleteSecret(VAULT_KEY_SESSION).catch(() => {});
 
-      logout();
+      logout({ preserveCache: flushFailed.length > 0 });
+      const { stopIndexRetries } = await import("@/lib/telegram/bootstrap");
+      stopIndexRetries();
       const { useFileStore } = await import("@/stores/fileStore");
       useFileStore.setState({
         files: [],
@@ -107,6 +117,8 @@ export default function TelegramAccountSection() {
         selectedIdsSet: new Set(),
         currentFolder: "/",
         bootstrapComplete: false,
+        indexLoadState: "loading",
+        indexLoadError: null,
       });
 
       toast.success(t("account.toasts.disconnected"));

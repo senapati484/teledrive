@@ -44,20 +44,24 @@ import { getClient } from "../telegram/client";
 import { getSecret, VAULT_KEY_CHANNEL_ID, channelIdKey } from "../secure/vault";
 import { logEvent } from "../events";
 import {
+  appendManifestEntry,
   diffAgainstManifest,
   emptyManifest,
+  ensureManifest,
   guessMimeFromName,
   isManifestCorrupt,
-  loadManifest,
-  recordUpload,
   saveManifest,
-  type BackupManifest,
+  type BackupManifestV2,
+  type ManifestEntryV2,
+  type BackupRunSummary,
 } from "./manifest";
 import { sanitizeFolderSegment, walkSourceFolders } from "./walker";
 import { detectOS, getDeviceName } from "../secure/deviceInfo";
-import { enqueueSave } from "../storage/indexQueue";
 import { isHardError } from "../telegram/rateLimit";
+import { isIndexReady, waitForIndexReady } from "../telegram/indexReadiness";
 import { reconstructMissingFolders } from "../storage/metadataStore";
+import { flushBackupIndexSave, queueBackupIndexSave } from "./indexSave";
+import { deleteMessages } from "./telegramOps";
 import type { TeleFile } from "../types";
 import i18n from "@/i18n";
 
@@ -103,20 +107,7 @@ function interruptibleSleep(ms: number, signal?: AbortSignal): Promise<void> {
   });
 }
 
-/**
- * Wait until `bootstrapComplete=true` on the file store, capped at `timeoutMs`.
- * Local copy of the helper in uploadManager.ts — we can't import it because
- * uploadManager imports a lot of upload-only state and we don't want a circular
- * dependency. Same shape, same semantics.
- */
-async function waitForBootstrap(timeoutMs: number = 8000): Promise<boolean> {
-  const start = Date.now();
-  while (Date.now() - start < timeoutMs) {
-    if (useFileStore.getState().bootstrapComplete) return true;
-    await new Promise((r) => setTimeout(r, 100));
-  }
-  return useFileStore.getState().bootstrapComplete;
-}
+
 
 /**
  * Lightweight extension → MIME lookup. Imported from `./manifest` (the
@@ -171,7 +162,7 @@ export interface BackupRunResult {
   /** Audit-row id, if backend POST succeeded. */
   auditJobId: string | null;
   /** Aggregate status. */
-  status: "success" | "partial" | "failed";
+  status: BackupRunSummary["status"];
   /** First error message, if any. */
   error: string | null;
   /** Wall-clock duration in ms. */
@@ -198,9 +189,7 @@ async function resolveChannelId(): Promise<string | null> {
   try {
     const phoneNumber = useAuthStore.getState().phoneNumber;
     if (phoneNumber) {
-      const k = channelIdKey(phoneNumber);
-      const fromPhoneKey = await getSecret(k);
-      if (fromPhoneKey) return fromPhoneKey;
+      return await getSecret(channelIdKey(phoneNumber));
     }
     return await getSecret(VAULT_KEY_CHANNEL_ID);
   } catch {
@@ -267,7 +256,6 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
     finishedAt: 0,
   };
 
-  // Guard: no folders configured.
   if (!folders.paths || folders.paths.length === 0) {
     return {
       ...baseResult,
@@ -278,18 +266,7 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
     };
   }
 
-  // Build the per-source-root display basename once. If two configured
-  // roots share a basename (e.g. /Users/me/Documents and /Volumes/ext/
-  // Documents), they would silently collide in the Backups tree at
-  //   /TeleDrive Backups/<device>/Documents/...
-  // because reconstructMissingFolders only sees the slash-joined path —
-  // a single "Documents" folder would absorb files from both roots.
-  // To prevent that, we prefix the second (third, …) collision with the
-  // source root's parent directory's basename, e.g. "ext-Documents".
-  // The full keying is the root's normalized absolute path, so re-running
-  // the same config produces the same display name (idempotent).
   const rootDisplayBasename = buildRootDisplayNames(folders.paths);
-
   const channelId = await resolveChannelId();
   if (!channelId) {
     return {
@@ -301,12 +278,9 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
     };
   }
 
-  // Ensure the Telegram client is connected before starting.
   try {
     const client = getClient();
-    if (!client.connected) {
-      await client.connect();
-    }
+    if (!client.connected) await client.connect();
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return {
@@ -318,44 +292,56 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
     };
   }
 
-  // Walk the source folders.
-  let walked: Awaited<ReturnType<typeof walkSourceFolders>>;
-  try {
-    walked = await walkSourceFolders(folders, { signal: opts.signal });
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
+  const walk = await walkSourceFolders(folders, { signal: opts.signal });
+  if (opts.signal?.aborted || walk.cancelled) {
     return {
       ...baseResult,
-      error: i18n.t("messages:backup.errors.walkerFailed", { message: msg }),
-      status: "failed",
+      totalFound: walk.files.length,
+      status: "cancelled",
+      error: i18n.t("messages:backup.errors.cancelled"),
       durationMs: Date.now() - startedAt,
       finishedAt: Date.now(),
     };
   }
 
-  // Detect missing source folders: any configured path that produced 0
-  // files AND is not in the walked list (i.e. the Rust command rejected
-  // it before returning anything).
-  const walkedAbs = new Set(walked.map((w) => w.absPath));
-  const missingFolders: string[] = [];
-  for (const p of folders.paths) {
-    // We can't tell "folder missing" from "folder empty" perfectly — but
-    // an empty existing folder is fine to skip silently. For now, we
-    // surface a warning only when we couldn't even read the root (logged
-    // in walkOneFolder). Future: return that signal up the stack.
-    void p;
-    void walkedAbs;
-  }
+  const missingFolders = [
+    ...new Set(
+      walk.roots
+        .filter(
+          (r) =>
+            r.status === "missing" ||
+            r.status === "unreadable" ||
+            r.status === "truncated",
+        )
+        .map((r) => r.path),
+    ),
+  ];
+  const walkHealthy =
+    walk.complete &&
+    !walk.roots.some(
+      (r) =>
+        r.status === "missing" ||
+        r.status === "unreadable" ||
+        r.status === "truncated",
+    );
 
-  // Diff against the manifest.
-  let manifest = await loadManifest();
-  // Tier 1 — T3.2: if the manifest was corrupt, refuse to upload. The
-  // quarantined value is preserved under a backup key in the vault for the
-  // user to inspect. Without this gate, a corrupt manifest silently cascades
-  // into a full re-upload that the dedup helpers can't reason about.
-  if (isManifestCorrupt()) {
+  const verifyMessageIds = async (ids: number[]): Promise<Set<number>> => {
+    const client = getClient();
+    const messages = await client.getMessages(channelId, { ids });
+    const live = new Set<number>();
+    for (const message of messages ?? []) {
+      const id = Number((message as { id?: unknown })?.id);
+      if (Number.isFinite(id) && id > 0) live.add(id);
+    }
+    return live;
+  };
+
+  let manifest: BackupManifestV2 = await ensureManifest(channelId, verifyMessageIds);
+  if (isManifestCorrupt(channelId)) {
     return {
       ...baseResult,
+      totalFound: walk.files.length,
+      missingFolders,
       error: i18n.t("messages:backup.errors.manifestCorrupt"),
       status: "failed",
       durationMs: Date.now() - startedAt,
@@ -369,117 +355,86 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
       deviceOs: detectOS(),
     };
   }
-  const diff = diffAgainstManifest(manifest, walked);
 
+  const diff = diffAgainstManifest(manifest, walk.files);
   const totalToUpload = diff.toUpload.length;
   let filesUploaded = 0;
+  let filesSkipped = diff.unchanged.length;
   let filesFailed = 0;
   let firstError: string | null = null;
+  let indexPaused = false;
 
-  // Upload loop. Sequential — the existing uploadFileToTelegram already
-  // manages Telegram-side FLOOD_WAIT backoff, and parallel uploads from
-  // the backup runner would race the user's regular upload queue.
-  for (let i = 0; i < diff.toUpload.length; i++) {
+  const indexReady = await waitForIndexReady(8000);
+  if (!indexReady) {
+    indexPaused = true;
+    firstError = i18n.t("messages:indexLoad.changesPaused");
+  }
+
+  for (let i = 0; indexReady && i < diff.toUpload.length; i++) {
     if (opts.signal?.aborted) {
       firstError ??= i18n.t("messages:backup.errors.cancelled");
       break;
     }
+    if (!isIndexReady()) {
+      indexPaused = true;
+      firstError ??= i18n.t("messages:indexLoad.changesPaused");
+      break;
+    }
 
     const file = diff.toUpload[i];
-    // Build the channel-side folder path. Mirror the source tree under
-    // the device root, preserving nested folder structure. Example:
-    //   sourceRoot: /Users/me/Documents
-    //   sourcePath: /Users/me/Documents/Work/report.pdf
-    //   relPath:    Work/report.pdf  (from the walker, already relative
-    //                                to the user's chosen source folder)
-    //   → channel folder: /TeleDrive Backups/MacBook Pro/Documents/Work
-    //   → channel name:   report.pdf
-    //
-    // The user picks "/Users/me/Documents" as their backup source, so the
-    // channel-side root includes the "Documents" segment — this way the
-    // backup preserves the user's local hierarchy (Documents/Work/...) and
-    // they can see all their picked source folders side-by-side under
-    // /TeleDrive Backups/<device>/.
-    //
-    // Two bugs this used to have:
-    //   1. relUnderSource was the FULL FILE PATH (Work/report.pdf), used as
-    //      a folder path. That created a folder named "Work/report.pdf"
-    //      literally, which Telegram treated as a single weird folder.
-    //   2. The sourceRoot basename (Documents) was never inserted, so files
-    //      lived directly under deviceRoot with no top-level folder label.
-    //
-    // The walker already returns relPath = path-within-source-root; we just
-    // take dirname(relPath) for the folder, basename(relPath) for the name.
-    //
-    // Three hardening checks added (Tasks #12, #13, #14):
-    //   - pickSourceRoot must find a match. If it returns null, the
-    //     walker has handed us a file outside every configured root
-    //     (excludes are filtered earlier, so a non-match here is a
-    //     walker bug). We throw a per-file error instead of silently
-    //     flattening the file under deviceRoot.
-    //   - The display basename is looked up from `rootDisplayBasename`
-    //     (built once at the start of the run) so basename collisions
-    //     across multiple source roots don't collapse into one folder.
-    //   - The final folderPath is length-capped at 900 chars; Telegram's
-    //     documented caption ceiling is 1024 and we want headroom for
-    //     the `teledrive_file:{...}` JSON wrapper.
-    const sourceRoot = pickSourceRoot(file.absPath, folders.paths);
-    if (!sourceRoot) {
-      throw new Error(
-        `walker produced ${file.absPath} which does not match any configured ` +
-        `source folder (${folders.paths.join(", ")}). This indicates a walker ` +
-        `or exclude-filter bug — refusing to upload rather than flatten the ` +
-        `file under the device root.`,
+    let target: { fileName: string; folderPath: string };
+    try {
+      target = computeUploadTarget(
+        file,
+        folders.paths,
+        rootDisplayBasename,
+        baseResult.deviceRoot,
       );
+    } catch (err) {
+      filesFailed++;
+      firstError ??= err instanceof Error ? err.message : String(err);
+      continue;
     }
-    // pickSourceRoot returns the normalized form (forward-slashes, no
-    // trailing slash) — same form buildRootDisplayNames stored the map
-    // key under, so the lookup keys directly without re-normalizing.
-    const relUnderSource = stripPrefix(file.absPath, sourceRoot);
-    const sourceBasename = rootDisplayBasename.get(sourceRoot) ?? "";
-    // Compute channel-side folder. relUnderSource starts with "/" so we
-    // strip it; then take everything except the trailing filename segment.
-    const relClean = relUnderSource.replace(/^\/+/, "");
-    const relSegments = relClean.split("/").filter(Boolean);
-    const fileName = relSegments.pop() ?? file.absPath.split(/[\\/]/).pop() ?? file.absPath;
-    const relFolderSegments = relSegments;
-    const channelFolderSegments = [
-      sourceBasename,
-      ...relFolderSegments,
-    ].filter(Boolean);
-    const folderPath =
-      channelFolderSegments.length > 0
-        ? `${baseResult.deviceRoot}/${channelFolderSegments.join("/")}`
-        : baseResult.deviceRoot;
 
-    // Length cap. Telegram documents cap the caption at 1024 chars; the
-    // `teledrive_file:${JSON.stringify({folder})}:` wrapper adds ~30
-    // chars on top of the path, so we cap the path at 900 to leave
-    // headroom. A path this long means a deeply-nested source — the
-    // user almost certainly has a folder like "node_modules" they meant
-    // to exclude. We fail-loud per file (don't abort the whole run, the
-    // other files may be fine).
-    if (folderPath.length > FOLDER_PATH_MAX_LENGTH) {
-      throw new Error(
-        `folderPath length ${folderPath.length} exceeds ${FOLDER_PATH_MAX_LENGTH}-char ` +
-        `cap (source path too deeply nested: ${file.absPath}). Add an exclude ` +
-        `pattern or shorten the source tree depth.`,
+    const prior = manifest.entries[file.absPath];
+    if (!prior) {
+      const adopted = await adoptExistingUpload(
+        channelId,
+        target.folderPath,
+        target.fileName,
+        file.size,
+        manifest,
       );
+      if (adopted) {
+        try {
+          await appendManifestEntry(
+            channelId,
+            manifest.generation,
+            file.absPath,
+            adopted,
+          );
+          manifest = {
+            ...manifest,
+            entries: { ...manifest.entries, [file.absPath]: adopted },
+          };
+          filesSkipped++;
+          continue;
+        } catch (err) {
+          filesFailed++;
+          firstError ??= err instanceof Error ? err.message : String(err);
+          continue;
+        }
+      }
     }
 
     try {
       const message = await uploadFileToTelegram(
         channelId,
-        fileName,
+        target.fileName,
         file.size,
         file.absPath,
-        folderPath,
-        undefined, // onProgress — chunk-level progress, not used by the backup flow
-        // onRetry — surface FLOOD_WAIT / network retries to the progress
-        // store so the overlay shows "Retrying 3/5 — waiting 30s" instead
-        // of a frozen counter. Keeps the user informed during a long
-        // single-file stall. We pull the action fresh on each callback
-        // so a re-render or HMR doesn't capture a stale reference.
+        target.folderPath,
+        undefined,
         (e) => {
           useBackupProgressStore.getState().setRetry({
             attempt: e.attempt,
@@ -489,213 +444,283 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
           });
         },
       );
-      const messageId = Number((message as any)?.id);
+      const messageId = Number((message as { id?: unknown })?.id);
       if (!Number.isFinite(messageId) || messageId <= 0) {
         throw new Error(
           `upload returned no usable message id: ${JSON.stringify(message).slice(0, 120)}`,
         );
       }
-      manifest = recordUpload(manifest, file.absPath, {
+
+      const previousMessageIds = prior
+        ? [
+            prior.messageId,
+            ...(prior.previousMessageIds ?? []),
+          ].filter((id, index, list) => list.indexOf(id) === index && id !== messageId)
+        : undefined;
+      const entry: ManifestEntryV2 = {
         mtimeMs: file.mtimeMs,
         size: file.size,
         messageId,
-        folderPath,
-      });
-      await saveManifest(manifest);
+        folderPath: target.folderPath,
+        uploadedAt: new Date().toISOString(),
+        ...(previousMessageIds && previousMessageIds.length > 0
+          ? { previousMessageIds }
+          : {}),
+      };
+      await appendManifestEntry(
+        channelId,
+        manifest.generation,
+        file.absPath,
+        entry,
+      );
+      manifest = {
+        ...manifest,
+        lastAttemptAt: Date.now(),
+        entries: { ...manifest.entries, [file.absPath]: entry },
+      };
 
-      // Tier 1 — T1.1: write the new TeleFile to the in-memory file store
-      // AND route an enqueueSave through the shared IndexQueue. Mirrors the
-      // optimistic-merge pattern in uploadManager.ts:216-272 — the file
-      // appears in the file browser IMMEDIATELY (no cold-start dance), and
-      // concurrent index writes (backup + user rename) coalesce via the
-      // queue's pending slot.
-      //
-      // Bootstrap gate: if recovery hasn't finished, skip the index save
-      // (the file is already on Telegram — the next orphan scan picks it up).
       const newTeleFile: TeleFile = {
-        // Deterministic id keyed on the Telegram messageId. Different from
-        // regular uploads (which use `file_<uuid>`) so dedup-by-messageId
-        // and dedupeByContentKey can identify these as backup entries.
         id: `backup_${messageId}`,
-        name: fileName,
+        name: target.fileName,
         size: file.size,
-        mime: guessMimeFromName(fileName),
-        folderPath,
+        mime: guessMimeFromName(target.fileName),
+        folderPath: target.folderPath,
         messageId,
         channelId,
         uploadedAt: Date.now(),
         starred: false,
         trashed: false,
       };
-
-      const bootstrapReady = await waitForBootstrap(8000);
-      if (bootstrapReady) {
-        const existingFiles = useFileStore.getState().files;
-        // Reconstruct any missing virtual folders BEFORE adding the new
-        // file, so the optimistic array mirrors what `healAndSave` would
-        // produce on cold start. Without this, the file appears in the
-        // browser at its full folder path but the parent folder entries
-        // don't exist yet — so the user clicks into a "missing" folder.
-        const { healedFiles: withFolders } = reconstructMissingFolders(
-          [...existingFiles, newTeleFile],
-          channelId,
-        );
-        const optimisticFiles = [
-          ...withFolders.filter(
-            (f) => f.id !== newTeleFile.id || f.messageId !== messageId
-          ),
-          newTeleFile,
-        ];
-        useFileStore.getState().setFiles(optimisticFiles);
-
-        try {
-          await enqueueSave(channelId, optimisticFiles);
-        } catch (indexErr) {
-          // Same hard-error rollback as uploadManager.ts:280-305. The file
-          // is already on Telegram — only the metadata index write failed.
-          // Remove the optimistic entry from the store so the UI reflects
-          // reality; the next cold start will recover it via the orphan scan.
-          const isHard =
-            /AUTH_KEY_UNREGISTERED|SESSION_REVOKED|CHANNEL_PRIVATE|PEER_ID_INVALID|CHAT_WRITE_FORBIDDEN|JSON/i.test(
-              (indexErr as Error)?.message ?? ""
-            );
-          if (isHard) {
-            const rolled = useFileStore
-              .getState()
-              .files.filter((f) => f.id !== newTeleFile.id);
-            useFileStore.getState().setFiles(rolled);
-            console.warn(
-              `[backup.runner] index save hard-error for ${file.absPath}; rolled back:`,
-              (indexErr as Error).message,
-            );
-          } else {
-            console.warn(
-              `[backup.runner] index save transient error for ${file.absPath}:`,
-              (indexErr as Error).message ?? indexErr,
-            );
-          }
-        }
-      } else {
-        console.warn(
-          `[backup.runner] bootstrap not ready; skipping in-memory merge for ${file.absPath}. ` +
-          `The orphan scan will pick this file up on the next cold start.`,
-        );
-      }
+      const replacedIds = new Set(previousMessageIds ?? []);
+      const existingFiles = useFileStore.getState().files;
+      const kept = existingFiles.filter(
+        (f) =>
+          !replacedIds.has(Number(f.messageId)) &&
+          f.id !== newTeleFile.id &&
+          !(f.messageId === messageId && f.channelId === channelId),
+      );
+      const { healedFiles } = reconstructMissingFolders(
+        [...kept, newTeleFile],
+        channelId,
+      );
+      useFileStore.getState().setFiles(healedFiles);
+      queueBackupIndexSave(channelId, healedFiles);
 
       filesUploaded++;
       opts.onProgress?.({
         uploaded: filesUploaded + filesFailed,
         total: totalToUpload,
-        currentFile: file.absPath,
+        currentFile: target.fileName,
       });
 
-      // Per-batch breather. Telegram tracks RPCs per ~second and
-      // enforces FLOOD_WAIT_X once a window is exceeded. The user was
-      // hitting a 30s FLOOD_WAIT on file 17 of a 218-file backup with
-      // no breather between files — the per-second counter kept
-      // climbing even though each individual upload looked fast. A
-      // short, deterministic pause every N successes drains the
-      // counter and prevents the user from ever seeing a stalled
-      // overlay in the common case. We DON'T breather after a failed
-      // file (the FLOOD_WAIT retry already inserted its own wait) and
-      // we DON'T breather after the last file in the loop. The breather
-      // is interruptible: a cancel signal short-circuits the wait.
       if (
         filesUploaded > 0 &&
         filesUploaded % BACKUP_BATCH_SIZE === 0 &&
         i < diff.toUpload.length - 1
       ) {
-        console.log(
-          `[backup.runner] breather: ${filesUploaded}/${totalToUpload} done; ` +
-          `pausing ${BACKUP_BREATHER_MS}ms to clear Telegram rate-limit window`,
-        );
         await interruptibleSleep(BACKUP_BREATHER_MS, opts.signal);
       }
     } catch (err) {
       filesFailed++;
       const msg = err instanceof Error ? err.message : String(err);
       firstError ??= msg;
-      console.warn(`[backup.runner] failed to upload ${file.absPath}:`, msg);
-      // Persist progress before bailing on a hard error.
-      await saveManifest(manifest);
+      console.warn(
+        `[backup.runner] failed to upload ${target.fileName}:`,
+        msg,
+      );
       opts.onProgress?.({
         uploaded: filesUploaded + filesFailed,
         total: totalToUpload,
-        currentFile: file.absPath,
+        currentFile: target.fileName,
       });
-
-      // If this is a HARD Telegram error (session revoked, auth key
-      // unregistered, channel private, etc.), every subsequent file will
-      // fail with the same error. Bail out now so the user gets a clear
-      // "session expired" message instead of 218 confusing failures and
-      // an indefinite wait. Without this short-circuit, a revoked session
-      // turns into a multi-minute loop of identical errors.
       if (isHardError(err)) {
-        // Account for the rest of the queue so filesFailed reflects what
-        // actually happened (and the user knows the magnitude of the loss).
         filesFailed += diff.toUpload.length - i - 1;
-        firstError ??=
-          i18n.t("messages:backup.errors.sessionExpired");
-        console.warn(
-          `[backup.runner] hard Telegram error; aborting run. ${diff.toUpload.length - i - 1} files remaining skipped.`,
-        );
+        firstError ??= i18n.t("messages:backup.errors.sessionExpired");
         break;
       }
-      // Continue with the rest for transient errors — partial is better than nothing.
     }
   }
 
-  // Aggregate status. Order matters:
-  //   1. Any filesFailed → "partial" (if some uploaded) or "failed" (if none did).
-  //      The previous ordering checked `unchanged > 0` BEFORE checking `filesFailed`,
-  //      which silently hid a 0-uploaded + 18-unchanged + 218-failed run as
-  //      "success" — the user saw "Backup complete — nothing changed" and never
-  //      realised their Telegram session was revoked and 218 files failed.
-  //   2. No-op (everything unchanged, nothing failed) → "success".
-  //   3. All-uploaded → "success".
+  const cancelled = Boolean(opts.signal?.aborted);
   let status: BackupRunResult["status"];
-  if (filesFailed > 0 && filesUploaded > 0) status = "partial";
-  else if (filesFailed > 0) status = "failed";
-  else if (filesUploaded > 0) status = "success";
-  else status = "success"; // no-op run: nothing to upload, nothing failed
+  if (cancelled) status = "cancelled";
+  else if (filesUploaded > 0 && filesFailed > 0) status = "partial";
+  else if (filesFailed > 0 || indexPaused) status = "failed";
+  else if (!walkHealthy) status = walk.files.length === 0 ? "failed" : "partial";
+  else status = "success";
 
-  // Audit job id — backend removed, set null.
-  const auditJobId: string | null = null;
-  void auditJobId; // unused but kept for structural compatibility
+  if (walkHealthy && !cancelled) {
+    const seen = new Set(walk.files.map((f) => f.absPath));
+    for (const [absPath, entry] of Object.entries(manifest.entries)) {
+      const missing = !seen.has(absPath);
+      if (entry.sourceMissing !== missing) {
+        manifest.entries[absPath] = { ...entry, sourceMissing: missing };
+      }
+    }
+  }
 
-  // Log an event for the activity timeline.
+  const finishedAt = Date.now();
+  const lastSuccessAt =
+    status === "success" || status === "partial"
+      ? finishedAt
+      : manifest.lastSuccessAt;
+  manifest = {
+    ...manifest,
+    lastAttemptAt: finishedAt,
+    lastSuccessAt,
+    lastResult: {
+      status,
+      uploaded: filesUploaded,
+      skipped: filesSkipped,
+      failed: filesFailed,
+      missingRoots: missingFolders,
+    },
+  };
+  try {
+    manifest.generation = await saveManifest(channelId, manifest);
+  } catch (err) {
+    console.warn("[backup.runner] manifest save failed:", err);
+  }
+
+  const flush = await flushBackupIndexSave(channelId);
+  if (flush.ok && status !== "cancelled") {
+    await sweepGarbage(channelId, manifest);
+  }
+
+  if (lastSuccessAt) {
+    useFileStore.getState().setLastBackupAt(lastSuccessAt);
+  }
+
   try {
     logEvent({
       type: status === "failed" ? "backup.failed" : "backup.completed",
       payload: {
         uploaded: filesUploaded,
-        skipped: diff.unchanged.length,
+        skipped: filesSkipped,
         failed: filesFailed,
-        deviceRoot: baseResult.deviceRoot,
+        cancelled: status === "cancelled",
       },
     });
   } catch {
-    // logEvent is fire-and-forget; ignore its own errors.
+    // logEvent is fire-and-forget.
   }
-
-  // Update the fileStore timestamp so the UI re-renders the "Last backup"
-  // label. The store setter is a no-op when bootstrap hasn't completed.
-  useFileStore.getState().setLastBackupAt(Date.now());
 
   return {
     triggeredBy: opts.triggeredBy,
     deviceRoot: baseResult.deviceRoot,
-    totalFound: walked.length,
+    totalFound: walk.files.length,
     filesUploaded,
-    filesSkipped: diff.unchanged.length,
+    filesSkipped,
     filesFailed,
     missingFolders,
-    auditJobId,
+    auditJobId: null,
     status,
     error: firstError,
     durationMs: Date.now() - startedAt,
     finishedAt: Date.now(),
   };
+}
+
+function computeUploadTarget(
+  file: { absPath: string; relPath: string; size: number; mtimeMs: number },
+  roots: string[],
+  displayNames: Map<string, string>,
+  deviceRoot: string,
+): { fileName: string; folderPath: string } {
+  const sourceRoot = pickSourceRoot(file.absPath, roots);
+  if (!sourceRoot) {
+    throw new Error(
+      `walker produced a file outside every configured source folder ` +
+        `(${file.relPath}); refusing to flatten it under the device root.`,
+    );
+  }
+  const relUnderSource = stripPrefix(file.absPath, sourceRoot);
+  const sourceBasename = displayNames.get(sourceRoot) ?? "";
+  const relClean = relUnderSource.replace(/^\/+/, "");
+  const relSegments = relClean.split("/").filter(Boolean);
+  const fileName =
+    relSegments.pop() ?? file.absPath.split(/[\\/]/).pop() ?? file.absPath;
+  const channelFolderSegments = [sourceBasename, ...relSegments].filter(Boolean);
+  const folderPath =
+    channelFolderSegments.length > 0
+      ? `${deviceRoot}/${channelFolderSegments.join("/")}`
+      : deviceRoot;
+  if (folderPath.length > FOLDER_PATH_MAX_LENGTH) {
+    throw new Error(
+      `folder path exceeds ${FOLDER_PATH_MAX_LENGTH} chars (source tree too deep); ` +
+        `add an exclude pattern or shorten the source tree.`,
+    );
+  }
+  return { fileName, folderPath };
+}
+
+async function adoptExistingUpload(
+  channelId: string,
+  folderPath: string,
+  fileName: string,
+  size: number,
+  manifest: BackupManifestV2,
+): Promise<ManifestEntryV2 | null> {
+  const since = manifest.lastAttemptAt ?? Date.now() - 60 * 60 * 1000;
+  const candidate = useFileStore.getState().files.find(
+    (f) =>
+      f.channelId === channelId &&
+      f.folderPath === folderPath &&
+      f.name === fileName &&
+      f.size === size &&
+      f.uploadedAt >= since &&
+      typeof f.messageId === "number" &&
+      f.messageId > 0,
+  );
+  if (!candidate) return null;
+  return {
+    mtimeMs: manifest.lastAttemptAt ?? Date.now(),
+    size,
+    messageId: candidate.messageId,
+    folderPath,
+    uploadedAt: new Date(candidate.uploadedAt).toISOString(),
+  };
+}
+
+async function sweepGarbage(
+  channelId: string,
+  manifest: BackupManifestV2,
+): Promise<void> {
+  const ids = new Set<number>();
+  for (const entry of Object.values(manifest.entries)) {
+    for (const id of entry.previousMessageIds ?? []) ids.add(id);
+  }
+  for (const item of manifest.garbage) ids.add(item.messageId);
+  if (ids.size === 0) return;
+
+  const referenced = new Set(
+    useFileStore
+      .getState()
+      .files.map((f) => Number(f.messageId))
+      .filter((id) => Number.isFinite(id)),
+  );
+  const deletable = [...ids].filter((id) => !referenced.has(id));
+  if (deletable.length > 0) {
+    try {
+      await deleteMessages(channelId, deletable);
+    } catch (err) {
+      console.warn(
+        `[backup.runner] old-message cleanup failed (${deletable.length} ids):`,
+        err,
+      );
+      return;
+    }
+  }
+
+  for (const entry of Object.values(manifest.entries)) {
+    if (entry.previousMessageIds) delete entry.previousMessageIds;
+  }
+  manifest.garbage = [];
+  try {
+    manifest.generation = await saveManifest(channelId, manifest);
+  } catch (err) {
+    console.warn("[backup.runner] manifest save after cleanup failed:", err);
+  }
 }
 
 /** Find which source-root this absPath belongs to. */
@@ -762,4 +787,4 @@ function stripPrefix(absPath: string, prefix: string): string {
 
 // Re-export for the React hook.
 export { emptyManifest };
-export type { BackupManifest };
+export type { BackupManifestV2 as BackupManifest };

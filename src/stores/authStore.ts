@@ -8,7 +8,7 @@ interface AuthState {
   apiHash: string | null;
   setCredentials: (apiId: number, apiHash: string) => void;
   setSession: (sessionString: string, phoneNumber: string) => void;
-  logout: () => void;
+  logout: (options?: { preserveCache?: boolean }) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -20,11 +20,13 @@ export const useAuthStore = create<AuthState>((set) => ({
   setCredentials: (apiId, apiHash) => set({ apiId, apiHash }),
   setSession: (sessionString, phoneNumber) =>
     set({ sessionString, phoneNumber, isAuthenticated: true }),
-  logout: () => {
-    try {
-      localStorage.removeItem("teledrive_cached_files");
-    } catch (err) {
-      console.warn("[authStore] Failed to clear cached files on logout:", err);
+  logout: (options) => {
+    if (!options?.preserveCache) {
+      try {
+        localStorage.removeItem("teledrive_cached_files");
+      } catch (err) {
+        console.warn("[authStore] Failed to clear cached files on logout:", err);
+      }
     }
     set({
       sessionString: null,

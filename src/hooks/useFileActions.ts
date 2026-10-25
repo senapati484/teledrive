@@ -11,7 +11,13 @@ import { TeleFile } from "../lib/types";
 import { toast } from "sonner";
 import { cacheFileOffline, removeOfflineCache } from "../lib/storage/offlineStorage";
 import { invoke } from "@tauri-apps/api/core";
-import { enqueueSave, flushAllQueues, retryQueue } from "../lib/storage/indexQueue";
+import {
+  enqueueSave,
+  flushAllQueues,
+  retryQueue,
+  IndexRetryExhaustedError,
+} from "../lib/storage/indexQueue";
+import { IndexNotReadyError, isIndexReady } from "../lib/telegram/indexReadiness";
 import { useCallback, useMemo } from "react";
 import { logEvent } from "../lib/events";
 import i18n from "../i18n";
@@ -102,6 +108,11 @@ function pushSnapshotForRollback(): void {
  * Pop the most recent rollback snapshot and restore the files array to it.
  * Called when an action's index save fails with a HARD error.
  */
+/** Exported for tests: only the action that still owns the store may roll it back. */
+export function isCurrentOptimisticState(appliedFiles: TeleFile[]): boolean {
+  return useFileStore.getState().files === appliedFiles;
+}
+
 function rollbackToLastSnapshot(): boolean {
   const snap = useFileStore.getState().popSnapshot();
   if (!snap) return false;
@@ -126,25 +137,25 @@ async function applyOptimistic(
 ): Promise<void> {
   const store = useFileStore.getState();
 
-  // Suppress writes before bootstrap completes. Bootstrap reads the
-  // authoritative index from Telegram and populates the store; if a user
-  // action fires before that, persisting our optimistic state would
-  // overwrite Telegram with a partial / stale index and lose data on
-  // the next restart. The user can retry the action once bootstrap
-  // completes (which takes < 1s in practice).
-  if (!store.bootstrapComplete && store.files.length === 0) {
+  // Suppress writes unless discovery produced a complete index AND the initial
+  // bootstrap has finished applying it. A cached file list is NOT enough:
+  // persisting an optimistic state on top of unknown Telegram state can
+  // overwrite a newer index with a stale/partial one.
+  if (!isIndexReady() || !store.bootstrapComplete) {
     await invoke("log_vault_state", {
-      state: `ACTION_SUPPRESSED_PRE_BOOTSTRAP files=${nextFiles.length}`,
+      state: `ACTION_SUPPRESSED_INDEX_NOT_READY state=${store.indexLoadState} files=${nextFiles.length}`,
     }).catch(() => {});
-    if (!options.skipRollbackOnHardError) {
-      rollbackToLastSnapshot();
-    }
+    // Nothing was applied yet, so there is nothing to roll back. Popping a
+    // snapshot here would restore a *previous* action's state.
     toast.error(i18n.t("files:actions.bootstrapPending"));
-    throw new Error("Bootstrap not complete");
+    throw new IndexNotReadyError();
   }
 
   pushSnapshotForRollback();
   store.setFiles(nextFiles);
+  // setFiles normalizes into a new array; remember the exact reference that
+  // this action applied so we only roll back our own optimistic state.
+  const appliedFiles = useFileStore.getState().files;
   store.setSyncing(true);
 
   try {
@@ -166,17 +177,33 @@ async function applyOptimistic(
       });
     }
   } catch (err: any) {
+    // Retry exhaustion is not a hard failure: the state was intentionally
+    // kept and will be retried (60s timer / manual Retry). Never roll it back.
+    if (err instanceof IndexRetryExhaustedError) {
+      if (isCurrentOptimisticState(appliedFiles)) {
+        useFileStore.getState().popSnapshot();
+      }
+      await invoke("log_vault_state", {
+        state: `ACTION_INDEX_STUCK kept=true: ${err?.message ?? err}`,
+      }).catch(() => {});
+      toast.error(i18n.t("files:actions.indexStuck"));
+      throw err;
+    }
     if (options.skipRollbackOnHardError) {
       await invoke("log_vault_state", {
         state: `ACTION_HARD_ERR_NO_ROLLBACK: ${err?.message ?? err}`,
       }).catch(() => {});
       throw err;
     }
-    // Hard error path: roll back to the pre-action snapshot.
-    const rolled = rollbackToLastSnapshot();
+    // Only roll back if the store still holds *this* action's optimistic
+    // state. A newer action may already have applied its own state; rolling
+    // back then would clobber it.
+    const isCurrent = isCurrentOptimisticState(appliedFiles);
+    const rolled = isCurrent ? rollbackToLastSnapshot() : false;
     await invoke("log_vault_state", {
-      state: `ACTION_HARD_ERR rolled=${rolled}: ${err?.message ?? err}`,
+      state: `ACTION_HARD_ERR rolled=${rolled} current=${isCurrent}: ${err?.message ?? err}`,
     }).catch(() => {});
+    if (!isCurrent) throw err;
     toast.error(
       i18n.t("files:actions.saveFailed", { error: err?.message ?? i18n.t("files:actions.unknownError") })
     );
@@ -205,8 +232,9 @@ if (typeof window !== "undefined") {
   // cheap last-resort escape hatch.
   (window as any).__teledriveForceBootstrapComplete = () => {
     useFileStore.getState().setBootstrapComplete(true);
+    useFileStore.getState().setIndexLoadState("ready");
     console.warn(
-      "[teledrive] bootstrapComplete forced to true via dev hook — gate bypassed"
+      "[teledrive] bootstrapComplete and indexLoadState forced to ready via dev hook — gate bypassed"
     );
   };
 }

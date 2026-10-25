@@ -19,6 +19,7 @@ import { loadIndexIncremental } from "../storage/metadataStore";
 import { withTelegramRetry } from "../telegram/rateLimit";
 import { useFileStore } from "../../stores/fileStore";
 import { logEvent } from "../events";
+import { isIndexReady } from "../telegram/indexReadiness";
 
 const POLL_INTERVAL_MS = 30_000;
 const SYNC_INDICATOR_MIN_MS = 800;
@@ -43,6 +44,7 @@ const state: CoordinatorState = {
  * want it to keep running through transient errors.
  */
 async function runOneTick(channelId: string): Promise<boolean> {
+  if (!isIndexReady()) return false;
   const lastMsgId = useFileStore.getState().lastIndexMsgId;
   if (lastMsgId <= 0) {
     // Bootstrap hasn't recorded a cursor yet — skip. Next start() call
@@ -125,8 +127,8 @@ export function startRemoteSync(channelId: string): void {
   state.currentChannelId = channelId;
   state.lastTickAt = 0;
 
-  // Don't start the loop until bootstrap has completed (lastIndexMsgId > 0).
-  if (useFileStore.getState().lastIndexMsgId <= 0) {
+  // Don't start the loop until discovery is ready and a cursor exists.
+  if (!isIndexReady() || useFileStore.getState().lastIndexMsgId <= 0) {
     return;
   }
 

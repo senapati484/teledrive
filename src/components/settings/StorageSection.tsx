@@ -1,8 +1,10 @@
 import { useState, useCallback } from "react";
-import { HardDrive, RefreshCw, Info, Loader2, Files, Folder, Trash2, ShieldCheck } from "lucide-react";
+import { HardDrive, RefreshCw, Info, Loader2, Files, Folder, Trash2, ShieldCheck, RotateCcw } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { useFileStore } from "@/stores/fileStore";
-import { loadIndex } from "@/lib/storage/metadataStore";
+import { loadIndexOutcome } from "@/lib/storage/metadataStore";
+import { retryIndexDiscovery } from "@/lib/telegram/bootstrap";
+import { useRecoveryStore } from "@/stores/recoveryStore";
 import { getSecret, VAULT_KEY_CHANNEL_ID, channelIdKey } from "@/lib/secure/vault";
 import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
@@ -27,8 +29,13 @@ export default function StorageSection() {
   const { t } = useTranslation("settings");
   const files = useFileStore((state) => state.files);
   const setFiles = useFileStore((state) => state.setFiles);
+  const indexQueueState = useFileStore((state) => state.indexQueueState);
+  const indexQueueRetryInSec = useFileStore(
+    (state) => state.indexQueueRetryInSec
+  );
   const phoneNumber = useAuthStore((state) => state.phoneNumber);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const openRecovery = useRecoveryStore((s) => s.openFor);
 
   const activeFiles = files.filter((f) => !f.trashed && f.mime !== "inode/directory");
   const activeFolders = files.filter((f) => !f.trashed && f.mime === "inode/directory");
@@ -51,7 +58,13 @@ export default function StorageSection() {
         toast.error(t("storage.toasts.channelNotInitialised"));
         return;
       }
-      let freshFiles = await loadIndex(channelId);
+      const outcome = await loadIndexOutcome(channelId);
+      if (outcome.status !== "ready") {
+        retryIndexDiscovery(channelId);
+        toast.error(t("storage.toasts.indexIncomplete"));
+        return;
+      }
+      let freshFiles = outcome.files;
       try {
         const { syncOfflineStatusWithDisk } = await import("@/lib/storage/offlineStorage");
         freshFiles = await syncOfflineStatusWithDisk(freshFiles);
@@ -67,6 +80,21 @@ export default function StorageSection() {
       setIsRefreshing(false);
     }
   }, [setFiles, phoneNumber]);
+
+  const handleOpenRecovery = useCallback(async () => {
+    let channelId: string | null = null;
+    if (phoneNumber) {
+      channelId = await getSecret(channelIdKey(phoneNumber));
+    }
+    if (!channelId) {
+      channelId = await getSecret(VAULT_KEY_CHANNEL_ID);
+    }
+    if (!channelId) {
+      toast.error(t("storage.toasts.channelNotInitialised"));
+      return;
+    }
+    openRecovery(channelId);
+  }, [openRecovery, phoneNumber, t]);
 
   return (
     <div className="space-y-6 select-none">
@@ -170,7 +198,7 @@ export default function StorageSection() {
           </div>
         </div>
 
-        <div className="pt-2">
+        <div className="flex flex-wrap gap-2 pt-2">
           <Button
             variant="outline"
             size="sm"
@@ -185,7 +213,31 @@ export default function StorageSection() {
             )}
             {isRefreshing ? t("storage.recalculating") : t("storage.recalculate")}
           </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleOpenRecovery}
+            className="rounded-full text-xs font-medium gap-2 h-9 px-4 border border-amber-500/40 text-amber-800 dark:text-amber-200 hover:bg-amber-50 dark:hover:bg-amber-950/30 cursor-pointer"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            {t("storage.recovery.button")}
+          </Button>
         </div>
+
+        {(indexQueueState === "saving" ||
+          (indexQueueState === "retrying" && indexQueueRetryInSec > 0)) && (
+          <p
+            role="status"
+            aria-live="polite"
+            className="text-xs text-slate-500 dark:text-slate-400"
+          >
+            {indexQueueState === "retrying"
+              ? t("storage.indexSave.retrying", {
+                  seconds: indexQueueRetryInSec,
+                })
+              : t("storage.indexSave.saving")}
+          </p>
+        )}
       </div>
 
       {/* Storage Guidelines Info Box */}

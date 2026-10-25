@@ -97,6 +97,17 @@
     },
     "lastBackup": "Last backup:",
     "lastBackupAgo": "{{time}} ago",
+    "lastAttempt": "Last attempt:",
+    "lastAttemptAgo": "{{time}} ago",
+    "runStatus": {
+      "success": "Succeeded",
+      "partial": "Completed with warnings",
+      "failed": "Failed",
+      "cancelled": "Cancelled — will resume next run"
+    },
+    "missingRoots_one": "{{count}} source folder is unavailable. Other folders were backed up.",
+    "missingRoots_other": "{{count}} source folders are unavailable. Other folders were backed up.",
+    "editFolders": "Edit folders",
     "never": "Never",
     "lastResult": {
       "uploaded_one": "{{count}} uploaded, ",
@@ -159,6 +170,10 @@
     },
     "recalculating": "Recalculating…",
     "recalculate": "Recalculate Storage",
+    "indexSave": {
+      "saving": "Saving the updated file list to Telegram…",
+      "retrying": "Telegram is rate limiting the file-list save. Retrying automatically in {{seconds}}s. Your files are safe."
+    },
     "info": {
       "noLimit": "Telegram does not impose any limit on the cumulative volume of data stored in private channels.",
       "fileLimits": "Individual file limits: up to <strong>2 GB</strong> per single file for standard accounts, and up to <strong>4 GB</strong> for Telegram Premium subscribers."
@@ -166,7 +181,32 @@
     "toasts": {
       "channelNotInitialised": "Storage channel not initialised yet.",
       "refreshed": "Storage refreshed from Telegram.",
-      "refreshFailed": "Failed to refresh storage data."
+      "refreshFailed": "Failed to refresh storage data.",
+      "indexIncomplete": "Couldn't verify a complete index. Cached files are still shown; changes stay paused until the index is repaired."
+    },
+    "recovery": {
+      "button": "Restore missing files",
+      "title": "Recover files",
+      "description": "Find files missing from your drive by checking older index snapshots and the uploaded files in your channel. Your current files stay exactly as they are; recovered files are added alongside them.",
+      "warning": "Recovered files are added to your current drive — nothing is removed. Older snapshots may include files you later deleted or renamed. Files whose Telegram message is missing will be skipped.",
+      "scanning": "Scanning channel history…",
+      "empty": "No recoverable files were found.",
+      "epochUnknown": "Unknown date",
+      "channelFiles": "Files found in channel history",
+      "selectAll": "Select all",
+      "selectNone": "Deselect all",
+      "selectedCount": "{{selected}} of {{total}} selected",
+      "filesCount_one": "{{count}} file",
+      "filesCount_other": "{{count}} files",
+      "restore": "Add selected ({{count}})",
+      "restoring": "Adding files…",
+      "restored_one": "Added {{count}} file to your drive",
+      "restored_other": "Added {{count}} files to your drive",
+      "restoredPartial_one": "Added {{count}} file; {{skipped}} missing message was skipped",
+      "restoredPartial_other": "Added {{count}} files; {{skipped}} missing messages were skipped",
+      "nothingNew": "Nothing new to add — those files are already in your drive.",
+      "failed": "Could not restore files",
+      "cancel": "Cancel"
     }
   },
   "about": {

@@ -44,3 +44,5 @@ distribution/
 artifacts-ci/
 release-dist/*
 !release-dist/build_dmg.sh
+# Local planning docs
+docs/superpowers/

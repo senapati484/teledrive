@@ -176,8 +176,9 @@
     }
   },
   "actions": {
-    "bootstrapPending": "Still loading your drive — please retry in a moment.",
-    "saveFailed": "Save failed and was rolled back: {{error}}",
+  "bootstrapPending": "Still loading your drive — please retry in a moment.",
+  "indexStuck": "Couldn't save changes yet. Your changes are kept locally and will retry automatically — or use Retry in the banner.",
+  "saveFailed": "Save failed and was rolled back: {{error}}",
     "unknownError": "Unknown error",
     "channelNotInitialized": "Telegram storage channel is not initialized",
     "fileNotFound": "File not found",

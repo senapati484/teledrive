@@ -8,7 +8,22 @@
       "verifyingChannel": "Verifying secure storage channel...",
       "loadingIndex": "Loading file metadata index...",
       "recoveryScan": "Verifying your files (recovery scan)...",
-      "initializingView": "Initializing local storage view..."
+      "initializingView": "Initializing local storage view...",
+      "indexIncomplete": "Couldn't verify the drive index — changes are paused."
+    }
+  },
+  "indexLoad": {
+    "bannerTitle": "Couldn't safely load your drive index",
+    "bannerBodyCached": "Showing cached files. Changes are disabled until the index can be verified.",
+    "bannerBodyEmpty": "No complete index was found in your storage channel. Retry, or restore a previous index from Settings.",
+    "retry": "Retry",
+    "retrying": "Retrying...",
+    "changesPaused": "The drive index isn't ready yet. Changes are paused.",
+    "reason": {
+      "not_found": "No complete index was found.",
+      "partial_manifest": "The newest index is missing one or more parts.",
+      "timeout": "Telegram took too long to respond.",
+      "network": "The storage channel couldn't be reached."
     }
   },
   "backup": {
