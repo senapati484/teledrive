@@ -10,6 +10,10 @@ import { useAuthStore } from "../stores/authStore";
 import { TeleFile } from "../lib/types";
 import { toast } from "sonner";
 import { cacheFileOffline, removeOfflineCache } from "../lib/storage/offlineStorage";
+import {
+  clearDeletedMessages,
+  recordDeletedMessages,
+} from "../lib/storage/tombstones";
 import { invoke } from "@tauri-apps/api/core";
 import {
   enqueueSave,
@@ -210,6 +214,42 @@ async function applyOptimistic(
     throw err;
   } finally {
     useFileStore.getState().setSyncing(false);
+  }
+}
+
+function messageIdsFor(files: TeleFile[]): number[] {
+  return [...new Set(
+    files
+      .map((f) => Number(f.messageId))
+      .filter((id) => Number.isFinite(id) && id > 0),
+  )];
+}
+
+/**
+ * Permanently removing entries must also stop the orphan scan from treating
+ * their still-existing Telegram messages as unindexed files. Record local
+ * tombstones before the index commit; clear them again if the commit rolls
+ * the optimistic state back.
+ */
+async function applyDeletion(
+  channelId: string,
+  remainingFiles: TeleFile[],
+  targets: TeleFile[],
+  options: { eventType: string; eventPayload?: Record<string, unknown> },
+): Promise<void> {
+  const messageIds = messageIdsFor(targets);
+  recordDeletedMessages(channelId, messageIds);
+  try {
+    await applyOptimistic(channelId, remainingFiles, options);
+  } catch (err) {
+    const stillPresent = new Set(
+      messageIdsFor(useFileStore.getState().files),
+    );
+    clearDeletedMessages(
+      channelId,
+      messageIds.filter((id) => stillPresent.has(id)),
+    );
+    throw err;
   }
 }
 
@@ -515,7 +555,10 @@ export function useFileActions() {
       }
 
       toast.success(t("actions.delete.success"));
-      await applyOptimistic(channelId, active, { eventType: "file.deleted", eventPayload: { fileId } });
+      await applyDeletion(channelId, active, targets, {
+        eventType: "file.deleted",
+        eventPayload: { fileId },
+      });
 
       // After the index commits, asynchronously delete offline caches and
       // Telegram messages in the background. If the index save had failed,
@@ -558,7 +601,10 @@ export function useFileActions() {
       }
 
       toast.success(t("actions.emptyTrash.success", { count: trashed.length }));
-      await applyOptimistic(channelId, active, { eventType: "files.deleted", eventPayload: { count: trashed.length } });
+      await applyDeletion(channelId, active, trashed, {
+        eventType: "files.deleted",
+        eventPayload: { count: trashed.length },
+      });
 
       // After the index commits, asynchronously clear cache & delete telegram messages in background
       void (async () => {
@@ -669,7 +715,10 @@ export function useFileActions() {
       const active = files.filter((f) => !isTargetOrInFolder(f));
 
       toast.success(t("actions.bulk.deleted", { count: fileIds.length }));
-      await applyOptimistic(channelId, active, { eventType: "files.deleted", eventPayload: { count: fileIds.length } });
+      await applyDeletion(channelId, active, targets, {
+        eventType: "files.deleted",
+        eventPayload: { count: fileIds.length },
+      });
 
       // After the index commits, asynchronously clear cache & delete telegram messages in background
       void (async () => {

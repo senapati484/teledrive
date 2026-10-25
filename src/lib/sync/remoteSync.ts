@@ -10,16 +10,21 @@
  * is the only sequencing constraint — we never start polling until bootstrap
  * has set `lastIndexMsgId` to a sane value.
  *
- * FLOOD_WAIT safety: a single `client.getMessages` per poll, 5s timeout,
- * with the existing `withTelegramRetry` wrapper for backoff. At the default
- * 30s cadence we hit Telegram at most ~120×/hr per channel, well under any
- * known FLOOD_WAIT threshold.
+ * FLOOD_WAIT safety: one revision check plus at most one incremental read
+ * per poll, each with a 5s timeout. At the default 30s cadence we hit
+ * Telegram at most ~240x/hr per channel, well under any known FLOOD_WAIT
+ * threshold for channel reads.
  */
-import { loadIndexIncremental } from "../storage/metadataStore";
+import {
+  hasIndexRevisionChanged,
+  loadIndexIncremental,
+  loadIndexOutcome,
+} from "../storage/metadataStore";
 import { withTelegramRetry } from "../telegram/rateLimit";
 import { useFileStore } from "../../stores/fileStore";
 import { logEvent } from "../events";
 import { isIndexReady } from "../telegram/indexReadiness";
+import { filterDeletedMessages } from "../storage/tombstones";
 
 const POLL_INTERVAL_MS = 30_000;
 const SYNC_INDICATOR_MIN_MS = 800;
@@ -38,6 +43,28 @@ const state: CoordinatorState = {
   lastTickAt: 0,
 };
 
+function canReplaceLocalState(): boolean {
+  const queueState = useFileStore.getState().indexQueueState;
+  // Never replace a snapshot while local writes are pending or stuck: those
+  // files are intentionally optimistic and would otherwise vanish until the
+  // next successful save.
+  return queueState === "idle" || queueState === "syncing-remote";
+}
+
+async function reloadAuthoritativeSnapshot(channelId: string): Promise<boolean> {
+  const filesBefore = useFileStore.getState().files;
+  const outcome = await loadIndexOutcome(channelId);
+  if (outcome.status !== "ready") return false;
+  if (!canReplaceLocalState()) return false;
+  // A local action may have landed while the snapshot was loading. The
+  // expected-array guard makes that action win instead of being clobbered
+  // by the older remote read.
+  await useFileStore
+    .getState()
+    .setRemoteSnapshot(filterDeletedMessages(channelId, outcome.files), filesBefore);
+  return useFileStore.getState().files !== filesBefore;
+}
+
 /**
  * One poll cycle. Resolves with true if any files were merged, false if
  * nothing changed. NEVER throws — caller is the setTimeout loop and we
@@ -54,23 +81,47 @@ async function runOneTick(channelId: string): Promise<boolean> {
 
   let mergedAny = false;
   try {
-    const result = await withTelegramRetry(
-      () => loadIndexIncremental(channelId, lastMsgId),
-      "remoteSync.loadIndexIncremental",
-      3,
-    );
+    // The fast index path edits existing messages in place, so a minId
+    // cursor alone can never observe renames/trashes/deletes from another
+    // device. Check the live chunks first; when they changed, replace the
+    // local non-backup view with the authoritative index snapshot.
+    const revisionChanged = await hasIndexRevisionChanged(channelId);
+    if (revisionChanged) {
+      if (!canReplaceLocalState()) return false;
+      mergedAny = await reloadAuthoritativeSnapshot(channelId);
+      if (mergedAny) {
+        logEvent({
+          type: "sync.remoteDelta",
+          payload: { fileCount: useFileStore.getState().files.length, reason: "revision" },
+        });
+      }
+    } else {
+      const result = await withTelegramRetry(
+        () => loadIndexIncremental(channelId, lastMsgId),
+        "remoteSync.loadIndexIncremental",
+        3,
+      );
 
-    if (result.files.length > 0) {
-      await useFileStore.getState().setRemoteDelta(result.files);
-      mergedAny = true;
-      logEvent({
-        type: "sync.remoteDelta",
-        payload: { fileCount: result.files.length, highestMsgId: result.highestMsgId },
-      });
-    }
+      if (result.files.length > 0) {
+        if (!canReplaceLocalState()) return false;
+        // New chunks mean a new epoch. Reloading the complete authoritative
+        // set (instead of union-merging the slice) is what propagates
+        // deletions; an additive merge would keep removed files forever.
+        mergedAny = await reloadAuthoritativeSnapshot(channelId);
+        if (mergedAny) {
+          logEvent({
+            type: "sync.remoteDelta",
+            payload: {
+              fileCount: result.files.length,
+              highestMsgId: result.highestMsgId,
+            },
+          });
+        }
+      }
 
-    if (result.highestMsgId > lastMsgId) {
-      useFileStore.getState().setLastIndexMsgId(result.highestMsgId);
+      if (result.highestMsgId > lastMsgId) {
+        useFileStore.getState().setLastIndexMsgId(result.highestMsgId);
+      }
     }
   } catch (err) {
     // withTelegramRetry has already classified and logged; just keep the

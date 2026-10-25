@@ -25,6 +25,7 @@ import {
   clearPendingMarker,
   resolvePendingIndex,
 } from "../storage/pendingIndex";
+import { filterDeletedMessages } from "../storage/tombstones";
 import i18n from "@/i18n";
 
 /**
@@ -353,7 +354,10 @@ async function bootstrapTeleDriveInner(
       // it's still trying").
       const latestFiles = useFileStore.getState().files;
       const existingMsgIds = new Set(latestFiles.map((f) => Number(f.messageId)));
-      const newOrphans = orphans.filter((o) => !existingMsgIds.has(Number(o.messageId)));
+      const newOrphans = filterDeletedMessages(
+        channelId,
+        orphans.filter((o) => !existingMsgIds.has(Number(o.messageId))),
+      );
 
       if (newOrphans.length > 0) {
         console.log(`[bootstrap] Orphan scan: Recovering ${newOrphans.length} orphaned file(s)…`);
@@ -412,7 +416,10 @@ async function bootstrapTeleDriveInner(
         });
         // Reconcile folderPaths: if a user-moved file conflicts with a
         // recovered folder, prefer the user's path.
-        const finalState = mergeWithUserPreference(cleaned, userOnlyEntries);
+        const finalState = filterDeletedMessages(
+          channelId,
+          mergeWithUserPreference(cleaned, userOnlyEntries),
+        );
         useFileStore.getState().setFiles(finalState);
 
         // Persist the recovered entries to Telegram. We use the same

@@ -3,7 +3,9 @@ import { getClient } from "../telegram/client";
 import { TeleFile } from "../types";
 import { useFileStore } from "../../stores/fileStore";
 import { enqueueSave, getIndexQueue } from "./indexQueue";
+import { filterDeletedMessages } from "./tombstones";
 import { normalizeFolderPath } from "../utils";
+import { withTelegramRetry } from "../telegram/rateLimit";
 import {
   epochTimestamp,
   isValidManifest,
@@ -978,9 +980,10 @@ export async function loadIndexOutcome(channelId: string): Promise<IndexLoadOutc
     getIndexQueue(channelId).setKnownIndex(result.ids, result.texts, result.chunks);
   }
 
+  const visibleFiles = filterDeletedMessages(channelId, result.files);
   const files = await healAndSave(
     channelId,
-    collapseDuplicateFolders(dedupeByContentKey(dedupeByMessageId(result.files)))
+    collapseDuplicateFolders(dedupeByContentKey(dedupeByMessageId(visibleFiles)))
   );
   return { status: "ready", files, savedAt: result.savedAt };
 }
@@ -996,6 +999,64 @@ export async function loadIndexOutcome(channelId: string): Promise<IndexLoadOutc
 export async function loadIndex(channelId: string): Promise<TeleFile[]> {
   const outcome = await loadIndexOutcome(channelId);
   return outcome.files;
+}
+
+/**
+ * Detect in-place edits to the live index chunks.
+ *
+ * Fast index saves edit existing Telegram messages, so a `minId` cursor never
+ * sees them. Comparing the cached chunk text (or savedAt for legacy chunks)
+ * against one `getMessages({ ids })` call lets remote sync reload the
+ * authoritative snapshot when another device renames, trashes, or deletes.
+ */
+export async function hasIndexRevisionChanged(
+  channelId: string,
+): Promise<boolean> {
+  const known = getIndexQueue(channelId).getKnownIndexMeta();
+  if (!known || known.ids.length === 0) return false;
+
+  const client = getClient();
+  let peer: any;
+  try {
+    peer = await resolveChannelInputPeer(channelId);
+  } catch (err) {
+    console.warn("[metadataStore] index revision: resolve failed:", err);
+    return false;
+  }
+
+  let messages: any[] = [];
+  try {
+    messages = await withTimeout(
+      client.getMessages(peer, { ids: known.ids }),
+      5000,
+      "client.getMessages(index revision)",
+    );
+  } catch (err) {
+    console.warn("[metadataStore] index revision: getMessages failed:", err);
+    return false;
+  }
+
+  const byId = new Map<number, any>();
+  for (const msg of messages ?? []) {
+    const id = Number(msg?.id);
+    if (Number.isFinite(id) && id > 0) byId.set(id, msg);
+  }
+
+  for (let i = 0; i < known.ids.length; i++) {
+    const msg = byId.get(known.ids[i]);
+    if (!msg) return true; // chunk deleted / replaced by a newer epoch
+    const text = msg.text ?? msg.message;
+    const knownText = known.texts[i];
+    if (typeof knownText === "string" && knownText.length > 0) {
+      if (text !== knownText) return true;
+      continue;
+    }
+    const parsed = parseIndexMessage(msg);
+    if (!parsed) return true;
+    if (parsed.savedAt !== known.savedAt[i]) return true;
+  }
+
+  return false;
 }
 
 // ---------------------------------------------------------------------------
@@ -1172,10 +1233,15 @@ export async function deleteTelegramMessage(
   if (!messageId || messageId === 0) return;
   const client = getClient();
   const peer = await resolveChannelInputPeer(channelId);
-  await withTimeout(
-    client.deleteMessages(peer, [messageId], { revoke: true }),
-    5000,
-    "deleteMessages"
+  await withTelegramRetry(
+    () =>
+      withTimeout(
+        client.deleteMessages(peer, [messageId], { revoke: true }),
+        10_000,
+        "deleteMessages"
+      ),
+    "deleteMessages",
+    3
   );
 }
 

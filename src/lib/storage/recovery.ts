@@ -25,6 +25,7 @@ import { useFileStore } from "../../stores/fileStore";
 import { clearPendingMarker, writePendingMarker } from "./pendingIndex";
 import type { TeleFile } from "../types";
 import { invoke } from "@tauri-apps/api/core";
+import { filterDeletedMessages } from "./tombstones";
 
 const MAX_SCAN_CHUNKS = 5000;
 const MAX_SCAN_MS = 60_000;
@@ -514,6 +515,10 @@ export async function mergeIndexFromRecovery(
     }).catch(() => {});
   }
 
+  // A permanently deleted file may still have its Telegram document if the
+  // original delete failed. Recovery must not resurrect it.
+  live = filterDeletedMessages(channelId, live);
+
   const current = useFileStore.getState().files;
   const currentIds = new Set(current.map((f) => f.id));
   const currentMsgIds = new Set(
@@ -602,7 +607,9 @@ export async function replaceIndexFromRecovery(
   channelId: string,
   files: TeleFile[]
 ): Promise<RestoreResult> {
-  const { live, missing } = await verifyExistingMessages(channelId, files);
+  const verified = await verifyExistingMessages(channelId, files);
+  const { missing } = verified;
+  const live = filterDeletedMessages(channelId, verified.live);
   if (missing.length > 0) {
     await invoke("log_vault_state", {
       state: `INDEX_RECOVERY_SKIP_MISSING count=${missing.length} ids=[${missing

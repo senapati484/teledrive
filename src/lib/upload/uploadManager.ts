@@ -411,6 +411,29 @@ export async function processQueue(): Promise<void> {
 // flushIndexQueue / scheduleIndexFlush pipeline here.
 
 /**
+ * Reset a failed upload item back to `pending` and kick the queue.
+ * Keeps the original File/path reference so no re-picking is required.
+ */
+export function retryUploadItem(itemId: string): boolean {
+  const { uploadQueue, updateQueueItem } = useFileStore.getState();
+  const item = uploadQueue.find((entry) => entry.id === itemId);
+  if (!item || item.status !== "error") return false;
+
+  updateQueueItem(itemId, {
+    status: "pending",
+    progress: 0,
+    error: undefined,
+    speed: undefined,
+    eta: undefined,
+    uploadedBytes: 0,
+  });
+  setTimeout(() => {
+    void processQueue();
+  }, 50);
+  return true;
+}
+
+/**
  * Enqueues a list of files and starts the upload processing queue.
  */
 export function addFilesToUploadQueue(
