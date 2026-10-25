@@ -3,7 +3,9 @@ import { getClient } from "../telegram/client";
 import { TeleFile } from "../types";
 import { useFileStore } from "../../stores/fileStore";
 import { enqueueSave, getIndexQueue } from "./indexQueue";
+import { filterDeletedMessages } from "./tombstones";
 import { normalizeFolderPath } from "../utils";
+import { withTelegramRetry } from "../telegram/rateLimit";
 import {
   epochTimestamp,
   isValidManifest,
@@ -953,12 +955,23 @@ export type IndexLoadOutcome =
  * Incomplete: keeps the cached files untouched, marks the store incomplete, and
  * never calls heal/save. Only `replaceIndexFromRecovery` may write in this state.
  */
-export async function loadIndexOutcome(channelId: string): Promise<IndexLoadOutcome> {
+export async function loadIndexOutcome(
+  channelId: string,
+  options: { preserveReadyOnIncomplete?: boolean } = {},
+): Promise<IndexLoadOutcome> {
   const result = await discoverIndex(channelId);
   const store = useFileStore.getState();
 
   if (result.status !== "ready") {
-    store.setIndexLoadState("incomplete", result.reason);
+    // A remote-sync refresh must not downgrade a previously healthy index
+    // because of one transient network failure — that would gate every local
+    // write until a later retry succeeds.
+    const preserveReady =
+      options.preserveReadyOnIncomplete === true &&
+      store.indexLoadState === "ready";
+    if (!preserveReady) {
+      store.setIndexLoadState("incomplete", result.reason);
+    }
     console.warn(
       `INDEX_DISCOVERY_INCOMPLETE reason=${result.reason}; keeping cached files and skipping heal/save.`
     );
@@ -978,9 +991,10 @@ export async function loadIndexOutcome(channelId: string): Promise<IndexLoadOutc
     getIndexQueue(channelId).setKnownIndex(result.ids, result.texts, result.chunks);
   }
 
+  const visibleFiles = filterDeletedMessages(channelId, result.files);
   const files = await healAndSave(
     channelId,
-    collapseDuplicateFolders(dedupeByContentKey(dedupeByMessageId(result.files)))
+    collapseDuplicateFolders(dedupeByContentKey(dedupeByMessageId(visibleFiles)))
   );
   return { status: "ready", files, savedAt: result.savedAt };
 }
@@ -998,6 +1012,64 @@ export async function loadIndex(channelId: string): Promise<TeleFile[]> {
   return outcome.files;
 }
 
+/**
+ * Detect in-place edits to the live index chunks.
+ *
+ * Fast index saves edit existing Telegram messages, so a `minId` cursor never
+ * sees them. Comparing the cached chunk text (or savedAt for legacy chunks)
+ * against one `getMessages({ ids })` call lets remote sync reload the
+ * authoritative snapshot when another device renames, trashes, or deletes.
+ */
+export async function hasIndexRevisionChanged(
+  channelId: string,
+): Promise<boolean> {
+  const known = getIndexQueue(channelId).getKnownIndexMeta();
+  if (!known || known.ids.length === 0) return false;
+
+  const client = getClient();
+  let peer: any;
+  try {
+    peer = await resolveChannelInputPeer(channelId);
+  } catch (err) {
+    console.warn("[metadataStore] index revision: resolve failed:", err);
+    return false;
+  }
+
+  let messages: any[] = [];
+  try {
+    messages = await withTimeout(
+      client.getMessages(peer, { ids: known.ids }),
+      5000,
+      "client.getMessages(index revision)",
+    );
+  } catch (err) {
+    console.warn("[metadataStore] index revision: getMessages failed:", err);
+    return false;
+  }
+
+  const byId = new Map<number, any>();
+  for (const msg of messages ?? []) {
+    const id = Number(msg?.id);
+    if (Number.isFinite(id) && id > 0) byId.set(id, msg);
+  }
+
+  for (let i = 0; i < known.ids.length; i++) {
+    const msg = byId.get(known.ids[i]);
+    if (!msg) return true; // chunk deleted / replaced by a newer epoch
+    const text = msg.text ?? msg.message;
+    const knownText = known.texts[i];
+    if (typeof knownText === "string" && knownText.length > 0) {
+      if (text !== knownText) return true;
+      continue;
+    }
+    const parsed = parseIndexMessage(msg);
+    if (!parsed) return true;
+    if (parsed.savedAt !== known.savedAt[i]) return true;
+  }
+
+  return false;
+}
+
 // ---------------------------------------------------------------------------
 // loadIndexIncremental — used by the multi-device sync poller.
 // ---------------------------------------------------------------------------
@@ -1009,10 +1081,9 @@ export async function loadIndex(channelId: string): Promise<TeleFile[]> {
 // into the in-memory store via setRemoteDelta, which is read-only.
 //
 // Returns { files, highestMsgId } so the caller can update its
-// high-water mark for the next poll. When `sinceMsgId` is 0 (e.g. first
-// sync poll after bootstrap), this is equivalent to a recent-messages
-// scan; the caller should only invoke it after the bootstrap has set
-// lastIndexMsgId to a non-zero value.
+// high-water mark for the next poll. When `sinceMsgId` is 0 (a brand-new
+// or empty drive), this scans recent messages so an index created by
+// another device can still be discovered.
 //
 // Cost: 1x getMessages(peer, { minId }) per poll = 5s timeout. At the
 // default 30s poll cadence that's well under Telegram's FLOOD_WAIT
@@ -1172,10 +1243,15 @@ export async function deleteTelegramMessage(
   if (!messageId || messageId === 0) return;
   const client = getClient();
   const peer = await resolveChannelInputPeer(channelId);
-  await withTimeout(
-    client.deleteMessages(peer, [messageId], { revoke: true }),
-    5000,
-    "deleteMessages"
+  await withTelegramRetry(
+    () =>
+      withTimeout(
+        client.deleteMessages(peer, [messageId], { revoke: true }),
+        10_000,
+        "deleteMessages"
+      ),
+    "deleteMessages",
+    3
   );
 }
 

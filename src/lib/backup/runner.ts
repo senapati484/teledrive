@@ -35,7 +35,11 @@
  *     and then bails.
  */
 
-import { uploadFileToTelegram } from "../telegram/uploader";
+import { invoke } from "@tauri-apps/api/core";
+import {
+  isHashedUploadResult,
+  uploadFileToTelegram,
+} from "../telegram/uploader";
 import { useFileStore } from "@/stores/fileStore";
 import { useLicenseStore } from "@/stores/licenseStore";
 import { useAuthStore } from "@/stores/authStore";
@@ -51,6 +55,7 @@ import {
   guessMimeFromName,
   isManifestCorrupt,
   saveManifest,
+  updateEntryStats,
   type BackupManifestV2,
   type ManifestEntryV2,
   type BackupRunSummary,
@@ -90,6 +95,17 @@ const BACKUP_BREATHER_MS = 2_000;
  * exclude or shorten the source tree.
  */
 const FOLDER_PATH_MAX_LENGTH = 900;
+
+/**
+ * Files above this size are never read locally just to compare a hash.
+ * A touch on a 2 GiB+ file uploads on mtime/size change instead. Callers
+ * can override this with `RunBackupOptions.hashSizeCapBytes`.
+ */
+export const DEFAULT_HASH_SIZE_CAP_BYTES = 2 * 1024 * 1024 * 1024;
+
+async function hashLocalFile(absPath: string): Promise<string> {
+  return invoke<string>("hash_file", { path: absPath });
+}
 
 /**
  * Sleep that can be cancelled by an AbortSignal. Used by the
@@ -178,6 +194,8 @@ export interface RunBackupOptions {
   signal?: AbortSignal;
   /** Notified after each successful file upload. */
   onProgress?: (info: { uploaded: number; total: number; currentFile: string }) => void;
+  /** Skip local hashing above this size. Defaults to 2 GiB. */
+  hashSizeCapBytes?: number;
 }
 
 /**
@@ -356,6 +374,7 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
     };
   }
 
+  const hashSizeCap = opts.hashSizeCapBytes ?? DEFAULT_HASH_SIZE_CAP_BYTES;
   const diff = diffAgainstManifest(manifest, walk.files);
   const totalToUpload = diff.toUpload.length;
   let filesUploaded = 0;
@@ -397,6 +416,36 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
     }
 
     const prior = manifest.entries[file.absPath];
+
+    if (prior?.hash && file.size <= hashSizeCap) {
+      try {
+        const localHash = await hashLocalFile(file.absPath);
+        if (localHash === prior.hash) {
+          const touched = updateEntryStats(prior, {
+            mtimeMs: file.mtimeMs,
+            size: file.size,
+          });
+          await appendManifestEntry(
+            channelId,
+            manifest.generation,
+            file.absPath,
+            touched,
+          );
+          manifest = {
+            ...manifest,
+            entries: { ...manifest.entries, [file.absPath]: touched },
+          };
+          filesSkipped++;
+          continue;
+        }
+      } catch (err) {
+        console.warn(
+          `[backup.runner] hash comparison failed for ${target.fileName}; uploading:`,
+          err,
+        );
+      }
+    }
+
     if (!prior) {
       const adopted = await adoptExistingUpload(
         channelId,
@@ -427,8 +476,9 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
       }
     }
 
+    const hashUpload = file.size <= hashSizeCap;
     try {
-      const message = await uploadFileToTelegram(
+      const upload = await uploadFileToTelegram(
         channelId,
         target.fileName,
         file.size,
@@ -443,7 +493,11 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
             floodSeconds: e.floodSeconds,
           });
         },
+        hashUpload,
       );
+      const hashed = hashUpload && isHashedUploadResult(upload) ? upload : null;
+      const message = hashed ? hashed.message : upload;
+      const contentHash = hashed?.hash ?? null;
       const messageId = Number((message as { id?: unknown })?.id);
       if (!Number.isFinite(messageId) || messageId <= 0) {
         throw new Error(
@@ -463,6 +517,7 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
         messageId,
         folderPath: target.folderPath,
         uploadedAt: new Date().toISOString(),
+        ...(contentHash ? { hash: contentHash } : {}),
         ...(previousMessageIds && previousMessageIds.length > 0
           ? { previousMessageIds }
           : {}),

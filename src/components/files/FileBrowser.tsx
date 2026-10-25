@@ -308,10 +308,9 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
    * Render-layer dedup. Even though `metadataStore.healAndSave` collapses
    * duplicates on cold start, the in-memory `state.files` can still contain
    * folder duplicates between cold starts because:
-   *   - `setRemoteDelta` only calls `dedupeByMessageId` (skips folders).
-   *   - `loadIndexIncremental` doesn't call any folder-collapse helper.
-   *   - The user-visible `createFolder` path uses random ids, not the
-   *     canonical `folderIdForPath`, so a folder can exist under both ids.
+   *   - Older remote-delta merges could skip folder collapsing.
+   *   - Cached folder entries can predate the canonical `folderIdForPath`
+   *     scheme, so a folder can exist under multiple ids until healing runs.
    *
    * Without this pass, two folder entries with the same full path but
    * different ids render as two separate cards (each keyed by `folder.id`).

@@ -252,6 +252,41 @@ export async function appendManifestEntry(
 }
 
 /**
+ * Drop manifest entries whose Telegram message was permanently deleted.
+ *
+ * Without this, the next bootstrap would re-add deleted backup files from the
+ * durable manifest even though they no longer exist in the index.
+ * Returns the number of removed entries.
+ */
+export async function removeManifestEntriesByMessageIds(
+  channelId: string,
+  messageIds: Iterable<number>,
+): Promise<number> {
+  const removeIds = new Set(
+    [...messageIds].filter((id) => Number.isFinite(id) && id > 0),
+  );
+  if (removeIds.size === 0) return 0;
+
+  const manifest = await loadManifest(channelId);
+  const entries: Record<string, ManifestEntryV2> = {};
+  let removed = 0;
+  for (const [absPath, entry] of Object.entries(manifest.entries ?? {})) {
+    const superseded = (entry.previousMessageIds ?? []).some((id) =>
+      removeIds.has(Number(id)),
+    );
+    if (removeIds.has(Number(entry.messageId)) || superseded) {
+      removed++;
+      continue;
+    }
+    entries[absPath] = entry;
+  }
+  if (removed === 0) return 0;
+
+  await saveManifest(channelId, { ...manifest, entries });
+  return removed;
+}
+
+/**
  * Load v2, migrating the legacy vault manifest once per channel/session.
  * The verifier must confirm every sampled message id is live before entries
  * are adopted; otherwise the legacy value is quarantined and we start empty.
@@ -355,12 +390,33 @@ export function resetManifestStateForTests(): void {
   corruptChannels.clear();
 }
 
+/**
+ * Update only the cheap stat fields after content hashing proved a touched
+ * file is unchanged. The message id, upload time, and hash stay intact.
+ */
+export function updateEntryStats(
+  entry: ManifestEntryV2,
+  stats: { mtimeMs: number; size: number },
+): ManifestEntryV2 {
+  return {
+    ...entry,
+    mtimeMs: stats.mtimeMs,
+    size: stats.size,
+    sourceMissing: false,
+  };
+}
+
 export interface ManifestDiff {
   toUpload: { absPath: string; relPath: string; mtimeMs: number; size: number }[];
   unchanged: { absPath: string; entry: ManifestEntryV2 }[];
   missing: { absPath: string; entry: ManifestEntryV2 }[];
 }
 
+/**
+ * Fast path only. A same-mtime/same-size content change is intentionally
+ * undetected here; content hashes are consulted by the runner only when the
+ * stat pair changed. This keeps normal runs from reading every file.
+ */
 export function diffAgainstManifest(
   manifest: BackupManifestV2,
   walk: { absPath: string; relPath: string; mtimeMs: number; size: number }[],

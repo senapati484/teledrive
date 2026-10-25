@@ -9,9 +9,11 @@ import {
   ChevronDown,
   ChevronUp,
   X,
+  RefreshCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
+import { retryUploadItem } from "@/lib/upload/uploadManager";
 
 /** Format bytes to a human-readable string (KB / MB / GB). */
 function formatBytes(bytes: number): string {
@@ -182,6 +184,16 @@ export function UploadProgressPanel() {
                     </span>
                   )}
                   
+                  {item.status === "error" && (
+                    <button
+                      onClick={() => retryUploadItem(item.id)}
+                      className="text-[#0b57d0] dark:text-[#a8c7fa] hover:text-[#0842a0] dark:hover:text-[#d3e3fd] p-1 rounded cursor-pointer min-h-[28px] min-w-[28px] flex items-center justify-center"
+                      title={t("upload.retry")}
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+
                   {/* Remove button for completed/errored items */}
                   {item.status !== "uploading" && (
                     <button

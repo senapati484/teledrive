@@ -29,7 +29,7 @@ import { getStorageChannelId } from "@/lib/telegram/channelManager";
 export default function RemoteSyncOrchestrator(): null {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const indexLoadState = useFileStore((s) => s.indexLoadState);
-  const lastIndexMsgId = useFileStore((s) => s.lastIndexMsgId);
+  const bootstrapComplete = useFileStore((s) => s.bootstrapComplete);
   const intervalMinutes =
     useLicenseStore((s) => s.license?.scheduledBackupIntervalMinutes) ?? null;
 
@@ -66,7 +66,7 @@ export default function RemoteSyncOrchestrator(): null {
   // incomplete (independent reads would otherwise race an unknown base).
   // Multi-device sync is now available to ALL authenticated users.
   useEffect(() => {
-    if (!isAuthenticated || indexLoadState !== "ready") {
+    if (!isAuthenticated || indexLoadState !== "ready" || !bootstrapComplete) {
       stopRemoteSync();
       return;
     }
@@ -99,7 +99,16 @@ export default function RemoteSyncOrchestrator(): null {
       if (retryHandle) clearTimeout(retryHandle);
       stopRemoteSync();
     };
-  }, [isAuthenticated, indexLoadState, lastIndexMsgId]);
+  }, [isAuthenticated, indexLoadState, bootstrapComplete]);
+
+  // Effect 3b — resume uploads that were queued while discovery was still
+  // loading or incomplete. processQueue leaves them pending by design.
+  useEffect(() => {
+    if (!isAuthenticated || indexLoadState !== "ready" || !bootstrapComplete) return;
+    void import("@/lib/upload/uploadManager")
+      .then((mod) => mod.processQueue())
+      .catch((err) => console.warn("[RemoteSyncOrchestrator] upload resume failed:", err));
+  }, [isAuthenticated, indexLoadState, bootstrapComplete]);
 
   // Effect 4 — due checks on launch, focus, and a 5-minute heartbeat.
   // The Rust tick is only a hint; every path re-checks the manifest anchor.

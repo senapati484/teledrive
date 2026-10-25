@@ -291,6 +291,27 @@ describe("loadIndexOutcome", () => {
     expect(state.indexLoadError).toBe("not_found");
     expect(state.files.map((f) => f.id)).toEqual(["file_9"]);
   });
+
+  it("does not downgrade a ready index on a remote refresh failure", async () => {
+    useFileStore.getState().setIndexLoadState("ready");
+    installFake({ reject: "both" });
+
+    const outcome = await loadIndexOutcome("chan", {
+      preserveReadyOnIncomplete: true,
+    });
+
+    expect(outcome.status).toBe("incomplete");
+    expect(useFileStore.getState().indexLoadState).toBe("ready");
+  });
+
+  it("downgrades when the caller needs bootstrap-level accuracy", async () => {
+    useFileStore.getState().setIndexLoadState("ready");
+    installFake({ reject: "both" });
+
+    await loadIndexOutcome("chan");
+
+    expect(useFileStore.getState().indexLoadState).toBe("incomplete");
+  });
 });
 
 describe("coherent epoch selection", () => {

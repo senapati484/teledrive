@@ -13,6 +13,7 @@ import {
   isManifestCorrupt,
   loadManifest,
   recordUpload,
+  removeManifestEntriesByMessageIds,
   saveManifest,
   type ManifestEntryV2,
 } from "../manifest";
@@ -72,6 +73,39 @@ describe("manifest v2", () => {
     const loaded = await loadManifest(CHANNEL);
     expect(loaded.entries["/a"].messageId).toBe(2);
     expect(loaded.entries["/stale"]).toBeUndefined();
+  });
+
+  it("removes entries whose message ids were permanently deleted", async () => {
+    let manifest = emptyManifest(CHANNEL);
+    manifest = recordUpload(manifest, "/a.txt", {
+      mtimeMs: 1,
+      size: 10,
+      messageId: 100,
+      folderPath: "/TeleDrive Backups/Device",
+    });
+    manifest = recordUpload(manifest, "/b.txt", {
+      mtimeMs: 1,
+      size: 10,
+      messageId: 101,
+      previousMessageIds: [100],
+      folderPath: "/TeleDrive Backups/Device",
+    });
+    manifest = recordUpload(manifest, "/c.txt", {
+      mtimeMs: 1,
+      size: 10,
+      messageId: 102,
+      folderPath: "/TeleDrive Backups/Device",
+    });
+    await saveManifest(CHANNEL, manifest);
+
+    await expect(
+      removeManifestEntriesByMessageIds(CHANNEL, [100]),
+    ).resolves.toBe(2);
+
+    const loaded = await loadManifest(CHANNEL);
+    expect(loaded.entries["/a.txt"]).toBeUndefined();
+    expect(loaded.entries["/b.txt"]).toBeUndefined();
+    expect(loaded.entries["/c.txt"].messageId).toBe(102);
   });
 
   it("quarantines a corrupt base and gates that channel", async () => {

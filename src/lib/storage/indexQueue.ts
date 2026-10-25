@@ -256,6 +256,23 @@ class ChannelQueue {
     return this.known ? [...this.known.ids] : null;
   }
 
+  /**
+   * Snapshot of the writer's cached epoch, used by remote sync to detect
+   * in-place edits (which do not create a new Telegram message id).
+   */
+  getKnownIndexMeta(): {
+    ids: number[];
+    texts: string[];
+    savedAt: number[];
+  } | null {
+    if (!this.known) return null;
+    return {
+      ids: [...this.known.ids],
+      texts: [...this.known.texts],
+      savedAt: [...this.known.savedAt],
+    };
+  }
+
   /** Test-only seam so queue integrity can be tested without Telegram. */
   setCommitImplForTests(impl: ((state: TeleFile[]) => Promise<void>) | null): void {
     this.commitOverride = impl;

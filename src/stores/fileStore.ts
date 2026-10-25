@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { TeleFile, UploadItem } from "../lib/types";
 import { normalizeFolderPath } from "../lib/utils";
+import { filterDeletedMessages } from "../lib/storage/tombstones";
 
 export type IndexQueueState =
   | "idle"
@@ -97,6 +98,16 @@ interface FileState {
    * has settled. See implementation for the lazy-import reason.
    */
   setRemoteDelta: (remoteFiles: TeleFile[]) => Promise<void>;
+  /**
+   * Replace the file list with an authoritative index snapshot. Unlike
+   * `setRemoteDelta`, this can remove entries, which is how deletes and moves
+   * made on another device propagate here. `expectedFiles` guards against
+   * overwriting a local action that landed while the snapshot was loading.
+   */
+  setRemoteSnapshot: (
+    remoteFiles: TeleFile[],
+    expectedFiles?: TeleFile[],
+  ) => Promise<void>;
   /** Update the high-water mark for the multi-device sync cursor. */
   setLastIndexMsgId: (msgId: number) => void;
   /** Record the timestamp of a backup snapshot. */
@@ -264,13 +275,39 @@ export const useFileStore = create<FileState>((set, get) => ({
       "../lib/storage/metadataStore"
     );
     set((state) => {
-      const merged = collapseDuplicateFolders(dedupeByMessageId([...state.files, ...remoteFiles]));
       const channelId = state.files[0]?.channelId || remoteFiles[0]?.channelId || "";
+      const visibleRemote = filterDeletedMessages(channelId, remoteFiles);
+      const merged = collapseDuplicateFolders(dedupeByMessageId([...state.files, ...visibleRemote]));
       const { healedFiles } = reconstructMissingFolders(merged, channelId);
-      if (healedFiles.length === state.files.length) return state;
-      debouncedCacheFiles(healedFiles);
+      const visibleFiles = filterDeletedMessages(channelId, healedFiles);
+      if (visibleFiles.length === state.files.length) return state;
+      debouncedCacheFiles(visibleFiles);
       return {
-        files: healedFiles,
+        files: visibleFiles,
+        lastRemoteSyncAt: Date.now(),
+      };
+    });
+  },
+  setRemoteSnapshot: async (
+    remoteFiles: TeleFile[],
+    expectedFiles?: TeleFile[],
+  ) => {
+    const { dedupeByMessageId, collapseDuplicateFolders, reconstructMissingFolders } = await import(
+      "../lib/storage/metadataStore"
+    );
+    set((state) => {
+      if (expectedFiles && state.files !== expectedFiles) return state;
+      const channelId =
+        state.files[0]?.channelId || remoteFiles[0]?.channelId || "";
+      const visibleRemote = filterDeletedMessages(channelId, remoteFiles);
+      const merged = collapseDuplicateFolders(
+        dedupeByMessageId(visibleRemote),
+      );
+      const { healedFiles } = reconstructMissingFolders(merged, channelId);
+      const visibleFiles = filterDeletedMessages(channelId, healedFiles);
+      debouncedCacheFiles(visibleFiles);
+      return {
+        files: visibleFiles,
         lastRemoteSyncAt: Date.now(),
       };
     });

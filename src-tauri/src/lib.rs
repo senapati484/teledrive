@@ -850,6 +850,36 @@ async fn read_file_chunk(
     .map_err(|e| format!("read_file_chunk join failed: {e}"))?
 }
 
+/// Streams `path` in 512 KiB chunks and returns the lowercase hex SHA-256.
+/// Used by the backup runner to detect touch-only changes without sending
+/// the file to Telegram again.
+fn hash_file_sync(path: &Path) -> Result<String, String> {
+    use sha2::{Digest, Sha256};
+    use std::io::Read;
+
+    let mut file = std::fs::File::open(path)
+        .map_err(|e| format!("open({}) failed: {e}", path.display()))?;
+    let mut hasher = Sha256::new();
+    let mut buf = vec![0u8; 512 * 1024];
+    loop {
+        let read = file
+            .read(&mut buf)
+            .map_err(|e| format!("read({}) failed: {e}", path.display()))?;
+        if read == 0 {
+            break;
+        }
+        hasher.update(&buf[..read]);
+    }
+    Ok(format!("{:x}", hasher.finalize()))
+}
+
+#[tauri::command]
+async fn hash_file(path: String) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || hash_file_sync(Path::new(&path)))
+        .await
+        .map_err(|e| format!("hash_file join failed: {e}"))?
+}
+
 /// Native binary file writer that bypasses tauri-plugin-fs IPC quirks,
 /// capability scope limits, and Windows WebView2 payload drops.
 /// Automatically creates parent directories if needed.
@@ -1046,6 +1076,7 @@ pub fn run() {
             cancel_backup_walk,
             get_app_data_dir,
             read_file_chunk,
+            hash_file,
             write_file_binary,
             write_file_chunk,
             open_file_in_system_viewer,
@@ -1104,6 +1135,20 @@ mod tests {
         atomic_write(&path, b"payload").unwrap();
 
         assert_eq!(std::fs::read_to_string(&path).unwrap(), "payload");
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn hash_file_matches_known_sha256_vector() {
+        let dir = temp_path("hash");
+        let path = dir.join("abc.txt");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(&path, b"abc").unwrap();
+
+        assert_eq!(
+            hash_file_sync(&path).unwrap(),
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        );
         std::fs::remove_dir_all(&dir).unwrap();
     }
 

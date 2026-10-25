@@ -82,7 +82,8 @@
     "collapse": "Collapse",
     "close": "Close",
     "queued": "Queued",
-    "uploading": "Uploading..."
+    "uploading": "Uploading...",
+    "retry": "Retry upload"
   },
   "backup": {
     "scanning": "Scanning folders…",
