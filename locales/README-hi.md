@@ -11,13 +11,22 @@
 
 [![कुल डाउनलोड](https://img.shields.io/sourceforge/dt/teledrive?style=flat-square&logo=sourceforge&logoColor=white)](https://sourceforge.net/projects/teledrive/files/)
 [![नवीनतम रिलीज़](https://img.shields.io/badge/रिलीज़-v0.1.2-2082f7.svg?style=flat-square)](https://sourceforge.net/projects/teledrive/files/v0.1.2/)
+[![Product Hunt](https://img.shields.io/badge/Product%20Hunt-Featured-FF6154.svg?style=flat-square&logo=producthunt&logoColor=white)](https://www.producthunt.com/products/teledrive-3)
 [![YouTube डेमो](https://img.shields.io/badge/YouTube-वीडियो%20डेमो-red.svg?style=flat-square&logo=youtube&logoColor=white)](https://youtu.be/4AiMn7HSlFg)
 [![लाइसेंस: GPL v3](https://img.shields.io/badge/लाइसेंस-GPLv3-gray.svg?style=flat-square)](../LICENSE)
 [![GitHub स्टार्स](https://img.shields.io/github/stars/senapati484/teledrive?style=flat-square&logo=github)](https://github.com/senapati484/teledrive/stargazers)
 [![Tauri v2](https://img.shields.io/badge/Tauri-v2-FFC131.svg?style=flat-square&logo=tauri&logoColor=black)](https://tauri.app/)
 [![React 19](https://img.shields.io/badge/React-19-61dafb.svg?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
 
-[**वेबसाइट**](https://teledrive.space) • [**डाउनलोड**](#-डाउनलोड) • [**वीडियो डेमो**](#-वीडियो-वॉकथ्रू-और-डेमो) • [**बग रिपोर्ट करें**](https://github.com/senapati484/teledrive/issues/new/choose) • [**सुविधा का अनुरोध करें**](https://github.com/senapati484/teledrive/issues/new/choose)
+<br/>
+
+<a href="https://www.producthunt.com/products/teledrive-3?utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-teledrive-3" target="_blank">
+  <img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1293880&theme=light" alt="TeleDrive - Unlimited Telegram cloud drive across 5 platforms. | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" />
+</a>
+
+<br/><br/>
+
+[**वेबसाइट**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**डाउनलोड**](#-डाउनलोड) • [**बीटा टेस्टिंग पोल 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**वीडियो डेमो**](#-वीडियो-वॉकथ्रू-और-डेमो) • [**बग रिपोर्ट करें**](https://github.com/senapati484/teledrive/issues/new/choose) • [**सुविधा का अनुरोध करें**](https://github.com/senapati484/teledrive/issues/new/choose)
 
 </div>
 
