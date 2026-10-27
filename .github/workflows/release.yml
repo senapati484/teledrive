@@ -130,7 +130,7 @@ jobs:
           ls -lh staging/
 
       - name: Upload platform deliverables
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: deliverables-${{ matrix.os_name }}
           path: staging/*
@@ -238,7 +238,7 @@ jobs:
           ls -lh staging/
 
       - name: Upload Android deliverables
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: deliverables-android
           path: staging/*
@@ -352,7 +352,7 @@ jobs:
           ls -lh staging/
 
       - name: Upload iOS deliverables
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: deliverables-ios
           path: staging/*
@@ -424,7 +424,7 @@ jobs:
           echo "========================================================"
 
       - name: Upload Complete Distribution Bundle Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: teledrive-${{ env.TAG }}-distribution
           path: |
