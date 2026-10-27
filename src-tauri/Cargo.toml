@@ -32,7 +32,7 @@ tauri-plugin-fs = "2.7.1"
 tauri-plugin-shell = "2.5.0"
 tauri-plugin-process = "2.4.0"
 argon2 = "0.5.3"
-sha2 = "0.10"
+sha2 = "0.11"
 tokio = { version = "1", features = ["sync", "time"] }
 
 [profile.release]
