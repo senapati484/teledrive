@@ -104,11 +104,17 @@ jobs:
           chmod +x gradlew
           ./gradlew --version
 
-      - name: Build Android APK (debug)
-        run: npx tauri android build --apk --ci --debug
-
-      - name: Build Android APK (release)
-        run: npx tauri android build --apk --ci
+      - name: Build Android APK
+        run: |
+          BUILD_TYPE="${{ github.event.inputs.build_type }}"
+          if [ -z "$BUILD_TYPE" ]; then
+            BUILD_TYPE="release"
+          fi
+          if [ "$BUILD_TYPE" = "debug" ]; then
+            npx tauri android build --apk --ci --debug
+          else
+            npx tauri android build --apk --ci
+          fi
 
       - name: Organize APK deliverables
         run: |
@@ -128,6 +134,16 @@ jobs:
               cp "$f" "release-dist/apk/teledrive-v${VERSION}-universal-debug.apk"
             fi
           done
+          if [ ! -f "distribution/v${VERSION}/teledrive.apk" ]; then
+            FIRST_APK=$(find release-dist/apk -type f -name "*.apk" | head -n 1)
+            if [ -n "$FIRST_APK" ]; then
+              cp "$FIRST_APK" "distribution/v${VERSION}/teledrive.apk"
+              echo "✓ Staged $FIRST_APK as distribution/v${VERSION}/teledrive.apk"
+            else
+              echo "::error::No APK was generated"
+              exit 1
+            fi
+          fi
           ls -lh release-dist/apk/
 
       - name: Upload Android APK artifact
