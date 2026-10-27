@@ -11,14 +11,30 @@ updates:
       security:
         applies-to: security-updates
         patterns: ["*"]
+      tauri-plugins:
+        patterns: ["@tauri-apps/*"]
+        update-types: ["minor", "patch"]
       dev-dependencies:
         applies-to: version-updates
         dependency-type: development
         update-types: ["minor", "patch"]
-      production-patch:
+      production-minor-patch:
         applies-to: version-updates
         dependency-type: production
-        update-types: ["patch"]
+        update-types: ["minor", "patch"]
+    ignore:
+      # Major bumps of the build toolchain break the release pipeline; do these
+      # manually with a full cross-platform build.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
+      - dependency-name: vite
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@vitejs/plugin-react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: react
+        update-types: ["version-update:semver-major"]
+      - dependency-name: react-dom
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: cargo
     directory: "/src-tauri"
@@ -27,11 +43,19 @@ updates:
       day: monday
     open-pull-requests-limit: 5
     groups:
-      cargo-patch:
-        applies-to: version-updates
-        update-types: ["patch"]
+      tauri-plugins:
+        patterns: ["tauri-plugin-*"]
+        update-types: ["minor", "patch"]
+      cargo-minor-patch:
+        update-types: ["minor", "patch"]
+    ignore:
+      - dependency-name: tauri
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
       interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]

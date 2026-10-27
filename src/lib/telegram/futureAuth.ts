@@ -78,15 +78,16 @@ export function saveFutureAuthToken(token: any): Promise<void> {
 /** Loads tokens in the Buffer form expected by CodeSettings.logoutTokens. */
 export async function loadLogoutTokens(): Promise<Buffer[]> {
   const tokens = await readTokens();
-  return tokens
-    .map((t) => {
-      try {
-        return Buffer.from(t, "base64");
-      } catch {
-        return null;
-      }
-    })
-    .filter((t): t is Buffer => !!t && t.length > 0);
+  const result: Buffer[] = [];
+  for (const t of tokens) {
+    try {
+      const buf = Buffer.from(t, "base64");
+      if (buf.length > 0) result.push(buf);
+    } catch {
+      // Skip malformed tokens.
+    }
+  }
+  return result;
 }
 
 export function clearFutureAuthTokens(): Promise<void> {

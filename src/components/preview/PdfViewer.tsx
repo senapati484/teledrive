@@ -498,7 +498,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
   const handlePrint = useCallback(() => {
     if (!data) return;
     try {
-      const blob = new Blob([data], { type: "application/pdf" });
+      const blob = new Blob([new Uint8Array(data)], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       const iframe = document.createElement("iframe");
       iframe.style.display = "none";
