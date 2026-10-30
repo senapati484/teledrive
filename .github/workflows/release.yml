@@ -70,6 +70,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Run test suite
+        run: npm test
+
       - name: Build frontend
         run: npm run build
 
@@ -200,6 +203,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Run test suite
+        run: npm test
 
       - name: Build frontend
         run: npm run build

@@ -1,5 +1,11 @@
 import type { TeleFile } from "../types";
 
+function pathHasGitSegment(path: string): boolean {
+  return path
+    .split(/[\\/]+/)
+    .some((segment) => segment === ".git");
+}
+
 /**
  * Checks whether a file or directory entry represents system or version-control junk
  * (e.g. .DS_Store, Git internal object hashes, hook samples, plumbing files)
@@ -14,11 +20,12 @@ export function isJunkFile(
   const folderPath = (file.folderPath || "").trim();
 
   if (isFolder) {
-    return name === ".git" || folderPath.includes("/.git");
+    return name === ".git" || pathHasGitSegment(folderPath);
   }
 
-  // 1. Files inside .git directories
-  if (folderPath.includes("/.git") || folderPath === ".git" || folderPath.startsWith("/.git")) {
+  // 1. Files inside .git directories (exact path segment, so `.github` and
+  // `.gitlab` are NOT mistaken for version-control internals).
+  if (pathHasGitSegment(folderPath)) {
     return true;
   }
 

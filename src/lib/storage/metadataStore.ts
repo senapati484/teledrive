@@ -1,4 +1,6 @@
 import { Api } from "telegram";
+import { sha256 } from "@noble/hashes/sha256";
+import { bytesToHex } from "@noble/hashes/utils";
 import { getClient } from "../telegram/client";
 import { TeleFile } from "../types";
 import { useFileStore } from "../../stores/fileStore";
@@ -32,13 +34,12 @@ import {
  */
 export function folderIdForPath(fullPath: string): string {
   const normalized = fullPath === "/" ? "/" : fullPath.replace(/\/+$/, "");
-  // btoa is available in WebView; full Unicode → percent-encode first.
-  const encoded = btoa(
-    encodeURIComponent(normalized).replace(/%([0-9A-F]{2})/g, (_, h) =>
-      String.fromCharCode(parseInt(h, 16))
-    )
-  );
-  return `folder_${encoded.slice(0, 48)}`;
+  // Hash the FULL path. The previous base64-truncation scheme kept only the
+  // first 36 bytes, so any folder tree deeper than that (e.g. backup device
+  // folders) collapsed to a single shared id and id-based actions modified
+  // unrelated folders. A 128-bit slice of SHA-256 makes collisions infeasible.
+  const digest = bytesToHex(sha256(new TextEncoder().encode(normalized)));
+  return `folder_${digest.slice(0, 32)}`;
 }
 
 /**
@@ -95,37 +96,66 @@ export function dedupeByMessageId(files: TeleFile[]): TeleFile[] {
  * Folders are skipped — folder dedup is owned by `collapseDuplicateFolders`
  * (it needs the parent path, which `name` alone doesn't carry).
  */
+const RETRY_DEDUPE_WINDOW_MS = 15 * 60 * 1000;
+
+function preferNewerFile(a: TeleFile, b: TeleFile): TeleFile {
+  // Last-write-wins; tie-break by larger messageId (newer Telegram msg).
+  return b.uploadedAt > a.uploadedAt
+    ? b
+    : b.uploadedAt < a.uploadedAt
+    ? a
+    : b.messageId > a.messageId
+    ? b
+    : a;
+}
+
+/**
+ * A same-name/same-size pair is only collapsed when we can prove it is the
+ * same logical upload. Identical content hashes are proof. Otherwise we only
+ * collapse the retry-orphan case: one entry is a `recovered_*` placeholder for
+ * a lost upload response and the other is the normal entry created by the
+ * retry, uploaded within a short window.
+ *
+ * The old key-only scheme treated any two distinct files with the same name
+ * and size in the same folder as duplicates and persisted the reduced list,
+ * silently deleting a real file.
+ */
+function isSameLogicalUpload(a: TeleFile, b: TeleFile): boolean {
+  if (a.hash && b.hash) return a.hash === b.hash;
+  const aRecovered = a.id.startsWith("recovered_");
+  const bRecovered = b.id.startsWith("recovered_");
+  if (aRecovered === bRecovered) return false;
+  return Math.abs((a.uploadedAt || 0) - (b.uploadedAt || 0)) <= RETRY_DEDUPE_WINDOW_MS;
+}
+
 export function dedupeByContentKey(files: TeleFile[]): TeleFile[] {
-  const byContentKey = new Map<string, TeleFile>();
+  const byContentKey = new Map<string, TeleFile[]>();
   const folders: TeleFile[] = [];
   for (const f of files) {
     if (!f.messageId || f.messageId === 0 || isFolderMime(f.mime)) {
       folders.push(f);
       continue;
     }
-    // Use the FOLDER PATH the file lives in (not getFolderFullPath — that's
-    // for folders). Two files in the same folder with the same name and size
-    // are still considered duplicates here: this collapses backup retries
-    // and concurrent uploads of the same source file.
     const parent = !f.folderPath || f.folderPath === "/" ? "" : f.folderPath.replace(/\/+$/, "");
     const key = `${parent}::${f.name}::${f.size}`;
-    const existing = byContentKey.get(key);
-    if (!existing) {
-      byContentKey.set(key, f);
-      continue;
-    }
-    // Last-write-wins; tie-break by larger messageId (newer Telegram msg).
-    const newer =
-      f.uploadedAt > existing.uploadedAt
-        ? f
-        : f.uploadedAt < existing.uploadedAt
-        ? existing
-        : f.messageId > existing.messageId
-        ? f
-        : existing;
-    byContentKey.set(key, newer);
+    const group = byContentKey.get(key);
+    if (group) group.push(f);
+    else byContentKey.set(key, [f]);
   }
-  return [...folders, ...byContentKey.values()];
+
+  const result: TeleFile[] = [...folders];
+  for (const group of byContentKey.values()) {
+    const kept: TeleFile[] = [];
+    for (const candidate of group) {
+      const duplicateIndex = kept.findIndex((existing) =>
+        isSameLogicalUpload(existing, candidate)
+      );
+      if (duplicateIndex === -1) kept.push(candidate);
+      else kept[duplicateIndex] = preferNewerFile(kept[duplicateIndex], candidate);
+    }
+    result.push(...kept);
+  }
+  return result;
 }
 
 /**

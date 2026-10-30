@@ -23,7 +23,8 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self' tauri: localhost: http://localhost:1420 http://127.0.0.1:1420; script-src 'self' 'unsafe-eval' 'unsafe-inline' localhost: https://checkout.razorpay.com; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://*.telegram.org; media-src 'self' blob: data: https://*.telegram.org; connect-src 'self' wss://*.telegram.org https://*.telegram.org ws://localhost:1420 ws://127.0.0.1:1420 http://localhost:1420 http://127.0.0.1:1420 http://localhost:3000 http://127.0.0.1:3000 https://api.razorpay.com https://lumberjack.razorpay.com;"
+      "csp": "default-src 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' blob: data: https://*.telegram.org; media-src 'self' blob: data: https://*.telegram.org; connect-src 'self' wss://*.telegram.org https://*.telegram.org; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
+      "devCsp": "default-src 'self' tauri: localhost: http://localhost:1420 http://127.0.0.1:1420; script-src 'self' 'unsafe-eval' 'unsafe-inline' localhost:; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' blob: data: https://*.telegram.org; media-src 'self' blob: data: https://*.telegram.org; connect-src 'self' wss://*.telegram.org https://*.telegram.org ws://localhost:1420 ws://127.0.0.1:1420 http://localhost:1420 http://127.0.0.1:1420;"
     }
   },
   "bundle": {

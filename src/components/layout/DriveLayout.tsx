@@ -929,6 +929,7 @@ export default function DriveLayout() {
       <FilePreviewModal
         file={previewFile}
         initialEditMode={previewInitialEditMode}
+        onFileUpdate={(updated) => setPreviewFile(updated)}
         onClose={() => {
           setPreviewFile(null);
           setPreviewInitialEditMode(false);

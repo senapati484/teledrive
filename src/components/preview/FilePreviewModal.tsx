@@ -177,13 +177,22 @@ interface Props {
   file: TeleFile | null;
   initialEditMode?: boolean;
   onClose: () => void;
+  onFileUpdate?: (updated: TeleFile) => void;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────
 
-export function FilePreviewModal({ file, initialEditMode = false, onClose }: Props) {
+export function FilePreviewModal({ file, initialEditMode = false, onClose, onFileUpdate }: Props) {
   const { t } = useTranslation("preview");
   const isDark = useDarkMode();
+
+  const [activeFile, setActiveFile] = useState<TeleFile | null>(file);
+
+  useEffect(() => {
+    setActiveFile(file);
+  }, [file]);
+
+  const currentFile = activeFile ?? file;
 
   // ── Download / load state ────────────────────────────────────────────────
   const [loading, setLoading]         = useState(false);
@@ -249,15 +258,16 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
   // Video autohide controls effect
   const lastActiveRef = useRef<number>(Date.now());
   useEffect(() => {
-    if (!file || !file.mime.startsWith("video/")) return;
+    if (!currentFile || !currentFile.mime.startsWith("video/")) return;
     const handleMouseMove = () => {
       setShowVideoControls(true);
       lastActiveRef.current = Date.now();
     };
+    const handleMouseLeave = () => setShowVideoControls(false);
     const container = videoContainerRef.current;
     if (container) {
       container.addEventListener("mousemove", handleMouseMove);
-      container.addEventListener("mouseleave", () => setShowVideoControls(false));
+      container.addEventListener("mouseleave", handleMouseLeave);
     }
     const interval = setInterval(() => {
       if (Date.now() - lastActiveRef.current > 2000 && isVideoPlaying) {
@@ -268,10 +278,11 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
     return () => {
       if (container) {
         container.removeEventListener("mousemove", handleMouseMove);
+        container.removeEventListener("mouseleave", handleMouseLeave);
       }
       clearInterval(interval);
     };
-  }, [file, isVideoPlaying]);
+  }, [currentFile, isVideoPlaying]);
 
   // Video fullscreen handler
   const handleVideoFullscreen = useCallback(() => {
@@ -880,15 +891,15 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
 
   // ── Handlers (memoized) ──────────────────────────────────────────────────
   const handleDownload = useCallback(() => {
-    if (file) {
-      downloadFileFromTelegram(file.channelId, file.messageId, file.name).catch((err) => {
+    if (currentFile) {
+      downloadFileFromTelegram(currentFile.channelId, currentFile.messageId, currentFile.name).catch((err) => {
         console.error("Download failed:", err);
       });
     }
-  }, [file]);
+  }, [currentFile]);
 
   const handleOpenInSystemApp = useCallback(async () => {
-    if (!file) return;
+    if (!currentFile) return;
     try {
       const { appLocalDataDir, join } = await import("@tauri-apps/api/path");
       const { openPath } = await import("@tauri-apps/plugin-opener");
@@ -896,8 +907,8 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
       const { readOfflineCache, isCachedOffline } = await import("@/lib/storage/offlineStorage");
 
       const cacheDir = await appLocalDataDir();
-      const safeName = file.name.replace(/[/\\?%*:|"<>]/g, "_").trim() || "document.bin";
-      const tempFilePath = await join(cacheDir, `temp_${file.id}_${safeName}`);
+      const safeName = currentFile.name.replace(/[/\\?%*:|"<>]/g, "_").trim() || "document.bin";
+      const tempFilePath = await join(cacheDir, `temp_${currentFile.id}_${safeName}`);
 
       let fileReady = false;
       try {
@@ -906,17 +917,17 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
         fileReady = false;
       }
 
-      if (!fileReady) {
+      if (!fileReady || fileBufferRef.current) {
         if (fileBufferRef.current) {
           await saveBinaryFile(tempFilePath, fileBufferRef.current);
         } else if (pdfBufferRef.current) {
           await saveBinaryFile(tempFilePath, pdfBufferRef.current);
-        } else if (file.offline && (await isCachedOffline(file.id))) {
-          const offlineBuf = await readOfflineCache(file.id);
+        } else if (currentFile.offline && (await isCachedOffline(currentFile.id))) {
+          const offlineBuf = await readOfflineCache(currentFile.id);
           await saveBinaryFile(tempFilePath, offlineBuf);
         } else {
           toast.info(t("toast.preparingSystemViewer"));
-          const buf = await downloadFileToBuffer(file.channelId, file.messageId);
+          const buf = await downloadFileToBuffer(currentFile.channelId, currentFile.messageId);
           await saveBinaryFile(tempFilePath, buf);
         }
       }
@@ -932,9 +943,9 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
     } catch (err: any) {
       console.error("Failed to open document in system app:", err);
       toast.error(t("toast.systemViewerFailed"));
-      downloadFileFromTelegram(file.channelId, file.messageId, file.name).catch(() => {});
+      downloadFileFromTelegram(currentFile.channelId, currentFile.messageId, currentFile.name).catch(() => {});
     }
-  }, [file, t]);
+  }, [currentFile, t]);
 
   const handleEnterEdit = useCallback(() => {
     setEditContent(textContent ?? "");
@@ -948,8 +959,26 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
     setSaveStatus("idle");
   }, []);
 
+  // Escape key handler: exit edit mode or close preview modal
+  useEffect(() => {
+    if (!currentFile) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+        if (isEditMode) {
+          handleCancelEdit();
+        } else {
+          onClose();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [currentFile, isEditMode, handleCancelEdit, onClose]);
+
   const handleSave = useCallback(async () => {
-    if (!file || isSaving) return;
+    if (!currentFile || isSaving) return;
     setIsSaving(true); setSaveStatus("saving");
 
     let optimisticFiles: TeleFile[] | null = null;
@@ -957,15 +986,15 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
 
     try {
       const bytes = new TextEncoder().encode(editContent);
-      const newFile = new File([bytes], file.name, { type: file.mime });
+      const newFile = new File([bytes], currentFile.name, { type: currentFile.mime });
 
       // 1) Upload the new bytes to Telegram.
       const message = await uploadFileToTelegram(
-        file.channelId, file.name, bytes.length, newFile, file.folderPath ?? "/", () => {}
+        currentFile.channelId, currentFile.name, bytes.length, newFile, currentFile.folderPath ?? "/", () => {}
       );
 
       const updated: TeleFile = {
-        ...file,
+        ...currentFile,
         messageId: message.id,
         size: bytes.length,
         uploadedAt: Date.now(),
@@ -975,7 +1004,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
       //    Push a snapshot BEFORE mutating so we can roll back on hard error.
       optimisticFiles = useFileStore
         .getState()
-        .files.map((f) => (f.id === file.id ? updated : f));
+        .files.map((f) => (f.id === currentFile.id ? updated : f));
       useFileStore.getState().pushSnapshot();
       pushedSnapshot = true;
       useFileStore.getState().setFiles(optimisticFiles);
@@ -983,7 +1012,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
       // 3) Persist through the shared IndexQueue. Transient errors (FLOOD_WAIT,
       //    timeout, network) are swallowed by the queue and retried — we keep
       //    the optimistic UI. Hard errors reject; we roll back below.
-      await enqueueSave(file.channelId, optimisticFiles);
+      await enqueueSave(currentFile.channelId, optimisticFiles);
       // Commit succeeded — discard the snapshot.
       useFileStore.getState().popSnapshot();
       pushedSnapshot = false;
@@ -991,17 +1020,22 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
       // 4) Fire-and-forget delete of the old Telegram message. We do this
       //    AFTER the index commit so a slow delete doesn't block the UI,
       //    and a failure here doesn't roll back the index update.
-      if (file.messageId && file.messageId !== message.id) {
-        deleteTelegramMessage(file.channelId, file.messageId).catch((err) => {
+      if (currentFile.messageId && currentFile.messageId !== message.id) {
+        deleteTelegramMessage(currentFile.channelId, currentFile.messageId).catch((err) => {
           console.warn(
-            `[FilePreviewModal] Could not delete old message ${file.messageId} for "${file.name}":`,
+            `[FilePreviewModal] Could not delete old message ${currentFile.messageId} for "${currentFile.name}":`,
             err?.message || err
           );
         });
       }
 
+      // 5) Refresh current active file reference, buffer, parent layout, and view state
+      setActiveFile(updated);
+      onFileUpdate?.(updated);
+      fileBufferRef.current = bytes;
+
       setTextContent(editContent);
-      if (file.name.endsWith(".md")) {
+      if (currentFile.name.endsWith(".md")) {
         setMarkdownHtml(sanitizeHtml(await marked.parse(editContent)));
       } else {
         setMarkdownHtml(null);
@@ -1010,7 +1044,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
       setIsEditMode(false);
       setEditContent("");
       setSaveStatus("saved");
-      toast.success(t("toast.saved", { name: file.name }));
+      toast.success(t("toast.saved", { name: currentFile.name }));
     } catch (err: any) {
       // Hard error path: roll back the optimistic files array.
       if (pushedSnapshot) {
@@ -1020,7 +1054,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
           // No snapshot — revert by re-applying the old entry.
           const rolled = useFileStore
             .getState()
-            .files.map((f) => (f.id === file.id ? file : f));
+            .files.map((f) => (f.id === currentFile.id ? currentFile : f));
           useFileStore.getState().setFiles(rolled);
         }
       }
@@ -1029,7 +1063,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
     } finally {
       setIsSaving(false);
     }
-  }, [file, editContent, isSaving, t]);
+  }, [currentFile, editContent, isSaving, t, onFileUpdate]);
 
   // ── O2 Code Editor integration ──────────────────────────────────────────
   const handleOpenInO2 = useCallback(async () => {
@@ -1084,9 +1118,9 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
   }, [isEditMode, editContent, textContent, t]);
 
   // ── Derived state ─────────────────────────────────────────────────────────
-  const langInfo        = detectLang(file?.name ?? "");
-  const ext             = file?.name.split(".").pop()?.toLowerCase() ?? "";
-  const mimeLower       = (file?.mime || "").toLowerCase();
+  const langInfo        = detectLang(currentFile?.name ?? "");
+  const ext             = currentFile?.name.split(".").pop()?.toLowerCase() ?? "";
+  const mimeLower       = (currentFile?.mime || "").toLowerCase();
   const isSvg           = ext === "svg" || (mimeLower === "image/svg+xml");
   const isImage         = (mimeLower.startsWith("image/") || IMAGE_EXTS.has(ext)) && !isSvg;
   const isVideo         = mimeLower.startsWith("video/") || VIDEO_EXTS.has(ext);
@@ -1103,7 +1137,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
   const isTableView       = isTableData && csvViewMode === "table" && !isEditMode;
   const isSvgImageView    = isSvg && svgViewMode === "image" && !isEditMode;
   const isCode            = textContent !== null && !isMarkdownPreview && !isTableView && !isSvgImageView;
-  const canEdit           = Boolean(file && isEditableFile(file) && !loading && !error && textContent !== null);
+  const canEdit           = Boolean(currentFile && isEditableFile(currentFile) && !loading && !error && textContent !== null);
   const canRunInO2        = textContent !== null && !loading && !error && O2_LANG_MAP[langInfo.hljsLang] !== undefined;
 
   const statusParts: string[] = [];
@@ -1127,11 +1161,15 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
   statusParts.push("UTF-8");
   if (isEditMode) statusParts.push(t("status.cursor", { line: cursorPos.line, col: cursorPos.col }));
 
-  if (!file) return null;
+  if (!file || !currentFile) return null;
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={currentFile.name}
+      id="file-preview-modal"
       className="fixed inset-0 z-50 flex flex-col animate-in fade-in duration-150"
       style={{ background: colors.bg, color: colors.text }}
     >
@@ -1146,12 +1184,12 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
       >
         {/* Left: icon + name + badges */}
         <div className="flex items-center gap-2 min-w-0 flex-1 pr-4">
-          <FileTypeIcon mime={file.mime} name={file.name} />
+          <FileTypeIcon mime={currentFile.mime} name={currentFile.name} />
           <span
             className="text-[13px] font-semibold truncate tracking-tight"
             style={{ color: colors.text }}
           >
-            {file.name}
+            {currentFile.name}
           </span>
 
           {langInfo.displayName && !isImage && !isVideo && !isAudio && !isPdf && (
@@ -1689,7 +1727,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     <div className="p-4 flex flex-col gap-4 overflow-y-auto text-[12px]">
                       <div>
                         <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">{t("details.name")}</div>
-                        <div className="font-semibold break-all text-slate-700 dark:text-slate-300">{file.name}</div>
+                        <div className="font-semibold break-all text-slate-700 dark:text-slate-300">{currentFile.name}</div>
                       </div>
                       <div>
                         <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">{t("details.dimensions")}</div>
@@ -1699,20 +1737,20 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                       </div>
                       <div>
                         <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">{t("details.fileSize")}</div>
-                        <div className="font-semibold text-slate-700 dark:text-slate-300">{formatSize(file.size)}</div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-300">{formatSize(currentFile.size)}</div>
                       </div>
                       <div>
                         <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">{t("details.mimeType")}</div>
-                        <div className="font-mono text-slate-750 dark:text-slate-400">{file.mime}</div>
+                        <div className="font-mono text-slate-750 dark:text-slate-400">{currentFile.mime}</div>
                       </div>
                       <div>
                         <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">{t("details.path")}</div>
-                        <div className="font-semibold text-slate-700 dark:text-slate-300 font-mono text-[11px] bg-slate-100 dark:bg-[#161719] px-1.5 py-0.5 rounded border border-slate-200/50 dark:border-white/[0.04] inline-block">{file.folderPath}</div>
+                        <div className="font-semibold text-slate-700 dark:text-slate-300 font-mono text-[11px] bg-slate-100 dark:bg-[#161719] px-1.5 py-0.5 rounded border border-slate-200/50 dark:border-white/[0.04] inline-block">{currentFile.folderPath}</div>
                       </div>
                       <div>
                         <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-1">{t("details.uploadedAt")}</div>
                         <div className="font-semibold text-slate-700 dark:text-slate-300">
-                          {new Date(file.uploadedAt).toLocaleString(i18n.language)}
+                          {new Date(currentFile.uploadedAt).toLocaleString(i18n.language)}
                         </div>
                       </div>
                     </div>
@@ -2184,14 +2222,14 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     <FolderArchive className="h-8 w-8" />
                   </div>
                   <h3 className="text-base font-bold mb-1 truncate max-w-full" style={{ color: colors.text }}>
-                    {file.name}
+                    {currentFile.name}
                   </h3>
                   <div className="flex items-center gap-2 mb-4">
                     <span className="text-[11px] font-mono px-2 py-0.5 rounded-md font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400">
                       {t("archive.badge", { ext: ext.toUpperCase() })}
                     </span>
                     <span className="text-[11px] font-mono" style={{ color: colors.muted }}>
-                      {formatSize(file.size)}
+                      {formatSize(currentFile.size)}
                     </span>
                   </div>
                   <p className="text-xs leading-relaxed mb-6" style={{ color: colors.muted }}>
@@ -2231,14 +2269,14 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose }: Pro
                     <FallbackIcon className="h-8 w-8" strokeWidth={1.5} />
                   </div>
                   <h3 className="text-base font-bold mb-1 truncate max-w-full" style={{ color: colors.text }}>
-                    {file.name}
+                    {currentFile.name}
                   </h3>
                   <div className="flex items-center gap-2 mb-4">
                     <code className="text-[11px] font-mono px-2 py-0.5 rounded-md font-semibold" style={{ background: colors.badgeBg, color: colors.badgeText }}>
-                      {file.mime || "application/octet-stream"}
+                      {currentFile.mime || "application/octet-stream"}
                     </code>
                     <span className="text-[11px] font-mono" style={{ color: colors.muted }}>
-                      {formatSize(file.size)}
+                      {formatSize(currentFile.size)}
                     </span>
                   </div>
                   <p className="text-xs leading-relaxed mb-6" style={{ color: colors.muted }}>

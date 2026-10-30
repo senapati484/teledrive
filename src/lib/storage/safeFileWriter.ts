@@ -55,6 +55,7 @@ export async function saveBinaryFile(
         path: filePath,
         data: Array.from(chunk),
         append: !isFirstChunk,
+        done: end >= bytes.byteLength,
       });
 
       isFirstChunk = false;
