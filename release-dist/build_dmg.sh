@@ -10,6 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 APP_VERSION=$(node -p "require('$PROJECT_DIR/package.json').version" 2>/dev/null || echo "0.1.2")
 SRC_APP="$PROJECT_DIR/src-tauri/target/release/bundle/macos/TeleDrive.app"
+DIST_DIR="$PROJECT_DIR/release-dist"
 DIST_VER_DIR="$PROJECT_DIR/distribution/v$APP_VERSION"
 OUTPUT_DMG="$DIST_VER_DIR/teledrive.dmg"
 BUNDLE_DMG="$PROJECT_DIR/src-tauri/target/release/bundle/dmg/teledrive.dmg"

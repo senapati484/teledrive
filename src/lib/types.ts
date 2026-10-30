@@ -7,6 +7,8 @@ export interface TeleFile {
   messageId: number;
   channelId: string;
   uploadedAt: number;
+  /** SHA-256 of the file contents when the uploader computed one. */
+  hash?: string;
   starred?: boolean;
   trashed?: boolean;
   archived?: boolean;

@@ -63,14 +63,14 @@ interface EpochCandidate {
 }
 
 function contentKey(file: TeleFile): string {
+  const parent = normalizeFolderPath(file.folderPath || "/");
+  const parentKey = parent === "/" ? "" : parent.replace(/\/+$/, "");
   if (file.mime === "inode/directory" || file.mime === "application/x-directory") {
-    return `folder:${file.folderPath ?? ""}`;
+    // Folders need their own name too: two sibling folders under the same
+    // parent are distinct and must not collapse into one another.
+    return `folder:${parentKey}/${file.name}`;
   }
-  const parent =
-    !file.folderPath || file.folderPath === "/"
-      ? ""
-      : file.folderPath.replace(/\/+$/, "");
-  return `${parent}::${file.name}::${file.size}`;
+  return `${parentKey}::${file.name}::${file.size}`;
 }
 
 function epochTimestampOf(chunks: ParsedIndexChunk[]): number {

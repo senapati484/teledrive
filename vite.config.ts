@@ -41,37 +41,37 @@ export default defineConfig(async () => ({
   build: {
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          // Split CodeMirror into its own large chunk (970KB+ raw) so it is only loaded when needed
-          if (id.includes("node_modules/@codemirror") || id.includes("node_modules/@lezer")) {
-            return "codemirror-vendor";
-          }
+          manualChunks(id: string) {
+            // Split CodeMirror into its own large chunk (970KB+ raw) so it is only loaded when needed
+            if (id.includes("node_modules/@codemirror") || id.includes("node_modules/@lezer")) {
+              return "codemirror-vendor";
+            }
+          },
         },
       },
+      // Raise the warning threshold since telegram MTProto client is ~1.5MB
+      chunkSizeWarningLimit: 2500,
     },
-    // Raise the warning threshold since telegram MTProto client is ~1.5MB
-    chunkSizeWarningLimit: 2500,
-  },
 
-  // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
-  //
-  // 1. prevent Vite from obscuring rust errors
-  clearScreen: false,
-  // 2. tauri expects a fixed port, fail if that port is not available
-  server: {
-    port: 1420,
-    strictPort: true,
-    host: host || "127.0.0.1",
-    hmr: host
-      ? {
+    // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
+    //
+    // 1. prevent Vite from obscuring rust errors
+    clearScreen: false,
+    // 2. tauri expects a fixed port, fail if that port is not available
+    server: {
+      port: 1420,
+      strictPort: true,
+      host: host || "127.0.0.1",
+      hmr: host
+        ? {
           protocol: "ws",
           host,
           port: 1421,
         }
-      : undefined,
-    watch: {
-      // 3. tell Vite to ignore watching `src-tauri`
-      ignored: ["**/src-tauri/**"],
+        : undefined,
+      watch: {
+        // 3. tell Vite to ignore watching `src-tauri`
+        ignored: ["**/src-tauri/**"],
+      },
     },
-  },
-}));
+  }));

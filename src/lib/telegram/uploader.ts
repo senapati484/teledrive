@@ -70,6 +70,10 @@ export async function uploadFileToTelegram(
   onRetry?: UploadRetryCallback,
   hash = false,
 ): Promise<any> {
+  if (fileSize <= 0) {
+    throw new Error(`Cannot upload 0-byte file "${fileName}": Telegram MTProto requires at least 1 byte.`);
+  }
+
   const client = getClient();
 
   let hasher: ReturnType<typeof sha256.create> | null = null;

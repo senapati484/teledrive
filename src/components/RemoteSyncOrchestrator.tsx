@@ -51,10 +51,10 @@ export default function RemoteSyncOrchestrator(): null {
   }, []);
 
   // Effect 2 — react to interval changes. When the user picks a new
-  // interval, push it to the Rust timer.
+  // interval, push it to the Rust timer. On logout or disabled interval,
+  // stop the timer so the daemon doesn't fire ticks unauthenticated.
   useEffect(() => {
-    if (!isAuthenticated) return;
-    if (intervalMinutes === null || intervalMinutes <= 0) {
+    if (!isAuthenticated || intervalMinutes === null || intervalMinutes <= 0) {
       void applyIntervalChange(null);
       return;
     }

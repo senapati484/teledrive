@@ -60,7 +60,7 @@ fn get_vault_state(app: tauri::AppHandle, lines: Option<usize>) -> Result<String
 fn save_session(app: tauri::AppHandle, session: String, phone: String) -> Result<(), String> {
     let session_path = get_session_path(&app)?;
     let json = serde_json::json!({ "session": session, "phone": phone });
-    std::fs::write(&session_path, json.to_string())
+    atomic_write(&session_path, json.to_string().as_bytes())
         .map_err(|e| format!("Failed to write session file: {e}"))
 }
 
@@ -106,7 +106,7 @@ fn clear_session_only(app: tauri::AppHandle) -> Result<(), String> {
     if let Some(obj) = parsed.as_object_mut() {
         obj.insert("session".to_string(), serde_json::Value::Null);
     }
-    std::fs::write(&session_path, parsed.to_string())
+    atomic_write(&session_path, parsed.to_string().as_bytes())
         .map_err(|e| format!("Failed to write session file: {e}"))
 }
 
@@ -118,30 +118,70 @@ fn lock_vault() -> Result<std::sync::MutexGuard<'static, ()>, String> {
         .map_err(|_| "vault lock poisoned".to_string())
 }
 
+/// Restrict a file to the current user (mode 0600 on Unix). Vault and session
+/// files contain Telegram credentials, so they must never be group/world
+/// readable. No-op on Windows where the app data directory is already ACL'd
+/// to the current user.
+fn restrict_permissions(path: &Path) -> Result<(), String> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600))
+            .map_err(|e| format!("Failed to restrict permissions on {}: {e}", path.display()))?;
+    }
+    #[cfg(not(unix))]
+    {
+        let _ = path;
+    }
+    Ok(())
+}
+
+fn temp_sibling(path: &Path, suffix: &str) -> Result<PathBuf, String> {
+    let parent = path
+        .parent()
+        .ok_or_else(|| format!("no parent directory for {}", path.display()))?;
+    let name = path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("file");
+    Ok(parent.join(format!(".{name}.{suffix}")))
+}
+
 /// Write bytes by replacing the destination with a synced temp file.
 /// `rename` is atomic on Unix; on Windows it can fail when the destination
 /// exists, so fall back to copy + remove without deleting the old file first.
-fn atomic_write(path: &Path, bytes: &[u8]) -> Result<(), String> {
+/// When `private` is true the temp and destination are restricted to the
+/// current user (mode 0600 on Unix), which is required for credential files.
+fn atomic_write_with_perms(path: &Path, bytes: &[u8], private: bool) -> Result<(), String> {
     let parent = path
         .parent()
         .ok_or_else(|| format!("no parent directory for {}", path.display()))?;
     std::fs::create_dir_all(parent)
         .map_err(|e| format!("Failed to create directory {}: {e}", parent.display()))?;
-    let name = path
-        .file_name()
-        .and_then(|n| n.to_str())
-        .unwrap_or("file");
-    let tmp = parent.join(format!(".{name}.tmp-{}", std::process::id()));
-    {
-        let mut file = std::fs::File::create(&tmp)
+    let tmp = temp_sibling(path, &format!("tmp-{}", std::process::id()))?;
+    let write_result = (|| -> Result<(), String> {
+        let mut file = std::fs::OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(true)
+            .open(&tmp)
             .map_err(|e| format!("Failed to create {}: {e}", tmp.display()))?;
+        if private {
+            restrict_permissions(&tmp)?;
+        }
         file.write_all(bytes)
             .map_err(|e| format!("Failed to write {}: {e}", tmp.display()))?;
         file.sync_all()
             .map_err(|e| format!("Failed to sync {}: {e}", tmp.display()))?;
+        Ok(())
+    })();
+    if let Err(err) = write_result {
+        let _ = std::fs::remove_file(&tmp);
+        return Err(err);
     }
     if let Err(rename_err) = std::fs::rename(&tmp, path) {
         std::fs::copy(&tmp, path).map_err(|copy_err| {
+            let _ = std::fs::remove_file(&tmp);
             format!(
                 "Failed to replace {}: rename={rename_err}; copy={copy_err}",
                 path.display()
@@ -149,7 +189,15 @@ fn atomic_write(path: &Path, bytes: &[u8]) -> Result<(), String> {
         })?;
         let _ = std::fs::remove_file(&tmp);
     }
+    if private {
+        restrict_permissions(path)?;
+    }
     Ok(())
+}
+
+/// Write credential files atomically with owner-only permissions.
+fn atomic_write(path: &Path, bytes: &[u8]) -> Result<(), String> {
+    atomic_write_with_perms(path, bytes, true)
 }
 
 /// Saves a key-value pair to a vault file in the app data directory.
@@ -160,8 +208,10 @@ fn save_vault_value(app: tauri::AppHandle, key: String, value: String) -> Result
     let mut data = if vault_path.exists() {
         let contents = std::fs::read_to_string(&vault_path)
             .map_err(|e| format!("Failed to read vault file: {e}"))?;
+        // Never silently replace a corrupt vault with an empty map: that would
+        // destroy every other stored credential on the next save.
         serde_json::from_str::<serde_json::Map<String, serde_json::Value>>(&contents)
-            .unwrap_or_default()
+            .map_err(|e| format!("Vault file is corrupt (refusing to overwrite): {e}"))?
     } else {
         serde_json::Map::new()
     };
@@ -837,8 +887,22 @@ async fn read_file_chunk(
     use std::io::{Read, Seek, SeekFrom};
     let path_owned = path.clone();
     tauri::async_runtime::spawn_blocking(move || {
+        // Never trust the frontend for allocation size. Uploads use 512 KiB
+        // chunks, so 8 MiB is a generous ceiling that prevents an OOM/DoS
+        // from a compromised or buggy webview.
+        const MAX_CHUNK: u64 = 8 * 1024 * 1024;
+        let length = length.min(MAX_CHUNK);
         let mut file = std::fs::File::open(&path_owned)
             .map_err(|e| format!("open({path_owned}) failed: {e}"))?;
+        let file_len = file
+            .metadata()
+            .map_err(|e| format!("metadata({path_owned}) failed: {e}"))?
+            .len();
+        if offset > file_len || offset.saturating_add(length) > file_len {
+            return Err(format!(
+                "read({length} bytes @{offset}) is out of bounds for {path_owned} ({file_len} bytes)"
+            ));
+        }
         file.seek(SeekFrom::Start(offset))
             .map_err(|e| format!("seek({offset}) failed: {e}"))?;
         let mut buf = vec![0u8; length as usize];
@@ -885,43 +949,61 @@ async fn hash_file(path: String) -> Result<String, String> {
 /// Automatically creates parent directories if needed.
 #[tauri::command]
 async fn write_file_binary(path: String, data: Vec<u8>) -> Result<(), String> {
-    use std::io::Write;
     let path_owned = path.clone();
     tauri::async_runtime::spawn_blocking(move || {
-        let p = std::path::Path::new(&path_owned);
-        if let Some(parent) = p.parent() {
-            let _ = std::fs::create_dir_all(parent);
-        }
-        let mut file = std::fs::File::create(p)
-            .map_err(|e| format!("Failed to create file {path_owned}: {e}"))?;
-        file.write_all(&data)
-            .map_err(|e| format!("Failed to write data to {path_owned}: {e}"))?;
-        Ok::<(), String>(())
+        // Atomic replace: a crash mid-write leaves the previous file intact
+        // instead of a truncated cache entry.
+        atomic_write_with_perms(std::path::Path::new(&path_owned), &data, false)
     })
     .await
     .map_err(|e| format!("write_file_binary task join error: {e}"))?
 }
 
 /// Appends or writes a chunk of binary data to disk.
-/// Useful for chunked streaming writes of large files without memory spikes.
+/// The first chunk truncates a private temp file, subsequent chunks append to
+/// it, and the final chunk (`done = true`) atomically renames it over the
+/// destination. A crash therefore never leaves a half-written file at `path`.
 #[tauri::command]
-async fn write_file_chunk(path: String, data: Vec<u8>, append: bool) -> Result<(), String> {
+async fn write_file_chunk(
+    path: String,
+    data: Vec<u8>,
+    append: bool,
+    done: Option<bool>,
+) -> Result<(), String> {
     use std::io::Write;
     let path_owned = path.clone();
+    let done = done.unwrap_or(false);
     tauri::async_runtime::spawn_blocking(move || {
         let p = std::path::Path::new(&path_owned);
         if let Some(parent) = p.parent() {
-            let _ = std::fs::create_dir_all(parent);
+            std::fs::create_dir_all(parent)
+                .map_err(|e| format!("Failed to create {}: {e}", parent.display()))?;
         }
+        let tmp = temp_sibling(p, "part")?;
         let mut file = std::fs::OpenOptions::new()
             .create(true)
             .write(true)
             .truncate(!append)
             .append(append)
-            .open(p)
-            .map_err(|e| format!("Failed to open file {path_owned}: {e}"))?;
+            .open(&tmp)
+            .map_err(|e| format!("Failed to open temp file {}: {e}", tmp.display()))?;
         file.write_all(&data)
-            .map_err(|e| format!("Failed to write chunk to {path_owned}: {e}"))?;
+            .map_err(|e| format!("Failed to write chunk to {}: {e}", tmp.display()))?;
+        file.sync_all()
+            .map_err(|e| format!("Failed to sync {}: {e}", tmp.display()))?;
+        drop(file);
+        if done {
+            if let Err(rename_err) = std::fs::rename(&tmp, p) {
+                std::fs::copy(&tmp, p).map_err(|copy_err| {
+                    let _ = std::fs::remove_file(&tmp);
+                    format!(
+                        "Failed to finalize {}: rename={rename_err}; copy={copy_err}",
+                        p.display()
+                    )
+                })?;
+                let _ = std::fs::remove_file(&tmp);
+            }
+        }
         Ok::<(), String>(())
     })
     .await
@@ -929,97 +1011,25 @@ async fn write_file_chunk(path: String, data: Vec<u8>, append: bool) -> Result<(
 }
 
 /// Opens any file with the host system's default viewer application.
-/// On desktop: uses OS-native commands (open/cmd/xdg-open).
-/// On mobile: delegates to tauri-plugin-opener which maps to
-///   - Android: ACTION_VIEW intent
-///   - iOS: UIDocumentInteractionController
+/// Uses tauri-plugin-opener on every platform so we never route a
+/// user/Telegram-controlled filename through a shell (`cmd /C start`), which
+/// is vulnerable to command injection on Windows.
 #[tauri::command]
 fn open_file_in_system_viewer(app: tauri::AppHandle, path: String) -> Result<(), String> {
-    #[cfg(mobile)]
-    {
-        use tauri_plugin_opener::OpenerExt;
-        app.opener()
-            .open_path(&path, None::<&str>)
-            .map_err(|e| format!("Failed to open file on mobile: {e}"))
-    }
-    #[cfg(not(mobile))]
-    {
-        // Suppress unused variable warning on mobile builds
-        let _ = &app;
-        #[cfg(target_os = "windows")]
-        {
-            std::process::Command::new("cmd")
-                .args(["/C", "start", "", &path])
-                .spawn()
-                .map_err(|e| format!("Failed to open file on Windows: {e}"))?;
-            Ok(())
-        }
-        #[cfg(target_os = "macos")]
-        {
-            std::process::Command::new("open")
-                .arg(&path)
-                .spawn()
-                .map_err(|e| format!("Failed to open file on macOS: {e}"))?;
-            Ok(())
-        }
-        #[cfg(target_os = "linux")]
-        {
-            std::process::Command::new("xdg-open")
-                .arg(&path)
-                .spawn()
-                .map_err(|e| format!("Failed to open file on Linux: {e}"))?;
-            Ok(())
-        }
-        #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
-        {
-            Err("Unsupported operating system for opening files".to_string())
-        }
-    }
+    use tauri_plugin_opener::OpenerExt;
+    app.opener()
+        .open_path(&path, None::<&str>)
+        .map_err(|e| format!("Failed to open file in system viewer: {e}"))
 }
 
-/// Launches the native Telegram app directly using OS-level commands or deep links,
-/// preventing accidental fallback to web browsers on desktop and mobile.
+/// Launches the native Telegram app via its registered deep-link handler.
+/// Uses tauri-plugin-opener (ShellExecute on Windows) instead of `cmd`.
 #[tauri::command]
 fn open_telegram_app(app: tauri::AppHandle, url: String) -> Result<(), String> {
-    #[cfg(mobile)]
-    {
-        use tauri_plugin_opener::OpenerExt;
-        app.opener()
-            .open_url(&url, None::<&str>)
-            .map_err(|e| format!("Failed to open Telegram app: {e}"))
-    }
-    #[cfg(not(mobile))]
-    {
-        let _ = &app;
-        #[cfg(target_os = "macos")]
-        {
-            std::process::Command::new("open")
-                .arg(&url)
-                .spawn()
-                .map_err(|e| format!("Failed to launch Telegram on macOS: {e}"))?;
-            Ok(())
-        }
-        #[cfg(target_os = "windows")]
-        {
-            std::process::Command::new("cmd")
-                .args(["/C", "start", "", &url])
-                .spawn()
-                .map_err(|e| format!("Failed to launch Telegram on Windows: {e}"))?;
-            Ok(())
-        }
-        #[cfg(target_os = "linux")]
-        {
-            std::process::Command::new("xdg-open")
-                .arg(&url)
-                .spawn()
-                .map_err(|e| format!("Failed to launch Telegram on Linux: {e}"))?;
-            Ok(())
-        }
-        #[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
-        {
-            Err("Unsupported operating system for launching Telegram".to_string())
-        }
-    }
+    use tauri_plugin_opener::OpenerExt;
+    app.opener()
+        .open_url(&url, None::<&str>)
+        .map_err(|e| format!("Failed to open Telegram app: {e}"))
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

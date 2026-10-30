@@ -72,6 +72,14 @@ export function useKeyboardShortcuts({ onToggleHelp }: KeyboardShortcutsProps) {
         return;
       }
 
+      // Ignore global drive shortcuts when a modal dialog or preview is open
+      if (
+        document.getElementById("file-preview-modal") ||
+        document.querySelector('[role="dialog"]')
+      ) {
+        return;
+      }
+
       // Detect Ctrl/Cmd modifier
       const isCmd = e.ctrlKey || e.metaKey;
 

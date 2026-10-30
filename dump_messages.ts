@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { TelegramClient } from "telegram";
 import { StringSession } from "telegram/sessions";
 import { ConnectionTCPObfuscated } from "telegram/network/connection";

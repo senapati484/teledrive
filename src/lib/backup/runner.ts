@@ -476,6 +476,13 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
       }
     }
 
+    if (file.size === 0) {
+      // Empty files cannot be transferred over Telegram MTProto document uploads.
+      // Skip safely to avoid infinite retry loops.
+      filesSkipped++;
+      continue;
+    }
+
     const hashUpload = file.size <= hashSizeCap;
     try {
       const upload = await uploadFileToTelegram(
@@ -543,6 +550,7 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
         messageId,
         channelId,
         uploadedAt: Date.now(),
+        ...(contentHash ? { hash: contentHash } : {}),
         starred: false,
         trashed: false,
       };

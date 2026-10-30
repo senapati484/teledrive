@@ -32,6 +32,9 @@ const SYNC_INDICATOR_MIN_MS = 800;
 
 interface CoordinatorState {
   timerId: ReturnType<typeof setTimeout> | null;
+  indicatorTimerId: ReturnType<typeof setTimeout> | null;
+  /** Incremented on every start/stop so in-flight ticks can detect staleness. */
+  generation: number;
   isRunning: boolean;
   currentChannelId: string | null;
   lastTickAt: number;
@@ -39,10 +42,20 @@ interface CoordinatorState {
 
 const state: CoordinatorState = {
   timerId: null,
+  indicatorTimerId: null,
+  generation: 0,
   isRunning: false,
   currentChannelId: null,
   lastTickAt: 0,
 };
+
+function isCurrent(channelId: string, generation: number): boolean {
+  return (
+    state.isRunning &&
+    state.currentChannelId === channelId &&
+    state.generation === generation
+  );
+}
 
 function canReplaceLocalState(): boolean {
   const store = useFileStore.getState();
@@ -65,13 +78,21 @@ function canReplaceLocalState(): boolean {
   return queueState === "idle" || queueState === "syncing-remote";
 }
 
-async function reloadAuthoritativeSnapshot(channelId: string): Promise<boolean> {
+async function reloadAuthoritativeSnapshot(
+  channelId: string,
+  expectedGeneration?: number,
+): Promise<boolean> {
   const filesBefore = useFileStore.getState().files;
   const outcome = await loadIndexOutcome(channelId, {
     preserveReadyOnIncomplete: true,
   });
   if (outcome.status !== "ready") return false;
   if (!canReplaceLocalState()) return false;
+  // Stop/switch may have happened while we awaited Telegram. Never apply the
+  // old channel's snapshot to the new session.
+  if (expectedGeneration !== undefined && !isCurrent(channelId, expectedGeneration)) {
+    return false;
+  }
   // A local action may have landed while the snapshot was loading. The
   // expected-array guard makes that action win instead of being clobbered
   // by the older remote read.
@@ -86,8 +107,14 @@ async function reloadAuthoritativeSnapshot(channelId: string): Promise<boolean> 
  * nothing changed. NEVER throws — caller is the setTimeout loop and we
  * want it to keep running through transient errors.
  */
-async function runOneTick(channelId: string): Promise<boolean> {
+async function runOneTick(
+  channelId: string,
+  generation = state.generation,
+  requireCurrentLoop = false,
+): Promise<boolean> {
   if (!isIndexReady()) return false;
+  const stillCurrent = () =>
+    !requireCurrentLoop || isCurrent(channelId, generation);
   // A ready index with no chunks is valid (empty drive). Start from 0 so the
   // first file uploaded by another device can still be discovered.
   const lastMsgId = useFileStore.getState().lastIndexMsgId;
@@ -99,9 +126,14 @@ async function runOneTick(channelId: string): Promise<boolean> {
     // device. Check the live chunks first; when they changed, replace the
     // local non-backup view with the authoritative index snapshot.
     const revisionChanged = await hasIndexRevisionChanged(channelId);
+    if (!stillCurrent()) return false;
     if (revisionChanged) {
       if (!canReplaceLocalState()) return false;
-      mergedAny = await reloadAuthoritativeSnapshot(channelId);
+      mergedAny = await reloadAuthoritativeSnapshot(
+        channelId,
+        requireCurrentLoop ? generation : undefined,
+      );
+      if (!stillCurrent()) return false;
       if (mergedAny) {
         logEvent({
           type: "sync.remoteDelta",
@@ -114,13 +146,18 @@ async function runOneTick(channelId: string): Promise<boolean> {
         "remoteSync.loadIndexIncremental",
         3,
       );
+      if (!stillCurrent()) return false;
 
       if (result.files.length > 0) {
         if (!canReplaceLocalState()) return false;
         // New chunks mean a new epoch. Reloading the complete authoritative
         // set (instead of union-merging the slice) is what propagates
         // deletions; an additive merge would keep removed files forever.
-        mergedAny = await reloadAuthoritativeSnapshot(channelId);
+        mergedAny = await reloadAuthoritativeSnapshot(
+          channelId,
+          requireCurrentLoop ? generation : undefined,
+        );
+        if (!stillCurrent()) return false;
         if (mergedAny) {
           logEvent({
             type: "sync.remoteDelta",
@@ -133,6 +170,7 @@ async function runOneTick(channelId: string): Promise<boolean> {
       }
 
       if (result.highestMsgId > lastMsgId) {
+        if (!stillCurrent()) return false;
         useFileStore.getState().setLastIndexMsgId(result.highestMsgId);
       }
     }
@@ -144,30 +182,49 @@ async function runOneTick(channelId: string): Promise<boolean> {
     return false;
   }
 
+  if (!stillCurrent()) return false;
+
   // Briefly show the "syncing-remote" indicator so the user knows the
   // background loop is alive, then return to idle.
   if (mergedAny) {
     state.lastTickAt = Date.now();
-    flashSyncIndicator();
+    flashSyncIndicator(
+      channelId,
+      requireCurrentLoop ? generation : undefined,
+    );
   }
   return mergedAny;
 }
 
-function flashSyncIndicator(): void {
+function flashSyncIndicator(
+  channelId?: string,
+  generation?: number,
+): void {
   const { setIndexQueueState } = useFileStore.getState();
   setIndexQueueState("syncing-remote");
-  setTimeout(() => {
+  if (state.indicatorTimerId) clearTimeout(state.indicatorTimerId);
+  state.indicatorTimerId = setTimeout(() => {
+    state.indicatorTimerId = null;
+    if (
+      generation !== undefined &&
+      channelId !== undefined &&
+      !isCurrent(channelId, generation)
+    ) {
+      return;
+    }
     if (useFileStore.getState().indexQueueState === "syncing-remote") {
       setIndexQueueState("idle");
     }
   }, SYNC_INDICATOR_MIN_MS);
 }
 
-function scheduleNext(channelId: string): void {
-  if (!state.isRunning) return;
+function scheduleNext(channelId: string, generation: number): void {
+  if (!isCurrent(channelId, generation)) return;
   state.timerId = setTimeout(async () => {
-    await runOneTick(channelId);
-    scheduleNext(channelId);
+    state.timerId = null;
+    if (!isCurrent(channelId, generation)) return;
+    await runOneTick(channelId, generation, true);
+    scheduleNext(channelId, generation);
   }, POLL_INTERVAL_MS);
 }
 
@@ -187,6 +244,7 @@ export function startRemoteSync(channelId: string): void {
     // Different channel — stop the old loop, start a new one.
     stopRemoteSync();
   }
+  state.generation += 1;
   state.isRunning = true;
   state.currentChannelId = channelId;
   state.lastTickAt = 0;
@@ -200,16 +258,22 @@ export function startRemoteSync(channelId: string): void {
     return;
   }
 
-  scheduleNext(channelId);
+  scheduleNext(channelId, state.generation);
 }
 
 /**
  * Stop the sync loop. Used by logout and orchestrator on auth loss.
  */
 export function stopRemoteSync(): void {
+  // Invalidate any tick that is currently awaiting Telegram.
+  state.generation += 1;
   if (state.timerId) {
     clearTimeout(state.timerId);
     state.timerId = null;
+  }
+  if (state.indicatorTimerId) {
+    clearTimeout(state.indicatorTimerId);
+    state.indicatorTimerId = null;
   }
   state.isRunning = false;
   state.currentChannelId = null;
@@ -222,9 +286,11 @@ export function stopRemoteSync(): void {
 
 /**
  * Manually trigger one sync tick. Returns true if any files were merged.
+ * Manual ticks are not tied to the loop generation (callers use this while
+ * the background loop is stopped), so they run without the staleness guard.
  */
 export async function runSyncTickOnce(channelId: string): Promise<boolean> {
-  return runOneTick(channelId);
+  return runOneTick(channelId, state.generation, false);
 }
 
 /** Read-only — returns the last successful tick timestamp (0 if never). */
