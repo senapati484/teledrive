@@ -30,4 +30,4 @@ export const DEFAULT_API_ID: number =
 export const DEFAULT_API_HASH: string = _envHash || atob(_AHASH);
 
 /** Keep this in sync with package.json / tauri.conf.json on release. */
-export const APP_VERSION = "0.1.3";
+export const APP_VERSION = "0.1.2";

@@ -22,7 +22,7 @@ echo ""
 OS="$(uname -s)"
 ARCH="$(uname -m)"
 
-VERSION="0.1.3"
+VERSION="0.1.2"
 LATEST_RELEASE="https://github.com/senapati484/teledrive/releases/latest/download"
 SF_DOWNLOAD="https://downloads.sourceforge.net/project/teledrive/v${VERSION}"
 
