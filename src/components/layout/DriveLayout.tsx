@@ -948,57 +948,57 @@ export default function DriveLayout() {
           window.history.back();
         }
       }}>
-        <DialogContent className="rounded-3xl max-w-lg p-6 bg-white dark:bg-[#0d0e11] border border-slate-200/80 dark:border-white/[0.08] shadow-2xl">
+        <DialogContent className="w-[calc(100%-2rem)] sm:w-full max-w-lg p-6 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#0e1015] border border-slate-200/90 dark:border-white/[0.08] shadow-2xl shadow-black/20 dark:shadow-[0_25px_70px_-15px_rgba(0,0,0,0.7)]">
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">
+            <DialogTitle className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
               {t("shortcuts.title")}
             </DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2 select-none">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-3 select-none">
             <div>
-              <h4 className="text-xs font-semibold text-[#444746] dark:text-[#c4c7c5] tracking-wide mb-3">{t("shortcuts.navigationGroup")}</h4>
+              <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">{t("shortcuts.navigationGroup")}</h4>
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.focusSearch")}</span>
-                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#060709] border border-slate-300/70 dark:border-white/[0.08] rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">{t("shortcuts.focusSearchKeys", { modKey })}</kbd>
+                  <span className="text-slate-700 dark:text-slate-300">{t("shortcuts.focusSearch")}</span>
+                  <kbd className="px-2 py-0.5 bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.08] rounded-md text-[10px] font-mono font-semibold text-slate-800 dark:text-slate-200 shadow-xs">{t("shortcuts.focusSearchKeys", { modKey })}</kbd>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.clearSelection")}</span>
-                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#060709] border border-slate-300/70 dark:border-white/[0.08] rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">Esc</kbd>
+                  <span className="text-slate-700 dark:text-slate-300">{t("shortcuts.clearSelection")}</span>
+                  <kbd className="px-2 py-0.5 bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.08] rounded-md text-[10px] font-mono font-semibold text-slate-800 dark:text-slate-200 shadow-xs">Esc</kbd>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.scrollToTop")}</span>
-                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#060709] border border-slate-300/70 dark:border-white/[0.08] rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">g g</kbd>
+                  <span className="text-slate-700 dark:text-slate-300">{t("shortcuts.scrollToTop")}</span>
+                  <kbd className="px-2 py-0.5 bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.08] rounded-md text-[10px] font-mono font-semibold text-slate-800 dark:text-slate-200 shadow-xs">g g</kbd>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.scrollToBottom")}</span>
-                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#060709] border border-slate-300/70 dark:border-white/[0.08] rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">g l</kbd>
+                  <span className="text-slate-700 dark:text-slate-300">{t("shortcuts.scrollToBottom")}</span>
+                  <kbd className="px-2 py-0.5 bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.08] rounded-md text-[10px] font-mono font-semibold text-slate-800 dark:text-slate-200 shadow-xs">g l</kbd>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.showHelp")}</span>
-                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#060709] border border-slate-300/70 dark:border-white/[0.08] rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">?</kbd>
+                  <span className="text-slate-700 dark:text-slate-300">{t("shortcuts.showHelp")}</span>
+                  <kbd className="px-2 py-0.5 bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.08] rounded-md text-[10px] font-mono font-semibold text-slate-800 dark:text-slate-200 shadow-xs">?</kbd>
                 </div>
               </div>
             </div>
 
             <div>
-              <h4 className="text-xs font-semibold text-[#444746] dark:text-[#c4c7c5] tracking-wide mb-3">{t("shortcuts.selectionGroup")}</h4>
+              <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-3">{t("shortcuts.selectionGroup")}</h4>
               <div className="space-y-3">
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.selectAll")}</span>
-                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#060709] border border-slate-300/70 dark:border-white/[0.08] rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">{modKey}A</kbd>
+                  <span className="text-slate-700 dark:text-slate-300">{t("shortcuts.selectAll")}</span>
+                  <kbd className="px-2 py-0.5 bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.08] rounded-md text-[10px] font-mono font-semibold text-slate-800 dark:text-slate-200 shadow-xs">{modKey}A</kbd>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.moveToTrash")}</span>
-                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#060709] border border-slate-300/70 dark:border-white/[0.08] rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">Del / Backspace</kbd>
+                  <span className="text-slate-700 dark:text-slate-300">{t("shortcuts.moveToTrash")}</span>
+                  <kbd className="px-2 py-0.5 bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.08] rounded-md text-[10px] font-mono font-semibold text-slate-800 dark:text-slate-200 shadow-xs">Del / Backspace</kbd>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.rename")}</span>
-                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#060709] border border-slate-300/70 dark:border-white/[0.08] rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">F2</kbd>
+                  <span className="text-slate-700 dark:text-slate-300">{t("shortcuts.rename")}</span>
+                  <kbd className="px-2 py-0.5 bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.08] rounded-md text-[10px] font-mono font-semibold text-slate-800 dark:text-slate-200 shadow-xs">F2</kbd>
                 </div>
                 <div className="flex justify-between items-center text-xs">
-                  <span className="text-[#444746] dark:text-[#c4c7c5]">{t("shortcuts.download")}</span>
-                  <kbd className="px-2 py-0.5 bg-[#f0f4f9] dark:bg-[#060709] border border-slate-300/70 dark:border-white/[0.08] rounded-md text-[10px] font-semibold text-[#1f1f1f] dark:text-[#e3e3e3]">{modKey}D</kbd>
+                  <span className="text-slate-700 dark:text-slate-300">{t("shortcuts.download")}</span>
+                  <kbd className="px-2 py-0.5 bg-slate-100 dark:bg-white/[0.06] border border-slate-200 dark:border-white/[0.08] rounded-md text-[10px] font-mono font-semibold text-slate-800 dark:text-slate-200 shadow-xs">{modKey}D</kbd>
                 </div>
               </div>
             </div>
