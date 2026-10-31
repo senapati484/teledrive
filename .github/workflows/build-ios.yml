@@ -24,7 +24,7 @@ on:
 jobs:
   build-ios:
     name: Build iOS App & IPA
-    runs-on: macos-14
+    runs-on: macos-latest
 
     steps:
       - name: Checkout repository
