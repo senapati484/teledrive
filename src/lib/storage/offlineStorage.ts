@@ -17,11 +17,13 @@ export async function getOfflineFilePath(fileId: string): Promise<string> {
     if (!dirExists) {
       await mkdir(offlineDir, { recursive: true });
     }
-  } catch (err) {
+  } catch {
     // If exists checks fail, attempt to make directory anyway
     try {
       await mkdir(offlineDir, { recursive: true });
-    } catch (_) {}
+    } catch {
+      // Ignored
+    }
   }
 
   return await join(offlineDir, `offline_${fileId}`);
@@ -71,7 +73,7 @@ export async function isCachedOffline(fileId: string): Promise<boolean> {
   try {
     const localPath = await getOfflineFilePath(fileId);
     return await exists(localPath);
-  } catch (_) {
+  } catch {
     return false;
   }
 }

@@ -878,8 +878,8 @@ class ChannelQueue {
     }
 
     const ids: number[] = [cache.ids[0]];
-    const texts: string[] = new Array(totalChunks);
-    const savedAts: number[] = new Array(totalChunks).fill(0);
+    const texts: string[] = Array.from({ length: totalChunks });
+    const savedAts: number[] = Array.from({ length: totalChunks }, () => 0);
     texts[0] = cache.texts[0] ?? "";
     savedAts[0] = cache.savedAt[0] ?? 0;
     const orphans: number[] = [];
@@ -972,9 +972,9 @@ class ChannelQueue {
     old: KnownIndex | null
   ): Promise<void> {
     const totalChunks = chunks.length;
-    const ids: number[] = new Array(totalChunks).fill(0);
-    const texts: string[] = new Array(totalChunks);
-    const savedAts: number[] = new Array(totalChunks).fill(savedAt);
+    const ids: number[] = Array.from({ length: totalChunks }, () => 0);
+    const texts: string[] = Array.from({ length: totalChunks });
+    const savedAts: number[] = Array.from({ length: totalChunks }, () => savedAt);
     const orphans: number[] = [];
 
     for (let i = 1; i < totalChunks; i++) {
@@ -1174,7 +1174,7 @@ function chunkPayload(
 async function resolvePeerWithTimeout(client: any, channelId: string): Promise<any> {
   try {
     return await client.getInputEntity(channelId);
-  } catch (err) {
+  } catch {
     return await withTimeout(
       client.getEntity(channelId),
       5000,

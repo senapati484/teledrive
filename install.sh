@@ -22,8 +22,9 @@ echo ""
 OS="$(uname -s)"
 ARCH="$(uname -m)"
 
+VERSION="0.1.3"
 LATEST_RELEASE="https://github.com/senapati484/teledrive/releases/latest/download"
-SF_DOWNLOAD="https://downloads.sourceforge.net/project/teledrive/v0.1.2"
+SF_DOWNLOAD="https://downloads.sourceforge.net/project/teledrive/v${VERSION}"
 
 if [ "$OS" = "Darwin" ]; then
     echo -e "${BLUE}▶ Detected macOS ($ARCH)${NC}"
@@ -34,7 +35,7 @@ if [ "$OS" = "Darwin" ]; then
     MOUNT_DIR="$TMP_DIR/mount"
 
     # Download DMG (try GitHub releases first, fallback to SourceForge)
-    if ! curl -fsSL "$LATEST_RELEASE/TeleDrive_0.1.2_universal.dmg" -o "$DMG_PATH" 2>/dev/null; then
+    if ! curl -fsSL "$LATEST_RELEASE/TeleDrive_${VERSION}_universal.dmg" -o "$DMG_PATH" 2>/dev/null; then
         echo -e "  Fetching from primary mirror..."
         curl -fsSL "$SF_DOWNLOAD/teledrive.dmg" -o "$DMG_PATH"
     fi
@@ -76,7 +77,7 @@ elif [ "$OS" = "Linux" ]; then
     APPIMAGE_PATH="$INSTALL_DIR/teledrive.AppImage"
 
     echo -e "  Downloading latest TeleDrive AppImage..."
-    if ! curl -fsSL "$LATEST_RELEASE/TeleDrive_0.1.2_amd64.AppImage" -o "$APPIMAGE_PATH" 2>/dev/null; then
+    if ! curl -fsSL "$LATEST_RELEASE/TeleDrive_${VERSION}_amd64.AppImage" -o "$APPIMAGE_PATH" 2>/dev/null; then
         curl -fsSL "$SF_DOWNLOAD/teledrive.AppImage" -o "$APPIMAGE_PATH"
     fi
 

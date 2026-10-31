@@ -131,7 +131,7 @@ const deliverables = [
   {
     type: 'macOS DMG',
     canonicalName: 'teledrive.dmg',
-    matcher: (name, full) => {
+    matcher: (name) => {
       if (!name.endsWith('.dmg')) return false;
       if (name.startsWith('rw.')) return false; // Ignore tmp read-write images
       return true;
@@ -140,7 +140,7 @@ const deliverables = [
   {
     type: 'Windows NSIS Setup',
     canonicalName: 'teledrive-setup.exe',
-    matcher: (name, full) => {
+    matcher: (name) => {
       const lower = name.toLowerCase();
       if (!lower.endsWith('.exe')) return false;
       return lower.includes('setup') || lower.endsWith('-setup.exe');
@@ -149,35 +149,35 @@ const deliverables = [
   {
     type: 'Windows MSI',
     canonicalName: 'teledrive.msi',
-    matcher: (name, full) => {
+    matcher: (name) => {
       return name.toLowerCase().endsWith('.msi');
     }
   },
   {
     type: 'Linux Debian (.deb)',
     canonicalName: 'teledrive.deb',
-    matcher: (name, full) => {
+    matcher: (name) => {
       return name.toLowerCase().endsWith('.deb');
     }
   },
   {
     type: 'Linux RPM (.rpm)',
     canonicalName: 'teledrive.rpm',
-    matcher: (name, full) => {
+    matcher: (name) => {
       return name.toLowerCase().endsWith('.rpm');
     }
   },
   {
     type: 'Linux AppImage',
     canonicalName: 'teledrive.AppImage',
-    matcher: (name, full) => {
+    matcher: (name) => {
       return name.endsWith('.AppImage');
     }
   },
   {
     type: 'Android APK',
     canonicalName: 'teledrive.apk',
-    matcher: (name, full) => {
+    matcher: (name) => {
       const lower = name.toLowerCase();
       if (!lower.endsWith('.apk')) return false;
       // Prefer release over debug
@@ -187,7 +187,7 @@ const deliverables = [
   {
     type: 'iOS Simulator',
     canonicalName: 'teledrive-ios-simulator.zip',
-    matcher: (name, full) => {
+    matcher: (name) => {
       const lower = name.toLowerCase();
       return lower.includes('simulator') && lower.endsWith('.zip');
     }
@@ -195,7 +195,7 @@ const deliverables = [
   {
     type: 'iOS IPA',
     canonicalName: 'teledrive.ipa',
-    matcher: (name, full) => {
+    matcher: (name) => {
       return name.toLowerCase().endsWith('.ipa');
     }
   }

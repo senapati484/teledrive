@@ -457,7 +457,7 @@ export default function AuthPage() {
   const [pending, setPending] = useState<PendingLogin | null>(null);
   const pendingRef = useRef<PendingLogin | null>(null);
   const [otp, setOtp] = useState<string[]>(
-    new Array(DEFAULT_CODE_LENGTH).fill("")
+    Array.from({ length: DEFAULT_CODE_LENGTH }, () => "")
   );
   const [resendAt, setResendAt] = useState(0);
   const [floodUntil, setFloodUntil] = useState(0);
@@ -564,7 +564,7 @@ export default function AuthPage() {
       const p = pendingFromSentCode(phoneValue, info, tempSession);
       applyPending(p);
       const length = info.codeLength > 0 ? info.codeLength : DEFAULT_CODE_LENGTH;
-      setOtp(new Array(length).fill(""));
+      setOtp(Array.from({ length }, () => ""));
       setEmailPattern(info.emailPattern || "");
       setEmailCode("");
       setEmailStage("address");
@@ -685,7 +685,7 @@ export default function AuthPage() {
       setEmailPattern(stored.emailPattern || "");
       const length =
         stored.codeLength > 0 ? stored.codeLength : DEFAULT_CODE_LENGTH;
-      setOtp(new Array(length).fill(""));
+      setOtp(Array.from({ length }, () => ""));
 
       if (stored.tempSession) {
         try {
@@ -1151,7 +1151,7 @@ export default function AuthPage() {
         applyPending(null);
         setStep("phone");
       } else if (code === "PHONE_CODE_INVALID" || code === "PHONE_CODE_EMPTY") {
-        setOtp(new Array(codeLength).fill(""));
+        setOtp(Array.from({ length: codeLength }, () => ""));
         otpRefs.current[0]?.focus();
       }
       setLastError(info);
@@ -1238,7 +1238,7 @@ export default function AuthPage() {
       .slice(0, codeLength);
     if (!rawDigits) return;
 
-    const newOtp = new Array(codeLength).fill("");
+    const newOtp = Array.from({ length: codeLength }, () => "");
     rawDigits.split("").forEach((d, i) => {
       newOtp[i] = d;
     });
@@ -1908,7 +1908,7 @@ export default function AuthPage() {
                   onClick={() => {
                     applyPending(null);
                     setStep("phone");
-                    setOtp(new Array(codeLength).fill(""));
+                    setOtp(Array.from({ length: codeLength }, () => ""));
                     setError(null);
                   }}
                   label={t("otp.differentNumber")}

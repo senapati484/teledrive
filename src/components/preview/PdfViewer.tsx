@@ -85,7 +85,7 @@ const PageCanvas = memo(function PageCanvas({
     if (!canvasRef.current || !pdfDoc) return;
     // Cancel any in-progress render
     if (renderTaskRef.current) {
-      try { renderTaskRef.current.cancel(); } catch (_) {}
+      try { renderTaskRef.current.cancel(); } catch { /* ignore */ }
       renderTaskRef.current = null;
     }
 
@@ -135,7 +135,7 @@ const PageCanvas = memo(function PageCanvas({
           pendingRender.current = false;
           // Cancel render of off-screen pages to save GPU
           if (renderTaskRef.current) {
-            try { renderTaskRef.current.cancel(); } catch (_) {}
+            try { renderTaskRef.current.cancel(); } catch { /* ignore */ }
             renderTaskRef.current = null;
           }
         }
@@ -159,7 +159,7 @@ const PageCanvas = memo(function PageCanvas({
   useEffect(() => {
     return () => {
       if (renderTaskRef.current) {
-        try { renderTaskRef.current.cancel(); } catch (_) {}
+        try { renderTaskRef.current.cancel(); } catch { /* ignore */ }
       }
     };
   }, []);
@@ -209,7 +209,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
 
     // Destroy old doc
     if (pdfDocRef.current) {
-      try { pdfDocRef.current.destroy(); } catch (_) {}
+      try { pdfDocRef.current.destroy(); } catch { /* ignore */ }
       pdfDocRef.current = null;
     }
     setPdfDoc(null);
@@ -286,7 +286,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
           return;
         }
 
-        pageRefs.current = new Array(numPages).fill(null);
+        pageRefs.current = Array.from({ length: numPages }, () => null);
         setPdfDoc(doc);
         setTotalPages(numPages);
         setPages(pageEntries);
@@ -320,7 +320,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
   useEffect(() => {
     return () => {
       if (pdfDocRef.current) {
-        try { pdfDocRef.current.destroy(); } catch (_) {}
+        try { pdfDocRef.current.destroy(); } catch { /* ignore */ }
         pdfDocRef.current = null;
       }
     };
@@ -507,7 +507,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
       iframe.onload = () => {
         try {
           iframe.contentWindow?.print();
-        } catch (e) {
+        } catch {
           // Fallback: open in new tab
           window.open(url, "_blank");
         }

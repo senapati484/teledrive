@@ -297,7 +297,7 @@ async function bootstrapTeleDriveInner(
           5000,
           "client.getMessages(orphan fallback)"
         );
-      } catch (_) {
+      } catch {
         recentMessages = [];
       }
     }
@@ -349,7 +349,7 @@ async function bootstrapTeleDriveInner(
         } else {
           continue;
         }
-      } catch (_) {
+      } catch {
         // Corrupted or non-JSON metadata caption — do not inject unknown files
         continue;
       }

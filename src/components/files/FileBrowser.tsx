@@ -593,7 +593,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       let fileReady = false;
       try {
         fileReady = await exists(tempFilePath);
-      } catch (_) {
+      } catch {
         fileReady = false;
       }
 
