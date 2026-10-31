@@ -8,7 +8,8 @@
       "verifyingChannel": "Memverifikasi saluran penyimpanan aman...",
       "loadingIndex": "Memuat indeks metadata berkas...",
       "recoveryScan": "Memeriksa berkas Anda (pemindaian pemulihan)...",
-      "initializingView": "Menginisialisasi tampilan penyimpanan lokal..."
+      "initializingView": "Menginisialisasi tampilan penyimpanan lokal...",
+      "indexIncomplete": "Tidak dapat memverifikasi indeks drive — perubahan dijeda."
     }
   },
   "backup": {
@@ -61,5 +62,19 @@
     "month_other": "{{count}} bulan",
     "year_one": "{{count}} tahun",
     "year_other": "{{count}} tahun"
+  },
+  "indexLoad": {
+    "bannerTitle": "Gagal memuat indeks drive Anda dengan aman",
+    "bannerBodyCached": "Menampilkan file cache. Perubahan dinonaktifkan hingga indeks dapat diverifikasi.",
+    "bannerBodyEmpty": "Tidak ada indeks lengkap yang ditemukan di saluran penyimpanan Anda. Coba lagi, atau pulihkan indeks sebelumnya dari Pengaturan.",
+    "retry": "Coba lagi",
+    "retrying": "Mencoba lagi...",
+    "changesPaused": "Indeks drive belum siap. Perubahan dijeda.",
+    "reason": {
+      "not_found": "Tidak ada indeks lengkap yang ditemukan.",
+      "partial_manifest": "Indeks terbaru kehilangan satu bagian atau lebih.",
+      "timeout": "Telegram terlalu lama merespons.",
+      "network": "Saluran penyimpanan tidak dapat dijangkau."
+    }
   }
 }

@@ -8,7 +8,8 @@
       "verifyingChannel": "Vérification du canal de stockage sécurisé...",
       "loadingIndex": "Chargement de l'index des métadonnées...",
       "recoveryScan": "Vérification de vos fichiers (analyse de récupération)...",
-      "initializingView": "Initialisation de la vue du stockage local..."
+      "initializingView": "Initialisation de la vue du stockage local...",
+      "indexIncomplete": "Impossible de vérifier l'index du drive — les modifications sont suspendues."
     }
   },
   "backup": {
@@ -61,5 +62,19 @@
     "month_other": "{{count}} mois",
     "year_one": "{{count}} an",
     "year_other": "{{count}} ans"
+  },
+  "indexLoad": {
+    "bannerTitle": "Impossible de charger en toute sécurité l'index du drive",
+    "bannerBodyCached": "Affichage des fichiers en cache. Les modifications sont désactivées jusqu'à ce que l'index puisse être vérifié.",
+    "bannerBodyEmpty": "Aucun index complet n'a été trouvé dans votre canal de stockage. Réessayez ou restaurez un index précédent depuis les Paramètres.",
+    "retry": "Réessayer",
+    "retrying": "Nouvel essai...",
+    "changesPaused": "L'index du drive n'est pas encore prêt. Les modifications sont suspendues.",
+    "reason": {
+      "not_found": "Aucun index complet n'a été trouvé.",
+      "partial_manifest": "Il manque une ou plusieurs parties au nouvel index.",
+      "timeout": "Telegram a mis trop de temps à répondre.",
+      "network": "Le canal de stockage est inaccessible."
+    }
   }
 }

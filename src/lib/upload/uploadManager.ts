@@ -212,9 +212,13 @@ export async function processQueue(): Promise<void> {
       scheduleUploadIndexSave(activeSavingChannelId, true);
     }
 
-    // Concurrency limit is 3. If full or nothing is pending, exit.
-    if (uploadingItems.length >= 3 || pendingItems.length === 0) {
+    // Concurrency limit is 2. Parallel uploads beyond 2 trigger Telegram MTProto FLOOD_WAIT on single sessions.
+    const MAX_CONCURRENT_UPLOADS = 2;
+    if (uploadingItems.length >= MAX_CONCURRENT_UPLOADS || pendingItems.length === 0) {
       isProcessing = false;
+      if (pendingItems.length > 0) {
+        scheduleQueueRetry(3000);
+      }
       return;
     }
 
@@ -247,8 +251,8 @@ export async function processQueue(): Promise<void> {
 
     const activeChannelId: string = channelId;
 
-    // Determine how many parallel uploads we can start
-    const openSlots = 3 - uploadingItems.length;
+    // Determine how many parallel uploads we can start (max 2 concurrent)
+    const openSlots = MAX_CONCURRENT_UPLOADS - uploadingItems.length;
     const itemsToStart = pendingItems.slice(0, openSlots);
 
     await invoke("log_vault_state", {
@@ -341,8 +345,17 @@ export async function processQueue(): Promise<void> {
                   uploadedBytes: uploaded,
                   speed,
                   eta,
+                  error: undefined,
                 });
               }
+            },
+            (retryEvent) => {
+              const sec = retryEvent.floodSeconds ?? Math.ceil(retryEvent.waitMs / 1000);
+              updateQueueItem(item.id, {
+                error: retryEvent.floodSeconds
+                  ? `Telegram rate limit: pausing for ${sec}s...`
+                  : `Network retry ${retryEvent.attempt}/${retryEvent.maxAttempts} in ${sec}s...`,
+              });
             }
           );
 

@@ -251,6 +251,7 @@
       "success_one": "Movido {{count}} elemento con éxito",
       "success_other": "Movidos {{count}} elementos con éxito",
       "failed": "Error al mover elementos"
-    }
+    },
+    "indexStuck": "Aún no se pudieron guardar los cambios. Se mantienen localmente y se reintentará automáticamente, o use Reintentar en el banner."
   }
 }

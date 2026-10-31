@@ -263,6 +263,7 @@
       "success_other": "{{count}} itens movidos",
       "failed": "Não foi possível mover os itens",
       "success_zero": "{{count}} itens movidos"
-    }
+    },
+    "indexStuck": "Não foi possível salvar as alterações ainda. Suas alterações foram mantidas localmente e serão tentadas automaticamente — ou use Tentar novamente no banner."
   }
 }

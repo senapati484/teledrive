@@ -27,6 +27,24 @@ TeleDrive v0.1.3 is an essential stability, reliability, and security release fe
 - **Modal Accessibility & Shortcuts**: File preview modals now implement full WAI-ARIA dialog attributes (`role="dialog"`, `aria-modal="true"`), Escape key dismissals, memory-leak-free pointer listeners, and global drive keyboard shortcut suppression while modals are open.
 - **Zero Linter & Compiler Diagnostics**: Cleaned up all language server warnings, typed configuration parameters, and configured workspace-level TSServer scoping.
 
+### 🐛 5. Bug Fixes & Stability Patches
+- **Universal Localization & 100% Key Parity (#80)**:
+  - Corrected mistranslations in Simplified Chinese (`"我的驾驶"` → `"我的云盘"`), Traditional Chinese (`"我的駕駛"` → `"我的雲端硬碟"`), and Japanese (`"私のドライブ"` → `"マイドライブ"`).
+  - Added full translation suites for `support.json` across all 10 non-English languages.
+  - Achieved 100% key parity across all 11 supported languages (`en`, `de`, `es`, `fr`, `hi`, `id`, `ja`, `pt-BR`, `ru`, `zh-CN`, `zh-TW`) with zero missing keys.
+- **Upload Queue & Rate Limit Resilience (#79)**:
+  - Reduced MTProto concurrency to 2 parallel streams to eliminate socket saturation and `FLOOD_WAIT` cascades on single-user connections.
+  - Extended file completion timeout (`SENDFILE_TIMEOUT_MS`) to 90 seconds to prevent premature timeout aborts on large files.
+  - Wired `onRetry` callbacks directly into the UI progress manager to clearly display Telegram rate-limit pauses with live countdown timers.
+  - Added automated retry heartbeat scheduling to ensure pending queues never stall.
+- **Empty Drive Folder Persistence (#77)**:
+  - Fixed initial index discovery in empty storage channels so creating new folders no longer triggers "retrying" countdown banners or rolls back optimistic folder state.
+- **macOS WKWebView File & Video Selection (#76)**:
+  - Removed premature focus-blur event listener that unmounted `<input type="file">` elements while native macOS file pickers were open.
+- **2FA Cloud Password Authentication (#42)**:
+  - Hardened SRP payload parsing to support both snake_case (`srp_B`, `srp_id`) and camelCase (`srpB`, `srpId`) attributes from Telegram's `account.password` API.
+  - Enforced strict `Buffer` conversion for cryptographic buffers (`A`, `M1`) passed to GramJS `InputCheckPasswordSRP`.
+
 ---
 
 ## 💾 Downloads & Packages (5 Platforms)

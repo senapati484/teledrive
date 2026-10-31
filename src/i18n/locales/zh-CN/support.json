@@ -1,0 +1,23 @@
+{
+  "starPrompt": {
+    "title": "喜欢 TeleDrive 吗？ ✨",
+    "description": "如果 TeleDrive 为您节省了时间或存储成本，在 GitHub 上点亮一颗 ⭐ 可以让更多人发现它，并支持项目的持续发展。",
+    "starButton": "⭐ 在 GitHub 上点赞",
+    "maybeLater": "稍后再说",
+    "dontAskAgain": "不再提示"
+  },
+  "whatsNew": {
+    "title": "TeleDrive 最新动态",
+    "badge": "v{{version}}",
+    "features": [
+      "设备备份 — 自动将本地文件夹镜像同步到您的 Telegram 频道",
+      "多语言界面 — 现已全面支持 11 种语言",
+      "优化拖放（Drag & Drop）文件管理体验",
+      "本地文件缓存加持，冷启动速度大幅提升",
+      "下一版本即将支持 Android 平台 🤖"
+    ],
+    "starCta": "喜欢这次更新吗？给我们一颗 ⭐ 吧",
+    "starButton": "⭐ 在 GitHub 上点赞",
+    "close": "关闭"
+  }
+}

@@ -53,7 +53,9 @@
     "resetZoom": "ズームフィット/リセット",
     "rotateCounterClockwise": "反時計回りに回転",
     "rotateClockwise": "時計回りに回転",
-    "toggleGrid": "グリッドの背景の切り替え"
+    "toggleGrid": "グリッドの背景の切り替え",
+    "convertingHeic": "画像プレビューを変換中…",
+    "decodeErrorDescription": "この画像形式はブラウザで直接プレビューできません。システムの写真ビューアーで開くかダウンロードできます。"
   },
   "details": {
     "title": "ファイルの詳細",
@@ -73,11 +75,13 @@
   "archive": {
     "badge": "{{ext}} アーカイブ",
     "description": "圧縮されたアーカイブをブラウザーで直接プレビューすることはできません。このアーカイブをダウンロードして、その内容をコンピュータに抽出して表示します。",
-    "download": "アーカイブをダウンロード"
+    "download": "アーカイブをダウンロード",
+    "openInSystem": "システムアプリで開く"
   },
   "unsupported": {
     "description": "このファイル タイプではプレビューを利用できません。ダウンロードして、システム上の互換性のあるアプリケーションで開くことができます。",
-    "download": "ダウンロードファイル"
+    "download": "ダウンロードファイル",
+    "openInSystem": "システムアプリで開く"
   },
   "status": {
     "words_one": "{{カウント, 数値}} 単語",

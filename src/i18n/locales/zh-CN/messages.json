@@ -8,7 +8,8 @@
       "verifyingChannel": "正在验证安全存储通道...",
       "loadingIndex": "正在加载文件元数据索引...",
       "recoveryScan": "正在验证您的文件（恢复扫描）...",
-      "initializingView": "正在初始化本地存储视图..."
+      "initializingView": "正在初始化本地存储视图...",
+      "indexIncomplete": "无法验证云盘索引 — 更改已暂停。"
     }
   },
   "backup": {
@@ -61,5 +62,19 @@
     "month_other": "{{count}} 个月",
     "year_one": "{{count}} 年",
     "year_other": "{{count}}年"
+  },
+  "indexLoad": {
+    "bannerTitle": "无法安全加载您的云盘索引",
+    "bannerBodyCached": "正在显示本地缓存的文件。在验证索引之前，文件修改操作已暂时禁用。",
+    "bannerBodyEmpty": "在您的存储频道中未找到完整的索引。请重试，或在“设置”中恢复历史索引。",
+    "retry": "重试",
+    "retrying": "正在重试...",
+    "changesPaused": "云盘索引尚未就绪。更改已暂停。",
+    "reason": {
+      "not_found": "未找到完整的索引。",
+      "partial_manifest": "最新索引缺少一个或多个分卷。",
+      "timeout": "Telegram 响应超时。",
+      "network": "无法连接到存储频道。"
+    }
   }
 }

@@ -7,7 +7,7 @@
     "connecting": "テレグラムに接続しています..."
   },
   "nav": {
-    "myDrive": "私のドライブ",
+    "myDrive": "マイドライブ",
     "recent": "最近の",
     "starred": "スター付き",
     "archived": "アーカイブ済み",
@@ -18,7 +18,8 @@
   "header": {
     "switchToLight": "ライトテーマに切り替える",
     "switchToDark": "ダークテーマに切り替える",
-    "settings": "設定"
+    "settings": "設定",
+    "searchPlaceholder": "ドライブ内を検索"
   },
   "indexQueue": {
     "saveFailedTitle": "インデックスの保存に失敗しました - クリックして再試行してください",
@@ -81,7 +82,8 @@
     "collapse": "崩壊",
     "close": "近い",
     "queued": "キューに入れられました",
-    "uploading": "アップロード中..."
+    "uploading": "アップロード中...",
+    "retry": "アップロードを再試行"
   },
   "backup": {
     "scanning": "フォルダーをスキャン中…",
@@ -101,7 +103,11 @@
     "summaryFailed_one": "{{count}} 回失敗しました",
     "summaryFailed_other": "{{count}} 回失敗しました",
     "resumeAnytime": "いつでも再開できます。",
-    "dismiss": "却下する"
+    "dismiss": "却下する",
+    "partial": "警告付きでバックアップが完了しました",
+    "summaryMissing_one": "{{count}} 個のフォルダーが利用できません",
+    "summaryMissing_other": "{{count}} 個のフォルダーが利用できません",
+    "cancel": "バックアップをキャンセル"
   },
   "errorBoundary": {
     "title": "何か問題が発生しました",

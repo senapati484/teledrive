@@ -35,7 +35,7 @@ import {
 } from "@/lib/secure/vault";
 import { bootstrapTeleDrive } from "@/lib/telegram/bootstrap";
 import { APP_VERSION, DEFAULT_API_ID, DEFAULT_API_HASH } from "@/lib/telegram/config";
-import { safeComputeCheck } from "@/lib/telegram/srp-helper";
+import { safeComputeCheck, toBuffer } from "@/lib/telegram/srp-helper";
 import { startQrLogin } from "@/lib/telegram/qr-helper";
 import { saveFutureAuthToken, loadLogoutTokens } from "@/lib/telegram/futureAuth";
 import {
@@ -1281,14 +1281,16 @@ export default function AuthPage() {
       const client = await ensureClient();
       const pwdInfo = await client.invoke(new Api.account.GetPassword());
       const srpResult = await safeComputeCheck(pwdInfo as any, password);
-      const passwordParam =
-        srpResult instanceof Api.InputCheckPasswordSRP
-          ? srpResult
-          : new Api.InputCheckPasswordSRP({
-              srpId: srpResult.srpId || (pwdInfo as any).srpId,
-              A: srpResult.A,
-              M1: srpResult.M1,
-            });
+      const srpId =
+        srpResult.srpId ??
+        srpResult.srp_id ??
+        (pwdInfo as any).srpId ??
+        (pwdInfo as any).srp_id;
+      const passwordParam = new Api.InputCheckPasswordSRP({
+        srpId,
+        A: toBuffer(srpResult.A),
+        M1: toBuffer(srpResult.M1),
+      });
       const result: any = await client.invoke(
         new Api.auth.CheckPassword({ password: passwordParam })
       );

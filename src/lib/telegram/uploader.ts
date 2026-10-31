@@ -16,7 +16,7 @@ import { bytesToHex } from "@noble/hashes/utils";
 
 const CHUNK_SIZE = 512 * 1024; // 512KB recommended chunk size for Telegram
 const CHUNK_TIMEOUT_MS = 20_000;
-const SENDFILE_TIMEOUT_MS = 30_000;
+const SENDFILE_TIMEOUT_MS = 90_000;
 
 interface UploadProgressCallback {
   (uploadedBytes: number, totalBytes: number): void;

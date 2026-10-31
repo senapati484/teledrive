@@ -324,6 +324,7 @@
       "success_one": "{{count}} élément déplacé avec succès",
       "success_other": "{{count}} éléments déplacés avec succès",
       "failed": "Échec du déplacement des éléments"
-    }
+    },
+    "indexStuck": "Impossible d'enregistrer les modifications pour l'instant. Vos modifications sont conservées localement et seront réessayées automatiquement — ou utilisez Réessayer dans la bannière."
   }
 }

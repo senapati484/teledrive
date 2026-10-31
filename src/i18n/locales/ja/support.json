@@ -1,0 +1,23 @@
+{
+  "starPrompt": {
+    "title": "TeleDrive を楽しんでいますか？ ✨",
+    "description": "TeleDrive で時間やストレージコストを節約できたなら、GitHub に ⭐ を付けることで、より多くの人が発見しやすくなり、プロジェクトの継続に役立ちます。",
+    "starButton": "⭐ GitHub でスターを付ける",
+    "maybeLater": "後で",
+    "dontAskAgain": "今後表示しない"
+  },
+  "whatsNew": {
+    "title": "TeleDrive の新機能",
+    "badge": "v{{version}}",
+    "features": [
+      "デバイスバックアップ — ローカルフォルダーを Telegram チャンネルに自動ミラーリング",
+      "多言語対応 UI — 11 言語をサポート",
+      "ドラッグ＆ドロップによるファイル管理の向上",
+      "ローカルファイルキャッシュによる高速起動",
+      "次期リリースで Android に対応予定 🤖"
+    ],
+    "starCta": "アップデートを気に入っていただけましたか？ ⭐ をお願いします",
+    "starButton": "⭐ GitHub でスターを付ける",
+    "close": "閉じる"
+  }
+}

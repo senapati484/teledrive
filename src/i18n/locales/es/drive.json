@@ -18,7 +18,8 @@
   "header": {
     "switchToLight": "Cambiar a tema claro",
     "switchToDark": "Cambiar a tema oscuro",
-    "settings": "Ajustes"
+    "settings": "Ajustes",
+    "searchPlaceholder": "Buscar en Drive"
   },
   "indexQueue": {
     "saveFailedTitle": "Error al guardar el índice — haz clic para reintentar",
@@ -81,7 +82,8 @@
     "collapse": "Contraer",
     "close": "Cerrar",
     "queued": "En cola",
-    "uploading": "Subiendo..."
+    "uploading": "Subiendo...",
+    "retry": "Reintentar subida"
   },
   "backup": {
     "scanning": "Escaneando carpetas…",
@@ -101,7 +103,11 @@
     "summaryFailed_one": "{{count}} fallido",
     "summaryFailed_other": "{{count}} fallidos",
     "resumeAnytime": "Puedes reanudar en cualquier momento.",
-    "dismiss": "Descartar"
+    "dismiss": "Descartar",
+    "partial": "Copia de seguridad completada con advertencias",
+    "summaryMissing_one": "{{count}} carpeta no disponible",
+    "summaryMissing_other": "{{count}} carpetas no disponibles",
+    "cancel": "Cancelar copia de seguridad"
   },
   "errorBoundary": {
     "title": "Algo salió mal",

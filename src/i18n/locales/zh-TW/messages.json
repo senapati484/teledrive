@@ -8,7 +8,8 @@
       "verifyingChannel": "正在驗證安全儲存通道...",
       "loadingIndex": "正在載入檔案後設資料索引...",
       "recoveryScan": "正在驗證您的檔案（恢復掃描）...",
-      "initializingView": "正在初始化本地儲存檢視..."
+      "initializingView": "正在初始化本地儲存檢視...",
+      "indexIncomplete": "無法驗證雲端硬碟索引 — 變更已暫停。"
     }
   },
   "backup": {
@@ -61,5 +62,19 @@
     "month_other": "{{count}} 個月",
     "year_one": "{{count}} 年",
     "year_other": "{{count}}年"
+  },
+  "indexLoad": {
+    "bannerTitle": "無法安全載入您的雲端硬碟索引",
+    "bannerBodyCached": "目前顯示快取檔案。在驗證索引之前，檔案修改已暫時停用。",
+    "bannerBodyEmpty": "在您的儲存頻道中未找到完整的索引。請重試，或在「設定」中還原歷史索引。",
+    "retry": "重試",
+    "retrying": "重試中...",
+    "changesPaused": "雲端硬碟索引尚未就緒。變更已暫停。",
+    "reason": {
+      "not_found": "未找到完整的索引。",
+      "partial_manifest": "最新索引缺少一個或多個部分。",
+      "timeout": "Telegram 回應逾時。",
+      "network": "無法連線至儲存頻道。"
+    }
   }
 }

@@ -53,7 +53,9 @@
     "resetZoom": "缩放适合/重置",
     "rotateCounterClockwise": "逆时针旋转",
     "rotateClockwise": "顺时针旋转",
-    "toggleGrid": "切换网格背景"
+    "toggleGrid": "切换网格背景",
+    "convertingHeic": "正在转换图片预览…",
+    "decodeErrorDescription": "此图片格式无法在浏览器中直接预览。您可以在系统相册中打开或直接下载。"
   },
   "details": {
     "title": "文件详细信息",
@@ -73,11 +75,13 @@
   "archive": {
     "badge": "{{ext}} 存档",
     "description": "压缩档案无法直接在浏览器中预览。下载此存档以解压并在您的计算机上查看其内容。",
-    "download": "下载档案"
+    "download": "下载档案",
+    "openInSystem": "在系统应用中打开"
   },
   "unsupported": {
     "description": "此文件类型没有可用的预览。您可以在系统上的兼容应用程序中下载并打开它。",
-    "download": "下载文件"
+    "download": "下载文件",
+    "openInSystem": "在系统应用中打开"
   },
   "status": {
     "words_one": "{{count, number}} 个字",

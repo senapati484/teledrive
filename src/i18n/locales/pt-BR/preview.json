@@ -53,7 +53,9 @@
     "resetZoom": "Ajustar / redefinir zoom",
     "rotateCounterClockwise": "Girar no sentido anti-horário",
     "rotateClockwise": "Girar no sentido horário",
-    "toggleGrid": "Mostrar/ocultar grade de fundo"
+    "toggleGrid": "Mostrar/ocultar grade de fundo",
+    "convertingHeic": "Convertendo pré-visualização da imagem…",
+    "decodeErrorDescription": "Este formato de imagem não pode ser pré-visualizado diretamente no navegador. Você pode abri-lo no visualizador de fotos do sistema ou baixá-lo."
   },
   "details": {
     "title": "Detalhes do arquivo",
@@ -73,11 +75,13 @@
   "archive": {
     "badge": "{{ext}} COMPACTADO",
     "description": "Arquivos compactados não podem ser visualizados diretamente aqui. Baixe o arquivo para extrair e ver o conteúdo no seu computador.",
-    "download": "Baixar arquivo compactado"
+    "download": "Baixar arquivo compactado",
+    "openInSystem": "Abrir no aplicativo do sistema"
   },
   "unsupported": {
     "description": "Não há pré-visualização disponível para este tipo de arquivo. Você pode baixá-lo e abri-lo em um aplicativo compatível no seu sistema.",
-    "download": "Baixar arquivo"
+    "download": "Baixar arquivo",
+    "openInSystem": "Abrir no aplicativo do sistema"
   },
   "status": {
     "words_one": "{{count, number}} palavra",

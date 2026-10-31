@@ -53,7 +53,9 @@
     "resetZoom": "縮放適合/重置",
     "rotateCounterClockwise": "逆時針旋轉",
     "rotateClockwise": "順時針旋轉",
-    "toggleGrid": "切換網格背景"
+    "toggleGrid": "切換網格背景",
+    "convertingHeic": "正在轉換圖片預覽…",
+    "decodeErrorDescription": "此圖片格式無法直接在瀏覽器中預覽。您可以在系統相片檢視器中開啟或下載。"
   },
   "details": {
     "title": "檔案詳細資訊",
@@ -73,11 +75,13 @@
   "archive": {
     "badge": "{{ext}} 存檔",
     "description": "壓縮檔案無法直接在瀏覽器中預覽。下載此存檔以解壓並在您的計算機上檢視其內容。",
-    "download": "下載檔案"
+    "download": "下載檔案",
+    "openInSystem": "在系統應用程式中開啟"
   },
   "unsupported": {
     "description": "此檔案型別沒有可用的預覽。您可以在系統上的相容應用程式中下載並開啟它。",
-    "download": "下載檔案"
+    "download": "下載檔案",
+    "openInSystem": "在系統應用程式中開啟"
   },
   "status": {
     "words_one": "{{count, number}} 個字",

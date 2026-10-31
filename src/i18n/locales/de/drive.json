@@ -18,7 +18,8 @@
   "header": {
     "switchToLight": "Wechseln Sie zum Lichtthema",
     "switchToDark": "Wechseln Sie zum dunklen Thema",
-    "settings": "Einstellungen"
+    "settings": "Einstellungen",
+    "searchPlaceholder": "In Drive suchen"
   },
   "indexQueue": {
     "saveFailedTitle": "Indexspeicherung fehlgeschlagen – klicken Sie, um es erneut zu versuchen",
@@ -81,7 +82,8 @@
     "collapse": "Zusammenbruch",
     "close": "Schließen",
     "queued": "In der Warteschlange",
-    "uploading": "Hochladen..."
+    "uploading": "Hochladen...",
+    "retry": "Upload wiederholen"
   },
   "backup": {
     "scanning": "Ordner scannen…",
@@ -101,7 +103,11 @@
     "summaryFailed_one": "{{count}} fehlgeschlagen",
     "summaryFailed_other": "{{count}} fehlgeschlagen",
     "resumeAnytime": "Sie können jederzeit fortfahren.",
-    "dismiss": "Zurückweisen"
+    "dismiss": "Zurückweisen",
+    "partial": "Sicherung mit Warnungen abgeschlossen",
+    "summaryMissing_one": "{{count}} Ordner nicht verfügbar",
+    "summaryMissing_other": "{{count}} Ordner nicht verfügbar",
+    "cancel": "Sicherung abbrechen"
   },
   "errorBoundary": {
     "title": "Etwas ist schief gelaufen",

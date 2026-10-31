@@ -251,6 +251,7 @@
       "success_one": "{{count}} Element erfolgreich verschoben",
       "success_other": "{{count}} Elemente erfolgreich verschoben",
       "failed": "Elemente konnten nicht verschoben werden"
-    }
+    },
+    "indexStuck": "Änderungen konnten noch nicht gespeichert werden. Ihre Änderungen werden lokal beibehalten und automatisch wiederholt — oder nutzen Sie 'Wiederholen' im Banner."
   }
 }
