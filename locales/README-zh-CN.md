@@ -10,7 +10,7 @@
 [**English**](../README.md) • [**Português (Brasil)**](README-pt-BR.md) • [**Español**](README-es.md) • [**繁體中文**](README-zh-TW.md) • [**简体中文**](README-zh-CN.md) • [**हिन्दी**](README-hi.md) • [**Français**](README-fr.md) • [**Bahasa Indonesia**](README-id.md) • [**Русский**](README-ru.md) • [**日本語**](README-ja.md) • [**Deutsch**](README-de.md)
 
 [![总下载量](https://img.shields.io/sourceforge/dt/teledrive?style=flat-square&logo=sourceforge&logoColor=white)](https://sourceforge.net/projects/teledrive/files/)
-[![最新版本](https://img.shields.io/badge/版本-v0.1.3-2082f7.svg?style=flat-square)](https://sourceforge.net/projects/teledrive/files/v0.1.3/)
+[![最新版本](https://img.shields.io/badge/版本-v0.1.2-2082f7.svg?style=flat-square)](https://sourceforge.net/projects/teledrive/files/v0.1.2/)
 [![Product Hunt](https://img.shields.io/badge/Product%20Hunt-Featured-FF6154.svg?style=flat-square&logo=producthunt&logoColor=white)](https://www.producthunt.com/products/teledrive-3)
 [![YouTube 演示视频](https://img.shields.io/badge/YouTube-演示视频-red.svg?style=flat-square&logo=youtube&logoColor=white)](https://youtu.be/4AiMn7HSlFg)
 [![开源协议: GPL v3](https://img.shields.io/badge/开源协议-GPLv3-gray.svg?style=flat-square)](../LICENSE)
@@ -62,24 +62,24 @@ Telegram 在私人频道中提供了几乎无限的免费云存储空间，但�
 
 ## 📥 下载
 
-当前最新版本：**v0.1.3** · 支持 5 大平台的预编译原生安装包：
+当前最新版本：**v0.1.2** · 支持 5 大平台的预编译原生安装包：
 
 | 操作系统 | 安装包格式 | 直接下载链接 | 架构 / 兼容性 | 大小 |
 |:---|:---|:---|:---|---:|
-| **Windows** | 安装程序 (`.exe`) | [**teledrive-setup.exe**](https://sourceforge.net/projects/teledrive/files/v0.1.3/teledrive-setup.exe/download) | x64 64位 (Windows 10 / 11) | 5.8 MB |
-| **Windows** | MSI 安装包 (`.msi`) | [**teledrive.msi**](https://sourceforge.net/projects/teledrive/files/v0.1.3/teledrive.msi/download) | 企业级安装包 (Win 10 / 11) | 7.3 MB |
-| **macOS** | 通用磁盘镜像 (`.dmg`) | [**teledrive.dmg**](https://sourceforge.net/projects/teledrive/files/v0.1.3/teledrive.dmg/download) | Apple Silicon (M1–M4) 与 Intel x64 | 14.4 MB |
-| **Linux** | 通用 AppImage (`.AppImage`) | [**teledrive.AppImage**](https://sourceforge.net/projects/teledrive/files/v0.1.3/teledrive.AppImage/download) | 独立便携版 (glibc 2.31+) | 85.5 MB |
-| **Linux** | Debian / Ubuntu (`.deb`) | [**teledrive.deb**](https://sourceforge.net/projects/teledrive/files/v0.1.3/teledrive.deb/download) | x86_64 / amd64 | 7.5 MB |
-| **Linux** | Fedora / RHEL (`.rpm`) | [**teledrive.rpm**](https://sourceforge.net/projects/teledrive/files/v0.1.3/teledrive.rpm/download) | x86_64 / amd64 | 7.5 MB |
-| **Android** | 通用 APK (`.apk`) | [**teledrive.apk**](https://sourceforge.net/projects/teledrive/files/v0.1.3/teledrive.apk/download) | Android 8.0+ (ARM64, ARMv7a, x86_64) | 45.9 MB |
-| **iOS** | 侧载安装包 (`.ipa`) | [**teledrive.ipa**](https://sourceforge.net/projects/teledrive/files/v0.1.3/teledrive.ipa/download) | iOS 15.0+ (AltStore / TrollStore) | 24.1 MB |
-| **iOS** | 模拟器构建包 (`.zip`) | [**teledrive-ios-simulator.zip**](https://sourceforge.net/projects/teledrive/files/v0.1.3/teledrive-ios-simulator.zip/download) | iOS 模拟器 (x86_64 / arm64) | 24.1 MB |
+| **Windows** | 安装程序 (`.exe`) | [**teledrive-setup.exe**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive-setup.exe/download) | x64 64位 (Windows 10 / 11) | 5.8 MB |
+| **Windows** | MSI 安装包 (`.msi`) | [**teledrive.msi**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.msi/download) | 企业级安装包 (Win 10 / 11) | 7.3 MB |
+| **macOS** | 通用磁盘镜像 (`.dmg`) | [**teledrive.dmg**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.dmg/download) | Apple Silicon (M1–M4) 与 Intel x64 | 14.4 MB |
+| **Linux** | 通用 AppImage (`.AppImage`) | [**teledrive.AppImage**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.AppImage/download) | 独立便携版 (glibc 2.31+) | 85.5 MB |
+| **Linux** | Debian / Ubuntu (`.deb`) | [**teledrive.deb**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.deb/download) | x86_64 / amd64 | 7.5 MB |
+| **Linux** | Fedora / RHEL (`.rpm`) | [**teledrive.rpm**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.rpm/download) | x86_64 / amd64 | 7.5 MB |
+| **Android** | 通用 APK (`.apk`) | [**teledrive.apk**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.apk/download) | Android 8.0+ (ARM64, ARMv7a, x86_64) | 45.9 MB |
+| **iOS** | 侧载安装包 (`.ipa`) | [**teledrive.ipa**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive.ipa/download) | iOS 15.0+ (AltStore / TrollStore) | 24.1 MB |
+| **iOS** | 模拟器构建包 (`.zip`) | [**teledrive-ios-simulator.zip**](https://sourceforge.net/projects/teledrive/files/v0.1.2/teledrive-ios-simulator.zip/download) | iOS 模拟器 (x86_64 / arm64) | 24.1 MB |
 
 > 🌐 所有软件包、镜像下载地址及加密校验码均可在 [**SourceForge**](https://sourceforge.net/projects/teledrive/files/) 或 [**teledrive.space**](https://teledrive.space) 获取。
 
 <details>
-<summary>🔐 <b>校验 SHA-256 加密散列校验码 (v0.1.3)</b></summary>
+<summary>🔐 <b>校验 SHA-256 加密散列校验码 (v0.1.2)</b></summary>
 
 ```
 dfb353e361336ebbb8921982aa190b1a4e765f987d6558535582d837e2c3b633  teledrive.dmg
