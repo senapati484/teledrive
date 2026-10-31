@@ -84,7 +84,6 @@
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
-    "shadcn": "^4.22.1",
     "typescript": "~7.0.2",
     "vite": "^7.3.7",
     "vite-plugin-node-polyfills": "^0.28.0",
