@@ -254,7 +254,7 @@ jobs:
   # ─── 3. Build iOS IPA (Parallel) ─────────────────────────────────────────────
   build-ios:
     name: Build iOS IPA
-    runs-on: macos-14
+    runs-on: macos-latest
     continue-on-error: true
 
     steps:
