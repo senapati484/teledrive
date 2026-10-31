@@ -16,7 +16,7 @@ import { bytesToHex } from "@noble/hashes/utils";
 
 const CHUNK_SIZE = 512 * 1024; // 512KB recommended chunk size for Telegram
 const CHUNK_TIMEOUT_MS = 20_000;
-const SENDFILE_TIMEOUT_MS = 30_000;
+const SENDFILE_TIMEOUT_MS = 90_000;
 
 interface UploadProgressCallback {
   (uploadedBytes: number, totalBytes: number): void;
@@ -93,9 +93,8 @@ export async function uploadFileToTelegram(
 
   const isPathInput = typeof filePathOrFile === "string";
 
-  try {
-    // Upload chunks sequentially
-    for (let partIndex = 0; partIndex < totalParts; partIndex++) {
+  // Upload chunks sequentially
+  for (let partIndex = 0; partIndex < totalParts; partIndex++) {
       const start = partIndex * CHUNK_SIZE;
       const end = Math.min(start + CHUNK_SIZE, fileSize);
       const currentChunkSize = end - start;
@@ -241,9 +240,4 @@ export async function uploadFileToTelegram(
       }
     }
     return { message: result, hash: contentHash } satisfies HashedUploadResult;
-  } catch (err) {
-    // No file handle to close — we read each chunk via a fresh Rust
-    // command invocation, which has its own open/read/close lifecycle.
-    throw err;
-  }
 }

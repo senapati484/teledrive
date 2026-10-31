@@ -119,7 +119,18 @@
       "maxExcludes_other": "Maximal {{count}} Ausschlussmuster.",
       "pickerFailed": "Ordnerauswahl konnte nicht geöffnet werden",
       "noFolders": "Wählen Sie zuerst mindestens einen Quellordner aus"
-    }
+    },
+    "lastAttempt": "Letzter Versuch:",
+    "lastAttemptAgo": "vor {{time}}",
+    "runStatus": {
+      "success": "Erfolgreich",
+      "partial": "Mit Warnungen abgeschlossen",
+      "failed": "Fehlgeschlagen",
+      "cancelled": "Abgebrochen — wird beim nächsten Durchlauf fortgesetzt"
+    },
+    "missingRoots_one": "{{count}} Quellordner ist nicht verfügbar. Andere Ordner wurden gesichert.",
+    "missingRoots_other": "{{count}} Quellordner sind nicht verfügbar. Andere Ordner wurden gesichert.",
+    "editFolders": "Ordner bearbeiten"
   },
   "appearance": {
     "title": "Erscheinungsbild",
@@ -166,7 +177,36 @@
     "toasts": {
       "channelNotInitialised": "Speicherkanal noch nicht initialisiert.",
       "refreshed": "Speicherdaten von Telegram aktualisiert.",
-      "refreshFailed": "Speicherdaten konnten nicht aktualisiert werden."
+      "refreshFailed": "Speicherdaten konnten nicht aktualisiert werden.",
+      "indexIncomplete": "Ein vollständiger Index konnte nicht überprüft werden. Gecachte Dateien werden weiterhin angezeigt; Änderungen bleiben pausiert."
+    },
+    "indexSave": {
+      "saving": "Aktualisierte Dateiliste wird auf Telegram gespeichert…",
+      "retrying": "Telegram begrenzt die Speicherungsrate. Automatische Wiederholung in {{seconds}}s. Ihre Dateien sind sicher."
+    },
+    "recovery": {
+      "button": "Fehlende Dateien wiederherstellen",
+      "title": "Dateien wiederherstellen",
+      "description": "Finden Sie fehlende Dateien, indem Sie ältere Index-Schnappschüsse und hochgeladene Dateien in Ihrem Kanal prüfen. Aktuelle Dateien bleiben unverändert; wiederhergestellte Dateien werden hinzugefügt.",
+      "warning": "Wiederhergestellte Dateien werden Ihrem aktuellen Drive hinzugefügt — es wird nichts gelöscht. Ältere Schnappschüsse können Dateien enthalten, die Sie später gelöscht oder umbenannt haben.",
+      "scanning": "Kanalverlauf wird gescannt…",
+      "empty": "Keine wiederherstellbaren Dateien gefunden.",
+      "epochUnknown": "Unbekanntes Datum",
+      "channelFiles": "Im Kanalverlauf gefundene Dateien",
+      "selectAll": "Alle auswählen",
+      "selectNone": "Auswahl aufheben",
+      "selectedCount": "{{selected}} von {{total}} ausgewählt",
+      "filesCount_one": "{{count}} Datei",
+      "filesCount_other": "{{count}} Dateien",
+      "restore": "Ausgewählte hinzufügen ({{count}})",
+      "restoring": "Dateien werden hinzugefügt…",
+      "restored_one": "{{count}} Datei zu Ihrem Drive hinzugefügt",
+      "restored_other": "{{count}} Dateien zu Ihrem Drive hinzugefügt",
+      "restoredPartial_one": "{{count}} Datei hinzugefügt; {{skipped}} fehlende Nachricht wurde übersprungen",
+      "restoredPartial_other": "{{count}} Dateien hinzugefügt; {{skipped}} fehlende Nachrichten wurden übersprungen",
+      "nothingNew": "Nichts Neues hinzuzufügen — diese Dateien befinden sich bereits in Ihrem Drive.",
+      "failed": "Dateien konnten nicht wiederhergestellt werden",
+      "cancel": "Abbrechen"
     }
   },
   "about": {

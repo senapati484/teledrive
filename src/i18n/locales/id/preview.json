@@ -53,7 +53,9 @@
     "resetZoom": "Atur Ulang Zoom",
     "rotateCounterClockwise": "Putar Berlawanan Arah Jarum Jam",
     "rotateClockwise": "Putar Searah Jarum Jam",
-    "toggleGrid": "Alihkan Latar Kisi"
+    "toggleGrid": "Alihkan Latar Kisi",
+    "convertingHeic": "Mengonversi pratinjau gambar…",
+    "decodeErrorDescription": "Format gambar ini tidak dapat dipratinjau langsung di peramban. Anda dapat membukanya di penampil foto sistem atau mengunduhnya."
   },
   "details": {
     "title": "Detail Berkas",
@@ -73,11 +75,13 @@
   "archive": {
     "badge": "ARSIP {{ext}}",
     "description": "Arsip terkompresi tidak dapat dipratinjau langsung di aplikasi. Unduh arsip ini untuk mengekstrak dan melihat isinya.",
-    "download": "Unduh Arsip"
+    "download": "Unduh Arsip",
+    "openInSystem": "Buka di Aplikasi Sistem"
   },
   "unsupported": {
     "description": "Tidak ada pratinjau yang tersedia untuk jenis berkas ini. Anda dapat mengunduh dan membukanya di aplikasi yang kompatibel.",
-    "download": "Unduh Berkas"
+    "download": "Unduh Berkas",
+    "openInSystem": "Buka di Aplikasi Sistem"
   },
   "status": {
     "words_one": "{{count, number}} kata",

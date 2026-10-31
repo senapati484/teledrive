@@ -35,7 +35,7 @@ import {
 } from "@/lib/secure/vault";
 import { bootstrapTeleDrive } from "@/lib/telegram/bootstrap";
 import { APP_VERSION, DEFAULT_API_ID, DEFAULT_API_HASH } from "@/lib/telegram/config";
-import { safeComputeCheck } from "@/lib/telegram/srp-helper";
+import { safeComputeCheck, toBuffer } from "@/lib/telegram/srp-helper";
 import { startQrLogin } from "@/lib/telegram/qr-helper";
 import { saveFutureAuthToken, loadLogoutTokens } from "@/lib/telegram/futureAuth";
 import {
@@ -457,7 +457,7 @@ export default function AuthPage() {
   const [pending, setPending] = useState<PendingLogin | null>(null);
   const pendingRef = useRef<PendingLogin | null>(null);
   const [otp, setOtp] = useState<string[]>(
-    new Array(DEFAULT_CODE_LENGTH).fill("")
+    Array.from({ length: DEFAULT_CODE_LENGTH }, () => "")
   );
   const [resendAt, setResendAt] = useState(0);
   const [floodUntil, setFloodUntil] = useState(0);
@@ -564,7 +564,7 @@ export default function AuthPage() {
       const p = pendingFromSentCode(phoneValue, info, tempSession);
       applyPending(p);
       const length = info.codeLength > 0 ? info.codeLength : DEFAULT_CODE_LENGTH;
-      setOtp(new Array(length).fill(""));
+      setOtp(Array.from({ length }, () => ""));
       setEmailPattern(info.emailPattern || "");
       setEmailCode("");
       setEmailStage("address");
@@ -685,7 +685,7 @@ export default function AuthPage() {
       setEmailPattern(stored.emailPattern || "");
       const length =
         stored.codeLength > 0 ? stored.codeLength : DEFAULT_CODE_LENGTH;
-      setOtp(new Array(length).fill(""));
+      setOtp(Array.from({ length }, () => ""));
 
       if (stored.tempSession) {
         try {
@@ -1151,7 +1151,7 @@ export default function AuthPage() {
         applyPending(null);
         setStep("phone");
       } else if (code === "PHONE_CODE_INVALID" || code === "PHONE_CODE_EMPTY") {
-        setOtp(new Array(codeLength).fill(""));
+        setOtp(Array.from({ length: codeLength }, () => ""));
         otpRefs.current[0]?.focus();
       }
       setLastError(info);
@@ -1238,7 +1238,7 @@ export default function AuthPage() {
       .slice(0, codeLength);
     if (!rawDigits) return;
 
-    const newOtp = new Array(codeLength).fill("");
+    const newOtp = Array.from({ length: codeLength }, () => "");
     rawDigits.split("").forEach((d, i) => {
       newOtp[i] = d;
     });
@@ -1281,14 +1281,16 @@ export default function AuthPage() {
       const client = await ensureClient();
       const pwdInfo = await client.invoke(new Api.account.GetPassword());
       const srpResult = await safeComputeCheck(pwdInfo as any, password);
-      const passwordParam =
-        srpResult instanceof Api.InputCheckPasswordSRP
-          ? srpResult
-          : new Api.InputCheckPasswordSRP({
-              srpId: srpResult.srpId || (pwdInfo as any).srpId,
-              A: srpResult.A,
-              M1: srpResult.M1,
-            });
+      const srpId =
+        srpResult.srpId ??
+        srpResult.srp_id ??
+        (pwdInfo as any).srpId ??
+        (pwdInfo as any).srp_id;
+      const passwordParam = new Api.InputCheckPasswordSRP({
+        srpId,
+        A: toBuffer(srpResult.A),
+        M1: toBuffer(srpResult.M1),
+      });
       const result: any = await client.invoke(
         new Api.auth.CheckPassword({ password: passwordParam })
       );
@@ -1908,7 +1910,7 @@ export default function AuthPage() {
                   onClick={() => {
                     applyPending(null);
                     setStep("phone");
-                    setOtp(new Array(codeLength).fill(""));
+                    setOtp(Array.from({ length: codeLength }, () => ""));
                     setError(null);
                   }}
                   label={t("otp.differentNumber")}

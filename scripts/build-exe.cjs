@@ -34,7 +34,7 @@ if (isWindows) {
   
   try {
     execSync('npx tauri build --target x86_64-pc-windows-msvc --bundles nsis', { cwd: rootDir, stdio: 'inherit' });
-  } catch (err) {
+  } catch {
     console.log('\n------------------------------------------------------');
     console.log('⚠️  Notice on Cross-Compiling Windows .exe from Mac/Linux:');
     console.log('Tauri and Rust native Windows linking require the Windows MSVC SDK or MinGW.');

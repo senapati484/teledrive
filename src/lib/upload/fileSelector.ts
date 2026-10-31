@@ -40,15 +40,6 @@ export async function triggerFilePicker(): Promise<void> {
       cleanup();
     };
 
-    // Safety timeout in case cancel event isn't fired by some WebKit versions
-    window.addEventListener(
-      "focus",
-      () => {
-        setTimeout(cleanup, 1500);
-      },
-      { once: true }
-    );
-
     input.click();
   });
 }
@@ -95,14 +86,6 @@ export async function triggerFolderPicker(): Promise<void> {
     input.oncancel = () => {
       cleanup();
     };
-
-    window.addEventListener(
-      "focus",
-      () => {
-        setTimeout(cleanup, 1500);
-      },
-      { once: true }
-    );
 
     input.click();
   });

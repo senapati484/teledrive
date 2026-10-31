@@ -8,7 +8,8 @@
       "verifyingChannel": "Verificando o canal de armazenamento seguro...",
       "loadingIndex": "Carregando o índice de metadados dos arquivos...",
       "recoveryScan": "Verificando seus arquivos (verificação de recuperação)...",
-      "initializingView": "Inicializando a visualização do armazenamento local..."
+      "initializingView": "Inicializando a visualização do armazenamento local...",
+      "indexIncomplete": "Não foi possível verificar o índice do drive — as alterações estão pausadas."
     }
   },
   "backup": {
@@ -67,5 +68,19 @@
     "day_zero": "{{count}} dias",
     "month_zero": "{{count}} meses",
     "year_zero": "{{count}} anos"
+  },
+  "indexLoad": {
+    "bannerTitle": "Não foi possível carregar o índice do seu drive com segurança",
+    "bannerBodyCached": "Exibindo arquivos em cache. As alterações estão desativadas até que o índice possa ser verificado.",
+    "bannerBodyEmpty": "Nenhum índice completo foi encontrado no seu canal de armazenamento. Tente novamente ou restaure um índice anterior nas Configurações.",
+    "retry": "Tentar novamente",
+    "retrying": "Tentando novamente...",
+    "changesPaused": "O índice do drive ainda não está pronto. As alterações estão pausadas.",
+    "reason": {
+      "not_found": "Nenhum índice completo foi encontrado.",
+      "partial_manifest": "O índice mais recente está sem uma ou mais partes.",
+      "timeout": "O Telegram demorou muito para responder.",
+      "network": "Não foi possível alcançar o canal de armazenamento."
+    }
   }
 }

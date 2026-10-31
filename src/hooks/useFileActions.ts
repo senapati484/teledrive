@@ -179,7 +179,7 @@ async function applyOptimistic(
     if (options.eventType) {
       logEvent({
         type: options.eventType,
-        payload: { fileCount: nextFiles.length, ...(options.eventPayload ?? {}) },
+        payload: { fileCount: nextFiles.length, ...options.eventPayload },
       });
     }
   } catch (err: any) {

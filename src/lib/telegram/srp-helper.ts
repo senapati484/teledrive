@@ -35,15 +35,27 @@ import { computeCheck } from "telegram/Password";
  */
 export function toBuffer(value: any): Buffer {
   if (!value) return Buffer.alloc(0);
-  if (value.byteLength === 0) return Buffer.alloc(0);
-  const buf = Buffer.alloc(value.byteLength);
-  // Copy bytes manually using Uint8Array.prototype.set
-  if (value.buffer) {
-    Uint8Array.prototype.set.call(buf, new Uint8Array(value.buffer, value.byteOffset, value.byteLength));
-  } else {
-    Uint8Array.prototype.set.call(buf, new Uint8Array(value));
+  if (value.type === "Buffer" && Array.isArray(value.data)) {
+    return Buffer.from(value.data);
   }
-  return buf;
+  if (Array.isArray(value)) {
+    return Buffer.from(value);
+  }
+  if (typeof value === "string") {
+    return Buffer.from(value, "utf8");
+  }
+  if (Buffer.isBuffer(value)) return value;
+  if (value instanceof Uint8Array) {
+    return Buffer.from(value.buffer, value.byteOffset, value.byteLength);
+  }
+  if (typeof value === "object" && "buffer" in value && value.buffer instanceof ArrayBuffer) {
+    return Buffer.from(value.buffer, value.byteOffset || 0, value.byteLength || value.buffer.byteLength);
+  }
+  try {
+    return Buffer.from(value);
+  } catch {
+    return Buffer.alloc(0);
+  }
 }
 
 /**
@@ -67,10 +79,13 @@ export async function safeComputeCheck(
     if (algo.salt2) algo.salt2 = toBuffer(algo.salt2);
   }
 
-  // ── Patch srpB (may appear as "srpB" or "srp_b" depending on GramJS version) ──
+  // ── Patch srpB (may appear as "srpB", "srp_b", or "srp_B" depending on GramJS version) ──
   const srp = passwordConfig as any;
   if (srp.srpB) srp.srpB = toBuffer(srp.srpB);
   if (srp.srp_b) srp.srp_b = toBuffer(srp.srp_b);
+  if (srp.srp_B) srp.srp_B = toBuffer(srp.srp_B);
+  if (srp.srp_id && !srp.srpId) srp.srpId = srp.srp_id;
+  if (srp.srpId && !srp.srp_id) srp.srp_id = srp.srpId;
 
   // ── Patch newAlgo if present (for password-change flows) ─────────────────
   const newAlgo = srp.newAlgo;
@@ -97,6 +112,7 @@ export async function safeComputeCheck(
     if (srpResult.M1) srpResult.M1 = toBuffer(srpResult.M1);
     const raw = srpResult as any;
     if (raw.srp_id && !raw.srpId) raw.srpId = raw.srp_id;
+    if (raw.srpId && !raw.srp_id) raw.srp_id = raw.srpId;
   }
 
   return srpResult;

@@ -324,6 +324,7 @@
       "success_one": "Berhasil memindahkan {{count}} item",
       "success_other": "Berhasil memindahkan {{count}} item",
       "failed": "Gagal memindahkan item"
-    }
+    },
+    "indexStuck": "Belum dapat menyimpan perubahan. Perubahan Anda disimpan secara lokal dan akan dicoba lagi otomatis — atau gunakan Coba lagi di banner."
   }
 }

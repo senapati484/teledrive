@@ -1,24 +1,25 @@
 {
-  "logoAlt": "电信标志",
+  "logoAlt": "TeleDrive 图标",
   "actions": {
     "close": "关闭"
   },
   "splash": {
-    "connecting": "正在连接到电报..."
+    "connecting": "正在连接到 Telegram..."
   },
   "nav": {
-    "myDrive": "我的驾驶",
-    "recent": "最近的",
+    "myDrive": "我的云盘",
+    "recent": "最近文件",
     "starred": "已加星标",
     "archived": "已存档",
-    "trash": "垃圾",
+    "trash": "回收站",
     "backups": "备份",
     "settings": "设置"
   },
   "header": {
     "switchToLight": "切换到浅色主题",
     "switchToDark": "切换到黑暗主题",
-    "settings": "设置"
+    "settings": "设置",
+    "searchPlaceholder": "在云盘中搜索"
   },
   "indexQueue": {
     "saveFailedTitle": "索引保存失败 — 单击重试",
@@ -81,7 +82,8 @@
     "collapse": "坍塌",
     "close": "关闭",
     "queued": "排队",
-    "uploading": "正在上传..."
+    "uploading": "正在上传...",
+    "retry": "重试上传"
   },
   "backup": {
     "scanning": "正在扫描文件夹...",
@@ -101,7 +103,11 @@
     "summaryFailed_one": "{{count}} 失败",
     "summaryFailed_other": "{{count}} 失败",
     "resumeAnytime": "您可以随时恢复。",
-    "dismiss": "解雇"
+    "dismiss": "解雇",
+    "partial": "备份完成（存在警告）",
+    "summaryMissing_one": "{{count}} 个文件夹不可用",
+    "summaryMissing_other": "{{count}} 个文件夹不可用",
+    "cancel": "取消备份"
   },
   "errorBoundary": {
     "title": "出了点问题",

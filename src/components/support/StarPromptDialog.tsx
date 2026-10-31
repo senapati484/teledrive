@@ -91,53 +91,55 @@ export default function StarPromptDialog() {
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="w-full max-w-sm p-0 overflow-hidden gap-0 rounded-2xl border border-slate-200/80 dark:border-white/[0.08] bg-white dark:bg-[#0d0e11] shadow-2xl"
+        className="w-[calc(100%-2rem)] sm:w-full max-w-md p-0 overflow-hidden gap-0 rounded-2xl sm:rounded-3xl border border-slate-200/90 dark:border-white/[0.08] bg-white dark:bg-[#0e1015] shadow-2xl shadow-black/20 dark:shadow-[0_25px_70px_-15px_rgba(0,0,0,0.7)]"
       >
         {/* ── Close (×) button — acts as "Maybe later" ── */}
         <button
           onClick={handleMaybeLater}
           aria-label="Close"
-          className="absolute top-3 right-3 z-10 h-7 w-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
+          className="absolute top-4 right-4 z-20 h-8 w-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
         >
           <X className="h-4 w-4" />
         </button>
 
-        {/* ── Header strip ── */}
-        <div className="flex flex-col items-center gap-3 pt-8 pb-5 px-6 bg-gradient-to-b from-blue-50/80 dark:from-[#001533]/60 to-transparent">
-          <div className="h-14 w-14 rounded-2xl bg-[#0B57D0] dark:bg-[#1a73e8] flex items-center justify-center shadow-lg shadow-blue-500/20 dark:shadow-blue-500/10">
+        {/* ── Ambient Header ── */}
+        <div className="relative flex flex-col items-center gap-3 pt-8 pb-5 px-6 sm:px-7 bg-gradient-to-b from-amber-500/[0.08] via-amber-500/[0.02] to-transparent">
+          <div className="absolute -top-10 left-1/2 -translate-x-1/2 w-44 h-44 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+
+          <div className="h-14 w-14 rounded-2xl bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300 flex items-center justify-center shadow-lg shadow-amber-500/25 ring-1 ring-white/20 dark:ring-white/10 shrink-0">
             <Star className="h-7 w-7 text-white fill-white" />
           </div>
-          <DialogTitle className="text-base font-semibold text-center text-[#1F1F1F] dark:text-[#E3E3E3]">
+          <DialogTitle className="text-base sm:text-lg font-bold text-center text-slate-900 dark:text-white">
             {t("starPrompt.title")}
           </DialogTitle>
-          <DialogDescription className="text-sm text-center text-[#444746] dark:text-[#9aa0a6] leading-relaxed max-w-xs">
+          <DialogDescription className="text-xs sm:text-sm text-center text-slate-600 dark:text-slate-300 leading-relaxed max-w-xs">
             {t("starPrompt.description")}
           </DialogDescription>
         </div>
 
         {/* ── Actions ── */}
-        <div className="flex flex-col gap-2.5 px-6 pb-6">
+        <div className="flex flex-col gap-3 px-6 pb-6 sm:px-7 sm:pb-7">
           {/* Primary CTA */}
           <Button
             onClick={handleStar}
-            className="w-full h-10 rounded-full text-sm font-semibold bg-[#0B57D0] hover:bg-[#0842A0] text-white dark:bg-[#1a73e8] dark:hover:bg-[#1558b0] border-0 shadow-sm cursor-pointer transition-colors"
+            className="w-full h-10.5 rounded-xl text-sm font-semibold bg-[#0B57D0] hover:bg-[#0842A0] dark:bg-blue-600 dark:hover:bg-blue-500 text-white shadow-md shadow-blue-500/20 active:scale-[0.98] transition-all cursor-pointer border-0"
           >
             {t("starPrompt.starButton")}
           </Button>
 
           {/* Secondary actions row */}
-          <div className="flex gap-2">
+          <div className="flex gap-2.5">
             <Button
               variant="outline"
               onClick={handleMaybeLater}
-              className="flex-1 h-9 rounded-full text-xs font-medium border-slate-200 dark:border-white/[0.08] text-[#444746] dark:text-[#9aa0a6] hover:bg-slate-50 dark:hover:bg-white/[0.04] cursor-pointer"
+              className="flex-1 h-9.5 rounded-xl text-xs font-medium border-slate-200 dark:border-white/[0.08] text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04] cursor-pointer"
             >
               {t("starPrompt.maybeLater")}
             </Button>
             <Button
               variant="ghost"
               onClick={handleDontAskAgain}
-              className="flex-1 h-9 rounded-full text-xs font-medium text-[#747775] dark:text-[#5f6368] hover:text-[#444746] dark:hover:text-[#9aa0a6] hover:bg-slate-50 dark:hover:bg-white/[0.04] cursor-pointer"
+              className="flex-1 h-9.5 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/[0.04] cursor-pointer"
             >
               {t("starPrompt.dontAskAgain")}
             </Button>

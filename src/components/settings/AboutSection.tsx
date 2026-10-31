@@ -5,6 +5,7 @@ import { getVersion } from "@tauri-apps/api/app";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { APP_VERSION } from "@/lib/telegram/config";
 
 const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -44,7 +45,7 @@ const LINKS = {
 
 export default function AboutSection() {
   const { t } = useTranslation("settings");
-  const [version, setVersion] = useState("0.1.2");
+  const [version, setVersion] = useState(APP_VERSION);
   const [checking, setChecking] = useState(false);
 
   useEffect(() => {

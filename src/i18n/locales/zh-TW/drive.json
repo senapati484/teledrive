@@ -1,24 +1,25 @@
 {
-  "logoAlt": "電信標誌",
+  "logoAlt": "TeleDrive 圖示",
   "actions": {
     "close": "關閉"
   },
   "splash": {
-    "connecting": "正在連線到Telegram..."
+    "connecting": "正在連線到 Telegram..."
   },
   "nav": {
-    "myDrive": "我的駕駛",
-    "recent": "最近的",
+    "myDrive": "我的雲端硬碟",
+    "recent": "最近項目",
     "starred": "已加上星號",
     "archived": "已存檔",
-    "trash": "垃圾",
+    "trash": "垃圾桶",
     "backups": "備份",
     "settings": "設定"
   },
   "header": {
     "switchToLight": "切換到淺色主題",
     "switchToDark": "切換到黑暗主題",
-    "settings": "設定"
+    "settings": "設定",
+    "searchPlaceholder": "在雲端硬碟中搜尋"
   },
   "indexQueue": {
     "saveFailedTitle": "索引儲存失敗 — 單擊重試",
@@ -81,7 +82,8 @@
     "collapse": "坍塌",
     "close": "關閉",
     "queued": "排隊",
-    "uploading": "正在上傳..."
+    "uploading": "正在上傳...",
+    "retry": "重試上傳"
   },
   "backup": {
     "scanning": "正在掃描資料夾...",
@@ -101,7 +103,11 @@
     "summaryFailed_one": "{{count}} 失敗",
     "summaryFailed_other": "{{count}} 失敗",
     "resumeAnytime": "您可以隨時恢復。",
-    "dismiss": "解僱"
+    "dismiss": "解僱",
+    "partial": "備份完成（有警告）",
+    "summaryMissing_one": "{{count}} 個資料夾無法使用",
+    "summaryMissing_other": "{{count}} 個資料夾無法使用",
+    "cancel": "取消備份"
   },
   "errorBoundary": {
     "title": "出了點問題",

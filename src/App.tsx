@@ -102,7 +102,9 @@ function App() {
               if (Array.isArray(parsed) && parsed.length > 0) {
                 hasCachedFiles = true;
               }
-            } catch (_) {}
+            } catch {
+              // Ignore invalid cache
+            }
           }
 
           if (hasCachedFiles) {

@@ -1,7 +1,7 @@
 {
   "page": {
     "title": "設定",
-    "backToDrive": "返回駕駛"
+    "backToDrive": "返回雲端硬碟"
   },
   "nav": {
     "account": "Telegram賬戶",
@@ -119,7 +119,18 @@
       "maxExcludes_other": "最多排除 {{count}} 個模式。",
       "pickerFailed": "無法開啟資料夾選擇器",
       "noFolders": "首先至少選擇一個原始檔夾"
-    }
+    },
+    "lastAttempt": "上次嘗試：",
+    "lastAttemptAgo": "{{time}} 前",
+    "runStatus": {
+      "success": "成功",
+      "partial": "完成（有警告）",
+      "failed": "失敗",
+      "cancelled": "已取消 — 將在下次執行時恢復"
+    },
+    "missingRoots_one": "{{count}} 個來源資料夾無法使用。其他資料夾已完成備份。",
+    "missingRoots_other": "{{count}} 個來源資料夾無法使用。其他資料夾已完成備份。",
+    "editFolders": "編輯資料夾"
   },
   "appearance": {
     "title": "外貌",
@@ -166,7 +177,36 @@
     "toasts": {
       "channelNotInitialised": "儲存通道尚未初始化。",
       "refreshed": "從 Telegram 重新整理儲存。",
-      "refreshFailed": "重新整理儲存資料失敗。"
+      "refreshFailed": "重新整理儲存資料失敗。",
+      "indexIncomplete": "無法驗證完整索引。仍會顯示快取檔案；變更操作保持暫停。"
+    },
+    "indexSave": {
+      "saving": "正在將更新的檔案清單儲存至 Telegram…",
+      "retrying": "Telegram 正在限制儲存速率。將在 {{seconds}} 秒後自動重試。您的檔案安全無虞。"
+    },
+    "recovery": {
+      "button": "還原缺失檔案",
+      "title": "還原檔案",
+      "description": "透過檢查頻道中的歷史索引快照與已上傳的檔案，找回雲端硬碟中缺失的檔案。您目前的檔案將完整保留。",
+      "warning": "還原的檔案會新增至您目前的雲端硬碟 — 不會刪除任何內容。歷史快照可能包含您日後已刪除或重新命名的檔案。",
+      "scanning": "正在掃描頻道歷史記錄…",
+      "empty": "未找到可還原的檔案。",
+      "epochUnknown": "未知日期",
+      "channelFiles": "在頻道歷史記錄中發現的檔案",
+      "selectAll": "全選",
+      "selectNone": "取消全選",
+      "selectedCount": "已選擇 {{selected}} / {{total}}",
+      "filesCount_one": "{{count}} 個檔案",
+      "filesCount_other": "{{count}} 個檔案",
+      "restore": "新增已選項目 ({{count}})",
+      "restoring": "正在新增檔案…",
+      "restored_one": "已新增 {{count}} 個檔案至您的雲端硬碟",
+      "restored_other": "已新增 {{count}} 個檔案至您的雲端硬碟",
+      "restoredPartial_one": "已新增 {{count}} 個檔案；略過了 {{skipped}} 則遺失的訊息",
+      "restoredPartial_other": "已新增 {{count}} 個檔案；略過了 {{skipped}} 則遺失的訊息",
+      "nothingNew": "沒有需要新增的檔案 — 這些檔案已在您的雲端硬碟中。",
+      "failed": "無法還原檔案",
+      "cancel": "取消"
     }
   },
   "about": {

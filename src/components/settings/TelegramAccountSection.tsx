@@ -287,28 +287,28 @@ export default function TelegramAccountSection() {
 
       {/* Change storage channel dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="rounded-3xl max-w-md bg-white dark:bg-[#0d0e11] border border-slate-200 dark:border-white/[0.08] p-6 shadow-2xl">
+        <DialogContent className="w-[calc(100%-2rem)] sm:w-full max-w-md bg-white dark:bg-[#0e1015] border border-slate-200/90 dark:border-white/[0.08] p-6 rounded-2xl sm:rounded-3xl shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="font-semibold text-[#1F1F1F] dark:text-[#E3E3E3]">
+            <DialogTitle className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
               {t("account.switchDialog.title")}
             </DialogTitle>
-            <DialogDescription className="text-xs text-[#444746] dark:text-[#C4C7C5]">
+            <DialogDescription className="text-xs sm:text-sm text-slate-600 dark:text-slate-300">
               {t("account.switchDialog.description")}
             </DialogDescription>
           </DialogHeader>
           <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-xs text-amber-800 dark:text-amber-300 leading-relaxed font-medium">
             ⚠️ <Trans t={t} i18nKey="account.switchDialog.warning" components={{ strong: <strong /> }} />
           </div>
-          <DialogFooter className="gap-2 sm:gap-0 mt-4">
+          <DialogFooter className="gap-2 sm:gap-2 mt-4">
             <Button
               variant="outline"
-              className="rounded-full text-xs font-medium border-slate-300 dark:border-white/[0.08] hover:bg-[#F0F4F9] dark:hover:bg-white/[0.06]"
+              className="rounded-xl text-xs font-medium border-slate-300 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.06]"
               onClick={() => setIsDialogOpen(false)}
             >
               {t("account.switchDialog.cancel")}
             </Button>
             <Button
-              className="rounded-full bg-[#0B57D0] hover:bg-[#0842A0] text-white dark:bg-[#1a73e8] dark:hover:bg-[#1558b0] font-medium text-xs ml-2 cursor-pointer"
+              className="rounded-xl bg-[#0B57D0] hover:bg-[#0842A0] text-white dark:bg-blue-600 dark:hover:bg-blue-500 font-medium text-xs cursor-pointer border-0 shadow-sm"
               onClick={async () => {
                 setIsDialogOpen(false);
                 try {

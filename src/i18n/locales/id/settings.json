@@ -125,7 +125,18 @@
     "progressHint": "Lihat panel progres di sudut kanan bawah.",
     "cancel": "Batal",
     "howItWorks": "<strong>Cara kerja pencadangan:</strong> TeleDrive memindai folder yang Anda pilih, membandingkannya dengan manifes lokal, dan hanya mengunggah file baru atau yang diubah.",
-    "viewBackups": "Lihat Cadangan"
+    "viewBackups": "Lihat Cadangan",
+    "lastAttempt": "Upaya terakhir:",
+    "lastAttemptAgo": "{{time}} yang lalu",
+    "runStatus": {
+      "success": "Berhasil",
+      "partial": "Selesai dengan peringatan",
+      "failed": "Gagal",
+      "cancelled": "Dibatalkan — akan dilanjutkan di sesi berikutnya"
+    },
+    "missingRoots_one": "{{count}} folder sumber tidak tersedia. Folder lain berhasil dicadangkan.",
+    "missingRoots_other": "{{count}} folder sumber tidak tersedia. Folder lain berhasil dicadangkan.",
+    "editFolders": "Edit folder"
   },
   "appearance": {
     "title": "Tampilan",
@@ -186,7 +197,8 @@
       "cacheClearFailed": "Gagal membersihkan cache lokal.",
       "channelNotInitialised": "Saluran penyimpanan belum diinisialisasi.",
       "refreshed": "Penyimpanan diperbarui dari Telegram.",
-      "refreshFailed": "Gagal memperbarui data penyimpanan."
+      "refreshFailed": "Gagal memperbarui data penyimpanan.",
+      "indexIncomplete": "Tidak dapat memverifikasi indeks lengkap. File cache tetap ditampilkan; perubahan dijeda."
     },
     "totalUsed": "Total Penyimpanan Digunakan",
     "calculating": "Menghitung…",
@@ -203,6 +215,34 @@
     "info": {
       "noLimit": "Telegram tidak membatasi volume kumulatif data yang disimpan di saluran pribadi.",
       "fileLimits": "Batas file individu: hingga <strong>2 GB</strong> per file untuk akun standar, dan hingga <strong>4 GB</strong> untuk pelanggan Telegram Premium."
+    },
+    "indexSave": {
+      "saving": "Menyimpan daftar file yang diperbarui ke Telegram…",
+      "retrying": "Telegram membatasi laju penyimpanan. Mencoba lagi otomatis dalam {{seconds}} dtk. File Anda aman."
+    },
+    "recovery": {
+      "button": "Pulihkan file yang hilang",
+      "title": "Pulihkan file",
+      "description": "Temukan file yang hilang dari drive Anda dengan memeriksa snapshot indeks lama dan file yang diunggah di saluran Anda.",
+      "warning": "File yang dipulihkan ditambahkan ke drive Anda saat ini — tidak ada yang dihapus.",
+      "scanning": "Memindai riwayat saluran…",
+      "empty": "Tidak ada file yang dapat dipulihkan.",
+      "epochUnknown": "Tanggal tidak diketahui",
+      "channelFiles": "File ditemukan di riwayat saluran",
+      "selectAll": "Pilih semua",
+      "selectNone": "Batal pilih semua",
+      "selectedCount": "{{selected}} dari {{total}} dipilih",
+      "filesCount_one": "{{count}} file",
+      "filesCount_other": "{{count}} file",
+      "restore": "Tambahkan yang dipilih ({{count}})",
+      "restoring": "Menambahkan file…",
+      "restored_one": "Menambahkan {{count}} file ke drive Anda",
+      "restored_other": "Menambahkan {{count}} file ke drive Anda",
+      "restoredPartial_one": "Menambahkan {{count}} file; {{skipped}} pesan hilang dilewati",
+      "restoredPartial_other": "Menambahkan {{count}} file; {{skipped}} pesan hilang dilewati",
+      "nothingNew": "Tidak ada yang baru untuk ditambahkan — file-file tersebut sudah ada di drive Anda.",
+      "failed": "Tidak dapat memulihkan file",
+      "cancel": "Batal"
     }
   },
   "about": {

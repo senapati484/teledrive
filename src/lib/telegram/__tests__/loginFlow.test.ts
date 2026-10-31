@@ -266,7 +266,7 @@ describe("diagnostics privacy", () => {
       codeLength: 5,
       phone: "+911234567890",
       platform: "android",
-      appVersion: "0.1.2",
+      appVersion: "0.1.3",
       errorCode: "FLOOD_WAIT",
     });
 

@@ -18,7 +18,8 @@
   "header": {
     "switchToLight": "Passer au thème clair",
     "switchToDark": "Passer au thème sombre",
-    "settings": "Paramètres"
+    "settings": "Paramètres",
+    "searchPlaceholder": "Rechercher dans Drive"
   },
   "indexQueue": {
     "saveFailedTitle": "Échec de l'enregistrement de l'index — cliquez pour réessayer",
@@ -81,7 +82,8 @@
     "collapse": "Réduire",
     "close": "Fermer",
     "queued": "En attente",
-    "uploading": "Téléversement..."
+    "uploading": "Téléversement...",
+    "retry": "Réessayer le téléversement"
   },
   "backup": {
     "scanning": "Analyse des dossiers…",
@@ -101,7 +103,11 @@
     "summaryFailed_one": "{{count}} échoué",
     "summaryFailed_other": "{{count}} échoués",
     "resumeAnytime": "Vous pouvez reprendre à tout moment.",
-    "dismiss": "Ignorer"
+    "dismiss": "Ignorer",
+    "partial": "Sauvegarde terminée avec des avertissements",
+    "summaryMissing_one": "{{count}} dossier non disponible",
+    "summaryMissing_other": "{{count}} dossiers non disponibles",
+    "cancel": "Annuler la sauvegarde"
   },
   "errorBoundary": {
     "title": "Un problème est survenu",

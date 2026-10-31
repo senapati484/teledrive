@@ -124,7 +124,18 @@
       "noFolders": "Selecciona al menos una carpeta de origen primero",
       "maxFolders_zero": "Máximo {{count}} carpetas de origen.",
       "maxExcludes_zero": "Máximo {{count}} patrones de exclusión."
-    }
+    },
+    "lastAttempt": "Último intento:",
+    "lastAttemptAgo": "hace {{time}}",
+    "runStatus": {
+      "success": "Exitoso",
+      "partial": "Completado con advertencias",
+      "failed": "Fallido",
+      "cancelled": "Cancelado: se reanudará en la próxima ejecución"
+    },
+    "missingRoots_one": "{{count}} carpeta de origen no está disponible. Se respaldaron las demás carpetas.",
+    "missingRoots_other": "{{count}} carpetas de origen no están disponibles. Se respaldaron las demás carpetas.",
+    "editFolders": "Editar carpetas"
   },
   "appearance": {
     "title": "Apariencia",
@@ -171,7 +182,36 @@
     "toasts": {
       "channelNotInitialised": "El canal de almacenamiento aún no está inicializado.",
       "refreshed": "Almacenamiento actualizado desde Telegram.",
-      "refreshFailed": "No se pudieron actualizar los datos de almacenamiento."
+      "refreshFailed": "No se pudieron actualizar los datos de almacenamiento.",
+      "indexIncomplete": "No se pudo verificar un índice completo. Los archivos en caché se siguen mostrando; los cambios permanecen pausados."
+    },
+    "indexSave": {
+      "saving": "Guardando lista de archivos actualizada en Telegram…",
+      "retrying": "Telegram está limitando la tasa de guardado. Reintentando automáticamente en {{seconds}}s. Sus archivos están seguros."
+    },
+    "recovery": {
+      "button": "Restaurar archivos faltantes",
+      "title": "Recuperar archivos",
+      "description": "Encuentre archivos faltantes en su drive revisando instantáneas de índices anteriores y archivos subidos en su canal. Sus archivos actuales se mantienen exactamente como están.",
+      "warning": "Los archivos recuperados se agregan a su drive actual; no se elimina nada. Las instantáneas antiguas pueden incluir archivos que luego eliminó o renombró.",
+      "scanning": "Escaneando historial del canal…",
+      "empty": "No se encontraron archivos recuperables.",
+      "epochUnknown": "Fecha desconocida",
+      "channelFiles": "Archivos encontrados en el historial del canal",
+      "selectAll": "Seleccionar todo",
+      "selectNone": "Deseleccionar todo",
+      "selectedCount": "{{selected}} de {{total}} seleccionados",
+      "filesCount_one": "{{count}} archivo",
+      "filesCount_other": "{{count}} archivos",
+      "restore": "Agregar seleccionados ({{count}})",
+      "restoring": "Agregando archivos…",
+      "restored_one": "Se agregó {{count}} archivo a su drive",
+      "restored_other": "Se agregaron {{count}} archivos a su drive",
+      "restoredPartial_one": "Se agregó {{count}} archivo; se omitió {{skipped}} mensaje faltante",
+      "restoredPartial_other": "Se agregaron {{count}} archivos; se omitieron {{skipped}} mensajes faltantes",
+      "nothingNew": "Nada nuevo para agregar: esos archivos ya están en su drive.",
+      "failed": "No se pudieron restaurar los archivos",
+      "cancel": "Cancelar"
     }
   },
   "about": {

@@ -944,8 +944,7 @@ export async function discoverIndex(channelId: string): Promise<DiscoveryResult>
     !fetchFailed &&
     recent.length === 0 &&
     pinned.length === 0 &&
-    !sawIndexMarker &&
-    useFileStore.getState().files.length === 0;
+    !sawIndexMarker;
   if (channelIsEmpty) {
     return {
       status: "ready",

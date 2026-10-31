@@ -165,7 +165,7 @@ function sanitizeHtml(html: string): string {
     ALLOWED_ATTR: [
       "href", "src", "alt", "title", "class", "target", "rel", "type", "checked", "disabled"
     ],
-    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i,
+    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.-:]|$))/i,
     FORBID_TAGS: ["script", "iframe", "object", "embed", "form", "base", "link", "style"],
     FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "onfocus", "onblur", "style"],
   });
@@ -913,7 +913,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
       let fileReady = false;
       try {
         fileReady = await exists(tempFilePath);
-      } catch (_) {
+      } catch {
         fileReady = false;
       }
 

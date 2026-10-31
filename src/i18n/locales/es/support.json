@@ -1,0 +1,23 @@
+{
+  "starPrompt": {
+    "title": "¿Disfrutando de TeleDrive? ✨",
+    "description": "Si TeleDrive te ha ahorrado tiempo o costes de almacenamiento, dejar una ⭐ en GitHub ayuda a que más personas lo descubran y mantiene el proyecto vivo.",
+    "starButton": "⭐ Destacar en GitHub",
+    "maybeLater": "Quizás más tarde",
+    "dontAskAgain": "No volver a preguntar"
+  },
+  "whatsNew": {
+    "title": "Novedades en TeleDrive",
+    "badge": "v{{version}}",
+    "features": [
+      "Copia de seguridad del dispositivo — reflejo automático de carpetas locales en tu canal de Telegram",
+      "Interfaz multilingüe — 11 idiomas compatibles ahora",
+      "Mejoras en la gestión de archivos mediante arrastrar y soltar",
+      "Inicio en frío más rápido con caché local de archivos",
+      "Soporte para Android disponible en la próxima versión 🤖"
+    ],
+    "starCta": "¿Te gusta la actualización? Danos una ⭐",
+    "starButton": "⭐ Destacar en GitHub",
+    "close": "Cerrar"
+  }
+}

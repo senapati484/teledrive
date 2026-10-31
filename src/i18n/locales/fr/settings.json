@@ -125,7 +125,18 @@
     "progressHint": "Consultez le panneau de progression dans le coin inférieur droit.",
     "cancel": "Annuler",
     "howItWorks": "<strong>Fonctionnement de la sauvegarde :</strong> TeleDrive analyse les dossiers sélectionnés, compare avec le manifeste local et ne téléverse que les fichiers nouveaux ou modifiés.",
-    "viewBackups": "Voir les sauvegardes"
+    "viewBackups": "Voir les sauvegardes",
+    "lastAttempt": "Dernière tentative :",
+    "lastAttemptAgo": "il y a {{time}}",
+    "runStatus": {
+      "success": "Réussi",
+      "partial": "Terminé avec des avertissements",
+      "failed": "Échoué",
+      "cancelled": "Annulé — reprendra à la prochaine exécution"
+    },
+    "missingRoots_one": "{{count}} dossier source n'est pas disponible. Les autres dossiers ont été sauvegardés.",
+    "missingRoots_other": "{{count}} dossiers sources ne sont pas disponibles. Les autres dossiers ont été sauvegardés.",
+    "editFolders": "Modifier les dossiers"
   },
   "appearance": {
     "title": "Apparence",
@@ -186,7 +197,8 @@
       "cacheClearFailed": "Échec du vidage du cache local.",
       "channelNotInitialised": "Canal de stockage pas encore initialisé.",
       "refreshed": "Stockage actualisé depuis Telegram.",
-      "refreshFailed": "Échec de l'actualisation des données de stockage."
+      "refreshFailed": "Échec de l'actualisation des données de stockage.",
+      "indexIncomplete": "Impossible de vérifier un index complet. Les fichiers en cache sont toujours affichés ; les modifications restent en pause."
     },
     "totalUsed": "Espace total utilisé",
     "calculating": "Calcul en cours…",
@@ -203,6 +215,34 @@
     "info": {
       "noLimit": "Telegram n'impose aucune limite sur le volume cumulé de données stockées dans les canaux privés.",
       "fileLimits": "Limites par fichier : jusqu'à <strong>2 Go</strong> par fichier pour les comptes standard, et jusqu'à <strong>4 Go</strong> pour les abonnés Telegram Premium."
+    },
+    "indexSave": {
+      "saving": "Enregistrement de la liste de fichiers mise à jour sur Telegram…",
+      "retrying": "Telegram limite le débit d'enregistrement. Nouvel essai automatique dans {{seconds}}s. Vos fichiers sont en sécurité."
+    },
+    "recovery": {
+      "button": "Restaurer les fichiers manquants",
+      "title": "Récupérer des fichiers",
+      "description": "Retrouvez les fichiers manquants dans votre drive en vérifiant les anciens instantanés d'index et les fichiers téléversés dans votre canal.",
+      "warning": "Les fichiers récupérés sont ajoutés à votre drive actuel — rien n'est supprimé. Les instantanés plus anciens peuvent inclure des fichiers que vous avez supprimés par la suite.",
+      "scanning": "Analyse de l'historique du canal…",
+      "empty": "Aucun fichier récupérable n'a été trouvé.",
+      "epochUnknown": "Date inconnue",
+      "channelFiles": "Fichiers trouvés dans l'historique du canal",
+      "selectAll": "Tout sélectionner",
+      "selectNone": "Tout désélectionner",
+      "selectedCount": "{{selected}} sur {{total}} sélectionnés",
+      "filesCount_one": "{{count}} fichier",
+      "filesCount_other": "{{count}} fichiers",
+      "restore": "Ajouter la sélection ({{count}})",
+      "restoring": "Ajout des fichiers…",
+      "restored_one": "{{count}} fichier ajouté à votre drive",
+      "restored_other": "{{count}} fichiers ajoutés à votre drive",
+      "restoredPartial_one": "{{count}} fichier ajouté ; {{skipped}} message manquant a été ignoré",
+      "restoredPartial_other": "{{count}} fichiers ajoutés ; {{skipped}} messages manquants ont été ignorés",
+      "nothingNew": "Rien de nouveau à ajouter — ces fichiers sont déjà dans votre drive.",
+      "failed": "Impossible de restaurer les fichiers",
+      "cancel": "Annuler"
     }
   },
   "about": {

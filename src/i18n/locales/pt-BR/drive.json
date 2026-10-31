@@ -18,7 +18,8 @@
   "header": {
     "switchToLight": "Mudar para o tema claro",
     "switchToDark": "Mudar para o tema escuro",
-    "settings": "Configurações"
+    "settings": "Configurações",
+    "searchPlaceholder": "Pesquisar no Drive"
   },
   "indexQueue": {
     "saveFailedTitle": "Falha ao salvar o índice — clique para tentar novamente",
@@ -84,7 +85,8 @@
     "uploading": "Enviando...",
     "failed_zero": "Falha em {{count}} envios",
     "complete_zero": "{{count}} envios concluídos",
-    "uploadingItems_zero": "Enviando {{count}} itens ({{percent}}%)"
+    "uploadingItems_zero": "Enviando {{count}} itens ({{percent}}%)",
+    "retry": "Tentar upload novamente"
   },
   "backup": {
     "scanning": "Verificando pastas…",
@@ -108,7 +110,11 @@
     "completeUploaded_zero": "Backup concluído — {{count}} arquivos enviados",
     "summaryUploaded_zero": "{{count}} enviados",
     "summaryUnchanged_zero": "{{count}} sem alteração",
-    "summaryFailed_zero": "{{count}} com falha"
+    "summaryFailed_zero": "{{count}} com falha",
+    "partial": "Backup concluído com avisos",
+    "summaryMissing_one": "{{count}} pasta indisponível",
+    "summaryMissing_other": "{{count}} pastas indisponíveis",
+    "cancel": "Cancelar backup"
   },
   "errorBoundary": {
     "title": "Algo deu errado",

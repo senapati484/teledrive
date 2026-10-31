@@ -119,7 +119,18 @@
       "maxExcludes_other": "最大で {{count}} 個のパターンが除外されます。",
       "pickerFailed": "フォルダーピッカーを開けませんでした",
       "noFolders": "最初に少なくとも 1 つのソース フォルダーを選択します"
-    }
+    },
+    "lastAttempt": "最後の試行:",
+    "lastAttemptAgo": "{{time}} 前",
+    "runStatus": {
+      "success": "成功",
+      "partial": "警告付きで完了",
+      "failed": "失敗",
+      "cancelled": "キャンセルされました — 次回の実行時に再開します"
+    },
+    "missingRoots_one": "{{count}} 個のソースフォルダーが利用できません。他のフォルダーはバックアップされました。",
+    "missingRoots_other": "{{count}} 個のソースフォルダーが利用できません。他のフォルダーはバックアップされました。",
+    "editFolders": "フォルダーを編集"
   },
   "appearance": {
     "title": "外観",
@@ -166,7 +177,36 @@
     "toasts": {
       "channelNotInitialised": "ストレージ チャネルがまだ初期化されていません。",
       "refreshed": "Telegram からストレージが更新されました。",
-      "refreshFailed": "ストレージデータの更新に失敗しました。"
+      "refreshFailed": "ストレージデータの更新に失敗しました。",
+      "indexIncomplete": "完全なインデックスを確認できませんでした。キャッシュされたファイルは表示されますが変更は一時停止します。"
+    },
+    "indexSave": {
+      "saving": "更新されたファイルリストを Telegram に保存中…",
+      "retrying": "Telegram のレート制限中です。{{seconds}} 秒後に自動で再試行します。ファイルは安全です。"
+    },
+    "recovery": {
+      "button": "不足しているファイルを復元",
+      "title": "ファイルを復元",
+      "description": "以前のインデックススナップショットとチャンネル内のアップロード済みファイルをチェックして、不足しているファイルを検索します。",
+      "warning": "復元されたファイルは現在のドライブに追加されます（削除されるものはありません）。",
+      "scanning": "チャンネル履歴をスキャン中…",
+      "empty": "復元可能なファイルは見つかりませんでした。",
+      "epochUnknown": "日付不明",
+      "channelFiles": "チャンネル履歴で見つかったファイル",
+      "selectAll": "すべて選択",
+      "selectNone": "選択解除",
+      "selectedCount": "{{total}} 件中 {{selected}} 件選択",
+      "filesCount_one": "{{count}} 件のファイル",
+      "filesCount_other": "{{count}} 件のファイル",
+      "restore": "選択項目を追加 ({{count}})",
+      "restoring": "ファイルを追加中…",
+      "restored_one": "{{count}} 件のファイルをドライブに追加しました",
+      "restored_other": "{{count}} 件のファイルをドライブに追加しました",
+      "restoredPartial_one": "{{count}} 件のファイルを追加しました（{{skipped}} 件の不明メッセージをスキップ）",
+      "restoredPartial_other": "{{count}} 件のファイルを追加しました（{{skipped}} 件の不明メッセージをスキップ）",
+      "nothingNew": "追加する新しいファイルはありません — すでにドライブ内に存在します。",
+      "failed": "ファイルを復元できませんでした",
+      "cancel": "キャンセル"
     }
   },
   "about": {

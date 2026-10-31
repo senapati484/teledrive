@@ -297,7 +297,7 @@ async function bootstrapTeleDriveInner(
           5000,
           "client.getMessages(orphan fallback)"
         );
-      } catch (_) {
+      } catch {
         recentMessages = [];
       }
     }
@@ -349,7 +349,7 @@ async function bootstrapTeleDriveInner(
         } else {
           continue;
         }
-      } catch (_) {
+      } catch {
         // Corrupted or non-JSON metadata caption — do not inject unknown files
         continue;
       }
@@ -868,17 +868,28 @@ async function runIndexRetry(): Promise<void> {
     if (outcome.status === "ready") {
       const status = indexRetryStatus;
       stopIndexRetries();
+      const currentFiles = useFileStore.getState().files;
+      const outcomeIds = new Set(outcome.files.map((f) => f.id));
+      const localOnlyFolders = currentFiles.filter((f) =>
+        (f.mime === "inode/directory" || f.mime === "application/x-directory") && !outcomeIds.has(f.id)
+      );
+      const mergedWithLocal = [...outcome.files, ...localOnlyFolders];
       const setFiles = useFileStore.getState().setFiles;
-      setFiles(outcome.files);
+      setFiles(mergedWithLocal);
       try {
         const merged = await mergeBackupManifestSync(
           channelId,
-          outcome.files,
+          mergedWithLocal,
           setFiles,
         );
-        if (merged.changed) fireAndForgetSaveIndex(channelId, merged.files);
+        if (merged.changed || localOnlyFolders.length > 0) {
+          fireAndForgetSaveIndex(channelId, merged.files);
+        }
       } catch (manifestErr) {
         console.warn("[bootstrap] manifest merge after retry failed:", manifestErr);
+        if (localOnlyFolders.length > 0) {
+          fireAndForgetSaveIndex(channelId, mergedWithLocal);
+        }
       }
       await invoke("log_vault_state", {
         state: `INDEX_RETRY_READY files=${useFileStore.getState().files.length}`,

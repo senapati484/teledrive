@@ -18,7 +18,8 @@
   "header": {
     "switchToLight": "Переключить на светлую тему",
     "switchToDark": "Переключить на тёмную тему",
-    "settings": "Настройки"
+    "settings": "Настройки",
+    "searchPlaceholder": "Поиск на Диске"
   },
   "indexQueue": {
     "saveFailedTitle": "Не удалось сохранить индекс — нажмите для повтора",
@@ -81,7 +82,8 @@
     "collapse": "Свернуть",
     "close": "Закрыть",
     "queued": "В очереди",
-    "uploading": "Загрузка..."
+    "uploading": "Загрузка...",
+    "retry": "Повторить загрузку"
   },
   "backup": {
     "scanning": "Сканирование папок…",
@@ -101,7 +103,11 @@
     "summaryFailed_one": "{{count}} с ошибкой",
     "summaryFailed_other": "{{count}} с ошибками",
     "resumeAnytime": "Вы можете возобновить в любое время.",
-    "dismiss": "Закрыть"
+    "dismiss": "Закрыть",
+    "partial": "Резервное копирование завершено с предупреждениями",
+    "summaryMissing_one": "{{count}} папка недоступна",
+    "summaryMissing_other": "{{count}} папок недоступно",
+    "cancel": "Отменить резервное копирование"
   },
   "errorBoundary": {
     "title": "Что-то пошло не так",

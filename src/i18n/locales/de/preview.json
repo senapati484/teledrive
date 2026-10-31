@@ -53,7 +53,9 @@
     "resetZoom": "Zoom anpassen / zurücksetzen",
     "rotateCounterClockwise": "Gegen den Uhrzeigersinn drehen",
     "rotateClockwise": "Im Uhrzeigersinn drehen",
-    "toggleGrid": "Rasterhintergrund umschalten"
+    "toggleGrid": "Rasterhintergrund umschalten",
+    "convertingHeic": "Bildvorschau wird konvertiert…",
+    "decodeErrorDescription": "Dieses Bildformat kann nicht direkt im Browser angezeigt werden. Sie können es im System-Fotobetrachter öffnen oder herunterladen."
   },
   "details": {
     "title": "Dateidetails",
@@ -73,11 +75,13 @@
   "archive": {
     "badge": "{{ext}} ARCHIV",
     "description": "Komprimierte Archive können nicht direkt im Browser in der Vorschau angezeigt werden. Laden Sie dieses Archiv herunter, um seinen Inhalt zu extrahieren und auf Ihrem Computer anzuzeigen.",
-    "download": "Archiv herunterladen"
+    "download": "Archiv herunterladen",
+    "openInSystem": "In System-App öffnen"
   },
   "unsupported": {
     "description": "Für diesen Dateityp ist keine Vorschau verfügbar. Sie können es herunterladen und in einer kompatiblen Anwendung auf Ihrem System öffnen.",
-    "download": "Datei herunterladen"
+    "download": "Datei herunterladen",
+    "openInSystem": "In System-App öffnen"
   },
   "status": {
     "words_one": "{{count, number}} Wort",

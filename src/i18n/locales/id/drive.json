@@ -18,7 +18,8 @@
   "header": {
     "switchToLight": "Beralih ke Tema Terang",
     "switchToDark": "Beralih ke Tema Gelap",
-    "settings": "Pengaturan"
+    "settings": "Pengaturan",
+    "searchPlaceholder": "Cari di Drive"
   },
   "indexQueue": {
     "saveFailedTitle": "Penyimpanan indeks gagal — klik untuk mencoba lagi",
@@ -81,7 +82,8 @@
     "collapse": "Ciutkan",
     "close": "Tutup",
     "queued": "Dalam antrean",
-    "uploading": "Mengunggah..."
+    "uploading": "Mengunggah...",
+    "retry": "Coba lagi unggah"
   },
   "backup": {
     "scanning": "Memindai folder…",
@@ -101,7 +103,11 @@
     "summaryFailed_one": "{{count}} gagal",
     "summaryFailed_other": "{{count}} gagal",
     "resumeAnytime": "Anda dapat melanjutkannya kapan saja.",
-    "dismiss": "Tutup"
+    "dismiss": "Tutup",
+    "partial": "Pencadangan selesai dengan peringatan",
+    "summaryMissing_one": "{{count}} folder tidak tersedia",
+    "summaryMissing_other": "{{count}} folder tidak tersedia",
+    "cancel": "Batalkan pencadangan"
   },
   "errorBoundary": {
     "title": "Terjadi kesalahan",

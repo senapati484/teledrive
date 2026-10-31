@@ -8,7 +8,8 @@
       "verifyingChannel": "Sicherer Speicherkanal wird überprüft...",
       "loadingIndex": "Dateimetadatenindex wird geladen...",
       "recoveryScan": "Überprüfen Ihrer Dateien (Wiederherstellungsscan)...",
-      "initializingView": "Lokale Speicheransicht wird initialisiert..."
+      "initializingView": "Lokale Speicheransicht wird initialisiert...",
+      "indexIncomplete": "Der Drive-Index konnte nicht überprüft werden — Änderungen sind pausiert."
     }
   },
   "backup": {
@@ -61,5 +62,19 @@
     "month_other": "{{count}} Monate",
     "year_one": "{{count}} Jahr",
     "year_other": "{{count}} Jahre"
+  },
+  "indexLoad": {
+    "bannerTitle": "Drive-Index konnte nicht sicher geladen werden",
+    "bannerBodyCached": "Zwischengespeicherte Dateien werden angezeigt. Änderungen sind deaktiviert, bis der Index überprüft werden kann.",
+    "bannerBodyEmpty": "Kein vollständiger Index in Ihrem Speicherkanal gefunden. Versuchen Sie es erneut oder stellen Sie einen früheren Index über die Einstellungen wieder her.",
+    "retry": "Wiederholen",
+    "retrying": "Wiederholen...",
+    "changesPaused": "Der Drive-Index ist noch nicht bereit. Änderungen sind pausiert.",
+    "reason": {
+      "not_found": "Kein vollständiger Index gefunden.",
+      "partial_manifest": "Im neuesten Index fehlen ein oder mehrere Teile.",
+      "timeout": "Telegram hat zu lange für eine Antwort gebraucht.",
+      "network": "Der Speicherkanal konnte nicht erreicht werden."
+    }
   }
 }

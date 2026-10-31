@@ -1,0 +1,23 @@
+{
+  "starPrompt": {
+    "title": "Menikmati TeleDrive? ✨",
+    "description": "Jika TeleDrive telah menghemat waktu atau biaya penyimpanan Anda, memberikan ⭐ di GitHub membantu lebih banyak orang menemukannya dan menjaga proyek tetap berjalan.",
+    "starButton": "⭐ Beri Bintang di GitHub",
+    "maybeLater": "Mungkin nanti",
+    "dontAskAgain": "Jangan tanya lagi"
+  },
+  "whatsNew": {
+    "title": "Apa yang Baru di TeleDrive",
+    "badge": "v{{version}}",
+    "features": [
+      "Pencadangan Perangkat — pencerminan otomatis folder lokal ke saluran Telegram Anda",
+      "Antarmuka multibahasa — 11 bahasa kini didukung",
+      "Peningkatan manajemen file seret-dan-lepas",
+      "Start-up lebih cepat dengan cache file lokal",
+      "Dukungan Android segera hadir di rilis berikutnya 🤖"
+    ],
+    "starCta": "Suka pembaruannya? Beri kami ⭐",
+    "starButton": "⭐ Beri Bintang di GitHub",
+    "close": "Tutup"
+  }
+}
