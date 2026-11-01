@@ -22,7 +22,7 @@ If you discover a security vulnerability in TeleDrive:
    - Go to the [Security Advisories](https://github.com/senapati484/teledrive/security/advisories) tab of this repository.
    - Click **"Report a vulnerability"** to open a private advisory draft.
 3. **Alternative Contact:**
-   - If you cannot use GitHub Security Advisories, send an email to [sayansenapati@gmail.com](mailto:sayansenapati@gmail.com) with the subject `[TeleDrive Security Vulnerability]`.
+   - If you cannot use GitHub Security Advisories, send an email to [sayansenapati2544@gmail.com](mailto:sayansenapati2544@gmail.com) with the subject `[TeleDrive Security Vulnerability]`.
 
 ### What to Include
 

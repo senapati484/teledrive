@@ -2,7 +2,7 @@
 name = "teledrive"
 version = "0.1.2"
 description = "A Tauri App"
-authors = ["you"]
+authors = ["Sayan Senapati <sayansenapati2544@gmail.com>"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

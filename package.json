@@ -2,6 +2,7 @@
   "name": "teledrive",
   "private": true,
   "version": "0.1.2",
+  "author": "Sayan Senapati <sayansenapati2544@gmail.com>",
   "type": "module",
   "scripts": {
     "dev": "vite",
