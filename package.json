@@ -2,7 +2,14 @@
   "name": "teledrive",
   "private": true,
   "version": "0.1.2",
+  "description": "A modern, cross-platform, zero-overhead cloud storage application that transforms a private Telegram channel into your own unlimited personal drive",
   "author": "Sayan Senapati <sayansenapati2544@gmail.com>",
+  "homepage": "https://www.teledrive.space",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/senapati484/teledrive.git"
+  },
+  "license": "GPL-3.0-or-later",
   "type": "module",
   "scripts": {
     "dev": "vite",
