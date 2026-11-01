@@ -1228,36 +1228,43 @@ export const saveIndexDirect = saveIndex;
 
 /** Adds a file entry to the index (replaces if same id already exists). */
 export async function addFile(channelId: string, file: TeleFile): Promise<TeleFile[]> {
-  return runExclusive(async () => {
-    const files = useFileStore.getState().files;
-    // Replace existing entry with same id, or append
-    const updatedFiles = [...files.filter((f) => f.id !== file.id), file];
+  const files = useFileStore.getState().files;
+  // Replace existing entry with same id, or append
+  const updatedFiles = [...files.filter((f) => f.id !== file.id), file];
+  useFileStore.getState().setFiles(updatedFiles);
+  try {
     await saveIndex(channelId, updatedFiles);
-    return updatedFiles;
-  });
+  } catch (err) {
+    console.warn("[metadataStore.addFile] Index save deferred/retrying:", err);
+  }
+  return updatedFiles;
 }
 
 /** Removes a file entry from the index by id. */
 export async function removeFile(channelId: string, fileId: string): Promise<TeleFile[]> {
-  return runExclusive(async () => {
-    const files = useFileStore.getState().files;
-    const file = files.find((f) => f.id === fileId);
-    const updatedFiles = files.filter((f) => f.id !== fileId);
+  const files = useFileStore.getState().files;
+  const file = files.find((f) => f.id === fileId);
+  const updatedFiles = files.filter((f) => f.id !== fileId);
+  useFileStore.getState().setFiles(updatedFiles);
+
+  try {
     await saveIndex(channelId, updatedFiles);
+  } catch (err) {
+    console.warn("[metadataStore.removeFile] Index save deferred/retrying:", err);
+  }
 
-    // Also delete the actual Telegram message if this was a real uploaded file
-    // (folders have messageId=0 and live only in the index)
-    if (file && file.messageId && file.messageId !== 0) {
-      await deleteTelegramMessage(channelId, file.messageId).catch((err) => {
-        console.warn(
-          `[metadataStore] Could not delete Telegram message ${file.messageId} (non-fatal):`,
-          err?.message || err
-        );
-      });
-    }
+  // Also delete the actual Telegram message if this was a real uploaded file
+  // (folders have messageId=0 and live only in the index)
+  if (file && file.messageId && file.messageId !== 0) {
+    await deleteTelegramMessage(channelId, file.messageId).catch((err) => {
+      console.warn(
+        `[metadataStore] Could not delete Telegram message ${file.messageId} (non-fatal):`,
+        err?.message || err
+      );
+    });
+  }
 
-    return updatedFiles;
-  });
+  return updatedFiles;
 }
 
 /**
@@ -1297,14 +1304,17 @@ export async function updateFile(
   fileId: string,
   patch: Partial<TeleFile>
 ): Promise<TeleFile[]> {
-  return runExclusive(async () => {
-    const files = useFileStore.getState().files;
-    const updatedFiles = files.map((f) =>
-      f.id === fileId ? { ...f, ...patch } : f
-    );
+  const files = useFileStore.getState().files;
+  const updatedFiles = files.map((f) =>
+    f.id === fileId ? { ...f, ...patch } : f
+  );
+  useFileStore.getState().setFiles(updatedFiles);
+  try {
     await saveIndex(channelId, updatedFiles);
-    return updatedFiles;
-  });
+  } catch (err) {
+    console.warn("[metadataStore.updateFile] Index save deferred/retrying:", err);
+  }
+  return updatedFiles;
 }
 
 /**
@@ -1323,17 +1333,20 @@ export function updateFileLocal(
 
 /** Adds multiple file entries to the index in a single save round-trip. */
 export async function addFilesBatch(channelId: string, newFiles: TeleFile[]): Promise<TeleFile[]> {
-  return runExclusive(async () => {
-    const files = useFileStore.getState().files;
-    const byId = new Map<string, TeleFile>();
-    for (const f of files) {
-      byId.set(f.id, f);
-    }
-    for (const f of newFiles) {
-      byId.set(f.id, f);
-    }
-    const updatedFiles = Array.from(byId.values());
+  const files = useFileStore.getState().files;
+  const byId = new Map<string, TeleFile>();
+  for (const f of files) {
+    byId.set(f.id, f);
+  }
+  for (const f of newFiles) {
+    byId.set(f.id, f);
+  }
+  const updatedFiles = Array.from(byId.values());
+  useFileStore.getState().setFiles(updatedFiles);
+  try {
     await saveIndex(channelId, updatedFiles);
-    return updatedFiles;
-  });
+  } catch (err) {
+    console.warn("[metadataStore.addFilesBatch] Index save deferred/retrying:", err);
+  }
+  return updatedFiles;
 }

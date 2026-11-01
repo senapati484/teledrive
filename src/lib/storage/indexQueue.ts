@@ -252,6 +252,10 @@ class ChannelQueue {
     };
   }
 
+  isRateLimited(): boolean {
+    return this.retryTimer != null || this.stuckTimer != null;
+  }
+
   getKnownIndexMsgIds(): number[] | null {
     return this.known ? [...this.known.ids] : null;
   }
@@ -1249,6 +1253,12 @@ export function retryQueue(channelId: string): void {
   const q = queues.get(channelId);
   if (!q || !isIndexReady()) return;
   q.retryNow(useFileStore.getState().files);
+}
+
+/** Returns true if the channel's index queue is actively cooling down from a rate limit / retry. */
+export function isChannelQueueRateLimited(channelId: string): boolean {
+  const q = queues.get(channelId);
+  return q ? q.isRateLimited() : false;
 }
 
 /** Test-only: inject a commit implementation for a channel. */

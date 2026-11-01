@@ -49,7 +49,10 @@ vi.mock("../../secure/deviceInfo", () => ({
   detectOS: () => "macos",
   getDeviceName: () => "Test Mac",
 }));
-vi.mock("../../storage/indexQueue", () => ({ enqueueSave: vi.fn(async () => {}) }));
+vi.mock("../../storage/indexQueue", () => ({
+  enqueueSave: vi.fn(async () => {}),
+  isChannelQueueRateLimited: vi.fn(() => false),
+}));
 vi.mock("../../telegram/indexReadiness", () => ({
   isIndexReady: vi.fn(() => true),
   waitForIndexReady: vi.fn(async () => true),

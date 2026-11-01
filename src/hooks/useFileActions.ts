@@ -192,8 +192,8 @@ async function applyOptimistic(
       await invoke("log_vault_state", {
         state: `ACTION_INDEX_STUCK kept=true: ${err?.message ?? err}`,
       }).catch(() => {});
-      toast.error(i18n.t("files:actions.indexStuck"));
-      throw err;
+      toast.warning(i18n.t("files:actions.indexStuck"));
+      return;
     }
     if (options.skipRollbackOnHardError) {
       await invoke("log_vault_state", {
