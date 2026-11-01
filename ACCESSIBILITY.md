@@ -21,6 +21,6 @@ The [Web Content Accessibility Guidelines (WCAG)](https://www.w3.org/WAI/standar
 We welcome your feedback on the accessibility of TeleDrive. If you encounter any accessibility barriers or have suggestions for improvement:
 
 - **GitHub Issues:** Open an issue on [GitHub Issues](https://github.com/senapati484/teledrive/issues) with the label `accessibility`.
-- **Email:** Contact [sayansenapati@gmail.com](mailto:sayansenapati@gmail.com).
+- **Email:** Contact [sayansenapati2544@gmail.com](mailto:sayansenapati2544@gmail.com).
 
 We try to respond to feedback within 3 business days.
