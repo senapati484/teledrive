@@ -65,6 +65,7 @@ import { detectOS, getDeviceName } from "../secure/deviceInfo";
 import { isHardError } from "../telegram/rateLimit";
 import { isIndexReady, waitForIndexReady } from "../telegram/indexReadiness";
 import { reconstructMissingFolders } from "../storage/metadataStore";
+import { isChannelQueueRateLimited } from "../storage/indexQueue";
 import { flushBackupIndexSave, queueBackupIndexSave } from "./indexSave";
 import { deleteMessages } from "./telegramOps";
 import type { TeleFile } from "../types";
@@ -576,7 +577,11 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
         currentFile: target.fileName,
       });
 
-      if (
+      const queueRateLimited = Boolean(isChannelQueueRateLimited?.(channelId));
+      if (queueRateLimited && i < diff.toUpload.length - 1) {
+        // Telegram rate limit active on the index queue; give it a breather to cool down
+        await interruptibleSleep(Math.min(BACKUP_BREATHER_MS * 2, 5_000), opts.signal);
+      } else if (
         filesUploaded > 0 &&
         filesUploaded % BACKUP_BATCH_SIZE === 0 &&
         i < diff.toUpload.length - 1

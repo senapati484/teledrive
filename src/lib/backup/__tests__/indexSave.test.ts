@@ -3,7 +3,10 @@ import { flushBackupIndexSave, queueBackupIndexSave } from "../indexSave";
 import { enqueueSave } from "../../storage/indexQueue";
 import { makeTeleFile, resetBackupTestState } from "./helpers";
 
-vi.mock("../../storage/indexQueue", () => ({ enqueueSave: vi.fn() }));
+vi.mock("../../storage/indexQueue", () => ({
+  enqueueSave: vi.fn(),
+  isChannelQueueRateLimited: vi.fn(() => false),
+}));
 const saveMock = vi.mocked(enqueueSave);
 
 beforeEach(() => {
@@ -55,5 +58,21 @@ describe("backup index saves", () => {
 
     await flushBackupIndexSave("chan");
     expect(saveMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("throttles rapid multi-file uploads and flushes once cleanly at completion", async () => {
+    // Simulate 300 files queued sequentially during a backup
+    for (let i = 1; i <= 300; i++) {
+      queueBackupIndexSave("chan_300", [makeTeleFile(String(i))]);
+    }
+
+    // Prior to flush, saves were not spammed 300 times
+    expect(saveMock).not.toHaveBeenCalled();
+
+    // End-of-backup flush commits the final complete state
+    const result = await flushBackupIndexSave("chan_300");
+    expect(result.ok).toBe(true);
+    expect(saveMock).toHaveBeenCalledTimes(1);
+    expect(saveMock).toHaveBeenCalledWith("chan_300", [makeTeleFile("300")]);
   });
 });
