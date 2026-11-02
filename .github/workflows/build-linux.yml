@@ -9,6 +9,12 @@ on:
       - '[0-9]+.[0-9]+.[0-9]+'
     tags:
       - 'v*'
+    paths-ignore:
+      - '**.md'
+      - 'locales/**'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.gitignore'
   workflow_dispatch:
     inputs:
       bundle_type:
@@ -21,6 +27,10 @@ on:
           - deb
           - rpm
           - appimage
+
+concurrency:
+  group: build-linux-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-linux:

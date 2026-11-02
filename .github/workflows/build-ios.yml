@@ -9,6 +9,12 @@ on:
       - '[0-9]+.[0-9]+.[0-9]+'
     tags:
       - 'v*'
+    paths-ignore:
+      - '**.md'
+      - 'locales/**'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.gitignore'
   workflow_dispatch:
     inputs:
       build_target:
@@ -20,6 +26,10 @@ on:
           - all
           - device
           - simulator
+
+concurrency:
+  group: build-ios-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-ios:

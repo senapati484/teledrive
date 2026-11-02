@@ -9,6 +9,12 @@ on:
       - '[0-9]+.[0-9]+.[0-9]+'
     tags:
       - 'v*'
+    paths-ignore:
+      - '**.md'
+      - 'locales/**'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.gitignore'
   workflow_dispatch:
     inputs:
       bundle_type:
@@ -20,6 +26,10 @@ on:
           - all
           - nsis
           - msi
+
+concurrency:
+  group: build-windows-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-windows:
