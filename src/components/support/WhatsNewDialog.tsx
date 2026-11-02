@@ -163,7 +163,9 @@ export default function WhatsNewDialog() {
   const [open, setOpen] = useState(false);
   const [version, setVersion] = useState<string | null>(null);
 
+  const lastSeenVersion = useSupportStore((s) => s.lastSeenVersion);
   const starredAt = useSupportStore((s) => s.starredAt);
+  const markWhatsNewSeen = useSupportStore((s) => s.markWhatsNewSeen);
   const markStarred = useSupportStore((s) => s.markStarred);
 
   useEffect(() => {
@@ -175,23 +177,29 @@ export default function WhatsNewDialog() {
     getVersion()
       .then((v) => {
         setVersion(v);
-        // In development phase: always show so the popup window can be previewed and verified
-        setOpen(true);
+        if (v !== lastSeenVersion) {
+          setOpen(true);
+        }
       })
       .catch(() => {
-        // Tauri not available (dev browser mode) — fallback to current version and show
-        setVersion("0.1.3");
-        setOpen(true);
+        // Tauri not available (dev browser mode)
+        const fallbackVersion = "0.1.3";
+        setVersion(fallbackVersion);
+        if (fallbackVersion !== lastSeenVersion) {
+          setOpen(true);
+        }
       });
 
     return () => {
       window.removeEventListener("teledrive:show-whats-new", handleTrigger);
       delete (window as unknown as { showWhatsNew?: () => void }).showWhatsNew;
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [lastSeenVersion]);
 
   const dismiss = () => {
-    // In development phase, do not lock out the dialog permanently so it can be re-tested
+    if (version) {
+      markWhatsNewSeen(version);
+    }
     setOpen(false);
   };
 
