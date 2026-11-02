@@ -9,7 +9,17 @@ on:
       - '[0-9]+.[0-9]+.[0-9]+'
     tags:
       - 'v*'
+    paths-ignore:
+      - '**.md'
+      - 'locales/**'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.gitignore'
   workflow_dispatch:
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   # ─── 1. Build Desktop Platforms (macOS, Windows, Linux) ─────────────────────

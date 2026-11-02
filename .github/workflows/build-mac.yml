@@ -9,6 +9,12 @@ on:
       - '[0-9]+.[0-9]+.[0-9]+'
     tags:
       - 'v*'
+    paths-ignore:
+      - '**.md'
+      - 'locales/**'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.gitignore'
   workflow_dispatch:
     inputs:
       target_arch:
@@ -20,6 +26,10 @@ on:
           - universal
           - aarch64
           - x86_64
+
+concurrency:
+  group: build-mac-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-mac:
