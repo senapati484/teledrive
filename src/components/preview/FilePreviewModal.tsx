@@ -47,7 +47,15 @@ import {
   Sparkles,
   FileJson,
   Type,
+  MoreVertical,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { TeleFile } from "@/lib/types";
 import { downloadFileToBuffer, downloadFileFromTelegram } from "@/lib/telegram/downloader";
 import { updateFileLocal, deleteTelegramMessage } from "@/lib/storage/metadataStore";
@@ -1175,7 +1183,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
     >
       {/* ── Topbar ─────────────────────────────────────────────────────── */}
       <div
-        className="flex items-center justify-between pl-4 pr-3 shrink-0 pt-[var(--safe-area-top,env(safe-area-inset-top,0px))]"
+        className="flex items-center justify-between pl-3 pr-2 sm:pl-4 sm:pr-3 shrink-0 pt-[var(--safe-area-top,env(safe-area-inset-top,0px))]"
         style={{
           height: "calc(44px + var(--safe-area-top, env(safe-area-inset-top, 0px)))",
           background: colors.topbar,
@@ -1183,18 +1191,19 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
         }}
       >
         {/* Left: icon + name + badges */}
-        <div className="flex items-center gap-2 min-w-0 flex-1 pr-4">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 pr-2 sm:pr-4">
           <FileTypeIcon mime={currentFile.mime} name={currentFile.name} />
           <span
-            className="text-[13px] font-semibold truncate tracking-tight"
+            className="text-[12px] sm:text-[13px] font-semibold truncate tracking-tight min-w-0"
             style={{ color: colors.text }}
+            title={currentFile.name}
           >
             {currentFile.name}
           </span>
 
           {langInfo.displayName && !isImage && !isVideo && !isAudio && !isPdf && (
             <span
-              className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider"
+              className="shrink-0 text-[9px] sm:text-[10px] font-bold px-1.5 py-0.5 rounded-md uppercase tracking-wider"
               style={{
                 background: colors.badgeBg,
                 color: colors.badgeText,
@@ -1207,7 +1216,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
 
           {isEditMode && (
             <span
-              className="shrink-0 text-[10px] font-extrabold px-2 py-0.5 rounded-md uppercase tracking-widest"
+              className="shrink-0 text-[9px] sm:text-[10px] font-extrabold px-1.5 sm:px-2 py-0.5 rounded-md uppercase tracking-widest"
               style={{
                 background: colors.editBadgeBg,
                 color: colors.editBadgeText,
@@ -1220,10 +1229,10 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
 
           {saveStatus === "saved" && !isEditMode && (
             <span
-              className="shrink-0 flex items-center gap-1 text-[11px] font-bold text-emerald-500"
+              className="shrink-0 flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-emerald-500"
             >
               <CheckCircle2 className="h-3 w-3" />
-              {t("topbar.saved")}
+              <span className="hidden xs:inline">{t("topbar.saved")}</span>
             </span>
           )}
         </div>
@@ -1235,19 +1244,19 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
               <button
                 onClick={handleCancelEdit}
                 disabled={isSaving}
-                className="flex items-center gap-1 h-7 px-3 text-[12px] font-semibold rounded-lg cursor-pointer transition-colors duration-150 disabled:opacity-50"
+                className="flex items-center gap-1 h-7 px-2.5 sm:px-3 text-[11px] sm:text-[12px] font-semibold rounded-lg cursor-pointer transition-colors duration-150 disabled:opacity-50"
                 style={{ color: colors.muted }}
                 onMouseEnter={e => (e.currentTarget.style.background = colors.hover)}
                 onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
               >
                 <XIcon className="h-3.5 w-3.5" />
-                {t("topbar.cancel")}
+                <span>{t("topbar.cancel")}</span>
               </button>
               <Button
                 size="sm"
                 onClick={handleSave}
                 disabled={isSaving}
-                className="h-7 px-3 text-[12px] font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-lg cursor-pointer disabled:opacity-50 transition-colors duration-150"
+                className="h-7 px-2.5 sm:px-3 text-[11px] sm:text-[12px] font-bold bg-blue-600 hover:bg-blue-500 text-white rounded-lg cursor-pointer disabled:opacity-50 transition-colors duration-150"
               >
                 {isSaving
                   ? <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />{t("topbar.saving")}</>
@@ -1257,233 +1266,400 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
             </>
           ) : (
             <>
-              {/* ── View Switchers ─────────────────────────────────── */}
-              {isMarkdownFile && textContent !== null && (
-                <div
-                  className="flex items-center p-0.5 rounded-lg border text-xs mr-1"
-                  style={{ borderColor: colors.border, background: colors.badgeBg }}
-                >
-                  <button
-                    onClick={() => setMdViewMode("preview")}
-                    className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
-                      mdViewMode === "preview"
-                        ? "bg-white dark:bg-[#1f2124] text-blue-600 dark:text-blue-400 shadow-xs"
-                        : "text-[#444746] dark:text-[#8e918f] hover:text-black dark:hover:text-white"
-                    }`}
+              {/* ── Desktop Inline Action Bar (>= sm) ─────────────────────────────────── */}
+              <div className="hidden sm:flex items-center gap-1">
+                {/* View Switchers */}
+                {isMarkdownFile && textContent !== null && (
+                  <div
+                    className="flex items-center p-0.5 rounded-lg border text-xs mr-1"
+                    style={{ borderColor: colors.border, background: colors.badgeBg }}
                   >
-                    <Eye className="h-3 w-3" />
-                    <span className="hidden sm:inline">{t("viewMode.preview")}</span>
-                  </button>
-                  <button
-                    onClick={() => setMdViewMode("source")}
-                    className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
-                      mdViewMode === "source"
-                        ? "bg-white dark:bg-[#1f2124] text-blue-600 dark:text-blue-400 shadow-xs"
-                        : "text-[#444746] dark:text-[#8e918f] hover:text-black dark:hover:text-white"
-                    }`}
-                  >
-                    <Code className="h-3 w-3" />
-                    <span className="hidden sm:inline">{t("viewMode.source")}</span>
-                  </button>
-                </div>
-              )}
+                    <button
+                      onClick={() => setMdViewMode("preview")}
+                      className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
+                        mdViewMode === "preview"
+                          ? "bg-white dark:bg-[#1f2124] text-blue-600 dark:text-blue-400 shadow-xs"
+                          : "text-[#444746] dark:text-[#8e918f] hover:text-black dark:hover:text-white"
+                      }`}
+                    >
+                      <Eye className="h-3 w-3" />
+                      <span>{t("viewMode.preview")}</span>
+                    </button>
+                    <button
+                      onClick={() => setMdViewMode("source")}
+                      className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
+                        mdViewMode === "source"
+                          ? "bg-white dark:bg-[#1f2124] text-blue-600 dark:text-blue-400 shadow-xs"
+                          : "text-[#444746] dark:text-[#8e918f] hover:text-black dark:hover:text-white"
+                      }`}
+                    >
+                      <Code className="h-3 w-3" />
+                      <span>{t("viewMode.source")}</span>
+                    </button>
+                  </div>
+                )}
 
-              {isTableData && (
-                <div
-                  className="flex items-center p-0.5 rounded-lg border text-xs mr-1"
-                  style={{ borderColor: colors.border, background: colors.badgeBg }}
-                >
-                  <button
-                    onClick={() => setCsvViewMode("table")}
-                    className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
-                      csvViewMode === "table"
-                        ? "bg-white dark:bg-[#1f2124] text-emerald-600 dark:text-emerald-400 shadow-xs"
-                        : "text-[#444746] dark:text-[#8e918f] hover:text-black dark:hover:text-white"
-                    }`}
+                {isTableData && (
+                  <div
+                    className="flex items-center p-0.5 rounded-lg border text-xs mr-1"
+                    style={{ borderColor: colors.border, background: colors.badgeBg }}
                   >
-                    <FileSpreadsheet className="h-3 w-3" />
-                    <span className="hidden sm:inline">{t("viewMode.table")}</span>
-                  </button>
-                  <button
-                    onClick={() => setCsvViewMode("source")}
-                    className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
-                      csvViewMode === "source"
-                        ? "bg-white dark:bg-[#1f2124] text-emerald-600 dark:text-emerald-400 shadow-xs"
-                        : "text-[#444746] dark:text-[#8e918f] hover:text-black dark:hover:text-white"
-                    }`}
-                  >
-                    <Code className="h-3 w-3" />
-                    <span className="hidden sm:inline">{t("viewMode.raw")}</span>
-                  </button>
-                </div>
-              )}
+                    <button
+                      onClick={() => setCsvViewMode("table")}
+                      className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
+                        csvViewMode === "table"
+                          ? "bg-white dark:bg-[#1f2124] text-emerald-600 dark:text-emerald-400 shadow-xs"
+                          : "text-[#444746] dark:text-[#8e918f] hover:text-black dark:hover:text-white"
+                      }`}
+                    >
+                      <FileSpreadsheet className="h-3 w-3" />
+                      <span>{t("viewMode.table")}</span>
+                    </button>
+                    <button
+                      onClick={() => setCsvViewMode("source")}
+                      className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
+                        csvViewMode === "source"
+                          ? "bg-white dark:bg-[#1f2124] text-emerald-600 dark:text-emerald-400 shadow-xs"
+                          : "text-[#444746] dark:text-[#8e918f] hover:text-black dark:hover:text-white"
+                      }`}
+                    >
+                      <Code className="h-3 w-3" />
+                      <span>{t("viewMode.raw")}</span>
+                    </button>
+                  </div>
+                )}
 
-              {isSvg && textContent !== null && (
-                <div
-                  className="flex items-center p-0.5 rounded-lg border text-xs mr-1"
-                  style={{ borderColor: colors.border, background: colors.badgeBg }}
-                >
-                  <button
-                    onClick={() => setSvgViewMode("image")}
-                    className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
-                      svgViewMode === "image"
-                        ? "bg-white dark:bg-[#1f2124] text-purple-600 dark:text-purple-400 shadow-xs"
-                        : "text-[#444746] dark:text-[#8e918f]"
-                    }`}
+                {isSvg && textContent !== null && (
+                  <div
+                    className="flex items-center p-0.5 rounded-lg border text-xs mr-1"
+                    style={{ borderColor: colors.border, background: colors.badgeBg }}
                   >
-                    <ImageIcon className="h-3 w-3" />
-                    <span className="hidden sm:inline">{t("viewMode.vector")}</span>
-                  </button>
-                  <button
-                    onClick={() => setSvgViewMode("code")}
-                    className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
-                      svgViewMode === "code"
-                        ? "bg-white dark:bg-[#1f2124] text-purple-600 dark:text-purple-400 shadow-xs"
-                        : "text-[#444746] dark:text-[#8e918f]"
-                    }`}
-                  >
-                    <Code className="h-3 w-3" />
-                    <span className="hidden sm:inline">{t("viewMode.code")}</span>
-                  </button>
-                </div>
-              )}
+                    <button
+                      onClick={() => setSvgViewMode("image")}
+                      className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
+                        svgViewMode === "image"
+                          ? "bg-white dark:bg-[#1f2124] text-purple-600 dark:text-purple-400 shadow-xs"
+                          : "text-[#444746] dark:text-[#8e918f]"
+                      }`}
+                    >
+                      <ImageIcon className="h-3 w-3" />
+                      <span>{t("viewMode.vector")}</span>
+                    </button>
+                    <button
+                      onClick={() => setSvgViewMode("code")}
+                      className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
+                        svgViewMode === "code"
+                          ? "bg-white dark:bg-[#1f2124] text-purple-600 dark:text-purple-400 shadow-xs"
+                          : "text-[#444746] dark:text-[#8e918f]"
+                      }`}
+                    >
+                      <Code className="h-3 w-3" />
+                      <span>{t("viewMode.code")}</span>
+                    </button>
+                  </div>
+                )}
 
-              {/* ── Format & Code View Controls ─────────────────────── */}
-              {isJsonFile && textContent !== null && (
-                <button
-                  onClick={handleFormatJson}
-                  title={t("topbar.formatJsonTitle")}
-                  className="flex items-center gap-1 h-7 px-2 text-[12px] font-semibold rounded-lg cursor-pointer transition-colors"
-                  style={{ color: colors.muted }}
-                  onMouseEnter={e => (e.currentTarget.style.background = colors.hover)}
-                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                >
-                  <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-                  <span className="hidden md:inline">{t("topbar.format")}</span>
-                </button>
-              )}
-
-              {(isCode || (isMarkdownFile && mdViewMode === "source") || (isTableData && csvViewMode === "source") || (isSvg && svgViewMode === "code")) && (
-                <>
+                {isJsonFile && textContent !== null && (
                   <button
-                    onClick={() => setWrapLines(!wrapLines)}
-                    title={wrapLines ? t("topbar.disableWrap") : t("topbar.enableWrap")}
-                    className={`flex items-center justify-center h-7 w-8 rounded-lg cursor-pointer transition-colors ${
-                      wrapLines ? "text-blue-600 bg-blue-500/10 dark:text-blue-400 dark:bg-blue-500/20" : ""
-                    }`}
-                    style={{ color: wrapLines ? undefined : colors.muted }}
-                    onMouseEnter={e => { if (!wrapLines) e.currentTarget.style.background = colors.hover; }}
-                    onMouseLeave={e => { if (!wrapLines) e.currentTarget.style.background = "transparent"; }}
-                  >
-                    <WrapText className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    onClick={cycleFontSize}
-                    title={t("topbar.fontSizeTitle", { size: codeFontSize })}
-                    className="flex items-center gap-0.5 h-7 px-2 rounded-lg cursor-pointer transition-colors text-[11px] font-mono font-medium"
+                    onClick={handleFormatJson}
+                    title={t("topbar.formatJsonTitle")}
+                    className="flex items-center gap-1 h-7 px-2 text-[12px] font-semibold rounded-lg cursor-pointer transition-colors"
                     style={{ color: colors.muted }}
                     onMouseEnter={e => (e.currentTarget.style.background = colors.hover)}
                     onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                   >
-                    <Type className="h-3 w-3" />
-                    <span>{codeFontSize}</span>
+                    <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                    <span className="hidden md:inline">{t("topbar.format")}</span>
                   </button>
-                </>
-              )}
+                )}
 
-              {textContent !== null && (
+                {(isCode || (isMarkdownFile && mdViewMode === "source") || (isTableData && csvViewMode === "source") || (isSvg && svgViewMode === "code")) && (
+                  <>
+                    <button
+                      onClick={() => setWrapLines(!wrapLines)}
+                      title={wrapLines ? t("topbar.disableWrap") : t("topbar.enableWrap")}
+                      className={`flex items-center justify-center h-7 w-8 rounded-lg cursor-pointer transition-colors ${
+                        wrapLines ? "text-blue-600 bg-blue-500/10 dark:text-blue-400 dark:bg-blue-500/20" : ""
+                      }`}
+                      style={{ color: wrapLines ? undefined : colors.muted }}
+                      onMouseEnter={e => { if (!wrapLines) e.currentTarget.style.background = colors.hover; }}
+                      onMouseLeave={e => { if (!wrapLines) e.currentTarget.style.background = "transparent"; }}
+                    >
+                      <WrapText className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={cycleFontSize}
+                      title={t("topbar.fontSizeTitle", { size: codeFontSize })}
+                      className="flex items-center gap-0.5 h-7 px-2 rounded-lg cursor-pointer transition-colors text-[11px] font-mono font-medium"
+                      style={{ color: colors.muted }}
+                      onMouseEnter={e => (e.currentTarget.style.background = colors.hover)}
+                      onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                    >
+                      <Type className="h-3 w-3" />
+                      <span>{codeFontSize}</span>
+                    </button>
+                  </>
+                )}
+
+                {textContent !== null && (
+                  <button
+                    onClick={handleCopyContent}
+                    title={t("topbar.copyTitle")}
+                    className="flex items-center justify-center h-7 w-8 rounded-lg cursor-pointer transition-colors duration-150"
+                    style={{ color: colors.muted }}
+                    onMouseEnter={e => (e.currentTarget.style.background = colors.hover)}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                  >
+                    {copiedCode ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                  </button>
+                )}
+
+                {canRunInO2 && (
+                  <button
+                    onClick={handleOpenInO2}
+                    title={t("topbar.runTitle")}
+                    className="flex items-center gap-1.5 h-7 px-2.5 text-[12px] font-semibold rounded-lg cursor-pointer transition-all duration-150"
+                    style={{ color: isDark ? "#34d399" : "#059669" }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = isDark ? "rgba(52,211,153,0.12)" : "rgba(5,150,105,0.08)";
+                    }}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    <span className="hidden md:inline">{t("topbar.run")}</span>
+                  </button>
+                )}
+
+                {canEdit && (
+                  <button
+                    onClick={handleEnterEdit}
+                    title={t("topbar.editTitle")}
+                    className="flex items-center gap-1.5 h-7 px-2.5 text-[12px] font-semibold rounded-lg cursor-pointer transition-colors duration-150"
+                    style={{ color: colors.muted }}
+                    onMouseEnter={e => (e.currentTarget.style.background = colors.hover)}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    <span className="hidden md:inline">{t("topbar.edit")}</span>
+                  </button>
+                )}
+
+                {(isImage || isSvgImageView) && (
+                  <button
+                    onClick={() => setShowDetails(!showDetails)}
+                    title={t("topbar.toggleDetails")}
+                    className={`flex items-center justify-center h-7 w-8 rounded-lg cursor-pointer transition-colors duration-150 ${showDetails ? "text-blue-500 bg-blue-500/10 dark:bg-blue-500/20" : ""}`}
+                    style={{ color: showDetails ? undefined : colors.muted }}
+                    onMouseEnter={e => { if (!showDetails) e.currentTarget.style.background = colors.hover; }}
+                    onMouseLeave={e => { if (!showDetails) e.currentTarget.style.background = "transparent"; }}
+                  >
+                    <Info className="h-4 w-4" />
+                  </button>
+                )}
+
+                {!loading && !error && (
+                  <button
+                    onClick={handleOpenInSystemApp}
+                    title={t("topbar.openInSystemViewerTitle", "Open in System App")}
+                    className="flex items-center gap-1.5 h-7 px-2.5 text-[12px] font-semibold rounded-lg cursor-pointer transition-colors duration-150 mr-1"
+                    style={{
+                      color: colors.text,
+                      background: colors.badgeBg,
+                      border: `1px solid ${colors.badgeBdr}`,
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = colors.hover)}
+                    onMouseLeave={e => (e.currentTarget.style.background = colors.badgeBg)}
+                  >
+                    <ExternalLink className="h-3.5 w-3.5 text-blue-500" />
+                    <span className="hidden lg:inline">{t("topbar.openInSystemViewer", "Open in System App")}</span>
+                  </button>
+                )}
+
                 <button
-                  onClick={handleCopyContent}
-                  title={t("topbar.copyTitle")}
+                  onClick={handleDownload}
+                  title={t("topbar.download")}
                   className="flex items-center justify-center h-7 w-8 rounded-lg cursor-pointer transition-colors duration-150"
                   style={{ color: colors.muted }}
                   onMouseEnter={e => (e.currentTarget.style.background = colors.hover)}
                   onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
                 >
-                  {copiedCode ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                  <Download className="h-4 w-4" />
                 </button>
-              )}
+              </div>
 
-              {/* O2 Code Runner button — shown for runnable languages */}
-              {canRunInO2 && (
-                <button
-                  onClick={handleOpenInO2}
-                  title={t("topbar.runTitle")}
-                  className="flex items-center gap-1.5 h-7 px-2.5 text-[12px] font-semibold rounded-lg cursor-pointer transition-all duration-150"
-                  style={{ color: isDark ? "#34d399" : "#059669" }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.background = isDark ? "rgba(52,211,153,0.12)" : "rgba(5,150,105,0.08)";
-                  }}
-                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                >
-                  <ExternalLink className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">{t("topbar.run")}</span>
-                </button>
-              )}
+              {/* ── Mobile Compact Actions (< sm) ─────────────────────────────────── */}
+              <div className="flex sm:hidden items-center gap-0.5">
+                {canEdit && (
+                  <button
+                    onClick={handleEnterEdit}
+                    title={t("topbar.editTitle")}
+                    className="flex items-center justify-center h-7 w-7 rounded-lg cursor-pointer transition-colors"
+                    style={{ color: colors.muted }}
+                    onMouseEnter={e => (e.currentTarget.style.background = colors.hover)}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                )}
 
-              {canEdit && (
-                <button
-                  onClick={handleEnterEdit}
-                  title={t("topbar.editTitle")}
-                  className="flex items-center gap-1.5 h-7 px-2.5 text-[12px] font-semibold rounded-lg cursor-pointer transition-colors duration-150"
-                  style={{ color: colors.muted }}
-                  onMouseEnter={e => (e.currentTarget.style.background = colors.hover)}
-                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">{t("topbar.edit")}</span>
-                </button>
-              )}
-              {(isImage || isSvgImageView) && (
-                <button
-                  onClick={() => setShowDetails(!showDetails)}
-                  title={t("topbar.toggleDetails")}
-                  className={`flex items-center justify-center h-7 w-8 rounded-lg cursor-pointer transition-colors duration-150 ${showDetails ? "text-blue-500 bg-blue-500/10 dark:bg-blue-500/20" : ""}`}
-                  style={{ color: showDetails ? undefined : colors.muted }}
-                  onMouseEnter={e => { if (!showDetails) e.currentTarget.style.background = colors.hover; }}
-                  onMouseLeave={e => { if (!showDetails) e.currentTarget.style.background = "transparent"; }}
-                >
-                  <Info className="h-4 w-4" />
-                </button>
-              )}
-              {!loading && !error && (
-                <button
-                  onClick={handleOpenInSystemApp}
-                  title={t("topbar.openInSystemViewerTitle", "Open in System App")}
-                  className="flex items-center gap-1.5 h-7 px-2.5 text-[12px] font-semibold rounded-lg cursor-pointer transition-colors duration-150 mr-1"
-                  style={{
-                    color: colors.text,
-                    background: colors.badgeBg,
-                    border: `1px solid ${colors.badgeBdr}`,
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.background = colors.hover)}
-                  onMouseLeave={e => (e.currentTarget.style.background = colors.badgeBg)}
-                >
-                  <ExternalLink className="h-3.5 w-3.5 text-blue-500" />
-                  <span className="hidden sm:inline">{t("topbar.openInSystemViewer", "Open in System App")}</span>
-                </button>
-              )}
-              <button
-                onClick={handleDownload}
-                title={t("topbar.download")}
-                className="flex items-center justify-center h-7 w-8 rounded-lg cursor-pointer transition-colors duration-150"
-                style={{ color: colors.muted }}
-                onMouseEnter={e => (e.currentTarget.style.background = colors.hover)}
-                onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
-              >
-                <Download className="h-4 w-4" />
-              </button>
+                {textContent !== null && (
+                  <button
+                    onClick={handleCopyContent}
+                    title={t("topbar.copyTitle")}
+                    className="flex items-center justify-center h-7 w-7 rounded-lg cursor-pointer transition-colors"
+                    style={{ color: colors.muted }}
+                    onMouseEnter={e => (e.currentTarget.style.background = colors.hover)}
+                    onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                  >
+                    {copiedCode ? <Check className="h-3.5 w-3.5 text-emerald-500" /> : <Copy className="h-3.5 w-3.5" />}
+                  </button>
+                )}
+
+                {/* More options menu */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      aria-label="More actions"
+                      className="flex items-center justify-center h-7 w-7 rounded-lg cursor-pointer transition-colors"
+                      style={{ color: colors.muted }}
+                      onMouseEnter={e => (e.currentTarget.style.background = colors.hover)}
+                      onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-52 p-1.5 rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#141518] text-slate-800 dark:text-slate-200 shadow-xl shadow-black/20 dark:shadow-black/80 z-[60]"
+                  >
+                    {isMarkdownFile && textContent !== null && (
+                      <DropdownMenuItem
+                        onClick={() => setMdViewMode(mdViewMode === "preview" ? "source" : "preview")}
+                        className="flex items-center justify-between text-xs py-2 px-2.5 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-white/[0.08]"
+                      >
+                        <span className="flex items-center gap-2">
+                          {mdViewMode === "preview" ? <Code className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" /> : <Eye className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />}
+                          {mdViewMode === "preview" ? t("viewMode.source") : t("viewMode.preview")}
+                        </span>
+                      </DropdownMenuItem>
+                    )}
+
+                    {isTableData && (
+                      <DropdownMenuItem
+                        onClick={() => setCsvViewMode(csvViewMode === "table" ? "source" : "table")}
+                        className="flex items-center justify-between text-xs py-2 px-2.5 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-white/[0.08]"
+                      >
+                        <span className="flex items-center gap-2">
+                          {csvViewMode === "table" ? <Code className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" /> : <FileSpreadsheet className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />}
+                          {csvViewMode === "table" ? t("viewMode.raw") : t("viewMode.table")}
+                        </span>
+                      </DropdownMenuItem>
+                    )}
+
+                    {isSvg && textContent !== null && (
+                      <DropdownMenuItem
+                        onClick={() => setSvgViewMode(svgViewMode === "image" ? "code" : "image")}
+                        className="flex items-center justify-between text-xs py-2 px-2.5 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-white/[0.08]"
+                      >
+                        <span className="flex items-center gap-2">
+                          {svgViewMode === "image" ? <Code className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" /> : <ImageIcon className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />}
+                          {svgViewMode === "image" ? t("viewMode.code") : t("viewMode.vector")}
+                        </span>
+                      </DropdownMenuItem>
+                    )}
+
+                    {(isCode || (isMarkdownFile && mdViewMode === "source") || (isTableData && csvViewMode === "source") || (isSvg && svgViewMode === "code")) && (
+                      <>
+                        <DropdownMenuItem
+                          onClick={() => setWrapLines(!wrapLines)}
+                          className="flex items-center justify-between text-xs py-2 px-2.5 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-white/[0.08]"
+                        >
+                          <span className="flex items-center gap-2">
+                            <WrapText className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                            {wrapLines ? t("topbar.disableWrap") : t("topbar.enableWrap")}
+                          </span>
+                          <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                            {wrapLines ? t("status.wrapOn") : t("status.wrapOff")}
+                          </span>
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem
+                          onClick={cycleFontSize}
+                          className="flex items-center justify-between text-xs py-2 px-2.5 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-white/[0.08]"
+                        >
+                          <span className="flex items-center gap-2">
+                            <Type className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                            {t("topbar.fontSizeTitle", { size: codeFontSize })}
+                          </span>
+                          <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">{codeFontSize}px</span>
+                        </DropdownMenuItem>
+                      </>
+                    )}
+
+                    {isJsonFile && textContent !== null && (
+                      <DropdownMenuItem
+                        onClick={handleFormatJson}
+                        className="flex items-center gap-2 text-xs py-2 px-2.5 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-white/[0.08]"
+                      >
+                        <Sparkles className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
+                        {t("topbar.format")}
+                      </DropdownMenuItem>
+                    )}
+
+                    {canRunInO2 && (
+                      <DropdownMenuItem
+                        onClick={handleOpenInO2}
+                        className="flex items-center gap-2 text-xs py-2 px-2.5 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-white/[0.08] text-emerald-600 dark:text-emerald-400"
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                        {t("topbar.run")}
+                      </DropdownMenuItem>
+                    )}
+
+                    {(isImage || isSvgImageView) && (
+                      <DropdownMenuItem
+                        onClick={() => setShowDetails(!showDetails)}
+                        className="flex items-center gap-2 text-xs py-2 px-2.5 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-white/[0.08]"
+                      >
+                        <Info className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                        {showDetails ? t("topbar.toggleDetails") : t("topbar.toggleDetails")}
+                      </DropdownMenuItem>
+                    )}
+
+                    {!loading && !error && (
+                      <>
+                        <DropdownMenuSeparator className="bg-slate-200 dark:bg-white/[0.08] my-1" />
+                        <DropdownMenuItem
+                          onClick={handleOpenInSystemApp}
+                          className="flex items-center gap-2 text-xs py-2 px-2.5 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-white/[0.08]"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
+                          {t("topbar.openInSystemViewer", "Open in System App")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={handleDownload}
+                          className="flex items-center gap-2 text-xs py-2 px-2.5 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-white/[0.08]"
+                        >
+                          <Download className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                          {t("topbar.download")}
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </>
           )}
+
           <button
             onClick={onClose}
             title={t("topbar.close")}
-            className="flex items-center justify-center h-9 w-9 sm:h-7 sm:w-8 rounded-lg cursor-pointer transition-colors duration-150 ml-0.5 hover:text-red-500"
+            className="flex items-center justify-center h-8 w-8 sm:h-7 sm:w-8 rounded-lg cursor-pointer transition-colors duration-150 ml-0.5 hover:text-red-500"
             style={{ color: colors.muted }}
             onMouseEnter={e => (e.currentTarget.style.background = colors.hover)}
             onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
           >
-            <X className="h-5 w-5 sm:h-4 sm:w-4" />
+            <X className="h-4.5 w-4.5 sm:h-4 sm:w-4" />
           </button>
         </div>
       </div>
@@ -2308,22 +2484,22 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
       {/* ── Status bar ───────────────────────────────────────────────────── */}
       {(isCode || isMarkdownFile || isTableData || isEditMode) && !loading && !error && textContent !== null ? (
         <div
-          className="flex items-center justify-between px-4 shrink-0 select-none pb-[env(safe-area-inset-bottom,0px)]"
+          className="flex items-center justify-between px-3 sm:px-4 shrink-0 select-none overflow-x-auto no-scrollbar pb-[env(safe-area-inset-bottom,0px)]"
           style={{
             height: "calc(26px + env(safe-area-inset-bottom, 0px))",
             background: colors.statusbar,
             borderTop: `1px solid ${colors.border}`,
           }}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 whitespace-nowrap">
             {statusParts.map((part, i) => (
-              <span key={i} className="text-[11px] font-mono" style={{ color: colors.muted }}>
+              <span key={i} className="text-[10px] sm:text-[11px] font-mono tracking-tight" style={{ color: colors.muted }}>
                 {part}
               </span>
             ))}
           </div>
           {isEditMode && (
-            <span className="text-[11px] font-mono" style={{ color: isDark ? "#374151" : "#94a3b8" }}>
+            <span className="text-[10px] sm:text-[11px] font-mono whitespace-nowrap pl-2 hidden xs:inline" style={{ color: isDark ? "#4b5563" : "#94a3b8" }}>
               {t("status.editorInfo")}
             </span>
           )}
