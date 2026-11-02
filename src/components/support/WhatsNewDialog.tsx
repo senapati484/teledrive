@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Check,
+  FileCode2,
   FolderSync,
   Globe,
   MousePointerClick,
@@ -53,18 +54,74 @@ function parseFeatureItem(featureText: string, index: number): ParsedFeature {
   if (
     lower.includes("backup") ||
     lower.includes("mirror") ||
+    lower.includes("sync") ||
+    lower.includes("sincron") ||
     lower.includes("备份") ||
     lower.includes("備份") ||
     lower.includes("sauvegarde") ||
     lower.includes("sicherung") ||
-    lower.includes("copia")
+    lower.includes("copia") ||
+    lower.includes("pencadangan") ||
+    lower.includes("резерв") ||
+    lower.includes("बैकअप")
   ) {
     Icon = FolderSync;
+  } else if (
+    lower.includes("android") ||
+    lower.includes("mobile") ||
+    lower.includes("phone") ||
+    lower.includes("ios") ||
+    lower.includes("móvil") ||
+    lower.includes("seluler") ||
+    lower.includes("mobil") ||
+    lower.includes("移动") ||
+    lower.includes("行動") ||
+    lower.includes("モバイル")
+  ) {
+    Icon = Smartphone;
+  } else if (
+    lower.includes("preview") ||
+    lower.includes("code") ||
+    lower.includes("editor") ||
+    lower.includes("visua") ||
+    lower.includes("view") ||
+    lower.includes("previsual") ||
+    lower.includes("vorschau") ||
+    lower.includes("aperçu") ||
+    lower.includes("просмотр") ||
+    lower.includes("peninjau") ||
+    lower.includes("预览") ||
+    lower.includes("預覽") ||
+    lower.includes("プレビュー") ||
+    lower.includes("पूर्वावलोकन")
+  ) {
+    Icon = FileCode2;
+  } else if (
+    lower.includes("secur") ||
+    lower.includes("segur") ||
+    lower.includes("sicher") ||
+    lower.includes("safe") ||
+    lower.includes("vault") ||
+    lower.includes("harden") ||
+    lower.includes("fortalec") ||
+    lower.includes("renforce") ||
+    lower.includes("усил") ||
+    lower.includes("सुरक्षा") ||
+    lower.includes("keamanan") ||
+    lower.includes("安全")
+  ) {
+    Icon = ShieldCheck;
   } else if (
     lower.includes("language") ||
     lower.includes("idioma") ||
     lower.includes("sprache") ||
     lower.includes("lang") ||
+    lower.includes("multilingual") ||
+    lower.includes("multilingüe") ||
+    lower.includes("mehrsprach") ||
+    lower.includes("multilingue") ||
+    lower.includes("язык") ||
+    lower.includes("bahasa") ||
     lower.includes("语言") ||
     lower.includes("語言") ||
     lower.includes("言語") ||
@@ -94,14 +151,6 @@ function parseFeatureItem(featureText: string, index: number): ParsedFeature {
     lower.includes("快")
   ) {
     Icon = Zap;
-  } else if (
-    lower.includes("android") ||
-    lower.includes("mobile") ||
-    lower.includes("phone") ||
-    lower.includes("ios") ||
-    lower.includes("móvil")
-  ) {
-    Icon = Smartphone;
   } else if (index % 3 === 0) {
     Icon = ShieldCheck;
   }
@@ -131,7 +180,7 @@ export default function WhatsNewDialog() {
       })
       .catch(() => {
         // Tauri not available (dev browser mode) — fallback to current version and show
-        setVersion("0.1.2");
+        setVersion("0.1.3");
         setOpen(true);
       });
 

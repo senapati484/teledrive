@@ -10,11 +10,11 @@
     "title": "Nouveautés de TeleDrive",
     "badge": "v{{version}}",
     "features": [
-      "Sauvegarde de l'appareil — mise en miroir automatique des dossiers locaux sur votre canal Telegram",
-      "Interface multilingue — 11 langues désormais prises en charge",
-      "Améliorations de la gestion des fichiers par glisser-déposer",
-      "Démarrage à froid plus rapide grâce au cache de fichiers local",
-      "Prise en charge d'Android dans la prochaine version 🤖"
+      "Sauvegarde d'appareil & stabilité de synchronisation — mise en miroir résiliente avec protection contre le gel et les limites de débit",
+      "Support officiel Android & Mobile — interface tactile native et synchronisation multiplateforme fluide",
+      "Aperçu moderne de fichiers & code — mise en page mobile responsive, coloration syntaxique, retour à la ligne et actions rapides",
+      "Renforcement de sécurité & stockage — empreintes SHA-256 des dossiers, coffre d'identifiants atomique et CSP strict",
+      "Parité multilingue — 11 langues avec traductions natives complètes et terminologie de disque localisée"
     ],
     "starCta": "Vous aimez la mise à jour ? Donnez-nous une ⭐",
     "starButton": "⭐ Étoiler sur GitHub",

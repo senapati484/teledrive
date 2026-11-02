@@ -10,11 +10,11 @@
     "title": "Apa yang Baru di TeleDrive",
     "badge": "v{{version}}",
     "features": [
-      "Pencadangan Perangkat — pencerminan otomatis folder lokal ke saluran Telegram Anda",
-      "Antarmuka multibahasa — 11 bahasa kini didukung",
-      "Peningkatan manajemen file seret-dan-lepas",
-      "Start-up lebih cepat dengan cache file lokal",
-      "Dukungan Android segera hadir di rilis berikutnya 🤖"
+      "Pencadangan Perangkat & Stabilitas Sinkronisasi — pencerminan otomatis yang tangguh dengan perlindungan batas laju dan pembekuan",
+      "Dukungan Resmi Android & Seluler — antarmuka sentuh native dan sinkronisasi lintas platform yang mulus",
+      "Peninjau Berkas & Kode Modern — tata letak responsif seluler, penyorotan sintaksis, pelipatan baris & aksi cepat",
+      "Penguatan Keamanan & Penyimpanan — ringkasan folder SHA-256, brankas kredensial atomik, dan kebijakan CSP yang ketat",
+      "Paritas Multi-Bahasa — 11 bahasa dengan terjemahan native lengkap dan terminologi drive terlokalisasi"
     ],
     "starCta": "Suka pembaruannya? Beri kami ⭐",
     "starButton": "⭐ Beri Bintang di GitHub",
