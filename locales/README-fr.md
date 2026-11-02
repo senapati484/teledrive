@@ -20,8 +20,18 @@ Zéro coût d'infrastructure. Zéro abonnement. Chiffrement direct MTProto de bo
 
 <br/>
 
-<a href="https://www.producthunt.com/products/teledrive-3?utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-teledrive-3" target="_blank">
+<a href="https://www.producthunt.com/products/teledrive-3?utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-teledrive-3" target="_blank" rel="noopener noreferrer">
   <img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1293880&theme=light" alt="TeleDrive - Unlimited Telegram cloud drive across 5 platforms. | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" />
+</a>
+
+<br/><br/>
+
+<a href="https://sourceforge.net/projects/teledrive/" target="_blank" rel="noopener noreferrer">
+  <img src="https://b.sf-syn.com/badge_img/4107869/oss-community-choice-black?achievement=oss-community-choice" alt="SourceForge Community Choice Award" width="115" />
+</a>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<a href="https://sourceforge.net/projects/teledrive/" target="_blank" rel="noopener noreferrer">
+  <img src="https://b.sf-syn.com/badge_img/4107869/oss-users-love-us-black" alt="SourceForge Users Love Us Award" width="115" />
 </a>
 
 <br/><br/>
