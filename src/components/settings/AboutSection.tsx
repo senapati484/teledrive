@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Bug, ShieldAlert, Globe, FlaskConical, Star } from "lucide-react";
+import { Bug, ShieldAlert, Globe, FlaskConical, Star, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getVersion } from "@tauri-apps/api/app";
 import { openUrl } from "@tauri-apps/plugin-opener";
@@ -105,9 +105,15 @@ export default function AboutSection() {
               <h4 className="text-base font-semibold text-[#1F1F1F] dark:text-[#E3E3E3]">
                 TeleDrive
               </h4>
-              <span className="bg-blue-50 dark:bg-blue-950/40 text-[#0B57D0] dark:text-[#8ab4f8] border border-blue-200/60 dark:border-blue-800/60 font-mono text-xs px-2.5 py-0.5 rounded-full font-medium">
-                v{version}
-              </span>
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new CustomEvent("teledrive:show-whats-new"))}
+                className="inline-flex items-center gap-1.5 bg-blue-50 dark:bg-blue-950/40 text-[#0B57D0] dark:text-[#8ab4f8] border border-blue-200/60 dark:border-blue-800/60 font-mono text-xs px-2.5 py-0.5 rounded-full font-medium hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors cursor-pointer"
+                title="View What's New"
+              >
+                <span>v{version}</span>
+                <Sparkles className="h-3 w-3 text-blue-600 dark:text-blue-400 shrink-0" />
+              </button>
             </div>
             <p className="text-xs text-[#747775]">
               {t("about.tagline")}
