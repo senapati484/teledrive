@@ -50,11 +50,19 @@ export default function StarPromptDialog() {
     if (show) setOpen(true);
   }, [open, firstLaunchAt, successfulUploads, snoozedUntil, dontAskAgain, starredAt, isTransferActive]);
 
-  // Poll periodically
+  // Poll periodically & listen for manual trigger events in dev
   useEffect(() => {
+    const handleTrigger = () => setOpen(true);
+    window.addEventListener("teledrive:show-star-prompt", handleTrigger);
+    (window as unknown as { showStarPrompt?: () => void }).showStarPrompt = handleTrigger;
+
     check();
     const id = setInterval(check, POLL_MS);
-    return () => clearInterval(id);
+    return () => {
+      clearInterval(id);
+      window.removeEventListener("teledrive:show-star-prompt", handleTrigger);
+      delete (window as unknown as { showStarPrompt?: () => void }).showStarPrompt;
+    };
   }, [check]);
 
   // Also re-check whenever upload count changes (upload just finished)
