@@ -56,8 +56,8 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
-        CFBundleShortVersionString: 0.1.2
-        CFBundleVersion: "0.1.2"
+        CFBundleShortVersionString: 0.1.3
+        CFBundleVersion: "0.1.3"
         UIFileSharingEnabled: true
         LSSupportsOpeningDocumentsInPlace: true
         NSPhotoLibraryUsageDescription: "TeleDrive needs access to your photo library to upload pictures and videos to your cloud storage."

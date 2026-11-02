@@ -10,11 +10,11 @@
     "title": "Novedades en TeleDrive",
     "badge": "v{{version}}",
     "features": [
-      "Copia de seguridad del dispositivo — reflejo automático de carpetas locales en tu canal de Telegram",
-      "Interfaz multilingüe — 11 idiomas compatibles ahora",
-      "Mejoras en la gestión de archivos mediante arrastrar y soltar",
-      "Inicio en frío más rápido con caché local de archivos",
-      "Soporte para Android disponible en la próxima versión 🤖"
+      "Copia de seguridad y estabilidad de sincronización — reflejo resistente de carpetas con protección contra límites de tasa y bloqueos",
+      "Soporte oficial para Android y móviles — interfaz táctil nativa y sincronización multiplataforma fluida",
+      "Visor moderno de archivos y código — diseño móvil adaptable, resaltado de sintaxis, ajuste de línea y acciones rápidas",
+      "Refuerzo de seguridad y almacenamiento — resúmenes SHA-256 de carpetas, bóveda de credenciales atómica y CSP estricto",
+      "Paridad multilingüe — 11 idiomas con traducción nativa completa y terminología de unidad localizada"
     ],
     "starCta": "¿Te gusta la actualización? Danos una ⭐",
     "starButton": "⭐ Destacar en GitHub",
