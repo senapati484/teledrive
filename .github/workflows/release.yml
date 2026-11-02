@@ -298,52 +298,57 @@ jobs:
       - name: Initialize and regenerate iOS project
         run: |
           npm run tauri ios init -- --ci --skip-targets-install
+          # Force Xcode project to adhere to projectFormat: xcode14_0 (objectVersion 56)
           xcodegen generate --spec src-tauri/gen/apple/project.yml
+          grep "objectVersion" src-tauri/gen/apple/teledrive.xcodeproj/project.pbxproj || true
 
-      - name: Build iOS App for Device
+      - name: Build iOS App (Device - aarch64)
         id: build_device
         continue-on-error: true
         run: |
-          echo "Building iOS physical device application in release mode..."
-          xcodebuild -project src-tauri/gen/apple/teledrive.xcodeproj \
-            -scheme teledrive_iOS \
-            -configuration release \
-            -destination "generic/platform=iOS" \
-            -derivedDataPath build/derivedData \
-            CODE_SIGNING_ALLOWED=NO \
-            CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" \
-            build
+          echo "Building iOS physical device application..."
+          npx tauri ios build --target aarch64 --no-sign --debug --ci
 
-      - name: Build iOS App for Simulator (Fallback)
-        if: steps.build_device.outcome != 'success'
+      - name: Build iOS App (Simulator - aarch64-sim)
         run: |
-          echo "Building iOS simulator application as companion/fallback..."
+          echo "Building iOS simulator application..."
           npx tauri ios build --target aarch64-sim --debug --ci
 
       - name: Standardize and stage iOS deliverables (.IPA)
         run: |
           mkdir -p staging
           VERSION=$(node -p "require('./package.json').version")
-          
+          echo "Packaging iOS installation deliverables for version v${VERSION}..."
+
+          is_valid_app() {
+            [ -n "$1" ] && [ -d "$1" ] && [ -f "$1/Info.plist" ] && [ -f "$1/TeleDrive" ]
+          }
+
           APP_PATH=""
-          if [ -d "build/derivedData/Build/Products/release-iphoneos/TeleDrive.app" ]; then
-            APP_PATH="build/derivedData/Build/Products/release-iphoneos/TeleDrive.app"
-          elif [ -d "build/derivedData/Build/Products/Release-iphoneos/TeleDrive.app" ]; then
-            APP_PATH="build/derivedData/Build/Products/Release-iphoneos/TeleDrive.app"
-          fi
+          # 1. Search for a valid device build (*iphoneos*)
+          for cand in \
+            "src-tauri/gen/apple/build/arm64/TeleDrive.app" \
+            $(find build/derivedData src-tauri/gen/apple ~/Library/Developer/Xcode/DerivedData -name "TeleDrive.app" -path "*iphoneos*" 2>/dev/null); do
+            if is_valid_app "$cand"; then
+              APP_PATH="$cand"
+              break
+            fi
+          done
+
+          # 2. Fall back to valid simulator build (*iphonesimulator*)
           if [ -z "$APP_PATH" ]; then
-            APP_PATH=$(find build/derivedData src-tauri/gen/apple ~/Library/Developer/Xcode/DerivedData -name "TeleDrive.app" -path "*iphoneos*" 2>/dev/null | head -n 1)
+            for cand in \
+              "src-tauri/gen/apple/build/arm64-sim/TeleDrive.app" \
+              $(find build/derivedData src-tauri/gen/apple ~/Library/Developer/Xcode/DerivedData -name "TeleDrive.app" 2>/dev/null); do
+              if is_valid_app "$cand"; then
+                APP_PATH="$cand"
+                break
+              fi
+            done
           fi
-          if [ -z "$APP_PATH" ]; then
-            APP_PATH=$(find build/derivedData src-tauri/gen/apple ~/Library/Developer/Xcode/DerivedData -name "TeleDrive.app" 2>/dev/null | head -n 1)
-          fi
-          if [ -z "$APP_PATH" ]; then
-            APP_PATH=$(find build/derivedData src-tauri/gen/apple ~/Library/Developer/Xcode/DerivedData -name "*.app" 2>/dev/null | head -n 1)
-          fi
-          
-          if [ -n "$APP_PATH" ]; then
-            echo "✓ Found .app at: $APP_PATH"
+
+          if is_valid_app "$APP_PATH"; then
+            echo "✓ Found valid .app bundle at: $APP_PATH ($(du -sh "$APP_PATH" | cut -f1))"
             codesign --force --deep --sign - "$APP_PATH" 2>/dev/null || true
             TMP_DIR=$(mktemp -d)
             mkdir -p "$TMP_DIR/Payload"
@@ -351,9 +356,27 @@ jobs:
             (cd "$TMP_DIR" && zip -r -q "$GITHUB_WORKSPACE/staging/teledrive.ipa" Payload)
             cp "$GITHUB_WORKSPACE/staging/teledrive.ipa" "$GITHUB_WORKSPACE/staging/teledrive-v${VERSION}.ipa"
             rm -rf "$TMP_DIR"
-            echo "✓ Created staging/teledrive.ipa"
+
+            IPA_SIZE=$(stat -f%z "$GITHUB_WORKSPACE/staging/teledrive.ipa" 2>/dev/null || stat -c%s "$GITHUB_WORKSPACE/staging/teledrive.ipa" 2>/dev/null || echo "0")
+            if [ "$IPA_SIZE" -lt 5000000 ]; then
+              echo "::error::Generated teledrive.ipa is suspiciously small ($IPA_SIZE bytes). Failing build."
+              exit 1
+            fi
+            echo "✓ Successfully generated staging/teledrive.ipa ($IPA_SIZE bytes)"
           else
-            echo "::warning::No app found to package into IPA"
+            echo "::error::Could not find a valid TeleDrive.app bundle containing Info.plist and executable."
+            exit 1
+          fi
+
+          # Also package Simulator .app if present
+          SIM_PATH=$(find src-tauri/gen/apple/build ~/Library/Developer/Xcode/DerivedData -name "TeleDrive.app" -path "*iphonesimulator*" 2>/dev/null | head -n 1)
+          if [ -z "$SIM_PATH" ] && [ -d "src-tauri/gen/apple/build/arm64-sim/TeleDrive.app" ]; then
+            SIM_PATH="src-tauri/gen/apple/build/arm64-sim/TeleDrive.app"
+          fi
+          if [ -n "$SIM_PATH" ] && [ -d "$SIM_PATH" ]; then
+            echo "✓ Packaging iOS simulator archive from $SIM_PATH"
+            (cd "$(dirname "$SIM_PATH")" && zip -r -q "$GITHUB_WORKSPACE/staging/teledrive-ios-simulator.zip" "$(basename "$SIM_PATH")")
+            cp "$GITHUB_WORKSPACE/staging/teledrive-ios-simulator.zip" "$GITHUB_WORKSPACE/staging/teledrive-v${VERSION}-ios-simulator.zip"
           fi
           ls -lh staging/
 
@@ -410,7 +433,8 @@ jobs:
             -name "teledrive.rpm" -o \
             -name "teledrive.AppImage" -o \
             -name "teledrive.apk" -o \
-            -name "teledrive.ipa" \
+            -name "teledrive.ipa" -o \
+            -name "teledrive-ios-simulator.zip" \
           \) -exec cp -v {} "$DIST_DIR/" \;
 
           # Clean up any potential duplicates
