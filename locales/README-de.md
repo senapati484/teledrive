@@ -57,14 +57,14 @@ Keine Serverkosten. Keine monatlichen Abos. Direkte MTProto-Verschlüsselung dir
 
 <br/><br/>
 
-[**Webseite**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**Downloads**](#-downloads) • [**Neues in v0.1.3 📝**](../RELEASE_NOTES_v0.1.3.md) • [**Beta Testing Poll 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**Video-Demo**](#-video-demo) • [**Fehler melden**](https://github.com/senapati484/teledrive/issues/new/choose) • [**Funktion vorschlagen**](https://github.com/senapati484/teledrive/issues/new/choose)
+[**Webseite**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**Downloads**](#-downloads) • [**Neues in v0.1.3 📝**](https://github.com/senapati484/teledrive/releases/tag/v0.1.3) • [**Beta Testing Poll 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**Video-Demo**](#-video-demo) • [**Fehler melden**](https://github.com/senapati484/teledrive/issues/new/choose) • [**Funktion vorschlagen**](https://github.com/senapati484/teledrive/issues/new/choose)
 
 </div>
 
 ---
 
 > [!IMPORTANT]
-> 🚀 **TeleDrive v0.1.3 ist offiziell live!** Mit nativen Mobile Bottom Sheets, robuster Batch-Sicherung gegen Telegram-Limits und voller Sprachunterstützung. Details in den [**v0.1.3 Release Notes**](../RELEASE_NOTES_v0.1.3.md).
+> 🚀 **TeleDrive v0.1.3 ist offiziell live!** Mit nativen Mobile Bottom Sheets, robuster Batch-Sicherung gegen Telegram-Limits und voller Sprachunterstützung. Details in den [**v0.1.3 Release Notes**](https://github.com/senapati484/teledrive/releases/tag/v0.1.3).
 
 ## 🎬 Video-Demo
 

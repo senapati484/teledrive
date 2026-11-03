@@ -64,7 +64,7 @@ Tanpa biaya server. Tanpa biaya langganan bulanan. Enkripsi MTProto langsung ke 
 ---
 
 > [!IMPORTANT]
-> 🚀 **TeleDrive v0.1.3 resmi dirilis!** Menghadirkan bottom sheet native untuk perangkat seluler, ketahanan pencadangan batch, dan paritas 11 bahasa. Baca [**Catatan Rilis v0.1.3**](../RELEASE_NOTES_v0.1.3.md).
+> 🚀 **TeleDrive v0.1.3 resmi dirilis!** Menghadirkan bottom sheet native untuk perangkat seluler, ketahanan pencadangan batch, dan paritas 11 bahasa. Baca [**Catatan Rilis v0.1.3**](https://github.com/senapati484/teledrive/releases/tag/v0.1.3).
 
 ## 🎬 Panduan Video & Demo
 

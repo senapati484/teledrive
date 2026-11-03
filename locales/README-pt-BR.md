@@ -57,14 +57,14 @@ Zero custos com servidores. Zero assinaturas. Criptografia MTProto direta para o
 
 <br/><br/>
 
-[**Site Oficial**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**Downloads**](#-downloads) • [**Novidades na v0.1.3 📝**](../RELEASE_NOTES_v0.1.3.md) • [**Beta Testing Poll 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**Vídeo Demonstrativo**](#-vídeo-demonstrativo) • [**Reportar um Erro**](https://github.com/senapati484/teledrive/issues/new/choose) • [**Sugerir Funcionalidade**](https://github.com/senapati484/teledrive/issues/new/choose)
+[**Site Oficial**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**Downloads**](#-downloads) • [**Novidades na v0.1.3 📝**](https://github.com/senapati484/teledrive/releases/tag/v0.1.3) • [**Beta Testing Poll 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**Vídeo Demonstrativo**](#-vídeo-demonstrativo) • [**Reportar um Erro**](https://github.com/senapati484/teledrive/issues/new/choose) • [**Sugerir Funcionalidade**](https://github.com/senapati484/teledrive/issues/new/choose)
 
 </div>
 
 ---
 
 > [!IMPORTANT]
-> 🚀 **TeleDrive v0.1.3 está oficialmente disponível!** Com painéis inferiores nativos no celular, backup em lote resistente a limites e paridade total em 11 idiomas. Veja as [**Notas de versão v0.1.3**](../RELEASE_NOTES_v0.1.3.md).
+> 🚀 **TeleDrive v0.1.3 está oficialmente disponível!** Com painéis inferiores nativos no celular, backup em lote resistente a limites e paridade total em 11 idiomas. Veja as [**Notas de versão v0.1.3**](https://github.com/senapati484/teledrive/releases/tag/v0.1.3).
 
 ## 🎬 Vídeo Demonstrativo
 
