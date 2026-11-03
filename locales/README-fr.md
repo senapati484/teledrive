@@ -64,7 +64,7 @@ Zéro coût d'infrastructure. Zéro abonnement. Chiffrement direct MTProto de bo
 ---
 
 > [!IMPORTANT]
-> 🚀 **TeleDrive v0.1.3 est officiellement disponible !** Incluant des feuilles inférieures natives sur mobile, une sauvegarde renforcée et une parité complète en 11 langues. Voir les [**Notes de version v0.1.3**](../RELEASE_NOTES_v0.1.3.md).
+> 🚀 **TeleDrive v0.1.3 est officiellement disponible !** Incluant des feuilles inférieures natives sur mobile, une sauvegarde renforcée et une parité complète en 11 langues. Voir les [**Notes de version v0.1.3**](https://github.com/senapati484/teledrive/releases/tag/v0.1.3).
 
 ## 🎬 Visite guidée en vidéo & Démo
 

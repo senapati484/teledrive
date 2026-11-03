@@ -55,14 +55,14 @@ Zero server costs. Zero subscriptions. Direct MTProto encryption straight to Tel
 
 <br/>
 
-[**Website**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**Downloads**](#-downloads) • [**What's New in v0.1.3 📝**](RELEASE_NOTES_v0.1.3.md) • [**Beta Testing Poll 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**Video Demo**](#-video-walkthrough--demo) • [**Report a Bug**](https://github.com/senapati484/teledrive/issues/new/choose) • [**Request a Feature**](https://github.com/senapati484/teledrive/issues/new/choose)
+[**Website**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**Downloads**](#-downloads) • [**What's New in v0.1.3 📝**](https://github.com/senapati484/teledrive/releases/tag/v0.1.3) • [**Beta Testing Poll 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**Video Demo**](#-video-walkthrough--demo) • [**Report a Bug**](https://github.com/senapati484/teledrive/issues/new/choose) • [**Request a Feature**](https://github.com/senapati484/teledrive/issues/new/choose)
 
 </div>
 
 ---
 
 > [!IMPORTANT]
-> 🚀 **TeleDrive v0.1.3 is officially live!** Featuring native mobile bottom sheet UX, batch backup resilience against Telegram rate limits, hardened iOS IPA & Android APK packaging pipelines, and 100% key parity across all 11 localized languages. Read the full [**v0.1.3 Release Notes**](RELEASE_NOTES_v0.1.3.md) or download native installers below.
+> 🚀 **TeleDrive v0.1.3 is officially live!** Featuring native mobile bottom sheet UX, batch backup resilience against Telegram rate limits, hardened iOS IPA & Android APK packaging pipelines, and 100% key parity across all 11 localized languages. Read the full [**v0.1.3 Release Notes**](https://github.com/senapati484/teledrive/releases/tag/v0.1.3) or download native installers below.
 
 ---
 

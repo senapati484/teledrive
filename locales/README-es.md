@@ -64,7 +64,7 @@ Cero costos de servidor. Cero suscripciones. Cifrado MTProto directo hacia Teleg
 ---
 
 > [!IMPORTANT]
-> 🚀 **¡TeleDrive v0.1.3 ya está oficialmente disponible!** Con paneles inferiores nativos en móviles, copia de seguridad por lotes resistente y compatibilidad total en 11 idiomas. Consulta las [**Notas de la versión v0.1.3**](../RELEASE_NOTES_v0.1.3.md).
+> 🚀 **¡TeleDrive v0.1.3 ya está oficialmente disponible!** Con paneles inferiores nativos en móviles, copia de seguridad por lotes resistente y compatibilidad total en 11 idiomas. Consulta las [**Notas de la versión v0.1.3**](https://github.com/senapati484/teledrive/releases/tag/v0.1.3).
 
 ## 🎬 Vídeo de Demostración
 
