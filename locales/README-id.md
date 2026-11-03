@@ -27,11 +27,23 @@ Tanpa biaya server. Tanpa biaya langganan bulanan. Enkripsi MTProto langsung ke 
 <br/><br/>
 
 <a href="https://sourceforge.net/projects/teledrive/" target="_blank" rel="noopener noreferrer">
-  <img src="https://b.sf-syn.com/badge_img/4107869/oss-community-choice-black?achievement=oss-community-choice" alt="SourceForge Community Choice Award" width="115" />
+  <img src="https://b.sf-syn.com/badge_img/4107869/oss-rising-star-black?achievement=oss-rising-star" alt="SourceForge Rising Star Award" width="105" />
 </a>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;
 <a href="https://sourceforge.net/projects/teledrive/" target="_blank" rel="noopener noreferrer">
-  <img src="https://b.sf-syn.com/badge_img/4107869/oss-users-love-us-black" alt="SourceForge Users Love Us Award" width="115" />
+  <img src="https://b.sf-syn.com/badge_img/4107869/oss-sf-favorite-black?achievement=oss-sf-favorite" alt="SourceForge Favorite Award" width="105" />
+</a>
+&nbsp;&nbsp;
+<a href="https://sourceforge.net/projects/teledrive/" target="_blank" rel="noopener noreferrer">
+  <img src="https://b.sf-syn.com/badge_img/4107869/oss-open-source-excellence-black?achievement=oss-open-source-excellence" alt="SourceForge Open Source Excellence Award" width="105" />
+</a>
+&nbsp;&nbsp;
+<a href="https://sourceforge.net/projects/teledrive/" target="_blank" rel="noopener noreferrer">
+  <img src="https://b.sf-syn.com/badge_img/4107869/oss-community-choice-black?achievement=oss-community-choice" alt="SourceForge Community Choice Award" width="105" />
+</a>
+&nbsp;&nbsp;
+<a href="https://sourceforge.net/projects/teledrive/" target="_blank" rel="noopener noreferrer">
+  <img src="https://b.sf-syn.com/badge_img/4107869/oss-users-love-us-black" alt="SourceForge Users Love Us Award" width="105" />
 </a>
 
 <br/><br/>
