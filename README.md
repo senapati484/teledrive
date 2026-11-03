@@ -10,6 +10,7 @@ Zero server costs. Zero subscriptions. Direct MTProto encryption straight to Tel
 [**English**](README.md) • [**Português (Brasil)**](locales/README-pt-BR.md) • [**Español**](locales/README-es.md) • [**繁體中文**](locales/README-zh-TW.md) • [**简体中文**](locales/README-zh-CN.md) • [**हिन्दी**](locales/README-hi.md) • [**Français**](locales/README-fr.md) • [**Bahasa Indonesia**](locales/README-id.md) • [**Русский**](locales/README-ru.md) • [**日本語**](locales/README-ja.md) • [**Deutsch**](locales/README-de.md)
 
 [![Total Downloads](https://img.shields.io/sourceforge/dt/teledrive?style=flat-square&logo=sourceforge&logoColor=white)](https://sourceforge.net/projects/teledrive/files/)
+[![Monthly Downloads](https://img.shields.io/sourceforge/dm/teledrive?style=flat-square&logo=sourceforge&logoColor=white)](https://sourceforge.net/projects/teledrive/files/)
 [![Latest Release](https://img.shields.io/badge/release-v0.1.3-2082f7.svg?style=flat-square)](https://sourceforge.net/projects/teledrive/files/v0.1.3/)
 [![Product Hunt](https://img.shields.io/badge/Product%20Hunt-Featured-FF6154.svg?style=flat-square&logo=producthunt&logoColor=white)](https://www.producthunt.com/products/teledrive-3)
 [![YouTube Walkthrough](https://img.shields.io/badge/YouTube-Video%20Demo-red.svg?style=flat-square&logo=youtube&logoColor=white)](https://youtu.be/4AiMn7HSlFg)
@@ -20,37 +21,48 @@ Zero server costs. Zero subscriptions. Direct MTProto encryption straight to Tel
 
 <br/>
 
-<a href="https://www.producthunt.com/products/teledrive-3?utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-teledrive-3" target="_blank" rel="noopener noreferrer">
-  <img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1293880&theme=light" alt="TeleDrive - Unlimited Telegram cloud drive across 5 platforms. | Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" />
-</a>
+<p align="center">
+  <a href="https://www.producthunt.com/products/teledrive-3?utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-teledrive-3" target="_blank" rel="noopener noreferrer">
+    <img src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1293880&theme=light" alt="TeleDrive on Product Hunt" style="width: 250px; height: 54px;" width="250" height="54" />
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://sourceforge.net/projects/teledrive/files/latest/download" target="_blank" rel="noopener noreferrer">
+    <img src="https://a.fsdn.com/con/app/sf-download-button" alt="Download TeleDrive on SourceForge" style="width: 276px; height: 54px;" width="276" height="54" />
+  </a>
+</p>
 
-<br/><br/>
+<p align="center">
+  <a href="https://sourceforge.net/projects/teledrive/" target="_blank" rel="noopener noreferrer">
+    <img src="https://b.sf-syn.com/badge_img/4107869/oss-rising-star-black?achievement=oss-rising-star" alt="SourceForge Rising Star Award" width="105" />
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://sourceforge.net/projects/teledrive/" target="_blank" rel="noopener noreferrer">
+    <img src="https://b.sf-syn.com/badge_img/4107869/oss-sf-favorite-black?achievement=oss-sf-favorite" alt="SourceForge Favorite Award" width="105" />
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://sourceforge.net/projects/teledrive/" target="_blank" rel="noopener noreferrer">
+    <img src="https://b.sf-syn.com/badge_img/4107869/oss-open-source-excellence-black?achievement=oss-open-source-excellence" alt="SourceForge Open Source Excellence Award" width="105" />
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://sourceforge.net/projects/teledrive/" target="_blank" rel="noopener noreferrer">
+    <img src="https://b.sf-syn.com/badge_img/4107869/oss-community-choice-black?achievement=oss-community-choice" alt="SourceForge Community Choice Award" width="105" />
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://sourceforge.net/projects/teledrive/" target="_blank" rel="noopener noreferrer">
+    <img src="https://b.sf-syn.com/badge_img/4107869/oss-users-love-us-black" alt="SourceForge Users Love Us Award" width="105" />
+  </a>
+</p>
 
-<a href="https://sourceforge.net/projects/teledrive/" target="_blank" rel="noopener noreferrer">
-  <img src="https://b.sf-syn.com/badge_img/4107869/oss-rising-star-black?achievement=oss-rising-star" alt="SourceForge Rising Star Award" width="105" />
-</a>
-&nbsp;&nbsp;
-<a href="https://sourceforge.net/projects/teledrive/" target="_blank" rel="noopener noreferrer">
-  <img src="https://b.sf-syn.com/badge_img/4107869/oss-sf-favorite-black?achievement=oss-sf-favorite" alt="SourceForge Favorite Award" width="105" />
-</a>
-&nbsp;&nbsp;
-<a href="https://sourceforge.net/projects/teledrive/" target="_blank" rel="noopener noreferrer">
-  <img src="https://b.sf-syn.com/badge_img/4107869/oss-open-source-excellence-black?achievement=oss-open-source-excellence" alt="SourceForge Open Source Excellence Award" width="105" />
-</a>
-&nbsp;&nbsp;
-<a href="https://sourceforge.net/projects/teledrive/" target="_blank" rel="noopener noreferrer">
-  <img src="https://b.sf-syn.com/badge_img/4107869/oss-community-choice-black?achievement=oss-community-choice" alt="SourceForge Community Choice Award" width="105" />
-</a>
-&nbsp;&nbsp;
-<a href="https://sourceforge.net/projects/teledrive/" target="_blank" rel="noopener noreferrer">
-  <img src="https://b.sf-syn.com/badge_img/4107869/oss-users-love-us-black" alt="SourceForge Users Love Us Award" width="105" />
-</a>
+<br/>
 
-<br/><br/>
-
-[**Website**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**Downloads**](#-downloads) • [**Beta Testing Poll 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**Video Demo**](#-video-walkthrough--demo) • [**Report a Bug**](https://github.com/senapati484/teledrive/issues/new/choose) • [**Request a Feature**](https://github.com/senapati484/teledrive/issues/new/choose)
+[**Website**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**Downloads**](#-downloads) • [**What's New in v0.1.3 📝**](RELEASE_NOTES_v0.1.3.md) • [**Beta Testing Poll 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**Video Demo**](#-video-walkthrough--demo) • [**Report a Bug**](https://github.com/senapati484/teledrive/issues/new/choose) • [**Request a Feature**](https://github.com/senapati484/teledrive/issues/new/choose)
 
 </div>
+
+---
+
+> [!IMPORTANT]
+> 🚀 **TeleDrive v0.1.3 is officially live!** Featuring native mobile bottom sheet UX, batch backup resilience against Telegram rate limits, hardened iOS IPA & Android APK packaging pipelines, and 100% key parity across all 11 localized languages. Read the full [**v0.1.3 Release Notes**](RELEASE_NOTES_v0.1.3.md) or download native installers below.
 
 ---
 
