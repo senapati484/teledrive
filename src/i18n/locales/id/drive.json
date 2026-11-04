@@ -118,5 +118,25 @@
     "title": "404 - Halaman Tidak Ditemukan",
     "description": "Halaman yang Anda cari tidak ada.",
     "goToMyDrive": "Buka Drive Saya"
+  },
+  "transfers": {
+    "active_one": "{{count}} transfer sedang berlangsung",
+    "active_other": "{{count}} transfer sedang berlangsung",
+    "complete_one": "{{count}} transfer selesai",
+    "complete_other": "{{count}} transfer selesai",
+    "failed_one": "{{count}} transfer gagal",
+    "failed_other": "{{count}} transfer gagal",
+    "downloads": "Unduhan",
+    "uploads": "Unggahan",
+    "pause": "Jeda",
+    "resume": "Lanjutkan",
+    "cancel": "Batalkan unduhan",
+    "remove": "Hapus",
+    "downloading": "Mengunduh",
+    "paused": "Dijeda",
+    "done": "Diunduh",
+    "cancelled": "Dibatalkan",
+    "failedStatus": "Gagal",
+    "retry": "Ulangi unduhan"
   }
 }

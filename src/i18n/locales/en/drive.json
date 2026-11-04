@@ -118,5 +118,25 @@
     "title": "404 - Page Not Found",
     "description": "The page you are looking for doesn't exist.",
     "goToMyDrive": "Go to My Drive"
+  },
+  "transfers": {
+    "active_one": "{{count}} transfer in progress",
+    "active_other": "{{count}} transfers in progress",
+    "complete_one": "{{count}} transfer complete",
+    "complete_other": "{{count}} transfers complete",
+    "failed_one": "{{count}} transfer failed",
+    "failed_other": "{{count}} transfers failed",
+    "downloads": "Downloads",
+    "uploads": "Uploads",
+    "pause": "Pause",
+    "resume": "Resume",
+    "cancel": "Cancel download",
+    "remove": "Remove",
+    "downloading": "Downloading",
+    "paused": "Paused",
+    "done": "Downloaded",
+    "cancelled": "Cancelled",
+    "failedStatus": "Failed",
+    "retry": "Retry download"
   }
 }

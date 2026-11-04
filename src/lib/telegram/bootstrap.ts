@@ -105,7 +105,22 @@ async function bootstrapTeleDriveInner(
   const channelId = await ensureStorageChannel(phone);
 
   onStatusChange?.(i18n.t("messages:bootstrap.status.loadingIndex"));
-  const outcome = await loadIndexOutcome(channelId);
+  let outcome = await loadIndexOutcome(channelId);
+
+  if (outcome.status === "incomplete" && outcome.reason === "missing_index") {
+    // The channel is reachable but contains no readable index: a brand-new
+    // channel, a channel used by an older upload-only build, or an index that
+    // was lost. Treat this as an empty-but-recoverable drive instead of a
+    // permanent failure. Otherwise every write stays gated behind an index
+    // that will never appear, because the retry loop only re-reads Telegram
+    // and never rebuilds. The orphan scan below re-indexes any TeleDrive
+    // uploads it finds and persists a fresh index.
+    useFileStore.getState().setIndexLoadState("ready", null);
+    outcome = { status: "ready", files: outcome.files, savedAt: 0 };
+    await invoke("log_vault_state", {
+      state: `BOOTSTRAP_NO_INDEX_REBUILD files=${outcome.files.length}`,
+    }).catch(() => {});
+  }
 
   if (outcome.status === "incomplete") {
     // Keep the cached file list, but still honor permanent-deletion
@@ -862,8 +877,23 @@ async function runIndexRetry(): Promise<void> {
 
   indexRetryRunning = true;
   try {
-    const outcome = await loadIndexOutcome(channelId);
+    let outcome = await loadIndexOutcome(channelId);
     if (indexRetryChannelId !== channelId) return;
+
+    if (outcome.status === "incomplete" && outcome.reason === "missing_index") {
+      // A transient failure recovered, but the channel has no index at all.
+      // Unblock writes instead of retrying forever; the next bootstrap pass
+      // rebuilds the index from channel history (orphan recovery).
+      useFileStore.getState().setIndexLoadState("ready", null);
+      outcome = {
+        status: "ready",
+        files: useFileStore.getState().files,
+        savedAt: 0,
+      };
+      await invoke("log_vault_state", {
+        state: `INDEX_RETRY_NO_INDEX files=${outcome.files.length}`,
+      }).catch(() => {});
+    }
 
     if (outcome.status === "ready") {
       const status = indexRetryStatus;

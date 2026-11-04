@@ -9,6 +9,7 @@
  */
 
 import type { TeleFile } from "../types";
+import { canonicalChannelId, channelKeyVariants } from "../telegram/peerId";
 
 const KEY_PREFIX = "teledrive_pending_index:";
 
@@ -23,9 +24,10 @@ export interface PendingIndexMarker {
 export function writePendingMarker(marker: PendingIndexMarker): void {
   if (typeof localStorage === "undefined") return;
   try {
+    const channelId = canonicalChannelId(marker.channelId);
     localStorage.setItem(
-      KEY_PREFIX + marker.channelId,
-      JSON.stringify(marker)
+      KEY_PREFIX + channelId,
+      JSON.stringify({ ...marker, channelId })
     );
   } catch (err) {
     console.warn("[pendingIndex] Failed to write marker:", err);
@@ -35,25 +37,30 @@ export function writePendingMarker(marker: PendingIndexMarker): void {
 export function readPendingMarker(channelId: string): PendingIndexMarker | null {
   if (typeof localStorage === "undefined") return null;
   try {
-    const raw = localStorage.getItem(KEY_PREFIX + channelId);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!parsed || parsed.channelId !== channelId) return null;
-    if (
-      typeof parsed.baseSavedAt !== "number" ||
-      !Number.isFinite(parsed.baseSavedAt) ||
-      parsed.baseSavedAt < 0
-    ) {
-      return null;
+    const canonical = canonicalChannelId(channelId);
+    for (const key of channelKeyVariants(channelId)) {
+      const raw = localStorage.getItem(KEY_PREFIX + key);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed.channelId !== "string") continue;
+      if (canonicalChannelId(parsed.channelId) !== canonical) continue;
+      if (
+        typeof parsed.baseSavedAt !== "number" ||
+        !Number.isFinite(parsed.baseSavedAt) ||
+        parsed.baseSavedAt < 0
+      ) {
+        continue;
+      }
+      if (typeof parsed.at !== "number" || !Number.isFinite(parsed.at)) {
+        continue;
+      }
+      return {
+        channelId: canonical,
+        baseSavedAt: parsed.baseSavedAt,
+        at: parsed.at,
+      };
     }
-    if (typeof parsed.at !== "number" || !Number.isFinite(parsed.at)) {
-      return null;
-    }
-    return {
-      channelId,
-      baseSavedAt: parsed.baseSavedAt,
-      at: parsed.at,
-    };
+    return null;
   } catch {
     return null;
   }
@@ -62,7 +69,9 @@ export function readPendingMarker(channelId: string): PendingIndexMarker | null 
 export function clearPendingMarker(channelId: string): void {
   if (typeof localStorage === "undefined") return;
   try {
-    localStorage.removeItem(KEY_PREFIX + channelId);
+    for (const key of channelKeyVariants(channelId)) {
+      localStorage.removeItem(KEY_PREFIX + key);
+    }
   } catch (err) {
     console.warn("[pendingIndex] Failed to clear marker:", err);
   }

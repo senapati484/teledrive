@@ -118,5 +118,25 @@
     "title": "404 - पृष्ठ नहीं मिला",
     "description": "आप जिस पृष्ठ की तलाश कर रहे हैं वह मौजूद नहीं है।",
     "goToMyDrive": "मेरे ड्राइव पर जाएं"
+  },
+  "transfers": {
+    "active_one": "{{count}} स्थानांतरण प्रगति पर है",
+    "active_other": "{{count}} स्थानांतरण प्रगति पर हैं",
+    "complete_one": "{{count}} स्थानांतरण पूर्ण हुआ",
+    "complete_other": "{{count}} स्थानांतरण पूर्ण हुए",
+    "failed_one": "{{count}} स्थानांतरण विफल रहा",
+    "failed_other": "{{count}} स्थानांतरण विफल रहे",
+    "downloads": "डाउनलोड",
+    "uploads": "अपलोड",
+    "pause": "रोकें",
+    "resume": "फिर से शुरू करें",
+    "cancel": "डाउनलोड रद्द करें",
+    "remove": "हटाएं",
+    "downloading": "डाउनलोड हो रहा है",
+    "paused": "रुका हुआ",
+    "done": "डाउनलोड हो गया",
+    "cancelled": "रद्द किया गया",
+    "failedStatus": "विफल",
+    "retry": "डाउनलोड पुनः प्रयास करें"
   }
 }

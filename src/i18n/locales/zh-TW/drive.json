@@ -118,5 +118,25 @@
     "title": "404 - 找不到頁面",
     "description": "您要查詢的頁面不存在。",
     "goToMyDrive": "前往我的雲端硬碟"
+  },
+  "transfers": {
+    "active_one": "{{count}} 個傳輸進行中",
+    "active_other": "{{count}} 個傳輸進行中",
+    "complete_one": "{{count}} 個傳輸完成",
+    "complete_other": "{{count}} 個傳輸完成",
+    "failed_one": "{{count}} 個傳輸失敗",
+    "failed_other": "{{count}} 個傳輸失敗",
+    "downloads": "下載項目",
+    "uploads": "上傳項目",
+    "pause": "暫停",
+    "resume": "繼續",
+    "cancel": "取消下載",
+    "remove": "移除",
+    "downloading": "下載中",
+    "paused": "已暫停",
+    "done": "已下載",
+    "cancelled": "已取消",
+    "failedStatus": "失敗",
+    "retry": "重試下載"
   }
 }

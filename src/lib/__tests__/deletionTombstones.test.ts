@@ -50,6 +50,22 @@ describe("deletion tombstones", () => {
     recordDeletedMessages("chan-a", [10]);
     expect(filterDeletedMessages("chan-b", [makeTeleFile("a", { messageId: 10 })])).toHaveLength(1);
   });
+
+  it("treats the legacy raw channel id and the marked id as the same channel", () => {
+    recordDeletedMessages("123456", [10]);
+    expect([...getDeletedMessageIds("-100123456")]).toEqual([10]);
+
+    recordDeletedMessages("-100123456", [11]);
+    expect([...getDeletedMessageIds("123456")].sort((a, b) => a - b)).toEqual([
+      10, 11,
+    ]);
+  });
+
+  it("clears tombstones written under either id form", () => {
+    recordDeletedMessages("123456", [10, 11]);
+    clearDeletedMessages("-100123456", [10]);
+    expect([...getDeletedMessageIds("123456")]).toEqual([11]);
+  });
 });
 
 describe("remote snapshot reconciliation", () => {

@@ -118,5 +118,25 @@
     "title": "404 - ページが見つかりません",
     "description": "お探しのページは存在しません。",
     "goToMyDrive": "マイドライブに移動"
+  },
+  "transfers": {
+    "active_one": "{{count}} 件の転送が進行中",
+    "active_other": "{{count}} 件の転送が進行中",
+    "complete_one": "{{count}} 件の転送が完了",
+    "complete_other": "{{count}} 件の転送が完了",
+    "failed_one": "{{count}} 件の転送が失敗",
+    "failed_other": "{{count}} 件の転送が失敗",
+    "downloads": "ダウンロード",
+    "uploads": "アップロード",
+    "pause": "一時停止",
+    "resume": "再開",
+    "cancel": "ダウンロードをキャンセル",
+    "remove": "削除",
+    "downloading": "ダウンロード中",
+    "paused": "一時停止中",
+    "done": "ダウンロード完了",
+    "cancelled": "キャンセル済み",
+    "failedStatus": "失敗",
+    "retry": "再試行"
   }
 }

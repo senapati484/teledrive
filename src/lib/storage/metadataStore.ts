@@ -2,6 +2,7 @@ import { Api } from "telegram";
 import { sha256 } from "@noble/hashes/sha256";
 import { bytesToHex } from "@noble/hashes/utils";
 import { getClient } from "../telegram/client";
+import { canonicalChannelId } from "../telegram/peerId";
 import { TeleFile } from "../types";
 import { useFileStore } from "../../stores/fileStore";
 import { enqueueSave, getIndexQueue } from "./indexQueue";
@@ -306,17 +307,18 @@ export async function withTimeout<T>(promise: Promise<T>, timeoutMs: number, lab
 
 export async function resolveChannelInputPeer(channelId: string) {
   const client = getClient();
+  const id = canonicalChannelId(channelId);
   try {
     // Session cache is normally instant. Bound it anyway: a half-open
     // connection must never leave recovery or bootstrap on a spinner forever.
     return await withTimeout(
-      client.getInputEntity(channelId),
+      client.getInputEntity(id),
       5000,
       "client.getInputEntity"
     );
   } catch (err) {
     console.warn("[metadataStore] getInputEntity failed, falling back to getEntity with timeout:", err);
-    return withTimeout(client.getEntity(channelId), 5000, "client.getEntity");
+    return withTimeout(client.getEntity(id), 5000, "client.getEntity");
   }
 }
 
@@ -626,6 +628,7 @@ function collectCandidates(parsed: ParsedIndexChunk[]): IndexCandidate[] {
 }
 
 export type DiscoveryIncompleteReason =
+  | "missing_index"
   | "not_found"
   | "partial_manifest"
   | "timeout"
@@ -707,6 +710,9 @@ export async function discoverIndex(channelId: string): Promise<DiscoveryResult>
   let fetchSucceeded = false;
   let fetchFailed = false;
   let timedOut = false;
+  // A failed search/history page makes "no index marker seen" inconclusive,
+  // so we must not claim the channel has no index.
+  let scanFailed = false;
 
   const addMessages = (messages: any[] | undefined | null) => {
     for (const msg of messages ?? []) {
@@ -859,6 +865,7 @@ export async function discoverIndex(channelId: string): Promise<DiscoveryResult>
       );
     } catch (err: any) {
       if (String(err?.message ?? err).includes("Timeout")) timedOut = true;
+      scanFailed = true;
       console.warn("[metadataStore] discoverIndex: search failed:", err);
       break;
     }
@@ -904,6 +911,7 @@ export async function discoverIndex(channelId: string): Promise<DiscoveryResult>
       );
     } catch (err: any) {
       if (String(err?.message ?? err).includes("Timeout")) timedOut = true;
+      scanFailed = true;
       console.warn("[metadataStore] discoverIndex: history page failed:", err);
       break;
     }
@@ -939,8 +947,11 @@ export async function discoverIndex(channelId: string): Promise<DiscoveryResult>
     return { status: "incomplete", reason: "partial_manifest" };
   }
 
+  if (!fetchSucceeded) {
+    return { status: "incomplete", reason: "network" };
+  }
+
   const channelIsEmpty =
-    fetchSucceeded &&
     !fetchFailed &&
     recent.length === 0 &&
     pinned.length === 0 &&
@@ -957,8 +968,14 @@ export async function discoverIndex(channelId: string): Promise<DiscoveryResult>
     };
   }
 
-  if (!fetchSucceeded) {
-    return { status: "incomplete", reason: "network" };
+  if (!sawIndexMarker && !fetchFailed && !scanFailed && !timedOut) {
+    // The channel is readable and a full search/history pass found no index
+    // message at all. This is not a transient read failure: it means the
+    // drive has no index yet (new channel, older upload-only build, or a lost
+    // index). Report it distinctly so bootstrap can rebuild and persist one
+    // instead of blocking every write forever on an index that will never
+    // appear.
+    return { status: "incomplete", reason: "missing_index" };
   }
   if (timedOut) {
     return { status: "incomplete", reason: "timeout" };

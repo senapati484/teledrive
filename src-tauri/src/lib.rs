@@ -963,48 +963,75 @@ async fn write_file_binary(path: String, data: Vec<u8>) -> Result<(), String> {
 /// The first chunk truncates a private temp file, subsequent chunks append to
 /// it, and the final chunk (`done = true`) atomically renames it over the
 /// destination. A crash therefore never leaves a half-written file at `path`.
+///
+/// `discard = true` removes the temp file and leaves the destination untouched
+/// (used when a download is cancelled or fails), and `sync = false` skips the
+/// per-chunk fsync so streaming a large file only pays for it once at the end.
+fn write_file_chunk_sync(
+    path: &str,
+    data: &[u8],
+    append: bool,
+    done: bool,
+    discard: bool,
+    sync: bool,
+) -> Result<(), String> {
+    use std::io::Write;
+    let p = std::path::Path::new(path);
+    let tmp = temp_sibling(p, "part")?;
+    if discard {
+        return match std::fs::remove_file(&tmp) {
+            Ok(()) => Ok(()),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+            Err(e) => Err(format!("Failed to discard {}: {e}", tmp.display())),
+        };
+    }
+    if let Some(parent) = p.parent() {
+        std::fs::create_dir_all(parent)
+            .map_err(|e| format!("Failed to create {}: {e}", parent.display()))?;
+    }
+    let mut file = std::fs::OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(!append)
+        .append(append)
+        .open(&tmp)
+        .map_err(|e| format!("Failed to open temp file {}: {e}", tmp.display()))?;
+    file.write_all(data)
+        .map_err(|e| format!("Failed to write chunk to {}: {e}", tmp.display()))?;
+    if sync {
+        file.sync_all()
+            .map_err(|e| format!("Failed to sync {}: {e}", tmp.display()))?;
+    }
+    drop(file);
+    if done {
+        if let Err(rename_err) = std::fs::rename(&tmp, p) {
+            std::fs::copy(&tmp, p).map_err(|copy_err| {
+                let _ = std::fs::remove_file(&tmp);
+                format!(
+                    "Failed to finalize {}: rename={rename_err}; copy={copy_err}",
+                    p.display()
+                )
+            })?;
+            let _ = std::fs::remove_file(&tmp);
+        }
+    }
+    Ok(())
+}
+
 #[tauri::command]
 async fn write_file_chunk(
     path: String,
     data: Vec<u8>,
     append: bool,
     done: Option<bool>,
+    discard: Option<bool>,
+    sync: Option<bool>,
 ) -> Result<(), String> {
-    use std::io::Write;
-    let path_owned = path.clone();
     let done = done.unwrap_or(false);
+    let discard = discard.unwrap_or(false);
+    let sync = sync.unwrap_or(true);
     tauri::async_runtime::spawn_blocking(move || {
-        let p = std::path::Path::new(&path_owned);
-        if let Some(parent) = p.parent() {
-            std::fs::create_dir_all(parent)
-                .map_err(|e| format!("Failed to create {}: {e}", parent.display()))?;
-        }
-        let tmp = temp_sibling(p, "part")?;
-        let mut file = std::fs::OpenOptions::new()
-            .create(true)
-            .write(true)
-            .truncate(!append)
-            .append(append)
-            .open(&tmp)
-            .map_err(|e| format!("Failed to open temp file {}: {e}", tmp.display()))?;
-        file.write_all(&data)
-            .map_err(|e| format!("Failed to write chunk to {}: {e}", tmp.display()))?;
-        file.sync_all()
-            .map_err(|e| format!("Failed to sync {}: {e}", tmp.display()))?;
-        drop(file);
-        if done {
-            if let Err(rename_err) = std::fs::rename(&tmp, p) {
-                std::fs::copy(&tmp, p).map_err(|copy_err| {
-                    let _ = std::fs::remove_file(&tmp);
-                    format!(
-                        "Failed to finalize {}: rename={rename_err}; copy={copy_err}",
-                        p.display()
-                    )
-                })?;
-                let _ = std::fs::remove_file(&tmp);
-            }
-        }
-        Ok::<(), String>(())
+        write_file_chunk_sync(&path, &data, append, done, discard, sync)
     })
     .await
     .map_err(|e| format!("write_file_chunk task join error: {e}"))?
@@ -1030,6 +1057,64 @@ fn open_telegram_app(app: tauri::AppHandle, url: String) -> Result<(), String> {
     app.opener()
         .open_url(&url, None::<&str>)
         .map_err(|e| format!("Failed to open Telegram app: {e}"))
+}
+
+#[cfg(not(mobile))]
+fn show_main_window(app: &AppHandle) {
+    if let Some(window) = app.get_webview_window("TeleDrive") {
+        let _ = window.show();
+        let _ = window.unminimize();
+        let _ = window.set_focus();
+    }
+}
+
+/// Desktop shell behaviour: closing the window keeps the process alive in the
+/// system tray so uploads/downloads and scheduled backups keep running.
+/// Quitting only happens through the tray menu (or Cmd+Q / app exit).
+#[cfg(not(mobile))]
+fn setup_desktop_shell(app: &tauri::App) -> tauri::Result<()> {
+    use tauri::menu::{Menu, MenuItem};
+    use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
+
+    let show_item = MenuItem::with_id(app, "show", "Open TeleDrive", true, None::<&str>)?;
+    let quit_item = MenuItem::with_id(app, "quit", "Quit TeleDrive", true, None::<&str>)?;
+    let menu = Menu::with_items(app, &[&show_item, &quit_item])?;
+
+    let mut tray = TrayIconBuilder::with_id("main")
+        .menu(&menu)
+        .show_menu_on_left_click(false)
+        .on_menu_event(|app, event| match event.id.as_ref() {
+            "show" => show_main_window(app),
+            "quit" => app.exit(0),
+            _ => {}
+        })
+        .on_tray_icon_event(|tray, event| {
+            if let TrayIconEvent::Click {
+                button: MouseButton::Left,
+                button_state: MouseButtonState::Up,
+                ..
+            } = event
+            {
+                show_main_window(tray.app_handle());
+            }
+        });
+
+    if let Some(icon) = app.default_window_icon() {
+        tray = tray.icon(icon.clone());
+    }
+    tray.build(app)?;
+
+    if let Some(window) = app.get_webview_window("TeleDrive") {
+        let handle = window.clone();
+        window.on_window_event(move |event| {
+            if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                api.prevent_close();
+                let _ = handle.hide();
+            }
+        });
+    }
+
+    Ok(())
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -1093,6 +1178,9 @@ pub fn run() {
             open_telegram_app,
         ])
         .setup(|app| {
+            #[cfg(not(mobile))]
+            setup_desktop_shell(app)?;
+
             #[cfg(debug_assertions)]
             {
                 #[cfg(not(mobile))]
@@ -1102,8 +1190,14 @@ pub fn run() {
             }
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application")
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|_app_handle, _event| {
+            #[cfg(target_os = "macos")]
+            if let tauri::RunEvent::Reopen { .. } = _event {
+                show_main_window(_app_handle);
+            }
+        })
 }
 
 #[cfg(test)]
@@ -1176,6 +1270,39 @@ mod tests {
         std::fs::write(&path, br#"{"generation":7}"#).unwrap();
 
         assert_eq!(manifest_generation_at(&path).unwrap(), 7);
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn chunked_write_appends_until_finalized() {
+        let dir = temp_path("chunks");
+        let path = dir.join("download.bin");
+        let path_str = path.to_str().unwrap();
+
+        write_file_chunk_sync(path_str, b"hello ", false, false, false, false).unwrap();
+        write_file_chunk_sync(path_str, b"world", true, false, false, false).unwrap();
+
+        assert!(!path.exists(), "destination must stay untouched until done");
+        write_file_chunk_sync(path_str, b"", true, true, false, true).unwrap();
+
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "hello world");
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn discarding_a_chunked_write_leaves_the_destination_untouched() {
+        let dir = temp_path("discard");
+        let path = dir.join("download.bin");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(&path, b"existing").unwrap();
+        let path_str = path.to_str().unwrap();
+
+        write_file_chunk_sync(path_str, b"partial", false, false, false, false).unwrap();
+        write_file_chunk_sync(path_str, b"", true, false, true, false).unwrap();
+
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "existing");
+        let entries: Vec<_> = std::fs::read_dir(&dir).unwrap().collect();
+        assert_eq!(entries.len(), 1, "temp file must be removed");
         std::fs::remove_dir_all(&dir).unwrap();
     }
 }

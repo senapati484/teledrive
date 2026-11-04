@@ -1,5 +1,6 @@
 import { Api } from "telegram";
 import { getClient } from "./client";
+import { canonicalChannelId } from "./peerId";
 // NOTE: we deliberately do NOT import @tauri-apps/plugin-fs here. Its
 // `open()` is gated by capability scopes (`fs:allow-open` etc.) — those
 // scopes are baked at build time and can't accept the user's arbitrary
@@ -208,7 +209,7 @@ export async function uploadFileToTelegram(
     const result = await withTelegramRetry(
       () =>
         withTimeout(
-          client.sendFile(channelId, {
+          client.sendFile(canonicalChannelId(channelId), {
             file: inputFile,
             forceDocument: true,
             caption,

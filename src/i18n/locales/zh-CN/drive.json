@@ -118,5 +118,25 @@
     "title": "404 - 找不到页面",
     "description": "您要查找的页面不存在。",
     "goToMyDrive": "前往我的云端硬盘"
+  },
+  "transfers": {
+    "active_one": "{{count}} 个传输进行中",
+    "active_other": "{{count}} 个传输进行中",
+    "complete_one": "{{count}} 个传输完成",
+    "complete_other": "{{count}} 个传输完成",
+    "failed_one": "{{count}} 个传输失败",
+    "failed_other": "{{count}} 个传输失败",
+    "downloads": "下载项",
+    "uploads": "上传项",
+    "pause": "暂停",
+    "resume": "继续",
+    "cancel": "取消下载",
+    "remove": "移除",
+    "downloading": "下载中",
+    "paused": "已暂停",
+    "done": "已下载",
+    "cancelled": "已取消",
+    "failedStatus": "失败",
+    "retry": "重试下载"
   }
 }

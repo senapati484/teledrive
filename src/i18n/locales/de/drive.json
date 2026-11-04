@@ -118,5 +118,25 @@
     "title": "404 – Seite nicht gefunden",
     "description": "Die gesuchte Seite existiert nicht.",
     "goToMyDrive": "Gehen Sie zu „Mein Laufwerk“."
+  },
+  "transfers": {
+    "active_one": "{{count}} Übertragung läuft",
+    "active_other": "{{count}} Übertragungen laufen",
+    "complete_one": "{{count}} Übertragung abgeschlossen",
+    "complete_other": "{{count}} Übertragungen abgeschlossen",
+    "failed_one": "{{count}} Übertragung fehlgeschlagen",
+    "failed_other": "{{count}} Übertragungen fehlgeschlagen",
+    "downloads": "Downloads",
+    "uploads": "Uploads",
+    "pause": "Pausieren",
+    "resume": "Fortsetzen",
+    "cancel": "Download abbrechen",
+    "remove": "Entfernen",
+    "downloading": "Wird heruntergeladen",
+    "paused": "Pausiert",
+    "done": "Heruntergeladen",
+    "cancelled": "Abgebrochen",
+    "failedStatus": "Fehlgeschlagen",
+    "retry": "Download wiederholen"
   }
 }

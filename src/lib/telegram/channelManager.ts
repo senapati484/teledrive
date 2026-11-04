@@ -1,6 +1,7 @@
-import { Api } from "telegram";
+import { Api, utils } from "telegram";
 import { getClient } from "./client";
 import { getSecret, saveSecret, VAULT_KEY_CHANNEL_ID, channelIdKey } from "../secure/vault";
+import { canonicalChannelId } from "./peerId";
 
 /**
  * Ensures the TeleDrive Storage channel exists for the given phone number.
@@ -18,6 +19,47 @@ import { getSecret, saveSecret, VAULT_KEY_CHANNEL_ID, channelIdKey } from "../se
  *   3. Dialog search             (recovery: vault cleared / first run on new device)
  *   4. Create new channel        (first-ever login for this account)
  */
+const STORAGE_CHANNEL_TITLE = "TeleDrive Storage";
+
+interface DialogSearchResult {
+  /** Marked channel id (`-100…`) when found. */
+  id: string | null;
+  /** True only when every folder scan finished; a failed scan must not
+   *  be mistaken for "this account has no storage channel yet". */
+  complete: boolean;
+}
+
+/**
+ * Look for the storage channel in both the main chat list and the archive.
+ * `getDialogs({})` only scans the main folder, so an archived channel would
+ * otherwise be invisible and we'd create a duplicate on the other device.
+ */
+async function searchStorageChannelInDialogs(): Promise<DialogSearchResult> {
+  const client = getClient();
+  let complete = true;
+
+  // 0 = main folder, 1 = archive. Scan both before concluding it's absent.
+  for (const folder of [0, 1]) {
+    try {
+      const dialogs = await client.getDialogs({ folder });
+      for (const dialog of dialogs) {
+        if (
+          dialog.title === STORAGE_CHANNEL_TITLE &&
+          (dialog.isChannel || dialog.entity?.className === "Channel") &&
+          dialog.id
+        ) {
+          return { id: canonicalChannelId(String(dialog.id)), complete: true };
+        }
+      }
+    } catch (err) {
+      complete = false;
+      console.warn(`[channelManager] Dialog search (folder ${folder}) failed:`, err);
+    }
+  }
+
+  return { id: null, complete };
+}
+
 export async function ensureStorageChannel(phone: string): Promise<string> {
   const client = getClient();
   const phoneKey = channelIdKey(phone);
@@ -26,9 +68,18 @@ export async function ensureStorageChannel(phone: string): Promise<string> {
   let channelId = await getSecret(phoneKey);
 
   if (channelId) {
+    const canonical = canonicalChannelId(channelId);
     try {
-      const peer = await client.getEntity(channelId);
-      if (peer) return channelId;
+      const peer = await client.getEntity(canonical);
+      if (peer) {
+        if (canonical !== channelId) {
+          await saveSecret(phoneKey, canonical);
+          console.info(
+            `[channelManager] Migrated channel id ${channelId} → ${canonical}`
+          );
+        }
+        return canonical;
+      }
     } catch (err) {
       console.warn(`[channelManager] Phone-keyed channel ${channelId} not accessible, continuing…`, err);
       channelId = null;
@@ -39,13 +90,17 @@ export async function ensureStorageChannel(phone: string): Promise<string> {
   if (!channelId) {
     const legacyId = await getSecret(VAULT_KEY_CHANNEL_ID);
     if (legacyId) {
+      const canonical = canonicalChannelId(legacyId);
       try {
-        const peer = await client.getEntity(legacyId);
+        const peer = await client.getEntity(canonical);
         if (peer) {
           // Migrate: write under the phone-specific key so future lookups are fast
-          await saveSecret(phoneKey, legacyId);
+          await saveSecret(phoneKey, canonical);
+          if (canonical !== legacyId) {
+            await saveSecret(VAULT_KEY_CHANNEL_ID, canonical);
+          }
           console.info(`[channelManager] Migrated legacy channel ID ${legacyId} → ${phoneKey}`);
-          return legacyId;
+          return canonical;
         }
       } catch (err) {
         console.warn(`[channelManager] Legacy channel ${legacyId} not accessible, searching dialogs…`, err);
@@ -54,31 +109,28 @@ export async function ensureStorageChannel(phone: string): Promise<string> {
   }
 
   // ── 3. Search dialogs for "TeleDrive Storage" ────────────────────────────
-  try {
-    const dialogs = await client.getDialogs({});
-    for (const dialog of dialogs) {
-      if (
-        dialog.title === "TeleDrive Storage" &&
-        (dialog.isChannel || dialog.entity?.className === "Channel") &&
-        dialog.id
-      ) {
-        // dialog.id from GramJS is BigInt; normalise to a plain string
-        // Use the absolute value with -100 prefix which is how Telegram identifies supergroups/channels
-        const rawId = String(dialog.id);
-        await saveSecret(phoneKey, rawId);
-        console.info(`[channelManager] Found channel via dialog search: ${rawId}`);
-        return rawId;
-      }
-    }
-  } catch (err) {
-    console.warn("[channelManager] Dialog search failed:", err);
+  const dialogSearch = await searchStorageChannelInDialogs();
+  if (dialogSearch.id) {
+    // dialog.id from GramJS is already the marked peer id (-100…).
+    await saveSecret(phoneKey, dialogSearch.id);
+    console.info(`[channelManager] Found channel via dialog search: ${dialogSearch.id}`);
+    return dialogSearch.id;
+  }
+
+  // Never create a second storage channel just because Telegram was
+  // unreachable for a moment — that silently splits the user's files across
+  // two channels and looks like "my devices don't sync" to them.
+  if (!dialogSearch.complete) {
+    throw new Error(
+      "Unable to search Telegram chats for the TeleDrive storage channel. Check the connection and retry."
+    );
   }
 
   // ── 4. Create a new private channel (first-ever login for this account) ──
   try {
     const result = await client.invoke(
       new Api.channels.CreateChannel({
-        title: "TeleDrive Storage",
+        title: STORAGE_CHANNEL_TITLE,
         about: "Private storage channel managed by TeleDrive. Do not delete or modify pinned messages.",
         broadcast: true,
       })
@@ -90,7 +142,11 @@ export async function ensureStorageChannel(phone: string): Promise<string> {
       throw new Error("Failed to create storage channel: channel info missing in updates");
     }
 
-    const idStr = String(channel.id);
+    // `channel.id` is the raw positive id. GramJS resolves a bare positive id
+    // as a *user*, so storing it makes every later getEntity/getMessages call
+    // fail (or hit the wrong peer). Use the marked channel id (-100…) that
+    // Telegram and `dialog.id` use.
+    const idStr = canonicalChannelId(utils.getPeerId(channel));
     await saveSecret(phoneKey, idStr);
     console.info(`[channelManager] Created new channel: ${idStr} for ${phoneKey}`);
     return idStr;
@@ -122,10 +178,10 @@ export async function getStorageChannelId(phone?: string | null): Promise<string
     if (phoneStr) {
       const phoneKey = channelIdKey(phoneStr);
       const id = await getSecret(phoneKey);
-      if (id) return id;
+      if (id) return canonicalChannelId(id);
     }
     const legacy = await getSecret(VAULT_KEY_CHANNEL_ID);
-    return legacy ?? undefined;
+    return legacy ? canonicalChannelId(legacy) : undefined;
   } catch {
     return undefined;
   }

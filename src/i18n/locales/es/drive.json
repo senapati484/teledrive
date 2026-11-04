@@ -118,5 +118,25 @@
     "title": "404 - Página no encontrada",
     "description": "La página que buscas no existe.",
     "goToMyDrive": "Ir a Mi Unidad"
+  },
+  "transfers": {
+    "active_one": "{{count}} transferencia en curso",
+    "active_other": "{{count}} transferencias en curso",
+    "complete_one": "{{count}} transferencia completada",
+    "complete_other": "{{count}} transferencias completadas",
+    "failed_one": "{{count}} transferencia fallida",
+    "failed_other": "{{count}} transferencias fallidas",
+    "downloads": "Descargas",
+    "uploads": "Subidas",
+    "pause": "Pausar",
+    "resume": "Reanudar",
+    "cancel": "Cancelar descarga",
+    "remove": "Eliminar",
+    "downloading": "Descargando",
+    "paused": "Pausado",
+    "done": "Descargado",
+    "cancelled": "Cancelado",
+    "failedStatus": "Fallido",
+    "retry": "Reintentar descarga"
   }
 }

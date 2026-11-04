@@ -27,6 +27,7 @@
 
 import { Api } from "telegram";
 import { getClient } from "../telegram/client";
+import { canonicalChannelId } from "../telegram/peerId";
 import { withTimeout, discoverIndex } from "./metadataStore";
 import {
   packChunks,
@@ -1176,11 +1177,12 @@ function chunkPayload(
 }
 
 async function resolvePeerWithTimeout(client: any, channelId: string): Promise<any> {
+  const id = canonicalChannelId(channelId);
   try {
-    return await client.getInputEntity(channelId);
+    return await client.getInputEntity(id);
   } catch {
     return await withTimeout(
-      client.getEntity(channelId),
+      client.getEntity(id),
       5000,
       "client.getEntity"
     );
