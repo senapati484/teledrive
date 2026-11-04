@@ -41,6 +41,11 @@ argon2 = "0.5.3"
 sha2 = "0.10"
 tokio = { version = "1", features = ["sync", "time"] }
 
+# Tray icons are desktop-only; keep the feature off mobile builds so the
+# underlying platform crates are never pulled into Android/iOS.
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+
 [profile.release]
 opt-level = 3
 codegen-units = 1

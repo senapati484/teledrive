@@ -203,9 +203,31 @@ describe("discoverIndex", () => {
     expect(calls.some((c) => c.offsetId === 900)).toBe(true);
   });
 
-  it("returns not_found for a non-empty channel with no index", async () => {
+  it("reports missing_index for a non-empty channel with no index", async () => {
     installFake({
       recent: [{ id: 900, text: "not an index", date: 1700000005 }],
+    });
+
+    const result = await discoverIndex("chan");
+
+    expect(result).toEqual({ status: "incomplete", reason: "missing_index" });
+  });
+
+  it("keeps not_found when an index marker exists but no epoch is valid", async () => {
+    installFake({
+      recent: [
+        {
+          id: 900,
+          text: JSON.stringify({
+            teledrive_index: true,
+            version: 2,
+            chunkIndex: 0,
+            totalChunks: 2,
+            files: [],
+          }),
+          date: 1700000005,
+        },
+      ],
     });
 
     const result = await discoverIndex("chan");
@@ -284,11 +306,11 @@ describe("loadIndexOutcome", () => {
 
     expect(outcome.status).toBe("incomplete");
     if (outcome.status !== "incomplete") return;
-    expect(outcome.reason).toBe("not_found");
+    expect(outcome.reason).toBe("missing_index");
     expect(outcome.files.map((f) => f.id)).toEqual(["file_9"]);
     const state = useFileStore.getState();
     expect(state.indexLoadState).toBe("incomplete");
-    expect(state.indexLoadError).toBe("not_found");
+    expect(state.indexLoadError).toBe("missing_index");
     expect(state.files.map((f) => f.id)).toEqual(["file_9"]);
   });
 

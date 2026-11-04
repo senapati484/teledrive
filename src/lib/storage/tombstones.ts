@@ -12,6 +12,9 @@
  * cross-device source of truth.
  */
 import type { TeleFile } from "../types";
+import { canonicalChannelId, channelKeyVariants } from "../telegram/peerId";
+
+export { canonicalChannelId };
 
 const STORAGE_KEY = "teledrive_deleted_messages_v1";
 const MAX_PER_CHANNEL = 5000;
@@ -50,9 +53,20 @@ export function recordDeletedMessages(channelId: string, ids: Iterable<number>):
   if (nextIds.length === 0) return;
 
   const map = readAll();
-  const existing = new Set((map[channelId] ?? []).filter((id) => Number.isFinite(id) && id > 0));
+  const variants = channelKeyVariants(channelId);
+  const existing = new Set<number>();
+  for (const key of variants) {
+    for (const id of map[key] ?? []) {
+      if (Number.isFinite(id) && id > 0) existing.add(id);
+    }
+  }
   for (const id of nextIds) existing.add(id);
-  map[channelId] = [...existing].slice(-MAX_PER_CHANNEL);
+
+  // Collapse legacy raw-positive keys into the canonical marked id.
+  for (const key of variants) {
+    if (key !== canonicalChannelId(channelId)) delete map[key];
+  }
+  map[canonicalChannelId(channelId)] = [...existing].slice(-MAX_PER_CHANNEL);
   writeAll(map);
 }
 
@@ -63,14 +77,31 @@ export function clearDeletedMessages(channelId: string, ids: Iterable<number>): 
   if (removeIds.size === 0) return;
 
   const map = readAll();
-  const remaining = (map[channelId] ?? []).filter((id) => !removeIds.has(id));
-  if (remaining.length === 0) delete map[channelId];
-  else map[channelId] = remaining;
+  const variants = channelKeyVariants(channelId);
+  const remaining = new Set<number>();
+  for (const key of variants) {
+    for (const id of map[key] ?? []) {
+      if (!removeIds.has(id) && Number.isFinite(id) && id > 0) remaining.add(id);
+    }
+    if (key !== canonicalChannelId(channelId)) delete map[key];
+  }
+
+  const canonical = canonicalChannelId(channelId);
+  if (remaining.size === 0) delete map[canonical];
+  else map[canonical] = [...remaining];
   writeAll(map);
 }
 
 export function getDeletedMessageIds(channelId: string): Set<number> {
-  return new Set((readAll()[channelId] ?? []).filter((id) => Number.isFinite(id) && id > 0));
+  if (!channelId) return new Set();
+  const map = readAll();
+  const deleted = new Set<number>();
+  for (const key of channelKeyVariants(channelId)) {
+    for (const id of map[key] ?? []) {
+      if (Number.isFinite(id) && id > 0) deleted.add(id);
+    }
+  }
+  return deleted;
 }
 
 /** Drop any file whose Telegram message was permanently deleted on this device. */

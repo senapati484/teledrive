@@ -118,5 +118,25 @@
     "title": "404 - Страница не найдена",
     "description": "Запрашиваемая страница не существует.",
     "goToMyDrive": "Перейти на Мой диск"
+  },
+  "transfers": {
+    "active_one": "{{count}} передача выполняется",
+    "active_other": "{{count}} передач выполняется",
+    "complete_one": "{{count}} передача завершена",
+    "complete_other": "{{count}} передач завершено",
+    "failed_one": "{{count}} передача не удалась",
+    "failed_other": "{{count}} передач не удалось",
+    "downloads": "Загрузки",
+    "uploads": "Отправка",
+    "pause": "Пауза",
+    "resume": "Продолжить",
+    "cancel": "Отменить загрузку",
+    "remove": "Удалить",
+    "downloading": "Загрузка",
+    "paused": "На паузе",
+    "done": "Загружено",
+    "cancelled": "Отменено",
+    "failedStatus": "Ошибка",
+    "retry": "Повторить загрузку"
   }
 }

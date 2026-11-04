@@ -33,6 +33,23 @@ export async function saveBinaryFile(
     bytes = new Uint8Array(data);
   }
 
+  // Android's save dialog returns a Storage Access Framework URI
+  // (`content://…`), not a filesystem path. Only tauri-plugin-fs can resolve
+  // it through the ContentResolver; the native Rust writer would create a
+  // stray relative file (or fail) and leave the chosen document at 0 bytes.
+  if (filePath.startsWith("content://")) {
+    try {
+      const { writeFile } = await import("@tauri-apps/plugin-fs");
+      await writeFile(filePath, bytes);
+      return;
+    } catch (uriErr: any) {
+      console.error("[safeFileWriter] Failed to write content URI:", uriErr);
+      throw new Error(
+        i18n.t("messages:storage.saveFailed", { path: filePath })
+      );
+    }
+  }
+
   try {
     // If file is smaller than CHUNK_SIZE, write in one shot via native Rust command
     if (bytes.byteLength <= CHUNK_SIZE) {

@@ -9,6 +9,7 @@
 
 import { invoke } from "@tauri-apps/api/core";
 import type { TeleFile } from "../types";
+import { rawChannelId } from "../telegram/peerId";
 
 const LEGACY_MANIFEST_KEY = "teledrive_backup_manifest_v1";
 export const CURRENT_MANIFEST_VERSION = 2 as const;
@@ -177,16 +178,36 @@ async function readManifest(
     return { manifest: emptyManifest(channelId), exists: false };
   }
 
+  // Upgrading from the raw positive channel id to the marked `-100…` id
+  // changes the on-disk manifest key. Adopt the old copy instead of
+  // re-uploading every backup file under the new key.
+  const legacyChannelId = rawChannelId(channelId);
+  let migratedFrom: string | null = null;
+  if (!loaded.base && legacyChannelId) {
+    try {
+      const legacy = await invoke<BackupManifestLoad>("load_backup_manifest", {
+        channelId: legacyChannelId,
+      });
+      if (legacy.base) {
+        loaded = legacy;
+        migratedFrom = legacyChannelId;
+      }
+    } catch (err) {
+      console.warn("[backup.manifest] legacy manifest load failed:", err);
+    }
+  }
+
   if (!loaded.base) {
     return { manifest: emptyManifest(channelId), exists: false };
   }
+  const sourceChannelId = migratedFrom ?? channelId;
 
   let parsed: BackupManifestV2;
   try {
     parsed = JSON.parse(loaded.base) as BackupManifestV2;
   } catch (err) {
     await quarantineBase(
-      channelId,
+      sourceChannelId,
       `json parse: ${(err as Error).message ?? err}`,
     );
     return { manifest: emptyManifest(channelId), exists: true };
@@ -198,7 +219,7 @@ async function readManifest(
     typeof parsed.entries !== "object"
   ) {
     await quarantineBase(
-      channelId,
+      sourceChannelId,
       `schema drift: version=${(parsed as { version?: unknown }).version}`,
     );
     return { manifest: emptyManifest(channelId), exists: true };
@@ -216,6 +237,26 @@ async function readManifest(
     lastResult: parsed.lastResult ?? null,
   };
   replayJournal(manifest, loaded.journal ?? []);
+
+  if (migratedFrom) {
+    try {
+      const next = await invoke<number>("save_backup_manifest", {
+        channelId,
+        value: JSON.stringify({ ...manifest, generation: 0 }),
+        generation: 0,
+      });
+      manifest.generation = Number(next) || 1;
+      console.info(
+        `[backup.manifest] Migrated manifest ${migratedFrom} → ${channelId}`,
+      );
+    } catch (err) {
+      console.warn(
+        "[backup.manifest] manifest migration failed; keeping legacy copy:",
+        err,
+      );
+    }
+  }
+
   resetManifestCorrupt(channelId);
   return { manifest, exists: true };
 }
