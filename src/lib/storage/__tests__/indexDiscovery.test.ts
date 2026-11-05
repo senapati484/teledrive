@@ -203,14 +203,22 @@ describe("discoverIndex", () => {
     expect(calls.some((c) => c.offsetId === 900)).toBe(true);
   });
 
-  it("reports missing_index for a non-empty channel with no index", async () => {
+  it("returns a ready empty drive for a non-empty channel with no index", async () => {
+    // A channel that has messages but no teledrive_index marker is treated as a
+    // new TeleDrive drive (the channel was used by another app or an older build
+    // that didn't write an index). Returning `ready` with zero files allows the
+    // user to start uploading immediately without seeing an alarming error banner.
     installFake({
       recent: [{ id: 900, text: "not an index", date: 1700000005 }],
     });
 
     const result = await discoverIndex("chan");
 
-    expect(result).toEqual({ status: "incomplete", reason: "missing_index" });
+    expect(result.status).toBe("ready");
+    if (result.status !== "ready") return;
+    expect(result.files).toEqual([]);
+    expect(result.ids).toEqual([]);
+    expect(result.savedAt).toBe(0);
   });
 
   it("keeps not_found when an index marker exists but no epoch is valid", async () => {
@@ -296,7 +304,9 @@ describe("loadIndexOutcome", () => {
     expect(state.lastIndexMsgId).toBe(100);
   });
 
-  it("keeps cached files and marks incomplete without writing", async () => {
+  it("returns ready empty drive and marks store ready when channel has non-index messages", async () => {
+    // A non-empty channel with no TeleDrive index is treated as a fresh drive
+    // so the user can upload immediately without seeing the error banner.
     useFileStore.getState().setFiles([file(9)]);
     installFake({
       recent: [{ id: 900, text: "not an index", date: 1700000005 }],
@@ -304,14 +314,12 @@ describe("loadIndexOutcome", () => {
 
     const outcome = await loadIndexOutcome("chan");
 
-    expect(outcome.status).toBe("incomplete");
-    if (outcome.status !== "incomplete") return;
-    expect(outcome.reason).toBe("missing_index");
-    expect(outcome.files.map((f) => f.id)).toEqual(["file_9"]);
+    expect(outcome.status).toBe("ready");
+    if (outcome.status !== "ready") return;
+    expect(outcome.files).toEqual([]);
     const state = useFileStore.getState();
-    expect(state.indexLoadState).toBe("incomplete");
-    expect(state.indexLoadError).toBe("missing_index");
-    expect(state.files.map((f) => f.id)).toEqual(["file_9"]);
+    expect(state.indexLoadState).toBe("ready");
+    expect(state.indexLoadError).toBeNull();
   });
 
   it("does not downgrade a ready index on a remote refresh failure", async () => {

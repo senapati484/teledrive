@@ -970,12 +970,23 @@ export async function discoverIndex(channelId: string): Promise<DiscoveryResult>
 
   if (!sawIndexMarker && !fetchFailed && !scanFailed && !timedOut) {
     // The channel is readable and a full search/history pass found no index
-    // message at all. This is not a transient read failure: it means the
-    // drive has no index yet (new channel, older upload-only build, or a lost
-    // index). Report it distinctly so bootstrap can rebuild and persist one
-    // instead of blocking every write forever on an index that will never
-    // appear.
-    return { status: "incomplete", reason: "missing_index" };
+    // message at all. This is an authoritative "no index exists" result —
+    // a new channel, a channel used by an older upload-only build, or one
+    // whose index was lost. Treat it as an empty-but-healthy drive: return
+    // `ready` with zero files so bootstrap can immediately create a fresh
+    // index and unblock uploads. Returning `incomplete` here would surface
+    // the "Couldn't safely load your drive index" error banner to every
+    // new user, which is misleading and blocks all writes permanently.
+    console.log("[metadataStore] discoverIndex: no index marker found after full scan — treating as new empty drive");
+    return {
+      status: "ready",
+      files: [],
+      ids: [],
+      texts: [],
+      savedAt: 0,
+      format: 2,
+      chunks: [],
+    };
   }
   if (timedOut) {
     return { status: "incomplete", reason: "timeout" };

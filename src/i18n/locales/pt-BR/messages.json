@@ -70,17 +70,17 @@
     "year_zero": "{{count}} anos"
   },
   "indexLoad": {
-    "bannerTitle": "Não foi possível carregar o índice do seu drive com segurança",
-    "bannerBodyCached": "Exibindo arquivos em cache. As alterações estão desativadas até que o índice possa ser verificado.",
-    "bannerBodyEmpty": "Nenhum índice completo foi encontrado no seu canal de armazenamento. Tente novamente ou restaure um índice anterior nas Configurações.",
+    "bannerTitle": "Índice do drive temporariamente indisponível",
+    "bannerBodyCached": "Exibindo seus arquivos em cache. O índice será verificado automaticamente — uploads estão pausados até que seja bem-sucedido.",
+    "bannerBodyEmpty": "TeleDrive não conseguiu alcançar ou verificar o índice do drive. Isso geralmente é um problema temporário de rede. Toque em Tentar novamente.",
     "retry": "Tentar novamente",
     "retrying": "Tentando novamente...",
     "changesPaused": "O índice do drive ainda não está pronto. As alterações estão pausadas.",
     "reason": {
-      "not_found": "Nenhum índice completo foi encontrado.",
-      "partial_manifest": "O índice mais recente está sem uma ou mais partes.",
-      "timeout": "O Telegram demorou muito para responder.",
-      "network": "Não foi possível alcançar o canal de armazenamento."
+      "not_found": "O índice não pôde ser montado a partir das mensagens disponíveis no canal.",
+      "partial_manifest": "O índice mais recente está incompleto — algumas mensagens de chunk podem estar ausentes.",
+      "timeout": "O Telegram demorou muito para responder. Verifique sua conexão.",
+      "network": "Não foi possível acessar o canal de armazenamento. Verifique sua conexão com a internet."
     }
   }
 }

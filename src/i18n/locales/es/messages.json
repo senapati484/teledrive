@@ -64,17 +64,17 @@
     "year_other": "{{count}} años"
   },
   "indexLoad": {
-    "bannerTitle": "No se pudo cargar de forma segura el índice del drive",
-    "bannerBodyCached": "Mostrando archivos en caché. Los cambios están deshabilitados hasta que se pueda verificar el índice.",
-    "bannerBodyEmpty": "No se encontró ningún índice completo en su canal de almacenamiento. Reintente o restaure un índice anterior desde Configuración.",
+    "bannerTitle": "Índice del drive temporalmente no disponible",
+    "bannerBodyCached": "Se muestran los archivos en caché. El índice se verificará automáticamente — las subidas están pausadas hasta que se complete con éxito.",
+    "bannerBodyEmpty": "TeleDrive no pudo alcanzar o verificar el índice del drive. Esto suele ser un problema de red temporal. Toca Reintentar.",
     "retry": "Reintentar",
     "retrying": "Reintentando...",
     "changesPaused": "El índice del drive aún no está listo. Los cambios están pausados.",
     "reason": {
-      "not_found": "No se encontró ningún índice completo.",
-      "partial_manifest": "Al índice más reciente le faltan una o más partes.",
-      "timeout": "Telegram tardó demasiado en responder.",
-      "network": "No se pudo acceder al canal de almacenamiento."
+      "not_found": "El índice no pudo ensamblarse desde los mensajes disponibles del canal.",
+      "partial_manifest": "El índice más reciente está incompleto — algunos mensajes de fragmento pueden estar ausentes.",
+      "timeout": "Telegram tardó demasiado en responder. Verifica tu conexión.",
+      "network": "No se pudo acceder al canal de almacenamiento. Comprueba tu conexión a Internet."
     }
   }
 }
