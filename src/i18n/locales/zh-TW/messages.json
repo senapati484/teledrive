@@ -64,17 +64,17 @@
     "year_other": "{{count}}年"
   },
   "indexLoad": {
-    "bannerTitle": "無法安全載入您的雲端硬碟索引",
-    "bannerBodyCached": "目前顯示快取檔案。在驗證索引之前，檔案修改已暫時停用。",
-    "bannerBodyEmpty": "在您的儲存頻道中未找到完整的索引。請重試，或在「設定」中還原歷史索引。",
+    "bannerTitle": "雲端硬碟索引暫時不可用",
+    "bannerBodyCached": "目前顯示本機快取檔案。索引將自動重新驗證——上傳已暫停，直到驗證成功。",
+    "bannerBodyEmpty": "TeleDrive 無法存取或驗證雲端硬碟索引。這通常是暫時性網路問題，請點選重試。",
     "retry": "重試",
     "retrying": "重試中...",
     "changesPaused": "雲端硬碟索引尚未就緒。變更已暫停。",
     "reason": {
-      "not_found": "未找到完整的索引。",
-      "partial_manifest": "最新索引缺少一個或多個部分。",
-      "timeout": "Telegram 回應逾時。",
-      "network": "無法連線至儲存頻道。"
+      "not_found": "無法從可用的頻道訊息組建索引。",
+      "partial_manifest": "最新索引不完整——部分區塊訊息可能遺失。",
+      "timeout": "Telegram 回應逾時，請檢查您的網路連線。",
+      "network": "無法連線至儲存頻道，請檢查您的網路連線。"
     }
   }
 }

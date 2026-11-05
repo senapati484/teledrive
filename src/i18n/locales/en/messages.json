@@ -13,17 +13,17 @@
     }
   },
   "indexLoad": {
-    "bannerTitle": "Couldn't safely load your drive index",
-    "bannerBodyCached": "Showing cached files. Changes are disabled until the index can be verified.",
-    "bannerBodyEmpty": "No complete index was found in your storage channel. Retry, or restore a previous index from Settings.",
+    "bannerTitle": "Drive index temporarily unavailable",
+    "bannerBodyCached": "Showing your cached files. The index will be verified automatically — uploads are paused until it succeeds.",
+    "bannerBodyEmpty": "TeleDrive couldn't reach or verify the drive index. This is usually a temporary network issue. Tap Retry to try again.",
     "retry": "Retry",
     "retrying": "Retrying...",
     "changesPaused": "The drive index isn't ready yet. Changes are paused.",
     "reason": {
-      "not_found": "No complete index was found.",
-      "partial_manifest": "The newest index is missing one or more parts.",
-      "timeout": "Telegram took too long to respond.",
-      "network": "The storage channel couldn't be reached."
+      "not_found": "The index could not be assembled from available channel messages.",
+      "partial_manifest": "The newest index is incomplete — some chunk messages may be missing.",
+      "timeout": "Telegram took too long to respond. Check your connection.",
+      "network": "The storage channel couldn't be reached. Check your internet connection."
     }
   },
   "backup": {

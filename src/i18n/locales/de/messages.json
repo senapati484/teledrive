@@ -64,17 +64,17 @@
     "year_other": "{{count}} Jahre"
   },
   "indexLoad": {
-    "bannerTitle": "Drive-Index konnte nicht sicher geladen werden",
-    "bannerBodyCached": "Zwischengespeicherte Dateien werden angezeigt. Änderungen sind deaktiviert, bis der Index überprüft werden kann.",
-    "bannerBodyEmpty": "Kein vollständiger Index in Ihrem Speicherkanal gefunden. Versuchen Sie es erneut oder stellen Sie einen früheren Index über die Einstellungen wieder her.",
+    "bannerTitle": "Drive-Index vorübergehend nicht verfügbar",
+    "bannerBodyCached": "Ihre zwischengespeicherten Dateien werden angezeigt. Der Index wird automatisch erneut verifiziert — Uploads werden pausiert, bis dies erfolgreich ist.",
+    "bannerBodyEmpty": "TeleDrive konnte den Drive-Index nicht erreichen oder verifizieren. Dies ist meist ein vorübergehendes Netzwerkproblem. Tippen Sie auf Wiederholen.",
     "retry": "Wiederholen",
     "retrying": "Wiederholen...",
     "changesPaused": "Der Drive-Index ist noch nicht bereit. Änderungen sind pausiert.",
     "reason": {
-      "not_found": "Kein vollständiger Index gefunden.",
-      "partial_manifest": "Im neuesten Index fehlen ein oder mehrere Teile.",
-      "timeout": "Telegram hat zu lange für eine Antwort gebraucht.",
-      "network": "Der Speicherkanal konnte nicht erreicht werden."
+      "not_found": "Der Index konnte aus den verfügbaren Kanalnachrichten nicht zusammengestellt werden.",
+      "partial_manifest": "Der neueste Index ist unvollständig — einige Chunk-Nachrichten fehlen möglicherweise.",
+      "timeout": "Telegram hat zu lange für eine Antwort gebraucht. Überprüfen Sie Ihre Verbindung.",
+      "network": "Der Speicherkanal konnte nicht erreicht werden. Überprüfen Sie Ihre Internetverbindung."
     }
   }
 }

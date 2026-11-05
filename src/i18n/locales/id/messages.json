@@ -64,17 +64,17 @@
     "year_other": "{{count}} tahun"
   },
   "indexLoad": {
-    "bannerTitle": "Gagal memuat indeks drive Anda dengan aman",
-    "bannerBodyCached": "Menampilkan file cache. Perubahan dinonaktifkan hingga indeks dapat diverifikasi.",
-    "bannerBodyEmpty": "Tidak ada indeks lengkap yang ditemukan di saluran penyimpanan Anda. Coba lagi, atau pulihkan indeks sebelumnya dari Pengaturan.",
+    "bannerTitle": "Indeks drive untuk sementara tidak tersedia",
+    "bannerBodyCached": "File cache Anda ditampilkan. Indeks akan diverifikasi secara otomatis — unggahan dijeda hingga berhasil.",
+    "bannerBodyEmpty": "TeleDrive tidak dapat menjangkau atau memverifikasi indeks drive. Ini biasanya masalah jaringan sementara. Ketuk Coba Lagi.",
     "retry": "Coba lagi",
     "retrying": "Mencoba lagi...",
     "changesPaused": "Indeks drive belum siap. Perubahan dijeda.",
     "reason": {
-      "not_found": "Tidak ada indeks lengkap yang ditemukan.",
-      "partial_manifest": "Indeks terbaru kehilangan satu bagian atau lebih.",
-      "timeout": "Telegram terlalu lama merespons.",
-      "network": "Saluran penyimpanan tidak dapat dijangkau."
+      "not_found": "Indeks tidak dapat dirakit dari pesan saluran yang tersedia.",
+      "partial_manifest": "Indeks terbaru tidak lengkap — beberapa pesan chunk mungkin hilang.",
+      "timeout": "Telegram terlalu lama merespons. Periksa koneksi Anda.",
+      "network": "Saluran penyimpanan tidak dapat dijangkau. Periksa koneksi internet Anda."
     }
   }
 }
