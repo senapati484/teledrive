@@ -29,7 +29,7 @@ import { useSupportStore } from "./stores/supportStore";
 // Full-screen spinner fallback
 function LoadingFallback() {
   return (
-    <div className="flex h-screen w-screen items-center justify-center bg-background select-none">
+    <div className="flex h-[100dvh] min-h-[100dvh] w-screen items-center justify-center bg-background select-none">
       <Loader2 className="h-8 w-8 animate-spin text-[#0B57D0] dark:text-[#A8C7FA]" />
     </div>
   );
@@ -39,7 +39,7 @@ function LoadingFallback() {
 function SplashLoader({ status }: { status: string }) {
   const { t } = useTranslation("drive");
   return (
-    <div className="flex h-screen w-screen flex-col items-center justify-center bg-background text-foreground gap-4 select-none">
+    <div className="flex h-[100dvh] min-h-[100dvh] w-screen flex-col items-center justify-center bg-background text-foreground gap-4 select-none">
       <div className="flex flex-col items-center gap-4">
         <img
           src="/teledrive.png"

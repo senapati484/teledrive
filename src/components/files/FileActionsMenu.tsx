@@ -41,6 +41,7 @@ interface FileActionsMenuProps {
   onArchive?: (file: TeleFile) => void;
   onUnarchive?: (file: TeleFile) => void;
   onOfflineToggle?: (file: TeleFile) => void;
+  triggerClassName?: string;
 }
 
 export const FileActionsMenu = React.memo(function FileActionsMenu({
@@ -56,6 +57,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
   onArchive,
   onUnarchive,
   onOfflineToggle,
+  triggerClassName,
 }: FileActionsMenuProps) {
   const { t } = useTranslation("files");
   const isDirectory = file.mime === "inode/directory" || file.mime === "application/x-directory";
@@ -66,10 +68,13 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
         <Button
           variant="ghost"
           size="icon"
-          className="h-9 w-9 sm:h-8 sm:w-8 rounded-full shrink-0 hover:bg-[#e9eef6] dark:hover:bg-[#1f2124] data-[state=open]:bg-[#c2e7ff]/60 dark:data-[state=open]:bg-[#004a77]/60 cursor-pointer transition-colors"
+          className={cn(
+            "h-7.5 w-7.5 sm:h-8 sm:w-8 rounded-full shrink-0 hover:bg-[#e9eef6] dark:hover:bg-[#1f2124] data-[state=open]:bg-[#c2e7ff]/60 dark:data-[state=open]:bg-[#004a77]/60 cursor-pointer transition-colors",
+            triggerClassName
+          )}
           onClick={(e) => e.stopPropagation()} // Prevent trigger select/click row
         >
-          <MoreVertical className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5]" />
+          <MoreVertical className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#444746] dark:text-[#c4c7c5]" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent

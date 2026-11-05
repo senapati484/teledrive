@@ -147,9 +147,9 @@ export default function SettingsPage() {
 
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-background text-foreground select-none">
+    <div className="flex flex-col h-[100dvh] min-h-[100dvh] overflow-hidden bg-background text-foreground select-none">
       {/* Topbar Settings Header */}
-      <header className="flex items-center gap-3 px-4 md:px-6 h-[calc(3.5rem+var(--safe-area-top,2.5rem))] md:h-16 pt-[var(--safe-area-top,2.5rem)] md:pt-0 shrink-0 bg-background border-b md:border-b-0 border-slate-200/60 dark:border-white/[0.04]">
+      <header className="flex items-center gap-3 px-4 md:px-6 h-[calc(3.5rem+var(--safe-area-top,0px))] md:h-16 pt-[var(--safe-area-top,0px)] md:pt-0 shrink-0 bg-background border-b md:border-b-0 border-slate-200/60 dark:border-white/[0.04]">
         <Button
           variant="ghost"
           size="icon"
