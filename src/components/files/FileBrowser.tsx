@@ -1211,7 +1211,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                         onTouchMove={handleTouchEndItem}
                         style={{ animationDelay: `${Math.min(folders.length + index, 15) * 20}ms` }}
                         className={cn(
-                          "group relative flex flex-col rounded-2xl transition-all duration-150 cursor-pointer overflow-hidden text-left select-none h-40 sm:h-52 bg-white dark:bg-[#111214] hover:bg-[#f8fafd] dark:hover:bg-[#161719] border border-slate-200/90 dark:border-white/[0.04] hover:border-slate-300 dark:hover:border-white/[0.08] hover:shadow-md",
+                          "group relative flex flex-col rounded-2xl transition-all duration-150 cursor-pointer overflow-hidden text-left select-none h-38 sm:h-48 md:h-52 bg-white dark:bg-[#111214] hover:bg-[#f8fafd] dark:hover:bg-[#161719] border border-slate-200/90 dark:border-white/[0.04] hover:border-slate-300 dark:hover:border-white/[0.08] hover:shadow-md",
                           isSelected
                             ? "bg-[#c2e7ff]/30 dark:bg-[#004a77]/30 ring-2 ring-[#0b57d0] dark:ring-[#a8c7fa] border-transparent shadow-xs"
                             : "",
@@ -1229,6 +1229,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                           <div className={cn("shrink-0 transition-opacity", isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100")} data-no-drag onClick={(e) => e.stopPropagation()}>
                             <FileActionsMenu
                               file={file}
+                              triggerClassName="h-7 w-7"
                               onPreview={toastPreview}
                               onEdit={handleEdit}
                               onDownload={handleDownload}
@@ -1482,7 +1483,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
 
       {/* Floating Bulk Action Bar */}
       {selectedIds.length > 0 && (
-        <div className="fixed bottom-[calc(3.75rem+max(var(--safe-area-bottom,0px),16px)+16px)] md:bottom-6 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-3 sm:gap-4 bg-white/95 dark:bg-[#141518]/95 text-[#1f1f1f] dark:text-[#e3e3e3] px-4 sm:px-5 py-2.5 rounded-full shadow-2xl border border-slate-300/80 dark:border-white/[0.06] backdrop-blur-md animate-slide-up select-none">
+        <div className="fixed bottom-[calc(var(--mobile-nav-height)+var(--safe-area-bottom,0px)+16px)] md:bottom-6 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-2.5 sm:gap-4 max-w-[calc(100vw-1.5rem)] bg-white/95 dark:bg-[#141518]/95 text-[#1f1f1f] dark:text-[#e3e3e3] px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-full shadow-2xl border border-slate-300/80 dark:border-white/[0.06] backdrop-blur-md animate-slide-up select-none">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold bg-[#0b57d0] dark:bg-[#a8c7fa] px-2.5 py-0.5 rounded-full text-white dark:text-[#003258]">{selectedIds.length}</span>
             <span className="text-xs font-medium whitespace-nowrap text-[#1f1f1f] dark:text-[#e3e3e3]">{t("browser.bulkBar.selected", { count: selectedIds.length })}</span>
@@ -1607,7 +1608,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       {/* Mobile Context Menu Bottom Sheet */}
       {isMobile && (
         <Sheet open={!!mobileContextFile} onOpenChange={(open) => !open && setMobileContextFile(null)}>
-          <SheetContent side="bottom" className="rounded-t-2xl px-6 pt-5 pb-[max(var(--safe-area-bottom,0px),24px)] max-h-[80vh] overflow-y-auto bg-white dark:bg-[#0d0e11] border-t dark:border-white/[0.08]">
+          <SheetContent side="bottom" className="rounded-t-2xl px-4 sm:px-6 pt-5 pb-[calc(var(--safe-area-bottom,0px)+1rem)] max-h-[85dvh] overflow-y-auto bg-white dark:bg-[#0d0e11] border-t dark:border-white/[0.08]">
             {mobileContextFile && (
               <div className="space-y-4 select-none">
                 <div className="flex items-center gap-3 border-b dark:border-white/[0.04] pb-3">

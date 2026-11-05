@@ -142,12 +142,14 @@ export function UploadProgressPanel() {
   return (
     <div
       className={cn(
-        "fixed bottom-[calc(var(--mobile-nav-height)+env(safe-area-inset-bottom,0px)+12px)] md:bottom-6 right-3 md:right-6 z-50 w-88 max-w-[calc(100vw-24px)] bg-white dark:bg-[#111214] border border-slate-200/90 dark:border-white/[0.06] shadow-2xl rounded-2xl overflow-hidden transition-all duration-300 transform select-none",
-        isMinimized ? "h-13" : "h-96"
+        "fixed bottom-[calc(var(--mobile-nav-height)+var(--safe-area-bottom,0px)+12px)] md:bottom-6 z-50 flex flex-col bg-white dark:bg-[#111214] border border-slate-200/90 dark:border-white/[0.06] shadow-2xl rounded-2xl overflow-hidden transition-all duration-300 transform select-none",
+        isMinimized
+          ? "h-12 left-3 right-20 sm:left-auto sm:right-6 sm:w-88"
+          : "h-[min(24rem,calc(100dvh-10rem))] left-3 right-3 sm:left-auto sm:right-6 sm:w-88"
       )}
     >
       <div
-        className="flex items-center justify-between px-4 py-3 bg-[#f0f4f9] dark:bg-[#161719] text-[#1f1f1f] dark:text-[#e3e3e3] select-none cursor-pointer border-b border-slate-200/80 dark:border-white/[0.04]"
+        className="flex items-center justify-between px-3.5 sm:px-4 py-2.5 sm:py-3 bg-[#f0f4f9] dark:bg-[#161719] text-[#1f1f1f] dark:text-[#e3e3e3] select-none cursor-pointer border-b border-slate-200/80 dark:border-white/[0.04]"
         onClick={() => setIsMinimized(!isMinimized)}
       >
         <div className="flex items-center gap-2.5 min-w-0">
@@ -199,7 +201,7 @@ export function UploadProgressPanel() {
       </div>
 
       {!isMinimized && (
-        <div className="flex flex-col h-[calc(100%-48px)] overflow-y-auto divide-y divide-slate-100 dark:divide-white/[0.03] bg-white dark:bg-[#111214]">
+        <div className="flex flex-col flex-1 min-h-0 overflow-y-auto divide-y divide-slate-100 dark:divide-white/[0.03] bg-white dark:bg-[#111214]">
           {downloads.length > 0 && (
             <div className="px-3.5 pt-2.5 pb-1 text-[10px] font-semibold uppercase tracking-wide text-[#747775] dark:text-[#8e918f]">
               {t("transfers.downloads")}

@@ -63,7 +63,7 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 grid w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#0e1015] p-6 text-sm text-popover-foreground shadow-2xl shadow-black/20 dark:shadow-[0_25px_70px_-15px_rgba(0,0,0,0.7)] border border-slate-200/90 dark:border-white/[0.08] ring-1 ring-black/5 dark:ring-white/[0.04] duration-200 ease-out outline-none max-h-[calc(100dvh-2.5rem)] overflow-y-auto custom-scrollbar data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          "fixed top-1/2 left-1/2 z-50 grid w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-3.5 sm:gap-4 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#0e1015] p-4 sm:p-6 text-sm text-popover-foreground shadow-2xl shadow-black/20 dark:shadow-[0_25px_70px_-15px_rgba(0,0,0,0.7)] border border-slate-200/90 dark:border-white/[0.08] ring-1 ring-black/5 dark:ring-white/[0.04] duration-200 ease-out outline-none max-h-[calc(100dvh-2rem)] overflow-y-auto custom-scrollbar data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           className
         )}
         {...props}

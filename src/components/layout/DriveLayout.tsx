@@ -140,7 +140,7 @@ const IndexQueuePill = React.memo(function IndexQueuePill() {
           : undefined
       }
       className={cn(
-        "flex items-center gap-1.5 px-3 py-1.5 rounded-full select-none animate-in fade-in duration-200 border text-xs",
+        "flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full select-none animate-in fade-in duration-200 border text-xs shrink-0",
         indexQueueState === "failed"
           ? "bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700/50 text-amber-800 dark:text-amber-200"
           : indexQueueState === "syncing-remote" || indexQueueState === "backup-running"
@@ -654,7 +654,7 @@ export default function DriveLayout() {
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className="flex flex-col h-screen overflow-hidden bg-background text-foreground relative"
+      className="flex flex-col h-[100dvh] min-h-[100dvh] overflow-hidden bg-background text-foreground relative overscroll-none"
     >
       {/* Drag & Drop full screen overlay: Google Drive styled */}
       {isDragging && (
@@ -671,14 +671,14 @@ export default function DriveLayout() {
       
       {/* Topbar: Mobile Google Drive Search Pill & Desktop Workspace App Bar */}
       {isMobile ? (
-        <header className="relative z-40 flex items-center px-3 h-[calc(3.75rem+max(var(--safe-area-top,0px),24px))] pt-[max(var(--safe-area-top,0px),24px)] pb-1.5 shrink-0 bg-background select-none">
+        <header className="relative z-40 flex items-center px-2.5 sm:px-3 h-[calc(3.5rem+var(--safe-area-top,0px))] pt-[var(--safe-area-top,0px)] pb-1.5 shrink-0 bg-background select-none">
           {mobileSearchOpen ? (
             <div className="flex-1 flex items-center gap-2 animate-in fade-in duration-150">
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setMobileSearchOpen(false)}
-                className="h-10 w-10 shrink-0 rounded-full hover:bg-muted text-muted-foreground cursor-pointer"
+                className="h-9 w-9 sm:h-10 sm:w-10 shrink-0 rounded-full hover:bg-muted text-muted-foreground cursor-pointer"
               >
                 <ChevronLeft className="h-5 w-5" />
               </Button>
@@ -687,15 +687,15 @@ export default function DriveLayout() {
               </div>
             </div>
           ) : (
-            <div className="w-full flex items-center gap-2">
+            <div className="w-full flex items-center gap-1.5 sm:gap-2">
               {/* Google Drive Mobile Floating Search Bar */}
-              <div className="flex-1 flex items-center gap-2 h-12 px-2.5 rounded-full bg-[#f0f4f9] dark:bg-[#1a1b1e] border border-slate-200/80 dark:border-white/[0.04] shadow-xs">
+              <div className="flex-1 min-w-0 flex items-center gap-1.5 sm:gap-2 h-11 sm:h-12 px-2 sm:px-2.5 rounded-full bg-[#f0f4f9] dark:bg-[#1a1b1e] border border-slate-200/80 dark:border-white/[0.04] shadow-xs">
                 <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
                   <SheetTrigger asChild>
                     <button
                       type="button"
                       aria-label={t("nav.myDrive") ?? "Menu"}
-                      className="h-9 w-9 rounded-full flex items-center justify-center text-[#444746] dark:text-[#c4c7c5] hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer shrink-0"
+                      className="h-8.5 w-8.5 sm:h-9 sm:w-9 rounded-full flex items-center justify-center text-[#444746] dark:text-[#c4c7c5] hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer shrink-0"
                     >
                       <Menu className="h-5 w-5" />
                     </button>
@@ -703,7 +703,7 @@ export default function DriveLayout() {
                   <SheetContent
                     side="left"
                     showCloseButton={false}
-                    className="w-[280px] max-w-[82vw] p-0 pt-[max(var(--safe-area-top,0px),24px)] bg-background flex flex-col border-r border-slate-200/60 dark:border-white/[0.04]"
+                    className="w-[280px] max-w-[82vw] p-0 pt-[var(--safe-area-top,0px)] bg-background flex flex-col border-r border-slate-200/60 dark:border-white/[0.04]"
                   >
                     <div className="px-5 py-3.5 flex items-center justify-between border-b border-slate-200/50 dark:border-white/[0.04]">
                       <div className="flex items-center gap-2.5">
@@ -738,7 +738,7 @@ export default function DriveLayout() {
                 <button
                   type="button"
                   onClick={() => setMobileSearchOpen(true)}
-                  className="flex-1 flex items-center text-left text-sm text-[#444746] dark:text-[#8e918f] font-normal truncate cursor-pointer select-none"
+                  className="flex-1 min-w-0 flex items-center text-left text-xs sm:text-sm text-[#444746] dark:text-[#8e918f] font-normal truncate cursor-pointer select-none"
                 >
                   <span className="truncate">
                     {location.pathname.startsWith("/drive/folder/")
@@ -754,18 +754,18 @@ export default function DriveLayout() {
                 <button
                   type="button"
                   onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                  className="h-8 w-8 rounded-full flex items-center justify-center text-[#444746] dark:text-[#c4c7c5] hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer shrink-0"
+                  className="h-7.5 w-7.5 sm:h-8 sm:w-8 rounded-full flex items-center justify-center text-[#444746] dark:text-[#c4c7c5] hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all cursor-pointer shrink-0"
                   title={theme === "dark" ? t("header.switchToLight") : t("header.switchToDark")}
                 >
-                  {theme === "dark" ? <Sun className="h-4.5 w-4.5" /> : <Moon className="h-4.5 w-4.5" />}
+                  {theme === "dark" ? <Sun className="h-4 w-4 sm:h-4.5 sm:w-4.5" /> : <Moon className="h-4 w-4 sm:h-4.5 sm:w-4.5" />}
                 </button>
 
                 {/* User avatar */}
                 <Avatar
-                  className="h-7.5 w-7.5 border border-border cursor-pointer active:scale-95 transition-all shrink-0"
+                  className="h-7 w-7 sm:h-7.5 sm:w-7.5 border border-border cursor-pointer active:scale-95 transition-all shrink-0"
                   onClick={() => navigate("/settings")}
                 >
-                  <AvatarFallback className="bg-gradient-to-tr from-[#0b57d0] to-[#1a73e8] text-white font-semibold text-[11px] select-none">
+                  <AvatarFallback className="bg-gradient-to-tr from-[#0b57d0] to-[#1a73e8] text-white font-semibold text-[10px] sm:text-[11px] select-none">
                     {getInitials(phoneNumber)}
                   </AvatarFallback>
                 </Avatar>
@@ -865,7 +865,7 @@ export default function DriveLayout() {
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          className="flex-1 overflow-y-auto bg-surface dark:bg-surface md:mr-4 md:mb-4 md:rounded-3xl md:border md:border-slate-200/60 md:dark:border-white/[0.03] md:shadow-xs border-0 pb-[calc(3.75rem+max(var(--safe-area-bottom,0px),16px)+80px)] md:pb-6 relative z-10"
+          className="flex-1 overflow-y-auto bg-surface dark:bg-surface md:mr-4 md:mb-4 md:rounded-3xl md:border md:border-slate-200/60 md:dark:border-white/[0.03] md:shadow-xs border-0 pb-[calc(var(--mobile-nav-height)+var(--safe-area-bottom,0px)+4.75rem)] md:pb-6 relative z-10"
         >
           <IndexLoadBanner />
           {/* Mobile FAB */}
@@ -893,7 +893,7 @@ export default function DriveLayout() {
 
       {/* Bottom Nav (Mobile): Material You 3 Google Drive pattern */}
       {isMobile && (
-        <nav className="fixed bottom-0 left-0 right-0 h-[calc(3.75rem+max(var(--safe-area-bottom,0px),16px))] border-t border-slate-200/80 dark:border-white/[0.06] bg-background/95 backdrop-blur-md flex items-center justify-around z-40 pb-[max(var(--safe-area-bottom,0px),16px)] pt-1 select-none">
+        <nav className="fixed bottom-0 left-0 right-0 h-[calc(var(--mobile-nav-height)+var(--safe-area-bottom,0px))] border-t border-slate-200/80 dark:border-white/[0.06] bg-background/95 backdrop-blur-md flex items-center justify-around z-40 pb-[var(--safe-area-bottom,0px)] pt-0.5 sm:pt-1 select-none">
           {mobileNavTabs.map((item) => {
             const Icon = item.icon;
             const isActive =
@@ -912,13 +912,13 @@ export default function DriveLayout() {
               >
                 <div
                   className={cn(
-                    "px-4.5 py-1 rounded-full mb-0.5 transition-all duration-200 relative flex items-center justify-center",
+                    "px-3.5 sm:px-4.5 py-0.5 sm:py-1 rounded-full mb-0.5 transition-all duration-200 relative flex items-center justify-center",
                     isActive && "bg-[#c2e7ff] dark:bg-[#004a77]"
                   )}
                 >
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-4.5 w-4.5 sm:h-5 sm:w-5" />
                 </div>
-                <span className="text-[11px] font-medium tracking-tight truncate max-w-[72px] text-center">
+                <span className="text-[10px] sm:text-[11px] font-medium tracking-tight truncate max-w-[72px] text-center">
                   {item.label}
                 </span>
               </Link>
