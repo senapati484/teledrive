@@ -29,7 +29,9 @@
     "indexSaveFailed": "Error al guardar el índice para \"{{name}}\": actualice la unidad.",
     "failedFallback": "Error al subir",
     "failed": "No se pudo cargar \"{{name}}\": {{message}}",
-    "emptyFile": "\"{{name}}\" está vacío. Telegram no admite archivos vacíos (0 bytes)."
+    "emptyFile": "\"{{name}}\" está vacío. Telegram no admite archivos vacíos (0 bytes).",
+    "exceedsFreeLimit": "\"{{name}}\" supera el límite de ~2 GB de Telegram para cuentas estándar (Telegram Premium admite hasta ~4 GB).",
+    "exceedsPremiumLimit": "\"{{name}}\" supera el límite de ~4 GB por archivo en Telegram."
   },
   "download": {
     "cancelled": "Descarga cancelada.",
@@ -39,7 +41,10 @@
     "errors": {
       "mediaNotFound": "Mensaje de archivo de destino o medios no encontrados en Telegram.",
       "mediaFailed": "No se pudo descargar el medio."
-    }
+    },
+    "zipEmpty": "No se encontraron archivos descargables en la selección.",
+    "zipSuccess": "¡\"{{name}}\" guardado correctamente!",
+    "zipFailed": "Error al crear el archivo ZIP."
   },
   "indexQueue": {
     "rateLimitRetrying": "Límite de velocidad de Telegram: reintentar"

@@ -13,7 +13,8 @@
     "unarchive": "Dearchivieren",
     "restore": "Wiederherstellen",
     "deletePermanently": "Dauerhaft löschen",
-    "moveToTrash": "In den Papierkorb verschieben"
+    "moveToTrash": "In den Papierkorb verschieben",
+    "downloadAsZip": "Als ZIP herunterladen"
   },
   "browser": {
     "fileType": {
@@ -137,7 +138,8 @@
       "restoreSelected": "Ausgewählte wiederherstellen",
       "deletePermanently": "Dauerhaft löschen",
       "moveSelectedToTrash": "Ausgewählte Datei in den Papierkorb verschieben",
-      "clearSelection": "Klare Auswahl"
+      "clearSelection": "Klare Auswahl",
+      "downloadSelected": "Auswahl herunterladen"
     },
     "mobileMenu": {
       "addToStarred": "Zu den Favoriten hinzufügen",

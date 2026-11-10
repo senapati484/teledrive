@@ -29,7 +29,9 @@
     "indexSaveFailed": "Не удалось сохранить индекс для «{{name}}» — обновите диск.",
     "failedFallback": "Сбой загрузки",
     "failed": "Не удалось загрузить «{{name}}»: {{message}}",
-    "emptyFile": "«{{name}}» пуст. Пустые файлы (0 байт) не поддерживаются в Telegram."
+    "emptyFile": "«{{name}}» пуст. Пустые файлы (0 байт) не поддерживаются в Telegram.",
+    "exceedsFreeLimit": "«{{name}}» превышает лимит загрузки ~2 ГБ для обычных аккаунтов Telegram (Telegram Premium поддерживает до ~4 ГБ).",
+    "exceedsPremiumLimit": "«{{name}}» превышает лимит Telegram в ~4 ГБ на один файл."
   },
   "download": {
     "cancelled": "Скачивание отменено.",
@@ -39,7 +41,10 @@
     "errors": {
       "mediaNotFound": "Сообщение или медиафайлы не найдены в Telegram.",
       "mediaFailed": "Не удалось скачать медиафайл."
-    }
+    },
+    "zipEmpty": "В выбранных элементах нет файлов для скачивания.",
+    "zipSuccess": "Архив «{{name}}» успешно сохранён!",
+    "zipFailed": "Не удалось создать ZIP-архив."
   },
   "indexQueue": {
     "rateLimitRetrying": "Ограничение скорости Telegram — повторная попытка"

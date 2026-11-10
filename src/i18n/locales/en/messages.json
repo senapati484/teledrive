@@ -43,7 +43,9 @@
     "indexSaveFailed": "Index save failed for \"{{name}}\" — refresh the drive.",
     "failedFallback": "Upload failed",
     "failed": "Failed to upload \"{{name}}\": {{message}}",
-    "emptyFile": "\"{{name}}\" is empty. Empty files (0 bytes) are not supported by Telegram."
+    "emptyFile": "\"{{name}}\" is empty. Empty files (0 bytes) are not supported by Telegram.",
+    "exceedsFreeLimit": "\"{{name}}\" exceeds Telegram's ~2 GB upload limit for standard accounts (Telegram Premium supports up to ~4 GB).",
+    "exceedsPremiumLimit": "\"{{name}}\" exceeds Telegram's ~4 GB single-file upload limit."
   },
   "download": {
     "cancelled": "Download cancelled.",
@@ -53,7 +55,10 @@
     "errors": {
       "mediaNotFound": "Target file message or media not found on Telegram.",
       "mediaFailed": "Failed to download media."
-    }
+    },
+    "zipEmpty": "No downloadable files found in the selection.",
+    "zipSuccess": "\"{{name}}\" saved successfully!",
+    "zipFailed": "Failed to create ZIP archive."
   },
   "indexQueue": {
     "rateLimitRetrying": "Telegram rate limit — retrying"

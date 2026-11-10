@@ -13,7 +13,8 @@
     "unarchive": "取消歸檔",
     "restore": "恢復",
     "deletePermanently": "永久刪除",
-    "moveToTrash": "移至垃圾桶"
+    "moveToTrash": "移至垃圾桶",
+    "downloadAsZip": "打包為 ZIP 下載"
   },
   "browser": {
     "fileType": {
@@ -137,7 +138,8 @@
       "restoreSelected": "恢復選擇",
       "deletePermanently": "永久刪除",
       "moveSelectedToTrash": "將所選內容移至垃圾桶",
-      "clearSelection": "清除選擇"
+      "clearSelection": "清除選擇",
+      "downloadSelected": "下載所選項目"
     },
     "mobileMenu": {
       "addToStarred": "新增至已加上星號",

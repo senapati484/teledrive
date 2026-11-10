@@ -244,7 +244,7 @@ export function UploadProgressPanel() {
                       </span>
                     )}
 
-                    {item.status === "error" && (
+                    {item.status === "error" && item.messageId > 0 && (
                       <button
                         onClick={() => {
                           removeDownload(item.id);

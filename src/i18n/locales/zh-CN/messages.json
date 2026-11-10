@@ -29,7 +29,9 @@
     "indexSaveFailed": "“{{name}}”的索引保存失败 — 刷新驱动器。",
     "failedFallback": "上传失败",
     "failed": "无法上传“{{name}}”：{{message}}",
-    "emptyFile": "“{{name}}”为空。 Telegram 不支持空文件（0 字节）。"
+    "emptyFile": "“{{name}}”为空。 Telegram 不支持空文件（0 字节）。",
+    "exceedsFreeLimit": "“{{name}}”超过了标准 Telegram 账号约 2 GB 的单文件上传上限（Telegram Premium 最高支持约 4 GB）。",
+    "exceedsPremiumLimit": "“{{name}}”超过了 Telegram 约 4 GB 的单文件上传上限。"
   },
   "download": {
     "cancelled": "下载已取消。",
@@ -39,7 +41,10 @@
     "errors": {
       "mediaNotFound": "在 Telegram 上找不到目标文件消息或媒体。",
       "mediaFailed": "无法下载媒体。"
-    }
+    },
+    "zipEmpty": "所选内容中没有可下载的文件。",
+    "zipSuccess": "已成功保存“{{name}}”！",
+    "zipFailed": "创建 ZIP 压缩包失败。"
   },
   "indexQueue": {
     "rateLimitRetrying": "Telegram 速率限制 — 重试"

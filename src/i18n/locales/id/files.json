@@ -13,7 +13,8 @@
     "unarchive": "Batalkan pengarsipan",
     "restore": "Pulihkan",
     "deletePermanently": "Hapus Permanen",
-    "moveToTrash": "Pindahkan ke Sampah"
+    "moveToTrash": "Pindahkan ke Sampah",
+    "downloadAsZip": "Unduh sebagai ZIP"
   },
   "browser": {
     "fileType": {
@@ -210,7 +211,8 @@
       "restoreSelected": "Pulihkan yang dipilih",
       "deletePermanently": "Hapus permanen",
       "moveSelectedToTrash": "Pindahkan yang dipilih ke sampah",
-      "clearSelection": "Hapus pilihan"
+      "clearSelection": "Hapus pilihan",
+      "downloadSelected": "Unduh yang dipilih"
     },
     "mobileMenu": {
       "addToStarred": "Tambahkan ke Berbintang",

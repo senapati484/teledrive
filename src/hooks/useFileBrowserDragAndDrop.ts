@@ -311,22 +311,28 @@ export function useFileBrowserDragAndDrop({
   }, []);
 
   const handleDragOverCard = useCallback((e: React.DragEvent, targetId: string) => {
+    const internalIds = resolveDraggedIds(e);
+    if (internalIds.length === 0) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
     if (dragOverIdRef.current !== targetId) {
       dragOverIdRef.current = targetId;
       setDragOverId(targetId);
     }
-  }, []);
+  }, [resolveDraggedIds]);
 
   const handleDrop = useCallback(async (e: React.DragEvent, targetFolderId: string) => {
+    const fileIds = resolveDraggedIds(e);
+    if (fileIds.length === 0) {
+      resetDragState();
+      return;
+    }
+
     e.preventDefault();
     e.stopPropagation();
-
-    const fileIds = resolveDraggedIds(e);
     resetDragState();
 
-    if (fileIds.length === 0 || !targetFolderId) return;
+    if (!targetFolderId) return;
     const targetFolderPath = resolveTargetFolderPath(targetFolderId);
     if (!targetFolderPath) return;
 
@@ -339,11 +345,11 @@ export function useFileBrowserDragAndDrop({
   }, [clearSelection, moveMultipleFilesOrFolders, resetDragState, resolveDraggedIds, resolveTargetFolderPath]);
 
   const handleGlobalDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-
     const internalDragIds = resolveDraggedIds(e);
     if (internalDragIds.length === 0) return;
+
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
 
     const targetFolderId = resolveDropTargetFromEvent(e);
     if (targetFolderId) {
@@ -361,10 +367,15 @@ export function useFileBrowserDragAndDrop({
   }, [resolveDraggedIds, resolveDropTargetFromEvent]);
 
   const handleGlobalDrop = useCallback(async (e: React.DragEvent) => {
+    const fileIds = resolveDraggedIds(e);
+    if (fileIds.length === 0) {
+      resetDragState();
+      return;
+    }
+
     e.preventDefault();
     e.stopPropagation();
 
-    const fileIds = resolveDraggedIds(e);
     const folderTargetId = resolveDropTargetFromEvent(e);
     const targetFolderPath = folderTargetId
       ? resolveTargetFolderPath(folderTargetId)
@@ -372,7 +383,7 @@ export function useFileBrowserDragAndDrop({
 
     resetDragState();
 
-    if (fileIds.length === 0 || !targetFolderPath) return;
+    if (!targetFolderPath) return;
 
     try {
       await moveMultipleFilesOrFolders(fileIds, targetFolderPath);

@@ -29,7 +29,9 @@
     "indexSaveFailed": "「{{name}}」のインデックス保存に失敗しました — ドライブを更新してください。",
     "failedFallback": "アップロードに失敗しました",
     "failed": "「{{name}}」をアップロードできませんでした: {{message}}",
-    "emptyFile": "「{{名前}}」は空です。空のファイル (0 バイト) は Telegram ではサポートされていません。"
+    "emptyFile": "「{{名前}}」は空です。空のファイル (0 バイト) は Telegram ではサポートされていません。",
+    "exceedsFreeLimit": "「{{name}}」は通常アカウントの Telegram アップロード上限（約 2 GB）を超えています（Telegram Premium は最大約 4 GB 対応）。",
+    "exceedsPremiumLimit": "「{{name}}」は Telegram の単一ファイル上限（約 4 GB）を超えています。"
   },
   "download": {
     "cancelled": "ダウンロードがキャンセルされました。",
@@ -39,7 +41,10 @@
     "errors": {
       "mediaNotFound": "ターゲット ファイル メッセージまたはメディアが Telegram 上に見つかりません。",
       "mediaFailed": "メディアのダウンロードに失敗しました。"
-    }
+    },
+    "zipEmpty": "選択範囲にダウンロード可能なファイルが見つかりませんでした。",
+    "zipSuccess": "「{{name}}」を保存しました！",
+    "zipFailed": "ZIP アーカイブの作成に失敗しました。"
   },
   "indexQueue": {
     "rateLimitRetrying": "テレグラムのレート制限 - 再試行中"

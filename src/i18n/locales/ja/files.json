@@ -13,7 +13,8 @@
     "unarchive": "アーカイブを解除する",
     "restore": "復元する",
     "deletePermanently": "完全に削除",
-    "moveToTrash": "ゴミ箱に移動"
+    "moveToTrash": "ゴミ箱に移動",
+    "downloadAsZip": "ZIP としてダウンロード"
   },
   "browser": {
     "fileType": {
@@ -137,7 +138,8 @@
       "restoreSelected": "選択したものを復元する",
       "deletePermanently": "完全に削除",
       "moveSelectedToTrash": "選択したものをゴミ箱に移動",
-      "clearSelection": "選択をクリア"
+      "clearSelection": "選択をクリア",
+      "downloadSelected": "選択項目をダウンロード"
     },
     "mobileMenu": {
       "addToStarred": "スター付きに追加",

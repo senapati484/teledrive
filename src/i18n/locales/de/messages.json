@@ -29,7 +29,9 @@
     "indexSaveFailed": "Indexspeicherung für „{{name}}“ fehlgeschlagen – aktualisieren Sie das Laufwerk.",
     "failedFallback": "Der Upload ist fehlgeschlagen",
     "failed": "Fehler beim Hochladen von „{{name}}“: {{message}}",
-    "emptyFile": "„{{name}}“ ist leer. Leere Dateien (0 Bytes) werden von Telegram nicht unterstützt."
+    "emptyFile": "„{{name}}“ ist leer. Leere Dateien (0 Bytes) werden von Telegram nicht unterstützt.",
+    "exceedsFreeLimit": "„{{name}}“ überschreitet das Upload-Limit von ~2 GB für Standardkonten (Telegram Premium unterstützt bis zu ~4 GB).",
+    "exceedsPremiumLimit": "„{{name}}“ überschreitet das Telegram-Einzeldateilimit von ~4 GB."
   },
   "download": {
     "cancelled": "Download abgebrochen.",
@@ -39,7 +41,10 @@
     "errors": {
       "mediaNotFound": "Zieldateinachricht oder Zielmedium wurde im Telegram nicht gefunden.",
       "mediaFailed": "Das Herunterladen der Medien ist fehlgeschlagen."
-    }
+    },
+    "zipEmpty": "Keine herunterladbaren Dateien in der Auswahl gefunden.",
+    "zipSuccess": "„{{name}}“ erfolgreich gespeichert!",
+    "zipFailed": "ZIP-Archiv konnte nicht erstellt werden."
   },
   "indexQueue": {
     "rateLimitRetrying": "Begrenzung der Telegrammrate – erneuter Versuch"

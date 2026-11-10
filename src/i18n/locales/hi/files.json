@@ -13,7 +13,8 @@
     "unarchive": "असंग्रहीत करें",
     "restore": "पुनर्स्थापित करें",
     "deletePermanently": "स्थायी रूप से हटाएं",
-    "moveToTrash": "ट्रैश में ले जाएं"
+    "moveToTrash": "ट्रैश में ले जाएं",
+    "downloadAsZip": "ZIP के रूप में डाउनलोड करें"
   },
   "browser": {
     "fileType": {
@@ -210,7 +211,8 @@
       "restoreSelected": "चयनित को पुनर्स्थापित करें",
       "deletePermanently": "स्थायी रूप से हटाएं",
       "moveSelectedToTrash": "चयनित को कचरे में ले जाएं",
-      "clearSelection": "चयन साफ़ करें"
+      "clearSelection": "चयन साफ़ करें",
+      "downloadSelected": "चयनित डाउनलोड करें"
     },
     "mobileMenu": {
       "addToStarred": "पसंदीदा में जोड़ें",
