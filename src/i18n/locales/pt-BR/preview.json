@@ -70,7 +70,9 @@
   "media": {
     "skipBack": "Voltar 10 s",
     "skipForward": "Avançar 10 s",
-    "audioTrack": "Faixa de áudio"
+    "audioTrack": "Faixa de áudio",
+    "decodeErrorDescription": "Este formato ou codec de mídia não pode ser reproduzido no player integrado. Você pode abri-lo diretamente no player do sistema (ex.: VLC) ou baixá-lo.",
+    "openInSystemPlayer": "Abrir no Player do Sistema"
   },
   "archive": {
     "badge": "{{ext}} COMPACTADO",

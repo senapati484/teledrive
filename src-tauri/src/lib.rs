@@ -959,6 +959,199 @@ async fn write_file_binary(path: String, data: Vec<u8>) -> Result<(), String> {
     .map_err(|e| format!("write_file_binary task join error: {e}"))?
 }
 
+/// Pure-Rust RFC 4648 base64 decoder used for compact binary chunk IPC payloads
+/// (especially over Android WebView postMessage where raw binary bodies fall back to JSON).
+fn decode_base64(input: &str) -> Result<Vec<u8>, String> {
+    fn val(b: u8) -> Option<u8> {
+        match b {
+            b'A'..=b'Z' => Some(b - b'A'),
+            b'a'..=b'z' => Some(b - b'a' + 26),
+            b'0'..=b'9' => Some(b - b'0' + 52),
+            b'+' => Some(62),
+            b'/' => Some(63),
+            _ => None,
+        }
+    }
+
+    let bytes: Vec<u8> = input
+        .bytes()
+        .filter(|b| !b.is_ascii_whitespace())
+        .collect();
+    if bytes.is_empty() {
+        return Ok(Vec::new());
+    }
+    if bytes.len() % 4 != 0 {
+        return Err("Invalid base64 length".to_string());
+    }
+
+    let mut out = Vec::with_capacity((bytes.len() / 4) * 3);
+    for (idx, chunk) in bytes.chunks_exact(4).enumerate() {
+        let is_last = idx + 1 == bytes.len() / 4;
+        let a = val(chunk[0]).ok_or_else(|| "Invalid base64 character".to_string())?;
+        let b = val(chunk[1]).ok_or_else(|| "Invalid base64 character".to_string())?;
+        let c = if chunk[2] == b'=' {
+            if !is_last || chunk[3] != b'=' {
+                return Err("Invalid base64 padding".to_string());
+            }
+            None
+        } else {
+            Some(val(chunk[2]).ok_or_else(|| "Invalid base64 character".to_string())?)
+        };
+        let d = if chunk[3] == b'=' {
+            if !is_last {
+                return Err("Invalid base64 padding".to_string());
+            }
+            None
+        } else {
+            Some(val(chunk[3]).ok_or_else(|| "Invalid base64 character".to_string())?)
+        };
+
+        out.push((a << 2) | (b >> 4));
+        if let Some(c_val) = c {
+            out.push((b << 4) | (c_val >> 2));
+            if let Some(d_val) = d {
+                out.push((c_val << 6) | d_val);
+            }
+        }
+    }
+    Ok(out)
+}
+
+#[cfg(target_os = "android")]
+fn content_uri_handles() -> &'static Mutex<std::collections::HashMap<String, std::fs::File>> {
+    static HANDLES: OnceLock<Mutex<std::collections::HashMap<String, std::fs::File>>> =
+        OnceLock::new();
+    HANDLES.get_or_init(|| Mutex::new(std::collections::HashMap::new()))
+}
+
+#[cfg(target_os = "android")]
+fn open_content_uri_modes(
+    app: &AppHandle,
+    url: &tauri::Url,
+    candidates: &[tauri_plugin_fs::OpenOptions],
+) -> Result<std::fs::File, String> {
+    use tauri_plugin_fs::FsExt;
+    let mut last_err = String::new();
+    for opts in candidates {
+        match app
+            .fs()
+            .open(tauri_plugin_fs::FilePath::Url(url.clone()), opts.clone())
+        {
+            Ok(file) => return Ok(file),
+            Err(e) => last_err = e.to_string(),
+        }
+    }
+    Err(format!(
+        "Failed to open content URI {}: {}",
+        url, last_err
+    ))
+}
+
+/// Streams a chunk directly to an Android SAF `content://` URI by holding one open
+/// descriptor per active transfer instead of repeatedly re-opening with `wa`/`wt`
+/// (which Android 11–16 Downloads/MediaProvider SAF frequently rejects).
+#[cfg(target_os = "android")]
+fn write_content_uri_chunk_sync(
+    app: &AppHandle,
+    uri_str: &str,
+    data: &[u8],
+    append: bool,
+    done: bool,
+    discard: bool,
+    sync: bool,
+) -> Result<(), String> {
+    use std::io::{Seek, SeekFrom, Write};
+
+    let url = tauri::Url::parse(uri_str)
+        .map_err(|e| format!("Invalid content URI {uri_str}: {e}"))?;
+    let handles = content_uri_handles();
+
+    if discard {
+        let existing = handles.lock().map(|mut m| m.remove(uri_str)).ok().flatten();
+        if let Some(file) = existing {
+            let _ = file.set_len(0);
+            drop(file);
+            return Ok(());
+        }
+        let mut trunc_opts = tauri_plugin_fs::OpenOptions::new();
+        trunc_opts.write(true).truncate(true);
+        let mut w_opts = tauri_plugin_fs::OpenOptions::new();
+        w_opts.write(true);
+        if let Ok(file) = open_content_uri_modes(app, &url, &[trunc_opts, w_opts]) {
+            let _ = file.set_len(0);
+        }
+        return Ok(());
+    }
+
+    let mut file = if append {
+        let existing = handles
+            .lock()
+            .map_err(|_| "Content URI lock poisoned".to_string())?
+            .remove(uri_str);
+        if let Some(f) = existing {
+            f
+        } else {
+            let mut wa_opts = tauri_plugin_fs::OpenOptions::new();
+            wa_opts.write(true).append(true);
+            let mut rw_opts = tauri_plugin_fs::OpenOptions::new();
+            rw_opts.read(true).write(true);
+            let mut w_opts = tauri_plugin_fs::OpenOptions::new();
+            w_opts.write(true);
+            let mut f = open_content_uri_modes(app, &url, &[wa_opts, rw_opts, w_opts])?;
+            let _ = f.seek(SeekFrom::End(0));
+            f
+        }
+    } else {
+        if let Ok(mut guard) = handles.lock() {
+            guard.remove(uri_str);
+        }
+        let mut w_opts = tauri_plugin_fs::OpenOptions::new();
+        w_opts.write(true);
+        let mut rw_opts = tauri_plugin_fs::OpenOptions::new();
+        rw_opts.read(true).write(true);
+        let mut wt_opts = tauri_plugin_fs::OpenOptions::new();
+        wt_opts.write(true).truncate(true);
+        let mut f = open_content_uri_modes(app, &url, &[w_opts, rw_opts, wt_opts])?;
+        let _ = f.seek(SeekFrom::Start(0));
+        let _ = f.set_len(0);
+        f
+    };
+
+    if !data.is_empty() {
+        file.write_all(data)
+            .map_err(|e| format!("Failed to write chunk to {uri_str}: {e}"))?;
+    }
+
+    if done {
+        file.flush()
+            .map_err(|e| format!("Failed to flush {uri_str}: {e}"))?;
+        // Some Android SAF DocumentProviders expose pipe-backed descriptors where fsync returns EINVAL/ENOTSUP.
+        let _ = file.sync_all();
+        drop(file);
+    } else {
+        if sync {
+            let _ = file.flush();
+        }
+        handles
+            .lock()
+            .map_err(|_| "Content URI lock poisoned".to_string())?
+            .insert(uri_str.to_string(), file);
+    }
+    Ok(())
+}
+
+/// Normalizes a filesystem path string, converting `file://` URLs into local paths.
+fn normalize_local_file_path(path: &str) -> Result<PathBuf, String> {
+    if path.starts_with("file://") {
+        let url = tauri::Url::parse(path)
+            .map_err(|e| format!("Invalid file URL {path}: {e}"))?;
+        return url
+            .to_file_path()
+            .map_err(|_| format!("Cannot convert file URL to local path: {path}"));
+    }
+    Ok(PathBuf::from(path))
+}
+
 /// Appends or writes a chunk of binary data to disk.
 /// The first chunk truncates a private temp file, subsequent chunks append to
 /// it, and the final chunk (`done = true`) atomically renames it over the
@@ -976,8 +1169,8 @@ fn write_file_chunk_sync(
     sync: bool,
 ) -> Result<(), String> {
     use std::io::Write;
-    let p = std::path::Path::new(path);
-    let tmp = temp_sibling(p, "part")?;
+    let p = normalize_local_file_path(path)?;
+    let tmp = temp_sibling(&p, "part")?;
     if discard {
         return match std::fs::remove_file(&tmp) {
             Ok(()) => Ok(()),
@@ -996,16 +1189,18 @@ fn write_file_chunk_sync(
         .append(append)
         .open(&tmp)
         .map_err(|e| format!("Failed to open temp file {}: {e}", tmp.display()))?;
-    file.write_all(data)
-        .map_err(|e| format!("Failed to write chunk to {}: {e}", tmp.display()))?;
+    if !data.is_empty() {
+        file.write_all(data)
+            .map_err(|e| format!("Failed to write chunk to {}: {e}", tmp.display()))?;
+    }
     if sync {
         file.sync_all()
             .map_err(|e| format!("Failed to sync {}: {e}", tmp.display()))?;
     }
     drop(file);
     if done {
-        if let Err(rename_err) = std::fs::rename(&tmp, p) {
-            std::fs::copy(&tmp, p).map_err(|copy_err| {
+        if let Err(rename_err) = std::fs::rename(&tmp, &p) {
+            std::fs::copy(&tmp, &p).map_err(|copy_err| {
                 let _ = std::fs::remove_file(&tmp);
                 format!(
                     "Failed to finalize {}: rename={rename_err}; copy={copy_err}",
@@ -1020,8 +1215,10 @@ fn write_file_chunk_sync(
 
 #[tauri::command]
 async fn write_file_chunk(
+    #[allow(unused)] app: AppHandle,
     path: String,
-    data: Vec<u8>,
+    data: Option<Vec<u8>>,
+    data_b64: Option<String>,
     append: bool,
     done: Option<bool>,
     discard: Option<bool>,
@@ -1030,11 +1227,153 @@ async fn write_file_chunk(
     let done = done.unwrap_or(false);
     let discard = discard.unwrap_or(false);
     let sync = sync.unwrap_or(true);
+    let bytes = if let Some(b64) = data_b64 {
+        decode_base64(&b64)?
+    } else {
+        data.unwrap_or_default()
+    };
+
+    if path.starts_with("content://") {
+        #[cfg(target_os = "android")]
+        return tauri::async_runtime::spawn_blocking(move || {
+            write_content_uri_chunk_sync(&app, &path, &bytes, append, done, discard, sync)
+        })
+        .await
+        .map_err(|e| format!("write_file_chunk content URI task join error: {e}"))?;
+
+        #[cfg(not(target_os = "android"))]
+        return Err("content:// URIs are only supported on Android".to_string());
+    }
+
     tauri::async_runtime::spawn_blocking(move || {
-        write_file_chunk_sync(&path, &data, append, done, discard, sync)
+        write_file_chunk_sync(&path, &bytes, append, done, discard, sync)
     })
     .await
     .map_err(|e| format!("write_file_chunk task join error: {e}"))?
+}
+
+fn preview_cache_root(app: &AppHandle) -> Result<PathBuf, String> {
+    let base = app
+        .path()
+        .app_local_data_dir()
+        .map_err(|e| format!("Failed to resolve app_local_data_dir: {e}"))?;
+    let dir = base.join("preview_cache");
+    std::fs::create_dir_all(&dir)
+        .map_err(|e| format!("Failed to create preview_cache dir: {e}"))?;
+    Ok(dir)
+}
+
+fn sanitize_preview_cache_filename(raw: &str) -> String {
+    let base = raw.rsplit(['/', '\\']).next().unwrap_or("preview.bin");
+    let cleaned: String = base
+        .chars()
+        .map(|c| {
+            if matches!(c, '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|') || c.is_control()
+            {
+                '_'
+            } else {
+                c
+            }
+        })
+        .collect();
+    let trimmed = cleaned.trim_matches('.').trim();
+    if trimmed.is_empty() {
+        "preview.bin".to_string()
+    } else {
+        trimmed.to_string()
+    }
+}
+
+#[tauri::command]
+fn get_preview_cache_path(app: AppHandle, file_name: String) -> Result<String, String> {
+    let root = preview_cache_root(&app)?;
+    let safe = sanitize_preview_cache_filename(&file_name);
+    Ok(root.join(safe).to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+fn check_preview_cache(
+    app: AppHandle,
+    file_name: String,
+    expected_size: Option<u64>,
+) -> Result<Option<String>, String> {
+    let root = preview_cache_root(&app)?;
+    let safe = sanitize_preview_cache_filename(&file_name);
+    let path = root.join(safe);
+    let Ok(meta) = std::fs::metadata(&path) else {
+        return Ok(None);
+    };
+    if !meta.is_file() || meta.len() == 0 {
+        return Ok(None);
+    }
+    if let Some(expected) = expected_size {
+        if expected > 0 && meta.len() != expected {
+            return Ok(None);
+        }
+    }
+    Ok(Some(path.to_string_lossy().into_owned()))
+}
+
+#[tauri::command]
+async fn cleanup_preview_cache(
+    app: AppHandle,
+    max_bytes: Option<u64>,
+    max_part_age_secs: Option<u64>,
+) -> Result<(), String> {
+    let root = preview_cache_root(&app)?;
+    let max_bytes = max_bytes.unwrap_or(1_536 * 1024 * 1024);
+    let max_part_age = Duration::from_secs(max_part_age_secs.unwrap_or(3600));
+
+    tauri::async_runtime::spawn_blocking(move || {
+        let Ok(entries) = std::fs::read_dir(&root) else {
+            return Ok(());
+        };
+        let now = std::time::SystemTime::now();
+        let mut files: Vec<(PathBuf, u64, std::time::SystemTime)> = Vec::new();
+        let mut total_bytes: u64 = 0;
+
+        for entry in entries.flatten() {
+            let path = entry.path();
+            let Ok(meta) = entry.metadata() else {
+                continue;
+            };
+            if !meta.is_file() {
+                continue;
+            }
+            let modified = meta.modified().unwrap_or(std::time::UNIX_EPOCH);
+            let is_part = path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .map(|n| n.contains(".part"))
+                .unwrap_or(false);
+            if is_part {
+                if let Ok(age) = now.duration_since(modified) {
+                    if age > max_part_age {
+                        let _ = std::fs::remove_file(&path);
+                    }
+                }
+                continue;
+            }
+            let len = meta.len();
+            total_bytes = total_bytes.saturating_add(len);
+            files.push((path, len, modified));
+        }
+
+        if total_bytes > max_bytes {
+            files.sort_by_key(|(_, _, modified)| *modified);
+            for (path, len, _) in files {
+                if total_bytes <= max_bytes {
+                    break;
+                }
+                if std::fs::remove_file(&path).is_ok() {
+                    total_bytes = total_bytes.saturating_sub(len);
+                }
+            }
+        }
+        Ok(())
+    })
+    .await
+    .map_err(|e| format!("cleanup_preview_cache join error: {e}"))?
 }
 
 /// Opens any file with the host system's default viewer application.
@@ -1174,6 +1513,9 @@ pub fn run() {
             hash_file,
             write_file_binary,
             write_file_chunk,
+            get_preview_cache_path,
+            check_preview_cache,
+            cleanup_preview_cache,
             open_file_in_system_viewer,
             open_telegram_app,
         ])
@@ -1304,5 +1646,26 @@ mod tests {
         let entries: Vec<_> = std::fs::read_dir(&dir).unwrap().collect();
         assert_eq!(entries.len(), 1, "temp file must be removed");
         std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn decode_base64_decodes_valid_and_padded_inputs() {
+        assert_eq!(decode_base64("").unwrap(), b"");
+        assert_eq!(decode_base64("Zg==").unwrap(), b"f");
+        assert_eq!(decode_base64("Zm8=").unwrap(), b"fo");
+        assert_eq!(decode_base64("Zm9v").unwrap(), b"foo");
+        assert_eq!(decode_base64("SGVs bG8s\nIHdvcmxkIQ==").unwrap(), b"Hello, world!");
+        assert!(decode_base64("abc").is_err());
+        assert!(decode_base64("ab*=").is_err());
+    }
+
+    #[test]
+    fn sanitize_preview_cache_filename_strips_traversal_and_unsafe_chars() {
+        assert_eq!(sanitize_preview_cache_filename("../../etc/passwd"), "passwd");
+        assert_eq!(
+            sanitize_preview_cache_filename("123_clip:2026*final?.mkv"),
+            "123_clip_2026_final_.mkv"
+        );
+        assert_eq!(sanitize_preview_cache_filename("..."), "preview.bin");
     }
 }

@@ -70,7 +70,9 @@
   "media": {
     "skipBack": "Reculer de 10s",
     "skipForward": "Avancer de 10s",
-    "audioTrack": "Piste audio"
+    "audioTrack": "Piste audio",
+    "decodeErrorDescription": "Ce format ou codec multimédia ne peut pas être lu par le lecteur intégré. Vous pouvez l’ouvrir directement dans le lecteur système (p. ex. VLC) ou le télécharger.",
+    "openInSystemPlayer": "Ouvrir dans le lecteur système"
   },
   "archive": {
     "badge": "ARCHIVE {{ext}}",

@@ -70,7 +70,9 @@
   "media": {
     "skipBack": "Retroceder 10s",
     "skipForward": "Avanzar 10s",
-    "audioTrack": "Pista de audio"
+    "audioTrack": "Pista de audio",
+    "decodeErrorDescription": "Este formato o códec multimedia no se puede reproducir en el reproductor integrado. Puede abrirlo directamente en el reproductor del sistema (p. ej., VLC) o descargarlo.",
+    "openInSystemPlayer": "Abrir en el reproductor del sistema"
   },
   "archive": {
     "badge": "ARCHIVO {{ext}}",

@@ -1,24 +1,29 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { invokeMock, writeFileMock } = vi.hoisted(() => ({
+const { invokeMock } = vi.hoisted(() => ({
   invokeMock: vi.fn(),
-  writeFileMock: vi.fn(),
 }));
 
 vi.mock("@tauri-apps/api/core", () => ({ invoke: invokeMock }));
-vi.mock("@tauri-apps/plugin-fs", () => ({ writeFile: writeFileMock }));
 
 import {
   discardDownloadFile,
   finalizeDownloadFile,
+  uint8ToBase64,
   writeDownloadChunk,
 } from "../downloadStreamWriter";
 
 beforeEach(() => {
   invokeMock.mockReset();
-  writeFileMock.mockReset();
   invokeMock.mockResolvedValue(undefined);
-  writeFileMock.mockResolvedValue(undefined);
+});
+
+describe("uint8ToBase64", () => {
+  it("encodes binary slices to base64", () => {
+    expect(uint8ToBase64(new Uint8Array([]))).toBe("");
+    expect(uint8ToBase64(new Uint8Array([102, 111, 111]))).toBe("Zm9v");
+    expect(uint8ToBase64(new Uint8Array([1, 2, 3, 255]))).toBe("AQID/w==");
+  });
 });
 
 describe("writeDownloadChunk", () => {
@@ -34,21 +39,23 @@ describe("writeDownloadChunk", () => {
     });
   });
 
-  it("uses plugin-fs for Android SAF URIs", async () => {
-    const chunk = new Uint8Array([3]);
+  it("streams Android SAF content:// URIs through native write_file_chunk with base64", async () => {
+    const chunk = new Uint8Array([72, 105]);
     await writeDownloadChunk("content://downloads/1", chunk, true);
 
-    expect(writeFileMock).toHaveBeenCalledWith("content://downloads/1", chunk, {
+    expect(invokeMock).toHaveBeenCalledWith("write_file_chunk", {
+      path: "content://downloads/1",
+      dataB64: "SGk=",
       append: true,
+      done: false,
+      sync: false,
     });
-    expect(invokeMock).not.toHaveBeenCalled();
   });
 });
 
 describe("finalizeDownloadFile", () => {
-  it("commits the native temp file", async () => {
+  it("commits local temp files and closes Android SAF descriptors", async () => {
     await finalizeDownloadFile("/tmp/file.bin");
-
     expect(invokeMock).toHaveBeenCalledWith("write_file_chunk", {
       path: "/tmp/file.bin",
       data: [],
@@ -56,33 +63,37 @@ describe("finalizeDownloadFile", () => {
       done: true,
       sync: true,
     });
-  });
 
-  it("is a no-op for content URIs", async () => {
+    invokeMock.mockClear();
     await finalizeDownloadFile("content://downloads/1");
-    expect(invokeMock).not.toHaveBeenCalled();
+    expect(invokeMock).toHaveBeenCalledWith("write_file_chunk", {
+      path: "content://downloads/1",
+      data: [],
+      append: true,
+      done: true,
+      sync: true,
+    });
   });
 });
 
 describe("discardDownloadFile", () => {
-  it("removes the native temp file", async () => {
+  it("removes the native temp file or resets content URIs", async () => {
     await discardDownloadFile("/tmp/file.bin");
-
     expect(invokeMock).toHaveBeenCalledWith("write_file_chunk", {
       path: "/tmp/file.bin",
       data: [],
       append: true,
       discard: true,
     });
-  });
 
-  it("truncates the document for content URIs", async () => {
+    invokeMock.mockClear();
     await discardDownloadFile("content://downloads/1");
-
-    expect(writeFileMock).toHaveBeenCalledTimes(1);
-    const [, bytes] = writeFileMock.mock.calls[0];
-    expect(bytes).toBeInstanceOf(Uint8Array);
-    expect(bytes).toHaveLength(0);
+    expect(invokeMock).toHaveBeenCalledWith("write_file_chunk", {
+      path: "content://downloads/1",
+      data: [],
+      append: true,
+      discard: true,
+    });
   });
 
   it("does not throw when cleanup fails", async () => {

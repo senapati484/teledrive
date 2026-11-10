@@ -70,7 +70,9 @@
   "media": {
     "skipBack": "Springe 10 Sekunden zurück",
     "skipForward": "10 Sekunden vorwärts springen",
-    "audioTrack": "Audiospur"
+    "audioTrack": "Audiospur",
+    "decodeErrorDescription": "Dieses Medienformat oder dieser Codec kann im integrierten Player nicht abgespielt werden. Sie können die Datei direkt im System-Mediaplayer (z. B. VLC) öffnen oder herunterladen.",
+    "openInSystemPlayer": "Im System-Player öffnen"
   },
   "archive": {
     "badge": "{{ext}} ARCHIV",

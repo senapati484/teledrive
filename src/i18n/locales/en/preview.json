@@ -70,7 +70,9 @@
   "media": {
     "skipBack": "Skip back 10s",
     "skipForward": "Skip forward 10s",
-    "audioTrack": "Audio Track"
+    "audioTrack": "Audio Track",
+    "decodeErrorDescription": "This media format or codec cannot be played in the built-in player. You can open it directly in your system media player (e.g., VLC or Windows Media Player) or download it.",
+    "openInSystemPlayer": "Open in System Player"
   },
   "archive": {
     "badge": "{{ext}} ARCHIVE",

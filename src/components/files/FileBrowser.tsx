@@ -580,31 +580,45 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
   const handleOpenSystemApp = useCallback(async (file: TeleFile) => {
     try {
       const { appLocalDataDir, join } = await import("@tauri-apps/api/path");
+      const { invoke } = await import("@tauri-apps/api/core");
       const { openPath } = await import("@tauri-apps/plugin-opener");
       const { exists } = await import("@tauri-apps/plugin-fs");
-      const { downloadFileToBuffer } = await import("@/lib/telegram/downloader");
+      const { streamFileToLocalPath } = await import("@/lib/telegram/downloader");
       const { saveBinaryFile } = await import("@/lib/storage/safeFileWriter");
       const { readOfflineCache, isCachedOffline } = await import("@/lib/storage/offlineStorage");
 
-      const cacheDir = await appLocalDataDir();
       const safeName = file.name.replace(/[/\\?%*:|"<>]/g, "_").trim() || "file";
-      const tempFilePath = await join(cacheDir, `temp_${file.id}_${safeName}`);
+      let tempFilePath = await invoke<string | null>("check_preview_cache", {
+        fileName: `${file.id}_${safeName}`,
+        expectedSize: file.size > 0 ? file.size : null,
+      }).catch(() => null);
 
-      let fileReady = false;
-      try {
-        fileReady = await exists(tempFilePath);
-      } catch {
-        fileReady = false;
-      }
+      if (!tempFilePath) {
+        const cacheDir = await appLocalDataDir();
+        tempFilePath = await join(cacheDir, `temp_${file.id}_${safeName}`);
 
-      if (!fileReady) {
-        if (file.offline && (await isCachedOffline(file.id))) {
-          const offlineBuf = await readOfflineCache(file.id);
-          await saveBinaryFile(tempFilePath, offlineBuf);
-        } else {
-          toast.info(t("browser.systemApp.preparing", { name: file.name }));
-          const buf = await downloadFileToBuffer(file.channelId, file.messageId);
-          await saveBinaryFile(tempFilePath, buf);
+        let fileReady = false;
+        try {
+          fileReady = await exists(tempFilePath);
+        } catch {
+          fileReady = false;
+        }
+
+        if (!fileReady) {
+          if (file.offline && (await isCachedOffline(file.id))) {
+            const offlineBuf = await readOfflineCache(file.id);
+            await saveBinaryFile(tempFilePath, offlineBuf);
+          } else {
+            toast.info(t("browser.systemApp.preparing", { name: file.name }));
+            await streamFileToLocalPath(
+              file.channelId,
+              file.messageId,
+              tempFilePath,
+              undefined,
+              undefined,
+              file.size
+            );
+          }
         }
       }
 
@@ -612,7 +626,6 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
         await openPath(tempFilePath);
       } catch (openerErr) {
         console.warn("plugin-opener failed, invoking native open_file_in_system_viewer:", openerErr);
-        const { invoke } = await import("@tauri-apps/api/core");
         await invoke("open_file_in_system_viewer", { path: tempFilePath });
       }
       toast.success(t("browser.systemApp.opened", { name: file.name }));
