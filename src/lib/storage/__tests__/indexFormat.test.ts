@@ -361,3 +361,40 @@ describe("Phase 2 TeleFile segments and E2EE roundtrip", () => {
     expect(parsed?.files[0].enc).toEqual(segmentedEncryptedFile.enc);
   });
 });
+
+describe("layout-preserving append-stable packChunks", () => {
+  it("keeps earlier chunks byte-identical when prepending a new folder or deleting a file in chunk 0", () => {
+    const initialFiles = makeFiles(240);
+    const { chunks: initialChunks } = packChunks(initialFiles);
+    expect(initialChunks.length).toBeGreaterThanOrEqual(4);
+
+    // Prepend a new folder (matching collapseDuplicateFolders array layout)
+    const newFolder: TeleFile = {
+      ...makeFile(999, "/"),
+      id: "folder_new",
+      name: "BrandNew",
+      mime: "inode/directory",
+      messageId: 0,
+      size: 0,
+    };
+    const withFolder = [newFolder, ...initialFiles];
+    const afterFolder = packChunks(withFolder, initialChunks);
+
+    // Chunks 0..(len-2) remain completely unchanged; only the tail grows
+    for (let i = 0; i < initialChunks.length - 1; i++) {
+      expect(afterFolder.chunks[i].map((f) => f.id)).toEqual(
+        initialChunks[i].map((f) => f.id)
+      );
+    }
+    expect(afterFolder.chunks.flat().map((f) => f.id)).toContain("folder_new");
+
+    // Deleting a file from chunk 0 only mutates chunk 0; downstream chunks stay put
+    const afterDelete = packChunks(initialFiles.slice(1), initialChunks);
+    expect(afterDelete.chunks[0].length).toBe(initialChunks[0].length - 1);
+    for (let i = 1; i < initialChunks.length; i++) {
+      expect(afterDelete.chunks[i].map((f) => f.id)).toEqual(
+        initialChunks[i].map((f) => f.id)
+      );
+    }
+  });
+});

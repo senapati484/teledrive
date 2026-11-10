@@ -1,6 +1,6 @@
 import { gzipSync, gunzipSync, strFromU8, strToU8 } from "fflate";
 import type { TeleFile } from "../types";
-import { normalizeFolderPath } from "../utils";
+import { normalizeFolderPath } from "../files/pathUtils";
 
 export const INDEX_VERSION = 3;
 export const TELEGRAM_TEXT_LIMIT = 4096;
@@ -288,11 +288,106 @@ function packWithFirstBudget(files: TeleFile[], firstLimit: number): TeleFile[][
   return chunks;
 }
 
-function estimateChunkCount(files: TeleFile[]): number {
+function packWithLayout(
+  files: TeleFile[],
+  previousChunks: TeleFile[][],
+  firstLimit: number
+): TeleFile[][] {
+  const remaining = new Map<string, TeleFile>();
+  for (const file of files) {
+    remaining.set(file.id, file);
+  }
+
+  const buckets: TeleFile[][] = [];
+  for (const prevChunk of previousChunks) {
+    const slot: TeleFile[] = [];
+    for (const prev of prevChunk) {
+      const updated = remaining.get(prev.id);
+      if (updated) {
+        slot.push(updated);
+        remaining.delete(prev.id);
+      }
+    }
+    if (slot.length > 0) {
+      buckets.push(slot);
+    }
+  }
+
+  const added: TeleFile[] = [];
+  for (const file of files) {
+    if (remaining.has(file.id)) {
+      added.push(remaining.get(file.id)!);
+      remaining.delete(file.id);
+    }
+  }
+
+  if (added.length > 0) {
+    if (buckets.length === 0) {
+      buckets.push(...packRaw(added, 40_000));
+    } else {
+      let tail = buckets[buckets.length - 1];
+      let tailChars =
+        120 + tail.reduce((sum, item) => sum + fileChars(item), 0);
+
+      for (const file of added) {
+        const len = fileChars(file);
+        const tailLimit =
+          buckets.length === 1 ? firstLimit : TELEGRAM_TEXT_LIMIT - 24;
+        const rawFits =
+          tail.length > 0 &&
+          tailChars + len <= 40_000 &&
+          tail.length < CHUNK_FILE_CAP;
+        const candidate = rawFits ? [...tail, file] : null;
+        if (
+          candidate &&
+          serializedChunkLength(candidate) <= tailLimit
+        ) {
+          tail.push(file);
+          tailChars += len;
+        } else {
+          tail = [file];
+          tailChars = 120 + len;
+          buckets.push(tail);
+        }
+      }
+    }
+  }
+
+  if (buckets.length === 0) return [[]];
+
+  const finalChunks: TeleFile[][] = [];
+  for (let i = 0; i < buckets.length; i++) {
+    const isFirst = finalChunks.length === 0;
+    const limit = isFirst ? firstLimit : TELEGRAM_TEXT_LIMIT - 24;
+    const bucket = buckets[i];
+    // Respect CHUNK_FILE_CAP per slot first if any caller passed oversized chunk
+    for (let j = 0; j < bucket.length; j += CHUNK_FILE_CAP) {
+      const slice = bucket.slice(j, j + CHUNK_FILE_CAP);
+      finalChunks.push(
+        ...splitToSerializedLimit(
+          slice,
+          finalChunks.length === 0 ? firstLimit : limit
+        )
+      );
+    }
+  }
+  return finalChunks;
+}
+
+function estimateChunkCount(
+  files: TeleFile[],
+  previousChunks?: TeleFile[][]
+): number {
+  if (previousChunks && previousChunks.length > 0) {
+    return packWithLayout(files, previousChunks, TELEGRAM_TEXT_LIMIT - 24).length;
+  }
   return packWithFirstBudget(files, TELEGRAM_TEXT_LIMIT - 24).length;
 }
 
-export function packChunks(files: TeleFile[]): {
+export function packChunks(
+  files: TeleFile[],
+  previousChunks?: TeleFile[][]
+): {
   chunks: TeleFile[][];
   manifestOmitted: boolean;
 } {
@@ -300,13 +395,19 @@ export function packChunks(files: TeleFile[]): {
     return { chunks: [[]], manifestOmitted: false };
   }
 
-  let totalChunks = Math.max(1, estimateChunkCount(files));
-  let chunks = packWithFirstBudget(files, TELEGRAM_TEXT_LIMIT - 24);
+  const useLayout = Boolean(previousChunks && previousChunks.length > 0);
+  const runPack = (limit: number) =>
+    useLayout
+      ? packWithLayout(files, previousChunks!, limit)
+      : packWithFirstBudget(files, limit);
+
+  let totalChunks = Math.max(1, estimateChunkCount(files, previousChunks));
+  let chunks = runPack(TELEGRAM_TEXT_LIMIT - 24);
 
   for (let attempt = 0; attempt < 6; attempt++) {
     const budget = manifestBudget(totalChunks);
     const firstBudget = Math.max(400, 3600 - budget);
-    const candidate = packWithFirstBudget(files, firstBudget);
+    const candidate = runPack(firstBudget);
     chunks = candidate;
     if (candidate.length === totalChunks) break;
     totalChunks = candidate.length;

@@ -78,7 +78,15 @@
     "badge": "{{ext}} ARCHIV",
     "description": "Komprimierte Archive können nicht direkt im Browser in der Vorschau angezeigt werden. Laden Sie dieses Archiv herunter, um seinen Inhalt zu extrahieren und auf Ihrem Computer anzuzeigen.",
     "download": "Archiv herunterladen",
-    "openInSystem": "In System-App öffnen"
+    "openInSystem": "In System-App öffnen",
+    "entryTooLarge": "Die Datei überschreitet das 25-MB-Limit für die Inline-Vorschau. Nutzen Sie Extrahieren, um sie lokal zu speichern.",
+    "extractFailed": "Datei konnte nicht extrahiert werden.",
+    "binaryEntryNotice": "Binäreintrag kann nicht direkt angezeigt werden. Zum Anzeigen lokal extrahieren.",
+    "backToList": "Zurück zu den Dateien",
+    "summary": "{{count}} Dateien · {{unpacked}} entpackt ({{packed}} komprimiert)",
+    "searchPlaceholder": "Archivdateien filtern…",
+    "noMatchingEntries": "Keine Dateien entsprechen Ihrem Filter.",
+    "extractFile": "Datei extrahieren"
   },
   "unsupported": {
     "description": "Für diesen Dateityp ist keine Vorschau verfügbar. Sie können es herunterladen und in einer kompatiblen Anwendung auf Ihrem System öffnen.",
@@ -155,5 +163,10 @@
     "ariaLabel": "Code-Viewer",
     "largeFile_one": "Große Datei (Zeile {{count, number}}) – Syntaxhervorhebung wird aus Leistungsgründen übersprungen",
     "largeFile_other": "Große Datei ({{count, number}} Zeilen) – Syntaxhervorhebung wird aus Leistungsgründen übersprungen"
+  },
+  "document": {
+    "slideLabel": "Folie {{number}} von {{total}}",
+    "emptySlide": "Leere Folie",
+    "speakerNotes": "Notizen:"
   }
 }

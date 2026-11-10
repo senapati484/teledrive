@@ -133,6 +133,11 @@ export default function BackupSection() {
   }
 
   async function handleAddFolder() {
+    const { isWebRuntime } = await import("@/lib/runtime/bridge");
+    if (isWebRuntime()) {
+      toast.info("Local folder backups require the desktop or mobile app.");
+      return;
+    }
     if (paths.length >= MAX_FOLDERS) {
       toast.warning(t("backup.toasts.maxFolders", { count: MAX_FOLDERS }));
       return;

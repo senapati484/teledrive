@@ -1,5 +1,6 @@
 import { appLocalDataDir, join } from "@tauri-apps/api/path";
 import { readFile, remove, mkdir, exists } from "@tauri-apps/plugin-fs";
+import { isWebRuntime } from "../runtime/bridge";
 import {
   streamFileToLocalPath,
   type DownloadFileOptions,
@@ -86,6 +87,7 @@ export async function isCachedOffline(fileId: string): Promise<boolean> {
  * - If a file is marked offline but missing from disk, and the client is online, it downloads it in the background.
  */
 export async function syncOfflineStatusWithDisk(files: TeleFile[]): Promise<TeleFile[]> {
+  if (isWebRuntime()) return files;
   return await Promise.all(
     files.map(async (file) => {
       // Folders/directories cannot be cached offline

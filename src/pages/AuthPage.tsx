@@ -80,7 +80,10 @@ import { SUPPORTED_LANGUAGES } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { invoke } from "@tauri-apps/api/core";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import {
+  isTauriRuntime,
+  runtimeOpenUrl,
+} from "@/lib/runtime/bridge";
 
 type Step = "phone" | "qr" | "otp" | "password" | "email" | "bootstrap";
 type EmailStage = "address" | "code";
@@ -794,19 +797,21 @@ export default function AuthPage() {
         : t("otp.delivery.openAppToast");
 
       try {
-        try {
-          await invoke("open_telegram_app", { url });
-          toast.info(toastMessage);
-          return;
-        } catch (nativeErr) {
-          console.warn(
-            "Native open_telegram_app failed, trying openUrl:",
-            nativeErr
-          );
+        if (isTauriRuntime()) {
+          try {
+            await invoke("open_telegram_app", { url });
+            toast.info(toastMessage);
+            return;
+          } catch (nativeErr) {
+            console.warn(
+              "Native open_telegram_app failed, trying openUrl:",
+              nativeErr
+            );
+          }
         }
 
         try {
-          await openUrl(url);
+          await runtimeOpenUrl(url);
           toast.info(toastMessage);
           return;
         } catch (openerErr) {
@@ -1856,7 +1861,7 @@ export default function AuthPage() {
                   {pending?.fragmentUrl && (
                     <button
                       type="button"
-                      onClick={() => openUrl(pending.fragmentUrl!)}
+                      onClick={() => void runtimeOpenUrl(pending.fragmentUrl!)}
                       className="mt-2 inline-flex items-center gap-1 text-[10px] font-medium text-sky-700 dark:text-sky-300 hover:underline cursor-pointer"
                     >
                       <ExternalLink className="h-3 w-3" />

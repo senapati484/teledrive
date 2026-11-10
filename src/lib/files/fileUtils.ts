@@ -215,12 +215,19 @@ export const UNRENDERABLE_IMAGE_EXTS = new Set([
 export const NON_PREVIEWABLE_BINARY_EXTS = new Set([
   "exe", "msi", "msix", "appx", "dll", "so", "dylib", "bin", "img",
   "vhd", "vhdx", "vmdk", "appimage",
-  "doc", "docx", "xls", "xlsx", "ppt", "pptx",
-  "odt", "ods", "odp", "epub", "mobi", "pages", "numbers", "key",
+  "doc", "xls", "ppt",
+  "mobi", "pages", "numbers", "key",
   "djvu", "xps", "oxps", "wpd", "wps",
   "sqlite", "sqlite3", "db", "mdb", "accdb",
   "wasm", "class", "pyc", "pyo", "o", "a", "lib",
   "ttf", "otf", "woff", "woff2", "eot",
+]);
+
+export const RICH_DOCUMENT_EXTS = new Set(["docx", "odt", "rtf", "epub"]);
+export const SPREADSHEET_WORKBOOK_EXTS = new Set(["xlsx", "ods"]);
+export const PRESENTATION_EXTS = new Set(["pptx", "odp"]);
+export const INSPECTABLE_ARCHIVE_EXTS = new Set([
+  "zip", "jar", "war", "ear", "apk", "ipa", "tar", "tgz", "gz",
 ]);
 
 export function containsNullByte(bytes: Uint8Array, inspectBytes = 4096): boolean {
@@ -229,6 +236,47 @@ export function containsNullByte(bytes: Uint8Array, inspectBytes = 4096): boolea
     if (bytes[i] === 0) return true;
   }
   return false;
+}
+
+/**
+ * Decodes raw bytes to text when the buffer is valid UTF-8, UTF-16LE, or
+ * UTF-16BE (with BOM). Binary payloads return `{ isText: false }`.
+ */
+export function decodeTextBuffer(bytes: Uint8Array): {
+  text: string;
+  isText: boolean;
+  encoding: string;
+} {
+  if (bytes.length === 0) {
+    return { text: "", isText: true, encoding: "UTF-8" };
+  }
+  if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe) {
+    try {
+      const text = new TextDecoder("utf-16le").decode(bytes.subarray(2));
+      return { text, isText: true, encoding: "UTF-16LE" };
+    } catch {
+      return { text: "", isText: false, encoding: "binary" };
+    }
+  }
+  if (bytes.length >= 2 && bytes[0] === 0xfe && bytes[1] === 0xff) {
+    try {
+      const text = new TextDecoder("utf-16be").decode(bytes.subarray(2));
+      return { text, isText: true, encoding: "UTF-16BE" };
+    } catch {
+      return { text: "", isText: false, encoding: "binary" };
+    }
+  }
+  if (containsNullByte(bytes, 4096)) {
+    return { text: "", isText: false, encoding: "binary" };
+  }
+  const hasUtf8Bom =
+    bytes.length >= 3 &&
+    bytes[0] === 0xef &&
+    bytes[1] === 0xbb &&
+    bytes[2] === 0xbf;
+  const slice = hasUtf8Bom ? bytes.subarray(3) : bytes;
+  const text = new TextDecoder().decode(slice);
+  return { text, isText: true, encoding: "UTF-8" };
 }
 
 /**

@@ -55,6 +55,7 @@ import { getFileCategory } from "@/lib/files/fileUtils";
 import { isEditableFile } from "@/lib/files/editableTypes";
 import {
   getCachedThumbnailUrl,
+  invalidateThumbnailCache,
   requestFileThumbnails,
 } from "@/lib/files/thumbnails";
 import { downloadSelectionAsZip } from "@/lib/telegram/zipDownloader";
@@ -240,6 +241,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
   const [deleteTarget, setDeleteTarget] = useState<TeleFile | null>(null);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
+  const [failedThumbSrcs, setFailedThumbSrcs] = useState<Record<string, string>>({});
 
   // Progressive render limit for memory & DOM performance on large directories
   const INITIAL_RENDER_LIMIT = 80;
@@ -627,6 +629,11 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
   }, []);
 
   const handleOpenSystemApp = useCallback(async (file: TeleFile) => {
+    const { isWebRuntime } = await import("@/lib/runtime/bridge");
+    if (isWebRuntime()) {
+      handleDownload(file);
+      return;
+    }
     try {
       const { appLocalDataDir, join } = await import("@tauri-apps/api/path");
       const { invoke } = await import("@tauri-apps/api/core");
@@ -637,9 +644,10 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       const { readOfflineCache, isCachedOffline } = await import("@/lib/storage/offlineStorage");
 
       const safeName = file.name.replace(/[/\\?%*:|"<>]/g, "_").trim() || "file";
+      const expectedPlainSize = file.enc?.plainSize ?? file.size;
       let tempFilePath = await invoke<string | null>("check_preview_cache", {
         fileName: `${file.id}_${safeName}`,
-        expectedSize: file.size > 0 ? file.size : null,
+        expectedSize: expectedPlainSize > 0 ? expectedPlainSize : null,
       }).catch(() => null);
 
       if (!tempFilePath) {
@@ -687,7 +695,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       console.error("Failed to open file in system app:", err);
       toast.error(t("browser.systemApp.failed", { error: err.message || t("browser.systemApp.unknownError") }));
     }
-  }, [t]);
+  }, [t, handleDownload]);
 
   const triggerUpload = useCallback(() => {
     window.dispatchEvent(new CustomEvent("teledrive-trigger-upload"));
@@ -1328,37 +1336,48 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
 
                         {/* Centered Preview Canvas */}
                         <div className="flex-1 bg-[#f8fafd] dark:bg-[#0a0a0a] mx-2.5 my-1 rounded-xl border border-slate-100 dark:border-white/[0.04] flex items-center justify-center relative overflow-hidden pointer-events-none">
-                          {(file.thumbnailUrl || thumbUrls[file.id] || getCachedThumbnailUrl(file)) ? (
-                            <img
-                              src={file.thumbnailUrl || thumbUrls[file.id] || getCachedThumbnailUrl(file)}
-                              alt={file.name}
-                              loading="lazy"
-                              className="w-full h-full object-cover"
-                              onError={() => {
-                                setThumbUrls((prev) => {
-                                  if (!prev[file.id]) return prev;
-                                  const next = { ...prev };
-                                  delete next[file.id];
-                                  return next;
-                                });
-                              }}
-                            />
-                          ) : (
-                            <div className="w-16 h-20 bg-white dark:bg-[#161719] rounded-md shadow-xs border border-slate-200/80 dark:border-white/[0.04] p-2 flex flex-col items-center justify-between pointer-events-none select-none">
-                              <div className="w-full space-y-1 mt-0.5 opacity-40">
-                                <div className="h-0.5 bg-slate-300 dark:bg-slate-600 rounded-full w-full" />
-                                <div className="h-0.5 bg-slate-300 dark:bg-slate-600 rounded-full w-4/5" />
-                                <div className="h-0.5 bg-slate-300 dark:bg-slate-600 rounded-full w-3/5" />
+                          {(() => {
+                            const rawThumbSrc = file.thumbnailUrl || thumbUrls[file.id] || getCachedThumbnailUrl(file);
+                            const thumbSrc =
+                              rawThumbSrc && failedThumbSrcs[file.id] !== rawThumbSrc
+                                ? rawThumbSrc
+                                : undefined;
+                            return thumbSrc ? (
+                              <img
+                                src={thumbSrc}
+                                alt={file.name}
+                                loading="lazy"
+                                className="w-full h-full object-cover"
+                                onError={() => {
+                                  invalidateThumbnailCache(file);
+                                  setFailedThumbSrcs((prev) =>
+                                    prev[file.id] === thumbSrc ? prev : { ...prev, [file.id]: thumbSrc }
+                                  );
+                                  setThumbUrls((prev) => {
+                                    if (!prev[file.id]) return prev;
+                                    const next = { ...prev };
+                                    delete next[file.id];
+                                    return next;
+                                  });
+                                }}
+                              />
+                            ) : (
+                              <div className="w-16 h-20 bg-white dark:bg-[#161719] rounded-md shadow-xs border border-slate-200/80 dark:border-white/[0.04] p-2 flex flex-col items-center justify-between pointer-events-none select-none">
+                                <div className="w-full space-y-1 mt-0.5 opacity-40">
+                                  <div className="h-0.5 bg-slate-300 dark:bg-slate-600 rounded-full w-full" />
+                                  <div className="h-0.5 bg-slate-300 dark:bg-slate-600 rounded-full w-4/5" />
+                                  <div className="h-0.5 bg-slate-300 dark:bg-slate-600 rounded-full w-3/5" />
+                                </div>
+                                <div className="my-auto py-0.5">
+                                  <FileIcon name={file.name} mime={file.mime} size="md" bare />
+                                </div>
+                                <div className="w-full space-y-1 mb-0.5 opacity-30">
+                                  <div className="h-0.5 bg-slate-300 dark:bg-slate-600 rounded-full w-full" />
+                                  <div className="h-0.5 bg-slate-300 dark:bg-slate-600 rounded-full w-2/3" />
+                                </div>
                               </div>
-                              <div className="my-auto py-0.5">
-                                <FileIcon name={file.name} mime={file.mime} size="md" bare />
-                              </div>
-                              <div className="w-full space-y-1 mb-0.5 opacity-30">
-                                <div className="h-0.5 bg-slate-300 dark:bg-slate-600 rounded-full w-full" />
-                                <div className="h-0.5 bg-slate-300 dark:bg-slate-600 rounded-full w-2/3" />
-                              </div>
-                            </div>
-                          )}
+                            );
+                          })()}
 
                           {file.starred && (
                             <Star className="absolute top-2 right-2 h-4 w-4 fill-amber-400 text-amber-400 drop-shadow-xs" />

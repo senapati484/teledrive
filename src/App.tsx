@@ -7,6 +7,7 @@ import { restoreSession } from "./lib/telegram/restoreSession";
 import { bootstrapTeleDrive } from "./lib/telegram/bootstrap";
 import { Toaster } from "@/components/ui/sonner";
 import { invoke } from "@tauri-apps/api/core";
+import { logVaultState } from "./lib/runtime/bridge";
 import DriveBrowserPage from "./pages/DriveBrowserPage";
 import RecentPage from "./pages/RecentPage";
 import StarredPage from "./pages/StarredPage";
@@ -27,6 +28,10 @@ const WhatsNewDialog = lazy(() => import("./components/support/WhatsNewDialog"))
 import { useSupportStore } from "./stores/supportStore";
 import { useEncryptionStore } from "./lib/secure/e2ee";
 import { UnlockEncryptionDialog } from "./components/files/UnlockEncryptionDialog";
+import {
+  hasCachedFilesHint,
+  loadCachedFilesSnapshot,
+} from "./lib/storage/localIndexCache";
 
 // Full-screen spinner fallback
 function LoadingFallback() {
@@ -96,31 +101,33 @@ function App() {
           const { useAuthStore } = await import("./stores/authStore");
           useAuthStore.getState().setSession(sessionString, phoneNumber);
 
-          // If we have cached files, bypass the splash screen instantly!
-          const cached = localStorage.getItem("teledrive_cached_files");
-          let hasCachedFiles = false;
-          if (cached) {
-            try {
-              const parsed = JSON.parse(cached);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                hasCachedFiles = true;
-              }
-            } catch {
-              // Ignore invalid cache
+          const { useFileStore } = await import("./stores/fileStore");
+          const hasCacheHint = hasCachedFilesHint();
+
+          // Hydrate large-drive IndexedDB snapshot before revealing DriveLayout
+          // (~2-5ms local read) so there is zero empty-folder flash on restart.
+          if (hasCacheHint && useFileStore.getState().files.length === 0) {
+            const cachedSnapshot = await loadCachedFilesSnapshot().catch(() => []);
+            if (active && cachedSnapshot.length > 0) {
+              useFileStore.getState().hydrateCachedFiles(cachedSnapshot);
             }
           }
 
-          if (hasCachedFiles) {
+          const hasHydratedFiles = useFileStore.getState().files.length > 0;
+          if (hasHydratedFiles || hasCacheHint) {
             setIsRestoring(false);
           }
 
-          // Trigger Telegram connection and remote sync in the background
+          // Trigger Telegram connection and remote sync without keeping the
+          // splash screen blocked on full multi-chunk index downloads.
           (async () => {
-            const { useFileStore } = await import("./stores/fileStore");
             useFileStore.getState().setSyncing(true);
             try {
               const restored = await restoreSession();
-              if (restored) {
+              if (active && restored) {
+                // Auth confirmed — show DriveLayout skeleton immediately while
+                // bootstrapTeleDrive fetches and decodes the remote index.
+                setIsRestoring(false);
                 await bootstrapTeleDrive(undefined, phoneNumber);
               }
             } catch (err) {
@@ -138,9 +145,9 @@ function App() {
         }
       } catch (err: any) {
         console.error("Failed to restore session on app launch:", err);
-        await invoke("log_vault_state", {
-          state: `BOOTSTRAP_ERR: ${err?.message || JSON.stringify(err)}\nStack: ${err?.stack || "no_stack"}`
-        }).catch(() => {});
+        await logVaultState(
+          `BOOTSTRAP_ERR: ${err?.message || JSON.stringify(err)}\nStack: ${err?.stack || "no_stack"}`
+        );
         if (active) setIsRestoring(false);
       }
     }

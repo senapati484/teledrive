@@ -23,6 +23,11 @@ import {
   StreamDecryptor,
   useEncryptionStore,
 } from "../secure/e2ee";
+import {
+  DEFAULT_DOWNLOAD_CONCURRENCY,
+  iteratePipelinedDownloadParts,
+} from "./pipelinedDownload";
+import { isWebRuntime, triggerBrowserBlobDownload } from "../runtime/bridge";
 
 export interface DownloadFileOptions {
   segments?: TeleFileSegment[];
@@ -85,6 +90,7 @@ interface DownloadJob {
   pending: Uint8Array[];
   pendingBytes: number;
   state: "running" | "paused" | "cancelling";
+  abortController: AbortController;
   running: boolean;
   lastTickAt: number;
   lastTickBytes: number;
@@ -149,29 +155,30 @@ async function runDownload(job: DownloadJob): Promise<void> {
       await client.connect();
     }
 
+    const waitWhilePaused = async (): Promise<boolean> => {
+      while ((job.state as string) === "paused") {
+        await sleep(PAUSE_POLL_MS);
+      }
+      return (job.state as string) !== "cancelling";
+    };
+
     for (const seg of job.segments) {
       if ((job.state as string) === "cancelling") break;
 
-      // Keep one iterator per segment so pausing only pauses consumption.
-      const iterator = client.iterDownload({
-        file: seg.media,
+      const iterator = iteratePipelinedDownloadParts({
+        client,
+        media: seg.media,
+        peer: job.peer,
+        messageId: seg.messageId,
+        fileSize: seg.size,
         requestSize: DOWNLOAD_CHUNK_SIZE,
-        msgData: [job.peer, seg.messageId],
+        concurrency: DEFAULT_DOWNLOAD_CONCURRENCY,
+        signal: job.abortController.signal,
+        waitWhilePaused,
       });
 
-      for await (const rawChunk of iterator) {
-        let state: string = job.state;
-        if (state === "cancelling") break;
-
-        while (state === "paused") {
-          await sleep(PAUSE_POLL_MS);
-          state = job.state;
-          if (state === "cancelling") break;
-        }
-        if (state === "cancelling") break;
-
-        const wireChunk =
-          rawChunk instanceof Uint8Array ? rawChunk : new Uint8Array(rawChunk);
+      for await (const wireChunk of iterator) {
+        if ((job.state as string) === "cancelling") break;
         const outChunk = job.decryptor
           ? await job.decryptor.pushChunk(wireChunk)
           : wireChunk;
@@ -306,6 +313,7 @@ export function cancelDownload(id: string): void {
     return;
   }
   job.state = "cancelling";
+  job.abortController.abort();
   activeDownloads.delete(id);
   useTransferStore.getState().updateDownload(id, {
     status: "cancelled",
@@ -422,18 +430,21 @@ export async function* iterateTelegramPlainChunks(params: {
       if (params.signal?.aborted) {
         throw new DOMException("Download aborted", "AbortError");
       }
-      const iterator = client.iterDownload({
-        file: seg.media,
+      const iterator = iteratePipelinedDownloadParts({
+        client,
+        media: seg.media,
+        peer: params.peer,
+        messageId: seg.messageId,
+        fileSize: seg.size,
         requestSize: params.requestSize ?? DOWNLOAD_CHUNK_SIZE,
-        msgData: [params.peer, seg.messageId],
+        concurrency: DEFAULT_DOWNLOAD_CONCURRENCY,
+        signal: params.signal,
       });
 
-      for await (const rawChunk of iterator) {
+      for await (const wireChunk of iterator) {
         if (params.signal?.aborted) {
           throw new DOMException("Download aborted", "AbortError");
         }
-        const wireChunk =
-          rawChunk instanceof Uint8Array ? rawChunk : new Uint8Array(rawChunk);
         const outChunk = decryptor ? await decryptor.pushChunk(wireChunk) : wireChunk;
         if (outChunk.length > 0) {
           yield outChunk;
@@ -489,6 +500,107 @@ export async function downloadFileFromTelegram(
     // Ask where to save before burning bandwidth.
     const safeFileName =
       fileName.replace(/[/\\?%*:|"<>]/g, "_").trim() || "download";
+
+    if (isWebRuntime()) {
+      const BROWSER_DOWNLOAD_RAM_LIMIT = 1.5 * 1024 * 1024 * 1024;
+      if (totalSize > BROWSER_DOWNLOAD_RAM_LIMIT) {
+        throw new Error(
+          "Files larger than 1.5 GiB require the desktop or mobile app to stream directly to disk."
+        );
+      }
+      const id = `${channelId}:${messageId}:${Date.now()}`;
+      const ac = new AbortController();
+      let paused = false;
+      registerExternalTransferControl(id, {
+        pause: () => {
+          paused = true;
+          useTransferStore.getState().updateDownload(id, { status: "paused", speed: undefined, eta: undefined });
+        },
+        resume: () => {
+          paused = false;
+          useTransferStore.getState().updateDownload(id, { status: "downloading", error: undefined });
+        },
+        cancel: () => {
+          ac.abort();
+          unregisterExternalTransferControl(id);
+          useTransferStore.getState().updateDownload(id, { status: "cancelled", speed: undefined, eta: undefined });
+        },
+      });
+      useTransferStore.getState().addDownload({
+        id,
+        name: fileName,
+        size: totalSize,
+        progress: 0,
+        receivedBytes: 0,
+        status: "downloading",
+        channelId,
+        messageId,
+      });
+
+      const chunks: Uint8Array[] = [];
+      let received = 0;
+      let lastTickAt = Date.now();
+      let lastTickBytes = 0;
+      try {
+        for await (const chunk of iterateTelegramPlainChunks({
+          peer,
+          segments,
+          enc: options?.enc,
+          encryptionKey: decryptionKey,
+          requestSize: DOWNLOAD_CHUNK_SIZE,
+          signal: ac.signal,
+        })) {
+          while (paused && !ac.signal.aborted) {
+            await sleep(PAUSE_POLL_MS);
+          }
+          if (ac.signal.aborted) break;
+          chunks.push(chunk);
+          received += chunk.length;
+          const now = Date.now();
+          const elapsed = now - lastTickAt;
+          if (elapsed >= PROGRESS_THROTTLE_MS) {
+            const pct = Math.min(99, downloadPercent(received, totalSize));
+            const rawSpeed = downloadSpeed(received, lastTickBytes, elapsed);
+            const speed = rawSpeed > 0 ? rawSpeed : undefined;
+            const eta = speed !== undefined ? downloadEta(totalSize, received, speed) : undefined;
+            useTransferStore.getState().updateDownload(id, {
+              progress: pct,
+              receivedBytes: received,
+              speed,
+              eta,
+            });
+            onProgress?.(pct);
+            lastTickAt = now;
+            lastTickBytes = received;
+          }
+        }
+        if (ac.signal.aborted) return;
+        const blob = new Blob(chunks as BlobPart[]);
+        triggerBrowserBlobDownload(blob, safeFileName);
+        onProgress?.(100);
+        useTransferStore.getState().updateDownload(id, {
+          status: "done",
+          progress: 100,
+          receivedBytes: received,
+          speed: undefined,
+          eta: undefined,
+        });
+      } catch (err: any) {
+        if (!ac.signal.aborted) {
+          useTransferStore.getState().updateDownload(id, {
+            status: "error",
+            error: err?.message || String(err),
+            speed: undefined,
+            eta: undefined,
+          });
+          throw err;
+        }
+      } finally {
+        unregisterExternalTransferControl(id);
+      }
+      return;
+    }
+
     const targetPath = await tauriSaveDialog({
       defaultPath: safeFileName,
     });
@@ -526,6 +638,7 @@ export async function downloadFileFromTelegram(
       pending: [],
       pendingBytes: 0,
       state: "running",
+      abortController: new AbortController(),
       running: false,
       lastTickAt: Date.now(),
       lastTickBytes: 0,

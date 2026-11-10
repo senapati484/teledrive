@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import { Bug, ShieldAlert, Globe, FlaskConical, Star, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { getVersion } from "@tauri-apps/api/app";
-import { openUrl } from "@tauri-apps/plugin-opener";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { APP_VERSION } from "@/lib/telegram/config";
+import { runtimeGetVersion, runtimeOpenUrl } from "@/lib/runtime/bridge";
 
 const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -50,12 +49,8 @@ export default function AboutSection() {
 
   useEffect(() => {
     async function fetchVersion() {
-      try {
-        const appVersion = await getVersion();
-        setVersion(appVersion);
-      } catch (err) {
-        console.warn("Failed to load app version from Tauri:", err);
-      }
+      const appVersion = await runtimeGetVersion(APP_VERSION);
+      setVersion(appVersion);
     }
     fetchVersion();
   }, []);
@@ -64,7 +59,7 @@ export default function AboutSection() {
     try {
       const parsed = new URL(url);
       if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return;
-      await openUrl(url);
+      await runtimeOpenUrl(url);
     } catch (err) {
       console.error("Failed to open URL:", err);
       toast.error(t("about.toasts.openLinkFailed"));

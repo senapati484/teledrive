@@ -233,6 +233,82 @@ export class StreamEncryptor {
   }
 }
 
+export interface E2eeSeekPlan {
+  fileSalt: Uint8Array;
+  blockSize: number;
+  startBlock: number;
+  endBlock: number;
+  wireStartOffset: number;
+  wireEndOffset: number;
+  firstBlockSkipBytes: number;
+  plainLengthNeeded: number;
+}
+
+export function parseE2eeHeader(headerBytes: Uint8Array): {
+  fileSalt: Uint8Array;
+  blockSize: number;
+} {
+  if (headerBytes.length < E2EE_HEADER_BYTES) {
+    throw new EncryptionError(
+      "truncated_stream",
+      "Encrypted file header is truncated."
+    );
+  }
+  for (let i = 0; i < E2EE_MAGIC.length; i++) {
+    if (headerBytes[i] !== E2EE_MAGIC[i]) {
+      throw new EncryptionError(
+        "corrupt_stream",
+        "Encrypted file header magic mismatch."
+      );
+    }
+  }
+  const fileSalt = headerBytes.slice(4, 20);
+  const blockSize = new DataView(
+    headerBytes.buffer,
+    headerBytes.byteOffset + 20,
+    4
+  ).getUint32(0, false);
+  if (blockSize <= 0 || blockSize > 8 * 1024 * 1024) {
+    throw new EncryptionError("corrupt_stream", "Invalid E2EE block size.");
+  }
+  return { fileSalt, blockSize };
+}
+
+export function computeE2eeSeekPlan(
+  headerBytes: Uint8Array,
+  plainTotalSize: number,
+  rangeStart: number,
+  rangeEnd: number
+): E2eeSeekPlan {
+  const { fileSalt, blockSize } = parseE2eeHeader(headerBytes);
+  if (plainTotalSize <= 0) {
+    throw new RangeError("Plaintext size must be positive for E2EE seek.");
+  }
+  const start = Math.max(0, Math.min(plainTotalSize - 1, rangeStart));
+  const end = Math.max(start, Math.min(plainTotalSize - 1, rangeEnd));
+  const frameStride = blockSize + E2EE_FRAME_OVERHEAD;
+  const startBlock = Math.floor(start / blockSize);
+  const endBlock = Math.floor(end / blockSize);
+  const endBlockPlainStart = endBlock * blockSize;
+  const endBlockPlainLen = Math.min(blockSize, plainTotalSize - endBlockPlainStart);
+
+  return {
+    fileSalt,
+    blockSize,
+    startBlock,
+    endBlock,
+    wireStartOffset: E2EE_HEADER_BYTES + startBlock * frameStride,
+    wireEndOffset:
+      E2EE_HEADER_BYTES +
+      endBlock * frameStride +
+      E2EE_FRAME_OVERHEAD +
+      endBlockPlainLen -
+      1,
+    firstBlockSkipBytes: start - startBlock * blockSize,
+    plainLengthNeeded: end - start + 1,
+  };
+}
+
 export class StreamDecryptor {
   private readonly key: CryptoKey;
   private buffer: Uint8Array = new Uint8Array(0);
@@ -243,6 +319,19 @@ export class StreamDecryptor {
 
   constructor(key: CryptoKey) {
     this.key = key;
+  }
+
+  /** Configures header parameters directly for random-access block seeking. */
+  initSeekState(
+    fileSalt: Uint8Array,
+    blockSize: number,
+    startBlockIndex: number
+  ): void {
+    this.fileSalt = toStrictBytes(fileSalt);
+    this.blockSize = blockSize;
+    this.blockIndex = startBlockIndex;
+    this.headerParsed = true;
+    this.buffer = new Uint8Array(0);
   }
 
   private append(chunk: Uint8Array): void {
@@ -266,23 +355,9 @@ export class StreamDecryptor {
       if (this.buffer.length < E2EE_HEADER_BYTES) {
         return new Uint8Array(0);
       }
-      for (let i = 0; i < E2EE_MAGIC.length; i++) {
-        if (this.buffer[i] !== E2EE_MAGIC[i]) {
-          throw new EncryptionError(
-            "corrupt_stream",
-            "Encrypted file header magic mismatch."
-          );
-        }
-      }
-      this.fileSalt = this.buffer.slice(4, 20);
-      this.blockSize = new DataView(
-        this.buffer.buffer,
-        this.buffer.byteOffset + 20,
-        4
-      ).getUint32(0, false);
-      if (this.blockSize <= 0 || this.blockSize > 8 * 1024 * 1024) {
-        throw new EncryptionError("corrupt_stream", "Invalid E2EE block size.");
-      }
+      const parsed = parseE2eeHeader(this.buffer);
+      this.fileSalt = toStrictBytes(parsed.fileSalt);
+      this.blockSize = parsed.blockSize;
       this.buffer = this.buffer.slice(E2EE_HEADER_BYTES);
       this.headerParsed = true;
     }

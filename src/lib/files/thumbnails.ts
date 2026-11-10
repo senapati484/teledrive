@@ -11,7 +11,9 @@ import {
 import type { TeleFile } from "../types";
 
 export const THUMB_MAX_DIMENSION = 320;
-export const LEGACY_IMAGE_THUMB_MAX_BYTES = 3 * 1024 * 1024;
+export const LEGACY_IMAGE_THUMB_MAX_BYTES = 5 * 1024 * 1024;
+export const LEGACY_VIDEO_THUMB_MAX_BYTES = 12 * 1024 * 1024;
+export const PDF_THUMB_MAX_BYTES = 8 * 1024 * 1024;
 export const UPLOAD_THUMB_MAX_BYTES = 40 * 1024 * 1024;
 
 const THUMB_BATCH_SIZE = 20;
@@ -36,6 +38,33 @@ function isTauriRuntime(): boolean {
   );
 }
 
+export function isValidRasterImageBytes(bytes: Uint8Array | null | undefined): boolean {
+  if (!bytes || bytes.length < 4) return false;
+  // JPEG (FF D8 FF)
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return true;
+  // PNG (89 50 4E 47)
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return true;
+  // GIF8 (47 49 46 38)
+  if (bytes[0] === 0x47 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x38) return true;
+  // BMP (42 4D)
+  if (bytes[0] === 0x42 && bytes[1] === 0x4d) return true;
+  // WebP (RIFF....WEBP)
+  if (
+    bytes.length >= 12 &&
+    bytes[0] === 0x52 &&
+    bytes[1] === 0x49 &&
+    bytes[2] === 0x46 &&
+    bytes[3] === 0x46 &&
+    bytes[8] === 0x57 &&
+    bytes[9] === 0x45 &&
+    bytes[10] === 0x42 &&
+    bytes[11] === 0x50
+  ) {
+    return true;
+  }
+  return false;
+}
+
 export function isThumbnailEligible(
   file: Pick<TeleFile, "name" | "mime" | "messageId" | "trashed" | "enc">
 ): boolean {
@@ -44,6 +73,7 @@ export function isThumbnailEligible(
   const ext = getFileExtension(file.name);
   if (UNRENDERABLE_IMAGE_EXTS.has(ext) || ext === "svg") return false;
   const mime = (file.mime || "").toLowerCase();
+  if (ext === "pdf" || mime === "application/pdf") return true;
   if (mime.startsWith("image/") || mime.startsWith("video/")) {
     return mime !== "image/svg+xml";
   }
@@ -51,7 +81,7 @@ export function isThumbnailEligible(
 }
 
 export function isLegacyRasterThumbCandidate(
-  file: Pick<TeleFile, "name" | "mime" | "size" | "messageId" | "trashed">
+  file: Pick<TeleFile, "name" | "mime" | "size" | "messageId" | "trashed" | "enc">
 ): boolean {
   if (!isThumbnailEligible(file)) return false;
   if (file.size <= 0 || file.size > LEGACY_IMAGE_THUMB_MAX_BYTES) return false;
@@ -60,12 +90,39 @@ export function isLegacyRasterThumbCandidate(
   const mime = (file.mime || "").toLowerCase();
   return (
     mime === "image/jpeg" ||
+    mime === "image/jpg" ||
     mime === "image/png" ||
     mime === "image/webp" ||
     mime === "image/gif" ||
     mime === "image/bmp" ||
     mime === "image/avif"
   );
+}
+
+export function isLegacyVideoThumbCandidate(
+  file: Pick<TeleFile, "name" | "mime" | "size" | "messageId" | "trashed" | "enc">
+): boolean {
+  if (!isThumbnailEligible(file)) return false;
+  if (file.size <= 0 || file.size > LEGACY_VIDEO_THUMB_MAX_BYTES) return false;
+  const ext = getFileExtension(file.name);
+  if (BROWSER_THUMB_VIDEO_EXTS.has(ext)) return true;
+  const mime = (file.mime || "").toLowerCase();
+  return (
+    mime === "video/mp4" ||
+    mime === "video/webm" ||
+    mime === "video/quicktime" ||
+    mime === "video/x-m4v"
+  );
+}
+
+export function isPdfThumbCandidate(
+  file: Pick<TeleFile, "name" | "mime" | "size" | "messageId" | "trashed" | "enc">
+): boolean {
+  if (!isThumbnailEligible(file)) return false;
+  if (file.size <= 0 || file.size > PDF_THUMB_MAX_BYTES) return false;
+  const ext = getFileExtension(file.name);
+  const mime = (file.mime || "").toLowerCase();
+  return ext === "pdf" || mime === "application/pdf";
 }
 
 export function thumbnailCacheFilename(channelId: string, messageId: number): string {
@@ -76,6 +133,21 @@ export function thumbnailCacheFilename(channelId: string, messageId: number): st
 function legacyPreviewCacheFilename(fileName: string, messageId: number): string {
   const ext = getFileExtension(fileName) || "bin";
   return `preview_${messageId}.${ext}`;
+}
+
+function getThumbByteSize(t: any): number | null {
+  if (typeof t?.size === "number" && Number.isFinite(t.size)) {
+    return t.size;
+  }
+  if (Array.isArray(t?.sizes) && t.sizes.length > 0) {
+    const nums = t.sizes.map(Number).filter((n: number) => Number.isFinite(n) && n > 0);
+    if (nums.length > 0) return Math.max(...nums);
+  }
+  return null;
+}
+
+function getThumbClassName(t: any): string {
+  return t?.className || t?.constructor?.name || "";
 }
 
 /**
@@ -92,8 +164,7 @@ export function pickBestTelegramThumb(media: any): any | null {
 
   const valid = rawSizes.filter((s) => {
     if (!s || typeof s !== "object") return false;
-    const className = s.className || s.constructor?.name || "";
-    if (className === "PhotoPathSize") return false;
+    if (getThumbClassName(s) === "PhotoPathSize") return false;
     return true;
   });
 
@@ -103,19 +174,19 @@ export function pickBestTelegramThumb(media: any): any | null {
   // within 200 KB before falling back to tiny inline PhotoStrippedSize.
   const preferredOrder = ["m", "s", "x", "y"];
   for (const typeCode of preferredOrder) {
-    const match = valid.find(
-      (t) =>
-        t.type === typeCode &&
-        (typeof t.size !== "number" || t.size <= 200 * 1024)
-    );
+    const match = valid.find((t) => {
+      if (t.type !== typeCode) return false;
+      const byteSize = getThumbByteSize(t);
+      return byteSize === null || byteSize <= 200 * 1024;
+    });
     if (match) return match;
   }
 
-  // Prefer any non-stripped raster thumb under 200 KB.
+  // Prefer any non-stripped raster thumb under 200 KB (including PhotoSizeProgressive).
   const smallRaster = valid.find((t) => {
-    const className = t.className || t.constructor?.name || "";
-    if (className === "PhotoStrippedSize") return false;
-    return typeof t.size === "number" && t.size > 0 && t.size <= 200 * 1024;
+    if (getThumbClassName(t) === "PhotoStrippedSize") return false;
+    const byteSize = getThumbByteSize(t);
+    return byteSize !== null && byteSize > 0 && byteSize <= 200 * 1024;
   });
   if (smallRaster) return smallRaster;
 
@@ -335,6 +406,65 @@ export function clearThumbnailMemoryCache(): void {
   inflightThumbKeys.clear();
 }
 
+export function invalidateThumbnailCache(
+  file: Pick<TeleFile, "channelId" | "messageId">
+): void {
+  if (!file.messageId) return;
+  thumbMemoryCache.set(thumbCacheKey(file.channelId, file.messageId), null);
+}
+
+async function renderPdfBytesToThumbBytes(bytes: Uint8Array): Promise<Uint8Array | null> {
+  if (typeof window === "undefined" || typeof document === "undefined") return null;
+  const pdfjs = (window as any).pdfjsLib;
+  if (!pdfjs) return null;
+  let doc: any = null;
+  let page: any = null;
+  try {
+    if (!pdfjs.GlobalWorkerOptions?.workerSrc) {
+      pdfjs.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.js";
+    }
+    const copy = new Uint8Array(bytes.length);
+    copy.set(bytes);
+    const loadTask = pdfjs.getDocument({
+      data: copy,
+      disableRange: true,
+      disableStream: true,
+      disableAutoFetch: true,
+      isEvalSupported: false,
+    });
+    doc = await loadTask.promise;
+    page = await doc.getPage(1);
+    const baseVp = page.getViewport({ scale: 1 });
+    const scale = Math.min(1.5, THUMB_MAX_DIMENSION / Math.max(baseVp.width || 1, baseVp.height || 1));
+    const vp = page.getViewport({ scale: Math.max(0.2, scale) });
+
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(vp.width));
+    canvas.height = Math.max(1, Math.round(vp.height));
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    await page.render({ canvasContext: ctx, viewport: vp }).promise;
+    return await canvasToJpegBytes(canvas);
+  } catch {
+    return null;
+  } finally {
+    try {
+      page?.cleanup?.();
+    } catch {
+      // ignore cleanup errors
+    }
+    try {
+      await doc?.destroy?.();
+    } catch {
+      // ignore cleanup errors
+    }
+  }
+}
+
 /**
  * Persists raw JPEG thumbnail bytes to Tauri `preview_cache` (or an in-memory
  * Blob URL in browser mode) and updates the session cache immediately.
@@ -344,7 +474,7 @@ export async function seedThumbnailCache(
   messageId: number,
   bytes: Uint8Array
 ): Promise<string | null> {
-  if (!messageId || messageId <= 0 || bytes.length === 0) return null;
+  if (!messageId || messageId <= 0 || !isValidRasterImageBytes(bytes)) return null;
   const key = thumbCacheKey(channelId, messageId);
 
   if (isTauriRuntime()) {
@@ -532,26 +662,44 @@ export function requestFileThumbnails(
             }
 
             const bestThumb = pickBestTelegramThumb(msg.media);
-            if (bestThumb) {
+            const canLegacyRaster =
+              (!file.segments || file.segments.length <= 1) && isLegacyRasterThumbCandidate(file);
+            const canLegacyVideo =
+              !canLegacyRaster &&
+              (!file.segments || file.segments.length <= 1) &&
+              isLegacyVideoThumbCandidate(file);
+            const canPdf =
+              !canLegacyRaster &&
+              !canLegacyVideo &&
+              (!file.segments || file.segments.length <= 1) &&
+              isPdfThumbCandidate(file);
+            const hasLegacyGenerator = canLegacyRaster || canLegacyVideo || canPdf;
+
+            // Skip low-res stripped preview when full raster downscale is cheap & crisp.
+            const preferLegacyOverStripped =
+              bestThumb && getThumbClassName(bestThumb) === "PhotoStrippedSize" && canLegacyRaster;
+
+            if (bestThumb && !preferLegacyOverStripped) {
               try {
-                const raw = await client.downloadMedia(msg, { thumb: bestThumb } as any);
+                // Pass `.type` string so GramJS matches `PhotoSizeProgressive` too.
+                const thumbParam =
+                  typeof bestThumb.type === "string" && bestThumb.type ? bestThumb.type : bestThumb;
+                const raw = await client.downloadMedia(msg, { thumb: thumbParam } as any);
                 const bytes = toUint8Array(raw);
-                if (!cancelled && bytes && bytes.length > 0) {
+                if (!cancelled && bytes && isValidRasterImageBytes(bytes)) {
                   const url = await seedThumbnailCache(file.channelId, file.messageId, bytes);
-                  if (!cancelled && url) onResolved(file.id, url);
-                } else {
-                  thumbMemoryCache.set(key, null);
+                  if (!cancelled && url) {
+                    onResolved(file.id, url);
+                    inflightThumbKeys.delete(key);
+                    continue;
+                  }
                 }
               } catch {
-                thumbMemoryCache.set(key, null);
-              } finally {
-                inflightThumbKeys.delete(key);
+                // Fall through to legacy generation when applicable
               }
-              continue;
             }
 
-            // Legacy uploads made without a Telegram thumbnail: only downscale compact raster images.
-            if (isLegacyRasterThumbCandidate(file)) {
+            if (hasLegacyGenerator) {
               enqueueLegacyThumbWork(async () => {
                 try {
                   if (cancelled) return;
@@ -561,18 +709,42 @@ export function requestFileThumbnails(
                     thumbMemoryCache.set(key, null);
                     return;
                   }
-                  const copy = new Uint8Array(bytes.length);
-                  copy.set(bytes);
-                  const mime = file.mime || "image/jpeg";
-                  const blob = new Blob([copy.buffer], { type: mime });
-                  const thumbBytes = await renderImageBlobToThumbBytes(blob);
-                  const finalBytes = thumbBytes ?? (bytes.length <= 150 * 1024 ? bytes : null);
-                  if (finalBytes && !cancelled) {
-                    const url = await seedThumbnailCache(file.channelId, file.messageId, finalBytes);
-                    if (!cancelled && url) onResolved(file.id, url);
-                  } else {
-                    thumbMemoryCache.set(key, null);
+                  let thumbBytes: Uint8Array | null = null;
+                  if (canLegacyRaster) {
+                    const copy = new Uint8Array(bytes.length);
+                    copy.set(bytes);
+                    const blob = new Blob([copy.buffer], { type: file.mime || "image/jpeg" });
+                    thumbBytes = await renderImageBlobToThumbBytes(blob);
+                    if (!thumbBytes && bytes.length <= 150 * 1024 && isValidRasterImageBytes(bytes)) {
+                      thumbBytes = bytes;
+                    }
+                  } else if (canLegacyVideo) {
+                    const ext = getFileExtension(file.name);
+                    const inferredVideoMime =
+                      file.mime && file.mime.startsWith("video/")
+                        ? file.mime
+                        : ext === "mov"
+                          ? "video/quicktime"
+                          : ext === "webm"
+                            ? "video/webm"
+                            : "video/mp4";
+                    const copy = new Uint8Array(bytes.length);
+                    copy.set(bytes);
+                    thumbBytes = await renderVideoFileToThumbBytes(
+                      new Blob([copy.buffer], { type: inferredVideoMime })
+                    );
+                  } else if (canPdf) {
+                    thumbBytes = await renderPdfBytesToThumbBytes(bytes);
                   }
+
+                  if (thumbBytes && !cancelled) {
+                    const url = await seedThumbnailCache(file.channelId, file.messageId, thumbBytes);
+                    if (!cancelled && url) {
+                      onResolved(file.id, url);
+                      return;
+                    }
+                  }
+                  thumbMemoryCache.set(key, null);
                 } catch {
                   thumbMemoryCache.set(key, null);
                 } finally {

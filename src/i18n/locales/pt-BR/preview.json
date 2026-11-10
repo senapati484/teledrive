@@ -78,7 +78,15 @@
     "badge": "{{ext}} COMPACTADO",
     "description": "Arquivos compactados não podem ser visualizados diretamente aqui. Baixe o arquivo para extrair e ver o conteúdo no seu computador.",
     "download": "Baixar arquivo compactado",
-    "openInSystem": "Abrir no aplicativo do sistema"
+    "openInSystem": "Abrir no aplicativo do sistema",
+    "entryTooLarge": "O arquivo excede o limite de 25 MB para visualização. Use Extrair para salvar localmente.",
+    "extractFailed": "Não foi possível extrair o arquivo.",
+    "binaryEntryNotice": "Esta entrada binária não pode ser exibida diretamente. Extraia para abrir localmente.",
+    "backToList": "Voltar aos arquivos",
+    "summary": "{{count}} arquivos · {{unpacked}} descompactados ({{packed}} compactado)",
+    "searchPlaceholder": "Filtrar arquivos do pacote…",
+    "noMatchingEntries": "Nenhum arquivo corresponde ao filtro.",
+    "extractFile": "Extrair arquivo"
   },
   "unsupported": {
     "description": "Não há pré-visualização disponível para este tipo de arquivo. Você pode baixá-lo e abri-lo em um aplicativo compatível no seu sistema.",
@@ -163,5 +171,10 @@
     "largeFile_one": "Arquivo grande ({{count, number}} linha) — realce de sintaxe desativado para melhor desempenho",
     "largeFile_other": "Arquivo grande ({{count, number}} linhas) — realce de sintaxe desativado para melhor desempenho",
     "largeFile_zero": "Arquivo grande ({{count, number}} linhas) — realce de sintaxe desativado para melhor desempenho"
+  },
+  "document": {
+    "slideLabel": "Slide {{number}} de {{total}}",
+    "emptySlide": "Slide vazio",
+    "speakerNotes": "Notas:"
   }
 }

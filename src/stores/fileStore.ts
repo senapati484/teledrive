@@ -2,6 +2,10 @@ import { create } from "zustand";
 import { TeleFile, UploadItem } from "../lib/types";
 import { normalizeFolderPath } from "../lib/utils";
 import { filterDeletedMessages } from "../lib/storage/tombstones";
+import {
+  saveCachedFilesSnapshot,
+  syncSmallCacheFallback,
+} from "../lib/storage/localIndexCache";
 
 export type IndexQueueState =
   | "idle"
@@ -90,8 +94,10 @@ interface FileState {
   setBootstrapComplete: (v: boolean) => void;
   /** Update discovery status; `error` is the incomplete reason (if any). */
   setIndexLoadState: (state: IndexLoadState, error?: string | null) => void;
-  /** Write the debounced localStorage cache immediately (logout/quota). */
+  /** Write the debounced snapshot cache immediately (logout/quota/pending marker). */
   flushFileCacheNow: () => void;
+  /** Hydrate initial file list from async IndexedDB cache on launch without scheduling a writeback. */
+  hydrateCachedFiles: (files: TeleFile[]) => void;
   /**
    * Merge remote deltas (multi-device sync) into the in-memory file list
    * WITHOUT triggering a Telegram index write. Resolves when the merge
@@ -155,18 +161,16 @@ const hasPendingOrUploading = (queue: UploadItem[]): boolean =>
   queue.some((item) => item.status === "uploading" || item.status === "pending");
 
 const debouncedCacheFiles = (files: TeleFile[], hasActiveTransfers = false) => {
-  if (typeof localStorage === "undefined") return;
+  if (typeof localStorage === "undefined" && typeof indexedDB === "undefined") {
+    return;
+  }
   clearScheduledCacheWrite();
   const delayMs = hasActiveTransfers ? 1000 : 300;
   cacheTimeout = setTimeout(() => {
     cacheTimeout = null;
     const write = () => {
       idleCallbackId = null;
-      try {
-        localStorage.setItem("teledrive_cached_files", JSON.stringify(files));
-      } catch (err) {
-        console.warn("[fileStore] Failed to cache files to localStorage:", err);
-      }
+      void saveCachedFilesSnapshot(files);
     };
     const rIC = (globalThis as IdleCallbackHost).requestIdleCallback;
     if (typeof rIC === "function") {
@@ -295,12 +299,21 @@ export const useFileStore = create<FileState>((set, get) => ({
     set({ indexLoadState, indexLoadError }),
   flushFileCacheNow: () => {
     clearScheduledCacheWrite();
-    if (typeof localStorage === "undefined") return;
-    try {
-      localStorage.setItem("teledrive_cached_files", JSON.stringify(get().files));
-    } catch (err) {
-      console.warn("[fileStore] Failed to flush files cache:", err);
-    }
+    const current = get().files;
+    syncSmallCacheFallback(current);
+    void saveCachedFilesSnapshot(current);
+  },
+  hydrateCachedFiles: (rawFiles) => {
+    if (rawFiles.length === 0) return;
+    set((state) => {
+      if (state.files.length > 0 && state.bootstrapComplete) return state;
+      const files = rawFiles.map((f) =>
+        isFolderPathCanonical(f.folderPath)
+          ? f
+          : { ...f, folderPath: normalizeFolderPath(f.folderPath) }
+      );
+      return { files, bootstrapComplete: true };
+    });
   },
   /**
    * Merge new files arriving from another device's sync poll (or any other

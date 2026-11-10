@@ -17,7 +17,7 @@ import {
 import { isBackupItem } from "../lib/backup/visibility";
 import { getFileMessageIds } from "../lib/files/segmentHelpers";
 import { removeManifestEntriesByMessageIds } from "../lib/backup/manifest";
-import { invoke } from "@tauri-apps/api/core";
+import { logVaultState } from "../lib/runtime/bridge";
 import {
   enqueueSave,
   flushAllQueues,
@@ -149,9 +149,9 @@ async function applyOptimistic(
   // persisting an optimistic state on top of unknown Telegram state can
   // overwrite a newer index with a stale/partial one.
   if (!isIndexReady() || !store.bootstrapComplete) {
-    await invoke("log_vault_state", {
-      state: `ACTION_SUPPRESSED_INDEX_NOT_READY state=${store.indexLoadState} files=${nextFiles.length}`,
-    }).catch(() => {});
+    await logVaultState(
+      `ACTION_SUPPRESSED_INDEX_NOT_READY state=${store.indexLoadState} files=${nextFiles.length}`
+    );
     // Nothing was applied yet, so there is nothing to roll back. Popping a
     // snapshot here would restore a *previous* action's state.
     toast.error(i18n.t("files:actions.bootstrapPending"));
@@ -170,9 +170,7 @@ async function applyOptimistic(
     // Commit succeeded (or is being transparently retried). Clear this
     // snapshot from the ring — the optimistic state is now canonical.
     useFileStore.getState().popSnapshot();
-    await invoke("log_vault_state", {
-      state: `ACTION_OK files=${nextFiles.length}`,
-    }).catch(() => {});
+    await logVaultState(`ACTION_OK files=${nextFiles.length}`);
     // Audit-log this action. Fire-and-forget — failures never interrupt
     // the user's flow. Caller passes `eventType` for known actions;
     // falls back to a generic type for un-tagged callers (none today,
@@ -190,16 +188,12 @@ async function applyOptimistic(
       if (isCurrentOptimisticState(appliedFiles)) {
         useFileStore.getState().popSnapshot();
       }
-      await invoke("log_vault_state", {
-        state: `ACTION_INDEX_STUCK kept=true: ${err?.message ?? err}`,
-      }).catch(() => {});
+      await logVaultState(`ACTION_INDEX_STUCK kept=true: ${err?.message ?? err}`);
       toast.warning(i18n.t("files:actions.indexStuck"));
       return;
     }
     if (options.skipRollbackOnHardError) {
-      await invoke("log_vault_state", {
-        state: `ACTION_HARD_ERR_NO_ROLLBACK: ${err?.message ?? err}`,
-      }).catch(() => {});
+      await logVaultState(`ACTION_HARD_ERR_NO_ROLLBACK: ${err?.message ?? err}`);
       throw err;
     }
     // Only roll back if the store still holds *this* action's optimistic
@@ -207,9 +201,9 @@ async function applyOptimistic(
     // back then would clobber it.
     const isCurrent = isCurrentOptimisticState(appliedFiles);
     const rolled = isCurrent ? rollbackToLastSnapshot() : false;
-    await invoke("log_vault_state", {
-      state: `ACTION_HARD_ERR rolled=${rolled} current=${isCurrent}: ${err?.message ?? err}`,
-    }).catch(() => {});
+    await logVaultState(
+      `ACTION_HARD_ERR rolled=${rolled} current=${isCurrent}: ${err?.message ?? err}`
+    );
     if (!isCurrent) throw err;
     toast.error(
       i18n.t("files:actions.saveFailed", { error: err?.message ?? i18n.t("files:actions.unknownError") })

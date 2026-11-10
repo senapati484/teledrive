@@ -78,7 +78,15 @@
     "badge": "{{ext}} 存档",
     "description": "压缩档案无法直接在浏览器中预览。下载此存档以解压并在您的计算机上查看其内容。",
     "download": "下载档案",
-    "openInSystem": "在系统应用中打开"
+    "openInSystem": "在系统应用中打开",
+    "entryTooLarge": "文件超过 25 MB 在线预览限制，请使用“提取”保存到本地。",
+    "extractFailed": "无法提取文件。",
+    "binaryEntryNotice": "二进制条目无法直接预览，请提取后在本地打开。",
+    "backToList": "返回文件列表",
+    "summary": "{{count}} 个文件 · 解压后 {{unpacked}}（压缩后 {{packed}}）",
+    "searchPlaceholder": "筛选压缩包文件…",
+    "noMatchingEntries": "没有匹配的文件。",
+    "extractFile": "提取文件"
   },
   "unsupported": {
     "description": "此文件类型没有可用的预览。您可以在系统上的兼容应用程序中下载并打开它。",
@@ -155,5 +163,10 @@
     "ariaLabel": "代码查看器",
     "largeFile_one": "大文件（{{count, number}} 行）- 为了性能而跳过语法突出显示",
     "largeFile_other": "大文件（{{count, number}} 行）- 为了性能而跳过语法突出显示"
+  },
+  "document": {
+    "slideLabel": "第 {{number}} / {{total}} 页",
+    "emptySlide": "空白幻灯片",
+    "speakerNotes": "备注："
   }
 }

@@ -78,7 +78,15 @@
     "badge": "{{ext}} 存檔",
     "description": "壓縮檔案無法直接在瀏覽器中預覽。下載此存檔以解壓並在您的計算機上檢視其內容。",
     "download": "下載檔案",
-    "openInSystem": "在系統應用程式中開啟"
+    "openInSystem": "在系統應用程式中開啟",
+    "entryTooLarge": "檔案超過 25 MB 預覽上限，請使用「擷取」儲存至本機。",
+    "extractFailed": "無法擷取檔案。",
+    "binaryEntryNotice": "二進位項目無法直接預覽，請擷取後於本機開啟。",
+    "backToList": "返回檔案清單",
+    "summary": "{{count}} 個檔案 · 解壓縮 {{unpacked}}（壓縮 {{packed}}）",
+    "searchPlaceholder": "篩選壓縮檔內容…",
+    "noMatchingEntries": "沒有符合的檔案。",
+    "extractFile": "擷取檔案"
   },
   "unsupported": {
     "description": "此檔案型別沒有可用的預覽。您可以在系統上的相容應用程式中下載並開啟它。",
@@ -155,5 +163,10 @@
     "ariaLabel": "程式碼檢視器",
     "largeFile_one": "大檔案（{{count, number}} 行）- 為了效能而跳過語法突出顯示",
     "largeFile_other": "大檔案（{{count, number}} 行）- 為了效能而跳過語法突出顯示"
+  },
+  "document": {
+    "slideLabel": "第 {{number}} / {{total}} 頁",
+    "emptySlide": "空白投影片",
+    "speakerNotes": "備註："
   }
 }

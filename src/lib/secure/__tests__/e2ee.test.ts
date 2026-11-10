@@ -13,8 +13,10 @@ vi.mock("../vault", () => ({
 
 import {
   base64ToBytes,
+  computeE2eeSeekPlan,
   deriveMasterKeyFromPassphrase,
   E2EE_BLOCK_SIZE,
+  E2EE_HEADER_BYTES,
   encryptedSizeForPlainSize,
   EncryptionError,
   StreamDecryptor,
@@ -120,6 +122,42 @@ describe("StreamEncryptor & StreamDecryptor (TDE1)", () => {
     const resumedB1 = await encResume.encryptBlock(b1);
 
     expect(resumedB1).toEqual(expectedB1);
+  });
+
+  it("supports random-access block range seeking without decrypting earlier blocks", async () => {
+    const salt = new Uint8Array(16).fill(0x55);
+    const key = await deriveMasterKeyFromPassphrase("seek-pass", salt);
+    // 1.3 MiB across 3 blocks (512K, 512K, ~280K)
+    const plain = new Uint8Array(1350 * 1024);
+    for (let i = 0; i < plain.length; i++) plain[i] = (i * 19) & 0xff;
+
+    const enc = new StreamEncryptor(key, E2EE_BLOCK_SIZE);
+    const parts: Uint8Array[] = [enc.header];
+    for (let off = 0; off < plain.length; off += E2EE_BLOCK_SIZE) {
+      parts.push(await enc.encryptBlock(plain.subarray(off, Math.min(off + E2EE_BLOCK_SIZE, plain.length))));
+    }
+    const wire = Buffer.concat(parts);
+
+    // Seek from middle of block 1 into block 2
+    const rangeStart = E2EE_BLOCK_SIZE + 12_345;
+    const rangeEnd = E2EE_BLOCK_SIZE * 2 + 50_000;
+    const header = wire.subarray(0, E2EE_HEADER_BYTES);
+    const plan = computeE2eeSeekPlan(header, plain.length, rangeStart, rangeEnd);
+
+    expect(plan.startBlock).toBe(1);
+    expect(plan.endBlock).toBe(2);
+
+    const slicedWire = wire.subarray(plan.wireStartOffset, plan.wireEndOffset + 1);
+    const dec = new StreamDecryptor(key);
+    dec.initSeekState(plan.fileSalt, plan.blockSize, plan.startBlock);
+    const decOut = await dec.pushChunk(new Uint8Array(slicedWire));
+    dec.finish();
+
+    const exactSlice = decOut.subarray(
+      plan.firstBlockSkipBytes,
+      plan.firstBlockSkipBytes + (rangeEnd - rangeStart + 1)
+    );
+    expect(exactSlice).toEqual(plain.subarray(rangeStart, rangeEnd + 1));
   });
 });
 
