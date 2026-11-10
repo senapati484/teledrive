@@ -35,10 +35,15 @@ import { cn } from "@/lib/utils";
 import { bootstrapTeleDrive, retryIndexNow } from "@/lib/telegram/bootstrap";
 import { isBackupItem } from "@/lib/backup/visibility";
 import { triggerFilePicker, triggerFolderPicker } from "@/lib/upload/fileSelector";
-import { addFilesToUploadQueue } from "@/lib/upload/uploadManager";
+import { collectDroppedFilesAndFolders } from "@/lib/upload/droppedFiles";
+import {
+  addFilesToUploadQueue,
+  ensureDroppedEmptyFolders,
+} from "@/lib/upload/uploadManager";
 import { UploadProgressPanel } from "@/components/upload/UploadProgressPanel";
 import { BackupProgressOverlay } from "@/components/backup/BackupProgressOverlay";
 import { downloadFileFromTelegram } from "@/lib/telegram/downloader";
+import { downloadSelectionAsZip } from "@/lib/telegram/zipDownloader";
 import { FilePreviewModal } from "@/components/preview/FilePreviewModal";
 import RecoveryDialog from "@/components/settings/RecoveryDialog";
 import { TeleFile } from "@/lib/types";
@@ -357,17 +362,23 @@ export default function DriveLayout() {
     e.dataTransfer.dropEffect = isInternalDrag ? "move" : "copy";
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
     dragCounter.current = 0;
 
-    // Only handle OS file uploads here — internal TeleDrive moves use stopPropagation
-    // so they never reach this handler. draggedItemIds will be empty for OS file drops.
-    const droppedFiles = e.dataTransfer.files;
-    if (droppedFiles && droppedFiles.length > 0) {
-      addFilesToUploadQueue(Array.from(droppedFiles));
+    // Capture webkitGetAsEntry synchronously before any await clears DataTransferItemList.
+    const dropPromise = collectDroppedFilesAndFolders(e.dataTransfer);
+    const { files: droppedFiles, emptyFolderPaths } = await dropPromise;
+
+    if (emptyFolderPaths.length > 0) {
+      await ensureDroppedEmptyFolders(emptyFolderPaths).catch((err) => {
+        console.warn("[DnD] Failed to create empty dropped folders:", err);
+      });
+    }
+    if (droppedFiles.length > 0) {
+      addFilesToUploadQueue(droppedFiles);
     }
   };
 
@@ -383,11 +394,19 @@ export default function DriveLayout() {
 
     const handleDownloadTrigger = (e: Event) => {
       const file = (e as CustomEvent).detail as TeleFile;
-      if (file) {
-        downloadFileFromTelegram(file.channelId, file.messageId, file.name).catch((err) => {
-          console.error("Download failed:", err);
+      if (!file) return;
+      const isDir =
+        file.mime === "inode/directory" || file.mime === "application/x-directory";
+      if (isDir) {
+        const allFiles = useFileStore.getState().files;
+        downloadSelectionAsZip(allFiles, [file]).catch((err) => {
+          console.error("Folder ZIP download failed:", err);
         });
+        return;
       }
+      downloadFileFromTelegram(file.channelId, file.messageId, file.name).catch((err) => {
+        console.error("Download failed:", err);
+      });
     };
 
     const handlePreviewTrigger = (e: Event) => {

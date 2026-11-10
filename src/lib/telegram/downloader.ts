@@ -24,10 +24,29 @@ const ANDROID_WRITE_BATCH_BYTES = 512 * 1024;
 const PROGRESS_THROTTLE_MS = 200;
 const PAUSE_POLL_MS = 100;
 
-function getWriteBatchBytes(): number {
+export function getWriteBatchBytes(): number {
   return getPlatform() === "android"
     ? ANDROID_WRITE_BATCH_BYTES
     : DESKTOP_WRITE_BATCH_BYTES;
+}
+
+export interface ExternalTransferControl {
+  pause?: () => void;
+  resume?: () => void;
+  cancel?: () => void;
+}
+
+const externalTransferControls = new Map<string, ExternalTransferControl>();
+
+export function registerExternalTransferControl(
+  id: string,
+  control: ExternalTransferControl
+): void {
+  externalTransferControls.set(id, control);
+}
+
+export function unregisterExternalTransferControl(id: string): void {
+  externalTransferControls.delete(id);
 }
 
 interface DownloadJob {
@@ -198,6 +217,11 @@ async function runDownload(job: DownloadJob): Promise<void> {
  * written are kept, so resuming continues from the same position.
  */
 export function pauseDownload(id: string): void {
+  const ext = externalTransferControls.get(id);
+  if (ext?.pause) {
+    ext.pause();
+    return;
+  }
   const job = activeDownloads.get(id);
   if (!job || !job.running || job.state !== "running") return;
   if (job.size > 0 && job.received >= job.size) return;
@@ -212,6 +236,11 @@ export function pauseDownload(id: string): void {
 
 /** Resume a paused download from the last fully received chunk. */
 export function resumeDownload(id: string): void {
+  const ext = externalTransferControls.get(id);
+  if (ext?.resume) {
+    ext.resume();
+    return;
+  }
   const job = activeDownloads.get(id);
   if (!job || !job.running || job.state !== "paused") return;
   job.state = "running";
@@ -225,6 +254,11 @@ export function resumeDownload(id: string): void {
 
 /** Cancel a download and discard its partial file. */
 export function cancelDownload(id: string): void {
+  const ext = externalTransferControls.get(id);
+  if (ext?.cancel) {
+    ext.cancel();
+    return;
+  }
   const job = activeDownloads.get(id);
   if (!job) {
     useTransferStore.getState().removeDownload(id);

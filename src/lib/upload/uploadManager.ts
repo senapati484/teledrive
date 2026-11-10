@@ -9,11 +9,24 @@ import { useSupportStore } from "../../stores/supportStore";
 import { logEvent } from "../events";
 import { channelIdKey, getSecret, VAULT_KEY_CHANNEL_ID } from "../secure/vault";
 import { enqueueSave } from "../storage/indexQueue";
-import { loadIndex, reconstructMissingFolders } from "../storage/metadataStore";
+import {
+  findFoldersByPath,
+  folderIdForPath,
+  loadIndex,
+  reconstructMissingFolders,
+} from "../storage/metadataStore";
 import { getClient } from "../telegram/client";
 import { uploadFileToTelegram } from "../telegram/uploader";
 import { TeleFile, UploadItem } from "../types";
 import { normalizeFolderPath } from "../utils";
+import {
+  joinVirtualFolderPath,
+  resolveRelativeUploadFolder,
+} from "./droppedFiles";
+import {
+  generateUploadThumbnail,
+  seedThumbnailCache,
+} from "../files/thumbnails";
 
 // ---------------------------------------------------------------------------
 // MIME type inference from file extension
@@ -306,6 +319,21 @@ export async function processQueue(): Promise<void> {
           // Ring buffer: [timestampMs, bytesAtThatPoint]
           const speedSamples: Array<[number, number]> = [];
 
+          // Resolve MIME early so thumbnail generation knows whether this is a
+          // renderable image or browser-playable video.
+          const rawMime =
+            item.file instanceof File
+              ? item.file.type
+              : (item.file as any)?.type ?? "";
+          const mimeType = rawMime && rawMime !== "application/octet-stream"
+            ? rawMime
+            : getMimeFromExtension(item.name);
+
+          const thumbBytes =
+            fileSource instanceof File
+              ? await generateUploadThumbnail(fileSource, item.name, mimeType).catch(() => null)
+              : null;
+
           const message = await uploadFileToTelegram(
             activeChannelId,
             item.name,
@@ -356,18 +384,14 @@ export async function processQueue(): Promise<void> {
                   ? `Telegram rate limit: pausing for ${sec}s...`
                   : `Network retry ${retryEvent.attempt}/${retryEvent.maxAttempts} in ${sec}s...`,
               });
-            }
+            },
+            false,
+            thumbBytes
           );
 
-          // Build the metadata entry.
-          // Priority: file.type (browser/OS) → getMimeFromExtension (extension lookup) → fallback
-          const rawMime =
-            item.file instanceof File
-              ? item.file.type
-              : (item.file as any)?.type ?? "";
-          const mimeType = rawMime && rawMime !== "application/octet-stream"
-            ? rawMime
-            : getMimeFromExtension(item.name);
+          if (thumbBytes && thumbBytes.length > 0 && message?.id) {
+            void seedThumbnailCache(activeChannelId, Number(message.id), thumbBytes).catch(() => {});
+          }
 
           const newFile: TeleFile = {
             id: item.id,
@@ -479,19 +503,120 @@ export function retryUploadItem(itemId: string): boolean {
   return true;
 }
 
+type UploadQueueInput =
+  | File
+  | { name: string; size: number; path: string; type: string; relativePath?: string };
+
+export type UploadQueueEntry =
+  | UploadQueueInput
+  | { file: File; relativePath?: string };
+
+function isWrappedUploadEntry(
+  entry: UploadQueueEntry
+): entry is { file: File; relativePath?: string } {
+  return (
+    typeof entry === "object" &&
+    entry !== null &&
+    "file" in entry &&
+    entry.file instanceof File
+  );
+}
+
+/**
+ * Ensures empty dropped subfolders (which contain 0 files and therefore would
+ * not otherwise trigger `reconstructMissingFolders`) are created in the drive.
+ */
+export async function ensureDroppedEmptyFolders(
+  emptyRelativeFolderPaths: string[],
+  baseFolderOverride?: string
+): Promise<void> {
+  if (!emptyRelativeFolderPaths || emptyRelativeFolderPaths.length === 0) return;
+  const { phoneNumber } = useAuthStore.getState();
+  let channelId: string | null = null;
+  if (phoneNumber) {
+    channelId = await getSecret(channelIdKey(phoneNumber)).catch(() => null);
+  }
+  if (!channelId) {
+    channelId = await getSecret(VAULT_KEY_CHANNEL_ID).catch(() => null);
+  }
+  if (!channelId) return;
+
+  const baseFolder = normalizeFolderPath(
+    baseFolderOverride ?? useFileStore.getState().currentFolder
+  );
+
+  await new Promise<void>((resolve) => {
+    uploadCommitChain = uploadCommitChain
+      .catch(() => {})
+      .then(async () => {
+        const currentFiles = useFileStore.getState().files;
+        let nextFiles = [...currentFiles];
+        let mutated = false;
+
+        for (const relFolder of emptyRelativeFolderPaths) {
+          const fullTarget = joinVirtualFolderPath(baseFolder, relFolder);
+          if (fullTarget === "/") continue;
+          const segments = fullTarget.split("/").filter(Boolean);
+          let curParent = "/";
+          for (const seg of segments) {
+            const candidateFull = curParent === "/" ? `/${seg}` : `${curParent}/${seg}`;
+            if (findFoldersByPath(nextFiles, candidateFull).length === 0) {
+              nextFiles.push({
+                id: folderIdForPath(candidateFull),
+                name: seg,
+                size: 0,
+                mime: "inode/directory",
+                folderPath: curParent,
+                messageId: 0,
+                channelId,
+                uploadedAt: Date.now(),
+                starred: false,
+                trashed: false,
+              });
+              mutated = true;
+            }
+            curParent = candidateFull;
+          }
+        }
+
+        if (mutated) {
+          useFileStore.getState().setFiles(nextFiles);
+          scheduleUploadIndexSave(channelId);
+        }
+        resolve();
+      });
+  });
+}
+
 /**
  * Enqueues a list of files and starts the upload processing queue.
+ * Preserves relative folder hierarchies from `webkitRelativePath` (folder
+ * picker) or `relativePath` (recursive drag-and-drop).
  */
 export function addFilesToUploadQueue(
-  files: (File | { name: string; size: number; path: string; type: string })[]
+  files: UploadQueueEntry[],
+  baseFolderOverride?: string
 ) {
   const { addToQueue, currentFolder } = useFileStore.getState();
-  const normalizedCurrentFolder = normalizeFolderPath(currentFolder);
+  const baseFolder = normalizeFolderPath(baseFolderOverride ?? currentFolder);
   let addedCount = 0;
 
-  files.forEach((file) => {
-    if (file.size === 0) {
-      toast.error(i18n.t("messages:upload.emptyFile", { name: file.name }), {
+  files.forEach((entry) => {
+    const rawFile: UploadQueueInput = isWrappedUploadEntry(entry)
+      ? entry.file
+      : entry;
+    const explicitRel = "relativePath" in entry ? entry.relativePath : undefined;
+    const webkitRel =
+      rawFile instanceof File
+        ? (rawFile as File & { webkitRelativePath?: string }).webkitRelativePath
+        : undefined;
+    const destinationFolder = resolveRelativeUploadFolder(
+      baseFolder,
+      explicitRel || webkitRel
+    );
+
+    if (rawFile.size === 0) {
+      toast.error(i18n.t("messages:upload.emptyFile", { name: rawFile.name }), {
         duration: 4000,
       });
       return;
@@ -499,12 +624,12 @@ export function addFilesToUploadQueue(
 
     const uploadItem: UploadItem = {
       id: Math.random().toString(36).substring(2, 11),
-      name: file.name,
-      size: file.size,
+      name: rawFile.name,
+      size: rawFile.size,
       progress: 0,
       status: "pending",
-      file: file,
-      folderPath: normalizedCurrentFolder,
+      file: rawFile,
+      folderPath: destinationFolder,
     };
     addToQueue(uploadItem);
     addedCount++;

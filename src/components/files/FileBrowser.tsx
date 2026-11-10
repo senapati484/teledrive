@@ -52,6 +52,11 @@ import {
 import { fuzzySearch } from "@/lib/search/searchEngine";
 import { getFileCategory } from "@/lib/files/fileUtils";
 import { isEditableFile } from "@/lib/files/editableTypes";
+import {
+  getCachedThumbnailUrl,
+  requestFileThumbnails,
+} from "@/lib/files/thumbnails";
+import { downloadSelectionAsZip } from "@/lib/telegram/zipDownloader";
 import { useFileBrowserDragAndDrop } from "@/hooks/useFileBrowserDragAndDrop";
 import { EmptyState } from "./EmptyState";
 import { collapseDuplicateFolders, dedupeByContentKey, dedupeByMessageId, folderIdForPath } from "@/lib/storage/metadataStore";
@@ -233,6 +238,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
   const [emptyTrashDialogOpen, setEmptyTrashDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<TeleFile | null>(null);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
 
   // Progressive render limit for memory & DOM performance on large directories
   const INITIAL_RENDER_LIMIT = 80;
@@ -495,6 +501,16 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       regularFiles: nextRegularFiles,
     };
   }, [dedupedActiveFiles, activeSortBy, filterType, indexedFiles, mode, searchQuery]);
+
+  // Lazily resolve compact thumbnails for visible Grid cards without writing
+  // ephemeral local/blob URLs back into the synced Telegram Schema v3 index.
+  useEffect(() => {
+    if (viewMode !== "grid" || regularFiles.length === 0) return;
+    const visible = regularFiles.slice(0, renderLimit);
+    return requestFileThumbnails(visible, (fileId, url) => {
+      setThumbUrls((prev) => (prev[fileId] === url ? prev : { ...prev, [fileId]: url }));
+    });
+  }, [viewMode, regularFiles, renderLimit]);
 
   // Breadcrumbs — only recompute when folderPath/mode change.
   // For `mode === "backups"` the link prefix is the Backups route so the
@@ -761,6 +777,21 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
   };
 
   // Bulk actions
+  const handleBulkDownload = async () => {
+    const selectedSet = new Set(selectedIds);
+    const selectedItems = files.filter((f) => selectedSet.has(f.id));
+    if (selectedItems.length === 0) return;
+
+    if (selectedItems.length === 1 && !isDirectory(selectedItems[0])) {
+      handleDownload(selectedItems[0]);
+      clearSelection();
+      return;
+    }
+
+    clearSelection();
+    await downloadSelectionAsZip(files, selectedItems);
+  };
+
   const handleBulkTrash = async () => {
     await moveMultipleToTrash(selectedIds);
     clearSelection();
@@ -1259,11 +1290,20 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
 
                         {/* Centered Preview Canvas */}
                         <div className="flex-1 bg-[#f8fafd] dark:bg-[#0a0a0a] mx-2.5 my-1 rounded-xl border border-slate-100 dark:border-white/[0.04] flex items-center justify-center relative overflow-hidden pointer-events-none">
-                          {file.thumbnailUrl ? (
+                          {(file.thumbnailUrl || thumbUrls[file.id] || getCachedThumbnailUrl(file)) ? (
                             <img
-                              src={file.thumbnailUrl}
+                              src={file.thumbnailUrl || thumbUrls[file.id] || getCachedThumbnailUrl(file)}
                               alt={file.name}
+                              loading="lazy"
                               className="w-full h-full object-cover"
+                              onError={() => {
+                                setThumbUrls((prev) => {
+                                  if (!prev[file.id]) return prev;
+                                  const next = { ...prev };
+                                  delete next[file.id];
+                                  return next;
+                                });
+                              }}
                             />
                           ) : (
                             <div className="w-16 h-20 bg-white dark:bg-[#161719] rounded-md shadow-xs border border-slate-200/80 dark:border-white/[0.04] p-2 flex flex-col items-center justify-between pointer-events-none select-none">
@@ -1525,6 +1565,14 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
               </>
             ) : (
               <>
+                <button
+                  type="button"
+                  onClick={handleBulkDownload}
+                  className="h-8.5 w-8.5 rounded-full flex items-center justify-center text-[#444746] dark:text-[#c4c7c5] hover:text-[#0b57d0] dark:hover:text-[#a8c7fa] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] transition-colors cursor-pointer border-0 bg-transparent outline-none"
+                  title={t("browser.bulkBar.downloadSelected", "Download selected")}
+                >
+                  <Download className="h-4.5 w-4.5" />
+                </button>
                 <button
                   type="button"
                   onClick={handleBulkTrash}

@@ -29,7 +29,9 @@
     "indexSaveFailed": "Gagal menyimpan indeks untuk \"{{name}}\" — segarkan drive.",
     "failedFallback": "Unggahan gagal",
     "failed": "Gagal mengunggah \"{{name}}\": {{message}}",
-    "emptyFile": "\"{{name}}\" kosong. Berkas kosong (0 byte) tidak didukung oleh Telegram."
+    "emptyFile": "\"{{name}}\" kosong. Berkas kosong (0 byte) tidak didukung oleh Telegram.",
+    "exceedsFreeLimit": "\"{{name}}\" melebihi batas unggahan ~2 GB untuk akun standar Telegram (Telegram Premium mendukung hingga ~4 GB).",
+    "exceedsPremiumLimit": "\"{{name}}\" melebihi batas satu file ~4 GB Telegram."
   },
   "download": {
     "cancelled": "Pengunduhan dibatalkan.",
@@ -39,7 +41,10 @@
     "errors": {
       "mediaNotFound": "Pesan atau media berkas tidak ditemukan di Telegram.",
       "mediaFailed": "Gagal mengunduh media."
-    }
+    },
+    "zipEmpty": "Tidak ada file yang dapat diunduh dalam pilihan.",
+    "zipSuccess": "\"{{name}}\" berhasil disimpan!",
+    "zipFailed": "Gagal membuat arsip ZIP."
   },
   "indexQueue": {
     "rateLimitRetrying": "Batas frekuensi Telegram tercapai — mencoba lagi"

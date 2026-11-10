@@ -13,7 +13,8 @@
     "unarchive": "Unarchive",
     "restore": "Restore",
     "deletePermanently": "Delete Permanently",
-    "moveToTrash": "Move to Trash"
+    "moveToTrash": "Move to Trash",
+    "downloadAsZip": "Download as ZIP"
   },
   "browser": {
     "fileType": {
@@ -137,7 +138,8 @@
       "restoreSelected": "Restore selected",
       "deletePermanently": "Delete permanently",
       "moveSelectedToTrash": "Move selected to trash",
-      "clearSelection": "Clear selection"
+      "clearSelection": "Clear selection",
+      "downloadSelected": "Download selected"
     },
     "mobileMenu": {
       "addToStarred": "Add to Starred",
@@ -176,9 +178,9 @@
     }
   },
   "actions": {
-  "bootstrapPending": "Still loading your drive — please retry in a moment.",
-  "indexStuck": "Couldn't save changes yet. Your changes are kept locally and will retry automatically — or use Retry in the banner.",
-  "saveFailed": "Save failed and was rolled back: {{error}}",
+    "bootstrapPending": "Still loading your drive — please retry in a moment.",
+    "indexStuck": "Couldn't save changes yet. Your changes are kept locally and will retry automatically — or use Retry in the banner.",
+    "saveFailed": "Save failed and was rolled back: {{error}}",
     "unknownError": "Unknown error",
     "channelNotInitialized": "Telegram storage channel is not initialized",
     "fileNotFound": "File not found",

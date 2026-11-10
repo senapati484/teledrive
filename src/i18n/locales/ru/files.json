@@ -13,7 +13,8 @@
     "unarchive": "Разархивировать",
     "restore": "Восстановить",
     "deletePermanently": "Удалить навсегда",
-    "moveToTrash": "Переместить в корзину"
+    "moveToTrash": "Переместить в корзину",
+    "downloadAsZip": "Скачать как ZIP"
   },
   "browser": {
     "fileType": {
@@ -137,7 +138,8 @@
       "restoreSelected": "Восстановить выбранные",
       "deletePermanently": "Удалить навсегда",
       "moveSelectedToTrash": "Переместить выбранные в корзину",
-      "clearSelection": "Снять выделение"
+      "clearSelection": "Снять выделение",
+      "downloadSelected": "Скачать выбранное"
     },
     "mobileMenu": {
       "addToStarred": "Добавить в избранное",

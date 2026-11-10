@@ -83,32 +83,36 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Group 1: Retrieve Actions (Preview, Edit & Download) */}
-        {!isDirectory && !file.trashed && !file.archived && (
+        {!file.trashed && !file.archived && (
           <>
-            <DropdownMenuItem
-              onClick={() => onPreview(file)}
-              className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
-            >
-              <Eye className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
-              <span>{t("menu.preview")}</span>
-            </DropdownMenuItem>
-            {onEdit && isEditableFile(file) && (
-              <DropdownMenuItem
-                onClick={() => onEdit(file)}
-                className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
-              >
-                <Pencil className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
-                <span>{t("menu.edit")}</span>
-              </DropdownMenuItem>
+            {!isDirectory && (
+              <>
+                <DropdownMenuItem
+                  onClick={() => onPreview(file)}
+                  className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
+                >
+                  <Eye className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
+                  <span>{t("menu.preview")}</span>
+                </DropdownMenuItem>
+                {onEdit && isEditableFile(file) && (
+                  <DropdownMenuItem
+                    onClick={() => onEdit(file)}
+                    className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
+                  >
+                    <Pencil className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
+                    <span>{t("menu.edit")}</span>
+                  </DropdownMenuItem>
+                )}
+              </>
             )}
             <DropdownMenuItem
               onClick={() => onDownload(file)}
               className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
             >
               <Download className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
-              <span>{t("menu.download")}</span>
+              <span>{isDirectory ? t("menu.downloadAsZip", "Download as ZIP") : t("menu.download")}</span>
             </DropdownMenuItem>
-            {onOfflineToggle && (
+            {!isDirectory && onOfflineToggle && (
               <DropdownMenuItem
                 onClick={() => onOfflineToggle(file)}
                 className="flex items-center justify-between px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"

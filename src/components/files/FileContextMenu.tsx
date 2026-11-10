@@ -92,13 +92,13 @@ export const FileContextMenu = React.memo(function FileContextMenu({
             <span>{t("menu.edit")}</span>
           </ContextMenuItem>
         )}
-        {!isDirectory && !file.trashed && !file.archived && (
+        {!file.trashed && !file.archived && (
           <ContextMenuItem
             onClick={() => onDownload(file)}
             className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
           >
             <Download className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
-            <span>{t("menu.download")}</span>
+            <span>{isDirectory ? t("menu.downloadAsZip", "Download as ZIP") : t("menu.download")}</span>
           </ContextMenuItem>
         )}
         {!isDirectory && !file.trashed && !file.archived && onOfflineToggle && (
