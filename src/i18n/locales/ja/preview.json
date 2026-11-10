@@ -70,7 +70,9 @@
   "media": {
     "skipBack": "10 秒前にスキップ",
     "skipForward": "10 秒スキップ",
-    "audioTrack": "オーディオトラック"
+    "audioTrack": "オーディオトラック",
+    "decodeErrorDescription": "このメディア形式またはコーデックは内蔵プレーヤーで再生できません。システムのメディアプレーヤー（VLC など）で直接開くか、ダウンロードできます。",
+    "openInSystemPlayer": "システムプレーヤーで開く"
   },
   "archive": {
     "badge": "{{ext}} アーカイブ",

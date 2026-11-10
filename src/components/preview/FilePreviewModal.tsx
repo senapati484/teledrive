@@ -57,17 +57,36 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { TeleFile } from "@/lib/types";
-import { downloadFileToBuffer, downloadFileFromTelegram } from "@/lib/telegram/downloader";
+import {
+  downloadFileToBuffer,
+  downloadFileFromTelegram,
+  downloadFilePrefixToBuffer,
+  streamFileToLocalPath,
+} from "@/lib/telegram/downloader";
 import { updateFileLocal, deleteTelegramMessage } from "@/lib/storage/metadataStore";
 import { uploadFileToTelegram } from "@/lib/telegram/uploader";
 import { enqueueSave } from "@/lib/storage/indexQueue";
-import { readOfflineCache } from "@/lib/storage/offlineStorage";
+import {
+  readOfflineCache,
+  getOfflineFilePath,
+  isCachedOffline,
+} from "@/lib/storage/offlineStorage";
 import { saveBinaryFile } from "@/lib/storage/safeFileWriter";
 import { useFileStore } from "@/stores/fileStore";
 import { Button } from "@/components/ui/button";
 import { marked } from "marked";
 import { isEditableFile } from "@/lib/files/editableTypes";
-import { IMAGE_EXTS, VIDEO_EXTS, AUDIO_EXTS, ARCHIVE_EXTS } from "@/lib/files/fileUtils";
+import {
+  IMAGE_EXTS,
+  VIDEO_EXTS,
+  AUDIO_EXTS,
+  ARCHIVE_EXTS,
+  UNRENDERABLE_IMAGE_EXTS,
+  NON_PREVIEWABLE_BINARY_EXTS,
+  containsNullByte,
+  getMediaMimeType,
+} from "@/lib/files/fileUtils";
+import { getPlatform } from "@/lib/platform";
 import { detectLang } from "@/lib/files/langDetect";
 import { useDarkMode } from "@/hooks/useDarkMode";
 import { SyntaxHighlighter } from "./SyntaxHighlighter";
@@ -77,6 +96,7 @@ import { PdfViewer } from "./PdfViewer";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 
 // ─── PDF-specific Error Boundary (isolates PDF crashes from the rest of the modal)
 class PdfErrorBoundary extends Component<{ children: ReactNode; onRetry?: () => void }, { hasError: boolean }> {
@@ -236,9 +256,14 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
   const [dragStart, setDragStart]     = useState({ x: 0, y: 0 });
   const [isConvertingHeic, setIsConvertingHeic] = useState(false);
   const [imageError, setImageError]             = useState(false);
+  const [mediaError, setMediaError]             = useState(false);
+  const [isTruncatedPreview, setIsTruncatedPreview] = useState(false);
   const pdfBufferRef                            = useRef<Uint8Array | null>(null);
   const fileBufferRef                           = useRef<Uint8Array | null>(null);
+  const cachedMediaPathRef                      = useRef<string | null>(null);
+  const mediaBlobFallbackRef                    = useRef(false);
   const [pdfData, setPdfData]                   = useState<Uint8Array | null>(null);
+  const [pdfUrl, setPdfUrl]                     = useState<string | null>(null);
 
   // ── Video preview states & refs ──────────────────────────────────────────
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -688,34 +713,252 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
 
   // ── Load file on change ──────────────────────────────────────────────────
   useEffect(() => {
+    const revokeIfBlob = (url: string | null) => {
+      if (url && url.startsWith("blob:")) {
+        URL.revokeObjectURL(url);
+      }
+    };
+
     if (!file) {
-      if (contentUrl) URL.revokeObjectURL(contentUrl);
-      setContentUrl(null); setTextContent(null); setMarkdownHtml(null);
+      setContentUrl((prev) => {
+        revokeIfBlob(prev);
+        return null;
+      });
+      setTextContent(null); setMarkdownHtml(null);
       setError(null); setIsEditMode(false); setEditContent(""); setSaveStatus("idle");
       pdfBufferRef.current = null;
       fileBufferRef.current = null;
+      cachedMediaPathRef.current = null;
+      mediaBlobFallbackRef.current = false;
       setPdfData(null);
+      setPdfUrl(null);
+      setIsTruncatedPreview(false);
       setImageError(false);
+      setMediaError(false);
       setIsConvertingHeic(false);
       return;
     }
 
     let current = true;
+    const abortController = new AbortController();
+
+    const streamToPreviewCache = async (targetFile: TeleFile): Promise<string> => {
+      if (targetFile.offline && (await isCachedOffline(targetFile.id))) {
+        if (current) setProgress(100);
+        return await getOfflineFilePath(targetFile.id);
+      }
+      const safeName = targetFile.name.replace(/[/\\?%*:|"<>]/g, "_").trim() || "preview.bin";
+      const cacheKey = `${targetFile.id}_${safeName}`;
+      const existing = await invoke<string | null>("check_preview_cache", {
+        fileName: cacheKey,
+        expectedSize: targetFile.size > 0 ? targetFile.size : null,
+      }).catch(() => null);
+      if (existing) {
+        if (current) setProgress(100);
+        return existing;
+      }
+      const targetPath = await invoke<string>("get_preview_cache_path", {
+        fileName: cacheKey,
+      });
+      await streamFileToLocalPath(
+        targetFile.channelId,
+        targetFile.messageId,
+        targetPath,
+        (pct) => { if (current) setProgress(pct); },
+        abortController.signal,
+        targetFile.size
+      );
+      void invoke("cleanup_preview_cache", {}).catch(() => {});
+      return targetPath;
+    };
 
     (async () => {
       setLoading(true); setProgress(0); setError(null);
-      setTextContent(null); setContentUrl(null); setMarkdownHtml(null);
+      setTextContent(null);
+      setContentUrl((prev) => {
+        revokeIfBlob(prev);
+        return null;
+      });
+      setMarkdownHtml(null);
       setMdViewMode("preview"); setCsvViewMode("table"); setSvgViewMode("image");
       setWrapLines(false); setCopiedCode(false);
       pdfBufferRef.current = null;
       fileBufferRef.current = null;
+      cachedMediaPathRef.current = null;
+      mediaBlobFallbackRef.current = false;
       setPdfData(null);
+      setPdfUrl(null);
+      setIsTruncatedPreview(false);
       setImageError(false);
+      setMediaError(false);
+      setIsVideoPlaying(false);
+      setVideoCurrentTime(0);
+      setVideoDuration(0);
+      setIsAudioPlaying(false);
+      setAudioCurrentTime(0);
+      setAudioDuration(0);
       setIsConvertingHeic(false);
 
+      const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
+      const mimeLower = (file.mime || "").toLowerCase();
+      const isSvgFile = ext === "svg" || file.name.toLowerCase().endsWith(".svg") || mimeLower === "image/svg+xml";
+      const isPdfFile = ext === "pdf" || mimeLower === "application/pdf" || mimeLower.includes("pdf");
+      const isHeicFile = ext === "heic" || ext === "heif" || mimeLower === "image/heic" || mimeLower === "image/heif";
+      const isImageFile = (mimeLower.startsWith("image/") || IMAGE_EXTS.has(ext)) && !isSvgFile;
+      const isVideoFile = mimeLower.startsWith("video/") || VIDEO_EXTS.has(ext);
+      const isAudioFile = mimeLower.startsWith("audio/") || AUDIO_EXTS.has(ext);
+      const isArchiveFile = ARCHIVE_EXTS.has(ext);
+      const isTextMime = (
+        mimeLower.startsWith("text/") ||
+        mimeLower.includes("javascript") || mimeLower.includes("typescript") ||
+        mimeLower.includes("json") || mimeLower.includes("xml") ||
+        mimeLower.includes("yaml") || mimeLower.includes("x-sh") ||
+        mimeLower.includes("x-python")
+      );
+      const isExplicitTextOrCode = isTextMime || isEditableFile(file) || isSvgFile;
+      const isKnownBinaryNoPreview =
+        isArchiveFile ||
+        (NON_PREVIEWABLE_BINARY_EXTS.has(ext) &&
+          !isExplicitTextOrCode &&
+          !isImageFile &&
+          !isVideoFile &&
+          !isAudioFile &&
+          !isPdfFile);
+      const isUnrenderableImage =
+        isImageFile &&
+        UNRENDERABLE_IMAGE_EXTS.has(ext) &&
+        !mimeLower.startsWith("image/jpeg") &&
+        !mimeLower.startsWith("image/png") &&
+        !mimeLower.startsWith("image/webp");
+      const isTauri = typeof window !== "undefined" && Boolean((window as any).__TAURI_INTERNALS__);
+
       try {
+        // 1. Instant 0-download handling for archives, installers, Office binaries,
+        //    and camera RAW/PSD images (streams to disk only on "Open in System App").
+        if (isArchiveFile || isKnownBinaryNoPreview) {
+          return;
+        }
+        if (isUnrenderableImage) {
+          if (current) setImageError(true);
+          return;
+        }
+
+        // 2. Stream videos & audio directly to disk cache on Tauri and serve via
+        //    asset:// HTTP 206 byte-range requests instead of buffering giant media
+        //    files into JS/Blob RAM.
+        if (isVideoFile || isAudioFile) {
+          if (isTauri) {
+            const localPath = await streamToPreviewCache(file);
+            if (!current || abortController.signal.aborted) return;
+            cachedMediaPathRef.current = localPath;
+            const assetUrl = convertFileSrc(localPath);
+            setContentUrl((prev) => {
+              revokeIfBlob(prev);
+              return assetUrl;
+            });
+            return;
+          }
+
+          const MAX_WEB_MEDIA_BLOB_BYTES = 250 * 1024 * 1024;
+          if (file.size > MAX_WEB_MEDIA_BLOB_BYTES) {
+            if (current) setMediaError(true);
+            return;
+          }
+          const mediaBuffer = await downloadFileToBuffer(
+            file.channelId,
+            file.messageId,
+            (pct) => { if (current) setProgress(pct); },
+            abortController.signal
+          );
+          if (!current || abortController.signal.aborted) return;
+          const mediaMime = getMediaMimeType(
+            file.name,
+            file.mime,
+            isVideoFile ? "video" : "audio"
+          );
+          const mediaBlob = new Blob([mediaBuffer as any], { type: mediaMime });
+          setContentUrl((prev) => {
+            revokeIfBlob(prev);
+            return URL.createObjectURL(mediaBlob);
+          });
+          return;
+        }
+
+        // 3. Large raster images (> 15 MB) stream directly to disk cache on Tauri
+        //    instead of allocating multi-hundred-MB buffers in JS RAM.
+        const LARGE_IMAGE_THRESHOLD_BYTES = 15 * 1024 * 1024;
+        if (isImageFile && !isHeicFile && isTauri && file.size > LARGE_IMAGE_THRESHOLD_BYTES) {
+          const localPath = await streamToPreviewCache(file);
+          if (!current || abortController.signal.aborted) return;
+          cachedMediaPathRef.current = localPath;
+          const assetUrl = convertFileSrc(localPath);
+          setContentUrl((prev) => {
+            revokeIfBlob(prev);
+            return assetUrl;
+          });
+          return;
+        }
+
+        // Guard giant HEIC files (> 60 MB) so in-JS heic2any conversion doesn't freeze WebView.
+        const MAX_HEIC_CONVERT_BYTES = 60 * 1024 * 1024;
+        if (isHeicFile && file.size > MAX_HEIC_CONVERT_BYTES) {
+          if (current) setImageError(true);
+          return;
+        }
+
+        // 4. Huge PDFs (> 80 MB) stream to disk cache on Tauri and range-load in PdfViewer.
+        const LARGE_PDF_THRESHOLD_BYTES = 80 * 1024 * 1024;
+        if (isPdfFile && isTauri && file.size > LARGE_PDF_THRESHOLD_BYTES) {
+          const localPath = await streamToPreviewCache(file);
+          if (!current || abortController.signal.aborted) return;
+          cachedMediaPathRef.current = localPath;
+          setPdfUrl(convertFileSrc(localPath));
+          return;
+        }
+
+        const MAX_TEXT_PREVIEW_BYTES = 3 * 1024 * 1024;
         let buffer: Uint8Array;
-        if (file.offline) {
+        let prefixTruncated = false;
+
+        const isUnknownType = !isImageFile && !isPdfFile && !isExplicitTextOrCode;
+
+        if (!file.offline && isExplicitTextOrCode && !isSvgFile && !initialEditMode && file.size > MAX_TEXT_PREVIEW_BYTES) {
+          // 5a. Oversized text/code/CSV/log files: fetch ONLY the 3 MiB prefix.
+          const res = await downloadFilePrefixToBuffer(
+            file.channelId,
+            file.messageId,
+            MAX_TEXT_PREVIEW_BYTES,
+            (pct) => { if (current) setProgress(pct); },
+            abortController.signal
+          );
+          if (!current || abortController.signal.aborted) return;
+          buffer = res.data;
+          prefixTruncated = res.truncated;
+        } else if (!file.offline && isUnknownType && file.size > 4 * 1024 * 1024) {
+          // 5b. Huge unknown/extensionless files: sniff 64 KiB header first.
+          const sniff = await downloadFilePrefixToBuffer(
+            file.channelId,
+            file.messageId,
+            64 * 1024,
+            (pct) => { if (current) setProgress(Math.min(50, pct)); },
+            abortController.signal
+          );
+          if (!current || abortController.signal.aborted) return;
+          if (containsNullByte(sniff.data, 4096)) {
+            if (current) setProgress(100);
+            return;
+          }
+          const textPrefix = await downloadFilePrefixToBuffer(
+            file.channelId,
+            file.messageId,
+            MAX_TEXT_PREVIEW_BYTES,
+            (pct) => { if (current) setProgress(pct); },
+            abortController.signal
+          );
+          if (!current || abortController.signal.aborted) return;
+          buffer = textPrefix.data;
+          prefixTruncated = textPrefix.truncated;
+        } else if (file.offline) {
           setProgress(50);
           try {
             buffer = await readOfflineCache(file.id);
@@ -725,31 +968,27 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
             console.warn(`[FilePreviewModal] Failed to read offline cache for "${file.name}", falling back to download:`, offlineErr);
             buffer = await downloadFileToBuffer(
               file.channelId, file.messageId,
-              (pct) => { if (current) setProgress(pct); }
+              (pct) => { if (current) setProgress(pct); },
+              abortController.signal
             );
           }
         } else {
           buffer = await downloadFileToBuffer(
             file.channelId, file.messageId,
-            (pct) => { if (current) setProgress(pct); }
+            (pct) => { if (current) setProgress(pct); },
+            abortController.signal
           );
         }
-        if (!current) return;
+        if (!current || abortController.signal.aborted) return;
 
-        fileBufferRef.current = buffer;
-
-        const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
-        const mimeLower = (file.mime || "").toLowerCase();
-        const isSvgFile = ext === "svg" || file.name.toLowerCase().endsWith(".svg") || mimeLower === "image/svg+xml";
-        const isPdfFile = ext === "pdf" || mimeLower === "application/pdf" || mimeLower.includes("pdf");
-        const isHeicFile = ext === "heic" || ext === "heif" || mimeLower === "image/heic" || mimeLower === "image/heif";
-        const isImageFile = (mimeLower.startsWith("image/") || IMAGE_EXTS.has(ext)) && !isSvgFile;
-        const isVideoFile = mimeLower.startsWith("video/") || VIDEO_EXTS.has(ext);
-        const isAudioFile = mimeLower.startsWith("audio/") || AUDIO_EXTS.has(ext);
+        if (!prefixTruncated) {
+          fileBufferRef.current = buffer;
+        }
 
         if (isPdfFile) {
           pdfBufferRef.current = buffer;
           setPdfData(buffer);
+          return;
         }
 
         // HEIC image conversion for seamless in-app preview
@@ -767,7 +1006,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
             const jpegBlob = Array.isArray(conversionResult) ? conversionResult[0] : conversionResult;
             if (current) {
               setContentUrl((prev) => {
-                if (prev) URL.revokeObjectURL(prev);
+                revokeIfBlob(prev);
                 return URL.createObjectURL(jpegBlob);
               });
             }
@@ -776,68 +1015,39 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
             const fallbackBlob = new Blob([buffer as any], { type: "image/heic" });
             if (current) {
               setContentUrl((prev) => {
-                if (prev) URL.revokeObjectURL(prev);
+                revokeIfBlob(prev);
                 return URL.createObjectURL(fallbackBlob);
               });
             }
           } finally {
             if (current) setIsConvertingHeic(false);
           }
-        } else if (
-          isImageFile ||
-          isVideoFile ||
-          isAudioFile ||
-          isPdfFile ||
-          isSvgFile
-        ) {
+          return;
+        }
+
+        if (isImageFile || isSvgFile) {
           let blobMime = file.mime || "application/octet-stream";
-          if (isPdfFile) blobMime = "application/pdf";
-          else if (isSvgFile) blobMime = "image/svg+xml";
+          if (isSvgFile) blobMime = "image/svg+xml";
           else if (isImageFile && !file.mime.startsWith("image/")) {
             blobMime = `image/${ext === "jpg" ? "jpeg" : ext}`;
-          } else if (isVideoFile && !file.mime.startsWith("video/")) {
-            blobMime = `video/${ext === "mov" ? "quicktime" : ext}`;
-          } else if (isAudioFile && !file.mime.startsWith("audio/")) {
-            blobMime = `audio/${ext}`;
           }
           const blob = new Blob([buffer as any], { type: blobMime });
           if (current) {
             setContentUrl((prev) => {
-              if (prev) URL.revokeObjectURL(prev);
+              revokeIfBlob(prev);
               return URL.createObjectURL(blob);
             });
           }
         }
 
-        const isTextMime = (
-          mimeLower.startsWith("text/") ||
-          mimeLower.includes("javascript") || mimeLower.includes("typescript") ||
-          mimeLower.includes("json") || mimeLower.includes("xml") ||
-          mimeLower.includes("yaml") || mimeLower.includes("x-sh") ||
-          mimeLower.includes("x-python")
-        );
-
-        // Check if buffer contains null bytes in the first 1KB (binary check)
-        let hasNullByte = false;
-        const checkBytes = buffer.subarray(0, Math.min(buffer.length, 1024));
-        for (let b = 0; b < checkBytes.length; b++) {
-          if (checkBytes[b] === 0) {
-            hasNullByte = true;
-            break;
-          }
-        }
-
+        const hasNullByte = containsNullByte(buffer, 4096);
         const shouldDecodeText = (
-          isTextMime ||
-          isEditableFile(file) ||
-          (!hasNullByte && !isImageFile && !isVideoFile && !isAudioFile && !isPdfFile) ||
-          isSvgFile
+          isExplicitTextOrCode ||
+          (!hasNullByte && !isImageFile)
         );
 
         if (shouldDecodeText) {
-          // Guard for massive text files (> 3MB) to prevent editor memory exhaustion
-          const MAX_TEXT_PREVIEW_BYTES = 3 * 1024 * 1024;
-          let isTruncated = false;
+          let isTruncated = prefixTruncated;
           let sliceBuffer = buffer;
           if (buffer.length > MAX_TEXT_PREVIEW_BYTES) {
             sliceBuffer = buffer.subarray(0, MAX_TEXT_PREVIEW_BYTES);
@@ -851,6 +1061,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
             text += `\n\n${t("truncatedNotice")}`;
           }
           if (!current) return;
+          setIsTruncatedPreview(isTruncated);
           setTextContent(text);
 
           if (mimeLower === "text/markdown" || file.name.toLowerCase().endsWith(".md") || file.name.toLowerCase().endsWith(".markdown")) {
@@ -858,20 +1069,15 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
             if (current) setMarkdownHtml(sanitizeHtml(html));
           }
 
-          if (initialEditMode && current) {
+          if (initialEditMode && !isTruncated && current) {
             setEditContent(text);
             setIsEditMode(true);
           }
-        } else if (!contentUrl && !isImageFile && !isVideoFile && !isAudioFile && !isPdfFile) {
-          const blob = new Blob([buffer as any], { type: file.mime || "application/octet-stream" });
-          if (current) {
-            setContentUrl((prev) => {
-              if (prev) URL.revokeObjectURL(prev);
-              return URL.createObjectURL(blob);
-            });
-          }
         }
       } catch (err: any) {
+        if (err?.name === "AbortError" || abortController.signal.aborted) {
+          return;
+        }
         if (current) {
           if (!navigator.onLine && !file.offline) {
             setError(t("errors.offlineUnavailable"));
@@ -886,12 +1092,13 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
 
     return () => {
       current = false;
+      abortController.abort();
     };
   }, [file]);
 
   useEffect(() => {
     return () => {
-      if (contentUrl) {
+      if (contentUrl && contentUrl.startsWith("blob:")) {
         URL.revokeObjectURL(contentUrl);
       }
     };
@@ -912,40 +1119,63 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
       const { appLocalDataDir, join } = await import("@tauri-apps/api/path");
       const { openPath } = await import("@tauri-apps/plugin-opener");
       const { exists } = await import("@tauri-apps/plugin-fs");
-      const { readOfflineCache, isCachedOffline } = await import("@/lib/storage/offlineStorage");
 
-      const cacheDir = await appLocalDataDir();
       const safeName = currentFile.name.replace(/[/\\?%*:|"<>]/g, "_").trim() || "document.bin";
-      const tempFilePath = await join(cacheDir, `temp_${currentFile.id}_${safeName}`);
-
-      let fileReady = false;
-      try {
-        fileReady = await exists(tempFilePath);
-      } catch {
-        fileReady = false;
+      const fileExt = currentFile.name.split(".").pop()?.toLowerCase() ?? "";
+      const expectedExtSuffix = fileExt ? `.${fileExt}` : "";
+      let targetPath = cachedMediaPathRef.current;
+      // Only reuse cached path directly when it preserves the file extension so the OS picks the right app.
+      if (targetPath && expectedExtSuffix && !targetPath.toLowerCase().endsWith(expectedExtSuffix)) {
+        targetPath = null;
       }
 
-      if (!fileReady || fileBufferRef.current) {
-        if (fileBufferRef.current) {
-          await saveBinaryFile(tempFilePath, fileBufferRef.current);
-        } else if (pdfBufferRef.current) {
-          await saveBinaryFile(tempFilePath, pdfBufferRef.current);
-        } else if (currentFile.offline && (await isCachedOffline(currentFile.id))) {
-          const offlineBuf = await readOfflineCache(currentFile.id);
-          await saveBinaryFile(tempFilePath, offlineBuf);
-        } else {
-          toast.info(t("toast.preparingSystemViewer"));
-          const buf = await downloadFileToBuffer(currentFile.channelId, currentFile.messageId);
-          await saveBinaryFile(tempFilePath, buf);
+      if (!targetPath) {
+        const previewKey = `${currentFile.id}_${safeName}`;
+        targetPath = await invoke<string | null>("check_preview_cache", {
+          fileName: previewKey,
+          expectedSize: currentFile.size > 0 ? currentFile.size : null,
+        }).catch(() => null);
+      }
+
+      if (!targetPath) {
+        const cacheDir = await appLocalDataDir();
+        const tempFilePath = await join(cacheDir, `temp_${currentFile.id}_${safeName}`);
+
+        let fileReady = false;
+        try {
+          fileReady = await exists(tempFilePath);
+        } catch {
+          fileReady = false;
         }
+
+        if (!fileReady || fileBufferRef.current) {
+          if (fileBufferRef.current) {
+            await saveBinaryFile(tempFilePath, fileBufferRef.current);
+          } else if (pdfBufferRef.current) {
+            await saveBinaryFile(tempFilePath, pdfBufferRef.current);
+          } else if (currentFile.offline && (await isCachedOffline(currentFile.id))) {
+            const offlineBuf = await readOfflineCache(currentFile.id);
+            await saveBinaryFile(tempFilePath, offlineBuf);
+          } else {
+            toast.info(t("toast.preparingSystemViewer"));
+            await streamFileToLocalPath(
+              currentFile.channelId,
+              currentFile.messageId,
+              tempFilePath,
+              undefined,
+              undefined,
+              currentFile.size
+            );
+          }
+        }
+        targetPath = tempFilePath;
       }
 
       try {
-        await openPath(tempFilePath);
+        await openPath(targetPath);
       } catch (openerErr) {
         console.warn("plugin-opener failed, invoking native open_file_in_system_viewer:", openerErr);
-        const { invoke } = await import("@tauri-apps/api/core");
-        await invoke("open_file_in_system_viewer", { path: tempFilePath });
+        await invoke("open_file_in_system_viewer", { path: targetPath });
       }
       toast.success(t("toast.openedInSystemViewer"));
     } catch (err: any) {
@@ -954,6 +1184,48 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
       downloadFileFromTelegram(currentFile.channelId, currentFile.messageId, currentFile.name).catch(() => {});
     }
   }, [currentFile, t]);
+
+  const handleMediaError = useCallback(async () => {
+    if (!currentFile) {
+      setMediaError(true);
+      return;
+    }
+    const platform = getPlatform();
+    const isLinuxDesktop =
+      platform === "desktop" &&
+      typeof navigator !== "undefined" &&
+      /linux/i.test(navigator.userAgent);
+    const localPath = cachedMediaPathRef.current;
+    const MAX_BLOB_FALLBACK_BYTES = 150 * 1024 * 1024;
+    if (
+      (platform === "android" || isLinuxDesktop) &&
+      localPath &&
+      !mediaBlobFallbackRef.current &&
+      currentFile.size > 0 &&
+      currentFile.size <= MAX_BLOB_FALLBACK_BYTES
+    ) {
+      mediaBlobFallbackRef.current = true;
+      try {
+        const { readFile } = await import("@tauri-apps/plugin-fs");
+        const bytes = await readFile(localPath);
+        const ext = currentFile.name.split(".").pop()?.toLowerCase() ?? "";
+        const mimeLower = (currentFile.mime || "").toLowerCase();
+        const kind = mimeLower.startsWith("video/") || VIDEO_EXTS.has(ext) ? "video" : "audio";
+        const blob = new Blob([bytes as any], {
+          type: getMediaMimeType(currentFile.name, currentFile.mime, kind),
+        });
+        setContentUrl((prev) => {
+          if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+          return URL.createObjectURL(blob);
+        });
+        return;
+      } catch (fallbackErr) {
+        console.warn("[FilePreviewModal] Blob media fallback failed:", fallbackErr);
+      }
+    }
+    console.warn(`[FilePreviewModal] Media element failed to decode: ${currentFile.name}`);
+    setMediaError(true);
+  }, [currentFile]);
 
   const handleEnterEdit = useCallback(() => {
     setEditContent(textContent ?? "");
@@ -1145,7 +1417,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
   const isTableView       = isTableData && csvViewMode === "table" && !isEditMode;
   const isSvgImageView    = isSvg && svgViewMode === "image" && !isEditMode;
   const isCode            = textContent !== null && !isMarkdownPreview && !isTableView && !isSvgImageView;
-  const canEdit           = Boolean(currentFile && isEditableFile(currentFile) && !loading && !error && textContent !== null);
+  const canEdit           = Boolean(currentFile && isEditableFile(currentFile) && !isTruncatedPreview && !loading && !error && textContent !== null);
   const canRunInO2        = textContent !== null && !loading && !error && O2_LANG_MAP[langInfo.hljsLang] !== undefined;
 
   const statusParts: string[] = [];
@@ -1935,8 +2207,59 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
               </div>
             ))}
 
+            {/* MEDIA FALLBACK (Unsupported Video/Audio Codec e.g. MKV AC3/HEVC) */}
+            {(isVideo || isAudio) && mediaError && (
+              <div className="w-full h-full flex items-center justify-center p-6">
+                <div
+                  className="flex flex-col items-center max-w-md w-full p-8 rounded-3xl text-center shadow-sm"
+                  style={{
+                    background: isDark ? "#111214" : "#ffffff",
+                    border: `1px solid ${colors.border}`,
+                  }}
+                >
+                  <div className="h-16 w-16 rounded-2xl bg-pink-500/10 text-pink-500 flex items-center justify-center mb-4">
+                    {isVideo ? (
+                      <Film className="h-8 w-8" strokeWidth={1.5} />
+                    ) : (
+                      <Music className="h-8 w-8" strokeWidth={1.5} />
+                    )}
+                  </div>
+                  <h3 className="text-base font-bold mb-1 truncate max-w-full" style={{ color: colors.text }}>
+                    {currentFile.name}
+                  </h3>
+                  <div className="flex items-center gap-2 mb-4">
+                    <code className="text-[11px] font-mono px-2 py-0.5 rounded-md font-semibold" style={{ background: colors.badgeBg, color: colors.badgeText }}>
+                      {ext.toUpperCase() || currentFile.mime}
+                    </code>
+                    <span className="text-[11px] font-mono" style={{ color: colors.muted }}>
+                      {formatSize(currentFile.size)}
+                    </span>
+                  </div>
+                  <p className="text-xs leading-relaxed mb-6" style={{ color: colors.muted }}>
+                    {t("media.decodeErrorDescription")}
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-3">
+                    <button
+                      onClick={handleOpenInSystemApp}
+                      className="flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-semibold bg-[#0b57d0] hover:bg-[#0842a0] text-white shadow-xs transition-colors cursor-pointer"
+                    >
+                      <ExternalLink className="h-4 w-4" />
+                      {t("media.openInSystemPlayer")}
+                    </button>
+                    <button
+                      onClick={handleDownload}
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-white/10 dark:hover:bg-white/15 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
+                    >
+                      <Download className="h-4 w-4" />
+                      {t("topbar.download")}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* VIDEO */}
-            {isVideo && contentUrl && (
+            {isVideo && contentUrl && !mediaError && (
               <div
                 ref={videoContainerRef}
                 className="w-full h-full flex items-center justify-center p-4 relative bg-black select-none group"
@@ -1945,12 +2268,15 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
                 <video
                   ref={videoRef}
                   src={contentUrl}
+                  preload="metadata"
+                  playsInline
                   autoPlay
                   onClick={togglePlayVideo}
                   onPlay={() => setIsVideoPlaying(true)}
                   onPause={() => setIsVideoPlaying(false)}
                   onTimeUpdate={handleVideoTimeUpdate}
                   onLoadedMetadata={handleVideoLoadedMetadata}
+                  onError={handleMediaError}
                   className="max-w-full max-h-full cursor-pointer shadow-2xl rounded-lg"
                   style={{ maxHeight: "calc(100vh - 120px)" }}
                 />
@@ -2090,17 +2416,19 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
             )}
 
             {/* AUDIO */}
-            {isAudio && contentUrl && (
+            {isAudio && contentUrl && !mediaError && (
               <div className="w-full h-full flex items-center justify-center p-6 bg-slate-950/5 animate-in fade-in duration-200">
                 {/* Audio Element */}
                 <audio
                   ref={audioRef}
                   src={contentUrl}
+                  preload="metadata"
                   autoPlay
                   onPlay={() => setIsAudioPlaying(true)}
                   onPause={() => setIsAudioPlaying(false)}
                   onTimeUpdate={handleAudioTimeUpdate}
                   onLoadedMetadata={handleAudioLoadedMetadata}
+                  onError={handleMediaError}
                 />
 
                 {/* Inline Styles for visualizer and rotation animation */}
@@ -2313,6 +2641,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
                 <PdfErrorBoundary onRetry={() => setPdfData(pdfBufferRef.current ? new Uint8Array(pdfBufferRef.current) : null)}>
                   <PdfViewer
                     data={pdfData || pdfBufferRef.current}
+                    url={pdfUrl}
                     fileName={file.name}
                     onOpenSystemApp={handleOpenInSystemApp}
                   />

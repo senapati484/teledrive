@@ -1,5 +1,10 @@
 import { invoke } from "@tauri-apps/api/core";
 import i18n from "@/i18n";
+import {
+  discardDownloadFile,
+  finalizeDownloadFile,
+  writeDownloadChunk,
+} from "./downloadStreamWriter";
 
 // 512KB chunk size ensures fast, reliable serialization across all platforms
 const CHUNK_SIZE = 512 * 1024;
@@ -33,16 +38,28 @@ export async function saveBinaryFile(
     bytes = new Uint8Array(data);
   }
 
-  // Android's save dialog returns a Storage Access Framework URI
-  // (`content://…`), not a filesystem path. Only tauri-plugin-fs can resolve
-  // it through the ContentResolver; the native Rust writer would create a
-  // stray relative file (or fail) and leave the chosen document at 0 bytes.
+  // Android's save dialog returns a Storage Access Framework URI (`content://…`).
+  // Stream through our native Rust FD writer so large files don't blow WebView
+  // postMessage limits and DocumentProviders never see unsupported `wa`/`wt` modes.
   if (filePath.startsWith("content://")) {
     try {
-      const { writeFile } = await import("@tauri-apps/plugin-fs");
-      await writeFile(filePath, bytes);
+      if (bytes.byteLength === 0) {
+        await writeDownloadChunk(filePath, new Uint8Array(0), false);
+        await finalizeDownloadFile(filePath);
+        return;
+      }
+      let offset = 0;
+      let first = true;
+      while (offset < bytes.byteLength) {
+        const end = Math.min(offset + CHUNK_SIZE, bytes.byteLength);
+        await writeDownloadChunk(filePath, bytes.subarray(offset, end), !first);
+        first = false;
+        offset = end;
+      }
+      await finalizeDownloadFile(filePath);
       return;
     } catch (uriErr: any) {
+      await discardDownloadFile(filePath);
       console.error("[safeFileWriter] Failed to write content URI:", uriErr);
       throw new Error(
         i18n.t("messages:storage.saveFailed", { path: filePath })

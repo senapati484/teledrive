@@ -1,5 +1,6 @@
 import { getClient } from "./client";
 import { canonicalChannelId } from "./peerId";
+import { getPlatform } from "../platform";
 import { save as tauriSaveDialog } from "@tauri-apps/plugin-dialog";
 import {
   discardDownloadFile,
@@ -17,9 +18,17 @@ import { toast } from "sonner";
 import i18n from "@/i18n";
 
 const DOWNLOAD_CHUNK_SIZE = 512 * 1024;
-const WRITE_BATCH_BYTES = 2 * 1024 * 1024;
+const DESKTOP_WRITE_BATCH_BYTES = 2 * 1024 * 1024;
+// Keep Android WebView JNI IPC payloads compact (~682 KB base64 per flush).
+const ANDROID_WRITE_BATCH_BYTES = 512 * 1024;
 const PROGRESS_THROTTLE_MS = 200;
 const PAUSE_POLL_MS = 100;
+
+function getWriteBatchBytes(): number {
+  return getPlatform() === "android"
+    ? ANDROID_WRITE_BATCH_BYTES
+    : DESKTOP_WRITE_BATCH_BYTES;
+}
 
 interface DownloadJob {
   id: string;
@@ -124,7 +133,7 @@ async function runDownload(job: DownloadJob): Promise<void> {
       job.pending.push(chunk);
       job.pendingBytes += chunk.length;
       job.received += chunk.length;
-      if (job.pendingBytes >= WRITE_BATCH_BYTES) {
+      if (job.pendingBytes >= getWriteBatchBytes()) {
         await flushDownloadBuffer(job);
       }
       updateProgress(job);
@@ -344,20 +353,227 @@ export async function downloadFileFromTelegram(
 }
 
 /**
+ * Streams a Telegram file directly to a local filesystem path in bounded batches
+ * without accumulating the full file in JavaScript RAM.
+ * Supports AbortSignal cancellation and automatically cleans up partial temp files.
+ */
+export async function streamFileToLocalPath(
+  channelId: string,
+  messageId: number,
+  targetPath: string,
+  onProgress?: (progress: number) => void,
+  signal?: AbortSignal,
+  expectedSize = 0
+): Promise<number> {
+  if (signal?.aborted) {
+    throw new DOMException("Download aborted", "AbortError");
+  }
+
+  const client = getClient();
+  if (!client.connected) {
+    await client.connect();
+  }
+  if (signal?.aborted) {
+    throw new DOMException("Download aborted", "AbortError");
+  }
+
+  const peer = await resolvePeer(channelId);
+  const messages = await client.getMessages(peer, {
+    ids: [messageId],
+  });
+
+  const message = messages[0];
+  if (!message || !message.media) {
+    throw new Error(i18n.t("messages:download.errors.mediaNotFound"));
+  }
+
+  const size = toNumber(
+    (message as any).file?.size ??
+      (message.media as any)?.document?.size ??
+      expectedSize
+  );
+
+  const batchLimit = getWriteBatchBytes();
+  let pending: Uint8Array[] = [];
+  let pendingBytes = 0;
+  let received = 0;
+  let written = 0;
+  let lastProgressPct = -1;
+
+  const flushBatch = async () => {
+    if (pendingBytes <= 0) return;
+    const merged = concatChunks(pending, pendingBytes);
+    pending = [];
+    pendingBytes = 0;
+    await writeDownloadChunk(targetPath, merged, written > 0);
+    written += merged.length;
+  };
+
+  try {
+    const iterator = client.iterDownload({
+      file: message.media,
+      requestSize: DOWNLOAD_CHUNK_SIZE,
+      msgData: [peer, messageId],
+    });
+
+    for await (const rawChunk of iterator) {
+      if (signal?.aborted) {
+        await discardDownloadFile(targetPath);
+        throw new DOMException("Download aborted", "AbortError");
+      }
+      const chunk =
+        rawChunk instanceof Uint8Array ? rawChunk : new Uint8Array(rawChunk);
+      pending.push(chunk);
+      pendingBytes += chunk.length;
+      received += chunk.length;
+
+      if (pendingBytes >= batchLimit) {
+        await flushBatch();
+      }
+
+      if (size > 0) {
+        const pct = Math.min(99, downloadPercent(received, size));
+        if (pct !== lastProgressPct) {
+          lastProgressPct = pct;
+          onProgress?.(pct);
+        }
+      }
+    }
+
+    if (signal?.aborted) {
+      await discardDownloadFile(targetPath);
+      throw new DOMException("Download aborted", "AbortError");
+    }
+
+    if (received <= 0) {
+      throw new Error(i18n.t("messages:download.errors.mediaFailed"));
+    }
+
+    await flushBatch();
+    await finalizeDownloadFile(targetPath);
+    onProgress?.(100);
+    return received;
+  } catch (err) {
+    await discardDownloadFile(targetPath);
+    throw err;
+  }
+}
+
+/**
+ * Downloads at most `maxBytes` from the start of a Telegram file into memory.
+ * Stops chunk iteration early so previewing huge text/log/CSV files or sniffing
+ * unknown binary headers never downloads or buffers the entire file in RAM.
+ */
+export async function downloadFilePrefixToBuffer(
+  channelId: string,
+  messageId: number,
+  maxBytes: number,
+  onProgress?: (progress: number) => void,
+  signal?: AbortSignal
+): Promise<{ data: Uint8Array; truncated: boolean; totalSize: number }> {
+  if (signal?.aborted) {
+    throw new DOMException("Download aborted", "AbortError");
+  }
+
+  const client = getClient();
+  if (!client.connected) {
+    await client.connect();
+  }
+  if (signal?.aborted) {
+    throw new DOMException("Download aborted", "AbortError");
+  }
+
+  const peer = await resolvePeer(channelId);
+  const messages = await client.getMessages(peer, {
+    ids: [messageId],
+  });
+
+  const message = messages[0];
+  if (!message || !message.media) {
+    throw new Error(i18n.t("messages:download.errors.mediaNotFound"));
+  }
+
+  const totalSize = toNumber(
+    (message as any).file?.size ??
+      (message.media as any)?.document?.size ??
+      0
+  );
+  const requestSize =
+    maxBytes <= 64 * 1024 ? 64 * 1024 : DOWNLOAD_CHUNK_SIZE;
+  const progressDenominator =
+    totalSize > 0 ? Math.min(totalSize, maxBytes) : maxBytes;
+
+  const chunks: Uint8Array[] = [];
+  let received = 0;
+
+  const iterator = client.iterDownload({
+    file: message.media,
+    requestSize,
+    msgData: [peer, messageId],
+  });
+
+  for await (const rawChunk of iterator) {
+    if (signal?.aborted) {
+      throw new DOMException("Download aborted", "AbortError");
+    }
+    const chunk =
+      rawChunk instanceof Uint8Array ? rawChunk : new Uint8Array(rawChunk);
+    if (chunk.length === 0) continue;
+
+    const remaining = maxBytes - received;
+    if (remaining <= 0) break;
+
+    if (chunk.length > remaining) {
+      chunks.push(chunk.subarray(0, remaining));
+      received += remaining;
+    } else {
+      chunks.push(chunk);
+      received += chunk.length;
+    }
+
+    if (progressDenominator > 0) {
+      onProgress?.(Math.min(99, downloadPercent(received, progressDenominator)));
+    }
+    if (received >= maxBytes) {
+      break;
+    }
+  }
+
+  if (signal?.aborted) {
+    throw new DOMException("Download aborted", "AbortError");
+  }
+  if (received <= 0) {
+    throw new Error(i18n.t("messages:download.errors.mediaFailed"));
+  }
+
+  onProgress?.(100);
+  const data = concatChunks(chunks, received);
+  const truncated = totalSize > 0 ? totalSize > data.length : received >= maxBytes;
+  return { data, truncated, totalSize };
+}
+
+/**
  * Downloads a file's media from Telegram into a memory buffer (Uint8Array).
- * Primarily used for in-app file previews.
+ * Primarily used for smaller in-app file previews (text, images, PDFs).
  */
 export async function downloadFileToBuffer(
   channelId: string,
   messageId: number,
-  onProgress?: (progress: number) => void
+  onProgress?: (progress: number) => void,
+  signal?: AbortSignal
 ): Promise<Uint8Array> {
+  if (signal?.aborted) {
+    throw new DOMException("Download aborted", "AbortError");
+  }
   const client = getClient();
   
   try {
     if (!client.connected) {
       console.log("[downloader] Client disconnected, reconnecting...");
       await client.connect();
+    }
+    if (signal?.aborted) {
+      throw new DOMException("Download aborted", "AbortError");
     }
     
     const peer = await resolvePeer(channelId);
@@ -372,6 +588,7 @@ export async function downloadFileToBuffer(
     
     const buffer = (await client.downloadMedia(message.media, {
       progressCallback: (downloadedBytes: any, totalBytes: any) => {
+        if (signal?.aborted) return;
         const downloaded = toNumber(downloadedBytes);
         const total = toNumber(totalBytes);
         if (total > 0) {
@@ -380,6 +597,10 @@ export async function downloadFileToBuffer(
         }
       },
     })) as any;
+
+    if (signal?.aborted) {
+      throw new DOMException("Download aborted", "AbortError");
+    }
     
     if (!buffer) {
       throw new Error(i18n.t("messages:download.errors.mediaFailed"));
@@ -394,7 +615,9 @@ export async function downloadFileToBuffer(
     }
     return new Uint8Array(buffer);
   } catch (error: any) {
-    console.error("Failed to download file to buffer:", error);
+    if (error?.name !== "AbortError") {
+      console.error("Failed to download file to buffer:", error);
+    }
     throw error;
   }
 }

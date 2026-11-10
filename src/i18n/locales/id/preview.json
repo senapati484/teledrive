@@ -70,7 +70,9 @@
   "media": {
     "skipBack": "Mundur 10 dtk",
     "skipForward": "Maju 10 dtk",
-    "audioTrack": "Trek Audio"
+    "audioTrack": "Trek Audio",
+    "decodeErrorDescription": "Format atau codec media ini tidak dapat diputar di pemutar bawaan. Anda dapat membukanya langsung di pemutar media sistem (misalnya VLC) atau mengunduhnya.",
+    "openInSystemPlayer": "Buka di Pemutar Sistem"
   },
   "archive": {
     "badge": "ARSIP {{ext}}",

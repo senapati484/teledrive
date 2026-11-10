@@ -70,7 +70,9 @@
   "media": {
     "skipBack": "向後跳 10 秒",
     "skipForward": "快進 10 秒",
-    "audioTrack": "音軌"
+    "audioTrack": "音軌",
+    "decodeErrorDescription": "內建播放器無法播放此媒體格式或編碼。您可以直接在系統媒體播放器（如 VLC）中開啟或下載該檔案。",
+    "openInSystemPlayer": "在系統播放器中開啟"
   },
   "archive": {
     "badge": "{{ext}} 存檔",

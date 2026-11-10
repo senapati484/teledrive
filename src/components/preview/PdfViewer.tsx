@@ -42,7 +42,8 @@ import {
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Props {
-  data: Uint8Array | null;
+  data?: Uint8Array | null;
+  url?: string | null;
   fileName: string;
   onOpenSystemApp?: () => void;
 }
@@ -179,7 +180,7 @@ const PageCanvas = memo(function PageCanvas({
 
 // ─── Main PdfViewer Component ─────────────────────────────────────────────────
 
-export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
+export function PdfViewer({ data, url, fileName, onOpenSystemApp }: Props) {
   const { t } = useTranslation("preview");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -220,7 +221,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
     setError(null);
     pageRefs.current = [];
 
-    if (!data || data.length === 0) {
+    if ((!data || data.length === 0) && !url) {
       setError("pdf.errors.noData");
       setLoading(false);
       return;
@@ -241,21 +242,34 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
           pdfjs.GlobalWorkerOptions.workerSrc = "/pdfjs/pdf.worker.min.js";
         }
 
-        // Copy buffer to avoid detached ArrayBuffer issues after component re-renders
-        const buf = data.buffer.slice(
-          data.byteOffset,
-          data.byteOffset + data.byteLength
-        );
+        let loadTask: any;
+        if (url && (!data || data.length === 0)) {
+          loadTask = pdfjs.getDocument({
+            url,
+            rangeChunkSize: 65536,
+            disableRange: false,
+            disableStream: false,
+            disableAutoFetch: true,
+            isEvalSupported: false,
+          });
+        } else {
+          // Copy buffer to avoid detached ArrayBuffer issues after component re-renders
+          const src = data!;
+          const buf = src.buffer.slice(
+            src.byteOffset,
+            src.byteOffset + src.byteLength
+          );
 
-        const loadTask = pdfjs.getDocument({
-          data: new Uint8Array(buf),
-          // Disable range requests (we already have the full buffer)
-          disableRange: true,
-          disableStream: true,
-          disableAutoFetch: true,
-          // Suppress cmap warnings — most modern PDFs don't need them
-          isEvalSupported: false,
-        });
+          loadTask = pdfjs.getDocument({
+            data: new Uint8Array(buf),
+            // Disable range requests (we already have the full buffer)
+            disableRange: true,
+            disableStream: true,
+            disableAutoFetch: true,
+            // Suppress cmap warnings — most modern PDFs don't need them
+            isEvalSupported: false,
+          });
+        }
 
         const doc = await loadTask.promise;
         if (cancelled) {
@@ -314,7 +328,7 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [data]);
+  }, [data, url]);
 
   // Destroy PDF on unmount
   useEffect(() => {
@@ -496,30 +510,34 @@ export function PdfViewer({ data, fileName, onOpenSystemApp }: Props) {
 
   // ── Print ─────────────────────────────────────────────────────────────────
   const handlePrint = useCallback(() => {
-    if (!data) return;
+    if (!data && !url) return;
     try {
-      const blob = new Blob([new Uint8Array(data)], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
+      let createdBlobUrl = false;
+      const printUrl = data
+        ? (() => {
+            createdBlobUrl = true;
+            return URL.createObjectURL(new Blob([new Uint8Array(data)], { type: "application/pdf" }));
+          })()
+        : url!;
       const iframe = document.createElement("iframe");
       iframe.style.display = "none";
-      iframe.src = url;
+      iframe.src = printUrl;
       document.body.appendChild(iframe);
       iframe.onload = () => {
         try {
           iframe.contentWindow?.print();
         } catch {
-          // Fallback: open in new tab
-          window.open(url, "_blank");
+          window.open(printUrl, "_blank");
         }
         setTimeout(() => {
           document.body.removeChild(iframe);
-          URL.revokeObjectURL(url);
+          if (createdBlobUrl) URL.revokeObjectURL(printUrl);
         }, 2000);
       };
     } catch (e) {
       console.warn("[PdfViewer] Print failed:", e);
     }
-  }, [data]);
+  }, [data, url]);
 
   // ── Computed page dimensions at current scale ─────────────────────────────
   const pageRects = useMemo(() => {
