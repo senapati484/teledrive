@@ -1,3 +1,17 @@
+export interface TeleFileSegment {
+  messageId: number;
+  size: number;
+}
+
+export interface TeleFileEncryption {
+  /** Envelope version: 1 = TDE1 chunked AES-256-GCM */
+  v: 1;
+  /** Base64 key verification salt/fingerprint */
+  s: string;
+  /** Original plaintext size before framing overhead */
+  plainSize?: number;
+}
+
 export interface TeleFile {
   id: string;
   name: string;
@@ -9,6 +23,10 @@ export interface TeleFile {
   uploadedAt: number;
   /** SHA-256 of the file contents when the uploader computed one. */
   hash?: string;
+  /** Ordered Telegram segment messages when split past single-file limits (>2/4 GB). */
+  segments?: TeleFileSegment[];
+  /** Client-side encryption metadata when stored in zero-knowledge E2EE mode. */
+  enc?: TeleFileEncryption;
   starred?: boolean;
   trashed?: boolean;
   archived?: boolean;

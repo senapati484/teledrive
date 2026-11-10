@@ -15,11 +15,59 @@ import { withTelegramRetry } from "./rateLimit";
 import { sha256 } from "@noble/hashes/sha256";
 import { bytesToHex } from "@noble/hashes/utils";
 import i18n from "@/i18n";
+import {
+  E2EE_BLOCK_SIZE,
+  E2EE_FRAME_OVERHEAD,
+  E2EE_HEADER_BYTES,
+  StreamEncryptor,
+  base64ToBytes,
+} from "../secure/e2ee";
+import {
+  clearUploadCheckpoint,
+  loadUploadCheckpoint,
+  saveUploadCheckpoint,
+  type UploadCheckpoint,
+} from "../upload/uploadCheckpoints";
+import type { TeleFileEncryption, TeleFileSegment } from "../types";
 
 export const UPLOAD_CHUNK_SIZE = 512 * 1024; // 512 KiB recommended chunk size for Telegram
 export const FREE_MAX_FILE_PARTS = 4000; // ~2,000 MiB (1.95 GiB) Telegram non-Premium cap
 export const PREMIUM_MAX_FILE_PARTS = 8000; // ~4,000 MiB (3.91 GiB) Telegram Premium cap
+// Conservative plaintext segment ceilings aligned cleanly to 512 KiB blocks
+// (leaves >= 199 parts headroom below Telegram's cap for E2EE framing overhead).
+export const SAFE_FREE_SEGMENT_BYTES = 1_900 * 1024 * 1024;
+export const SAFE_PREMIUM_SEGMENT_BYTES = 3_800 * 1024 * 1024;
 export const DEFAULT_BIG_PART_CONCURRENCY = 3;
+
+export interface PlannedSegment {
+  index: number;
+  offset: number;
+  size: number;
+}
+
+/**
+ * Splits `totalSize` into sequential upload segments bounded by `maxSegmentBytes`.
+ * Returns a single segment `{ index: 0, offset: 0, size: totalSize }` when no split is needed.
+ */
+export function planFileSegments(
+  totalSize: number,
+  maxSegmentBytes: number
+): PlannedSegment[] {
+  if (totalSize <= 0 || maxSegmentBytes <= 0) return [];
+  if (totalSize <= maxSegmentBytes) {
+    return [{ index: 0, offset: 0, size: totalSize }];
+  }
+  const segments: PlannedSegment[] = [];
+  let offset = 0;
+  let index = 0;
+  while (offset < totalSize) {
+    const size = Math.min(maxSegmentBytes, totalSize - offset);
+    segments.push({ index, offset, size });
+    offset += size;
+    index++;
+  }
+  return segments;
+}
 
 const CHUNK_SIZE = UPLOAD_CHUNK_SIZE;
 const CHUNK_TIMEOUT_MS = 20_000;
@@ -146,6 +194,23 @@ interface UploadProgressCallback {
 export interface HashedUploadResult {
   message: any;
   hash: string | null;
+  segments?: TeleFileSegment[];
+  enc?: TeleFileEncryption;
+}
+
+export interface UploadAdvancedOptions {
+  /** Stable fingerprint key enabling part-level & segment-level checkpoint resume. */
+  checkpointKey?: string;
+  /** Split files exceeding Telegram single-file caps into sequential messages (default: true). */
+  allowMultiSegment?: boolean;
+  /** Override segment threshold (for tests). */
+  maxSegmentBytesOverride?: number;
+  /** Active E2EE AES-GCM master key (enables TDE1 streaming envelope encryption). */
+  encryptionKey?: CryptoKey | null;
+  /** Public PBKDF2 KDF salt base64 embedded into `TeleFile.enc.s`. */
+  encryptionSaltB64?: string | null;
+  /** Optional anonymized Telegram document filename when encrypting (e.g., `<id>.tde`). */
+  anonymizedFileName?: string;
 }
 
 /**
@@ -177,9 +242,24 @@ export type UploadRetryCallback = (event: {
   error: any;
 }) => void;
 
+function appendChunkBytes(a: Uint8Array, b: Uint8Array): Uint8Array {
+  if (a.length === 0) return b;
+  if (b.length === 0) return a;
+  const merged = new Uint8Array(a.length + b.length);
+  merged.set(a, 0);
+  merged.set(b, a.length);
+  return merged;
+}
+
+function isStaleResumeError(err: any): boolean {
+  const msg = String(err?.errorMessage || err?.message || "").toUpperCase();
+  return msg.includes("FILE_ID_INVALID") || msg.includes("FILE_PART_") || msg.includes("PART_INVALID");
+}
+
 /**
  * Uploads a file (either from local native path or browser File object) to Telegram storage channel.
- * Returns the message object representing the uploaded file document.
+ * Supports pipelined chunks, resumable checkpoints, >2/4 GB multi-segment splitting,
+ * and optional streaming client-side E2EE (`TDE1`).
  */
 export async function uploadFileToTelegram(
   channelId: string,
@@ -191,33 +271,57 @@ export async function uploadFileToTelegram(
   onRetry?: UploadRetryCallback,
   hash = false,
   thumbBytes?: Uint8Array | null,
+  advanced?: UploadAdvancedOptions,
 ): Promise<any> {
   if (fileSize <= 0) {
     throw new Error(`Cannot upload 0-byte file "${fileName}": Telegram MTProto requires at least 1 byte.`);
   }
 
-  const rawValidation = validateUploadSizeForAccount(fileSize, null);
-  if (!rawValidation.ok) {
-    throw new Error(
-      i18n.t("messages:upload.exceedsPremiumLimit", {
-        name: fileName,
-        defaultValue: `"${fileName}" exceeds Telegram's ~4 GB single-file limit.`,
-      })
-    );
-  }
-  if (rawValidation.totalParts > FREE_MAX_FILE_PARTS) {
-    const isPremium = await detectAccountIsPremium();
-    const accountValidation = validateUploadSizeForAccount(fileSize, isPremium);
-    if (!accountValidation.ok) {
+  const allowMultiSegment = advanced?.allowMultiSegment ?? true;
+  const isEncrypted = Boolean(advanced?.encryptionKey);
+  const effectiveWireTotalEstimate = isEncrypted
+    ? E2EE_HEADER_BYTES +
+      fileSize +
+      Math.ceil(fileSize / E2EE_BLOCK_SIZE) * E2EE_FRAME_OVERHEAD
+    : fileSize;
+
+  let maxPlainSegmentBytes = SAFE_FREE_SEGMENT_BYTES;
+  if (advanced?.maxSegmentBytesOverride && advanced.maxSegmentBytesOverride > 0) {
+    maxPlainSegmentBytes = advanced.maxSegmentBytesOverride;
+  } else if (!allowMultiSegment) {
+    const rawValidation = validateUploadSizeForAccount(effectiveWireTotalEstimate, null);
+    if (!rawValidation.ok) {
       throw new Error(
-        i18n.t("messages:upload.exceedsFreeLimit", {
+        i18n.t("messages:upload.exceedsPremiumLimit", {
           name: fileName,
-          defaultValue: `"${fileName}" exceeds Telegram's ~2 GB upload limit for standard accounts (Telegram Premium supports up to ~4 GB).`,
+          defaultValue: `"${fileName}" exceeds Telegram's ~4 GB single-file limit.`,
         })
       );
     }
+    if (rawValidation.totalParts > FREE_MAX_FILE_PARTS) {
+      const isPremium = await detectAccountIsPremium();
+      const accountValidation = validateUploadSizeForAccount(effectiveWireTotalEstimate, isPremium);
+      if (!accountValidation.ok) {
+        throw new Error(
+          i18n.t("messages:upload.exceedsFreeLimit", {
+            name: fileName,
+            defaultValue: `"${fileName}" exceeds Telegram's ~2 GB upload limit for standard accounts (Telegram Premium supports up to ~4 GB).`,
+          })
+        );
+      }
+    }
+    maxPlainSegmentBytes = Math.max(fileSize, SAFE_PREMIUM_SEGMENT_BYTES);
+  } else if (Math.ceil(effectiveWireTotalEstimate / CHUNK_SIZE) > FREE_MAX_FILE_PARTS) {
+    const isPremium = await detectAccountIsPremium();
+    maxPlainSegmentBytes =
+      isPremium === true ? SAFE_PREMIUM_SEGMENT_BYTES : SAFE_FREE_SEGMENT_BYTES;
+  } else {
+    maxPlainSegmentBytes = SAFE_FREE_SEGMENT_BYTES;
   }
 
+  const plannedSegments = planFileSegments(fileSize, maxPlainSegmentBytes);
+  const totalSegs = plannedSegments.length;
+  const isPathInput = typeof filePathOrFile === "string";
   const client = getClient();
 
   let hasher: ReturnType<typeof sha256.create> | null = null;
@@ -229,158 +333,386 @@ export async function uploadFileToTelegram(
     }
   }
 
-  // Setup file ID using bigInt which is required by GramJS API
-  const fileId = bigInt(Math.floor(Math.random() * 1e15));
+  const checkpointKey = advanced?.checkpointKey;
+  let activeCheckpoint: UploadCheckpoint | null =
+    checkpointKey ? loadUploadCheckpoint(checkpointKey) : null;
+  if (activeCheckpoint && activeCheckpoint.encrypted !== isEncrypted) {
+    clearUploadCheckpoint(checkpointKey!);
+    activeCheckpoint = null;
+  }
 
-  const isBig = rawValidation.isBig;
-  const totalParts = rawValidation.totalParts;
-  const isPathInput = typeof filePathOrFile === "string";
-
-  // Read & hash chunks sequentially (so SHA-256 is deterministic and only ~1.5 MiB
-  // sits in flight), while pipelining up to 3 concurrent SaveBigFilePart RPCs for
-  // multi-10MB files. Automatically steps down to 1 if Telegram reports FLOOD_WAIT.
-  let partConcurrency = isBig ? DEFAULT_BIG_PART_CONCURRENCY : 1;
-  let uploadedBytes = 0;
-  let abortedError: any = null;
-  const inFlight = new Set<Promise<void>>();
-
-  const uploadSinglePart = async (partIndex: number, chunkBytes: Uint8Array) => {
-    const chunkLabel = `${isBig ? "SaveBigFilePart" : "SaveFilePart"}(${partIndex}/${totalParts})`;
-    await withTelegramRetry(
-      () =>
-        withTimeout(
-          isBig
-            ? client.invoke(
-                new Api.upload.SaveBigFilePart({
-                  fileId,
-                  filePart: partIndex,
-                  fileTotalParts: totalParts,
-                  bytes: Buffer.from(chunkBytes),
-                })
-              )
-            : client.invoke(
-                new Api.upload.SaveFilePart({
-                  fileId,
-                  filePart: partIndex,
-                  bytes: Buffer.from(chunkBytes),
-                })
-              ),
-          CHUNK_TIMEOUT_MS,
-          chunkLabel
-        ),
-      chunkLabel,
-      // Cap at 5 attempts per chunk — 5 × 30s (FLOOD_WAIT_CAP) = 150s
-      // worst case before failing. Combined with the per-batch
-      // breather in the runner, persistent rate limits surface as
-      // file failures (visible in the overlay) rather than 8-minute
-      // stalls.
-      5,
-      (e) => {
-        if (e.floodSeconds !== null && partConcurrency > 1) {
-          partConcurrency = 1;
-        }
-        onRetry?.({
-          ...e,
-          label: chunkLabel,
-        });
-      },
-    );
-
-    uploadedBytes += chunkBytes.length;
-    onProgress?.(Math.min(uploadedBytes, fileSize), fileSize);
-  };
-
-  for (let partIndex = 0; partIndex < totalParts; partIndex++) {
-    while (inFlight.size >= partConcurrency && !abortedError) {
-      await Promise.race(inFlight).catch(() => {});
+  let presetFileSalt: Uint8Array | undefined;
+  if (isEncrypted && activeCheckpoint?.fileSaltB64) {
+    try {
+      const parsedSalt = base64ToBytes(activeCheckpoint.fileSaltB64);
+      if (parsedSalt.length === 16) presetFileSalt = parsedSalt;
+    } catch {
+      presetFileSalt = undefined;
     }
-    if (abortedError) break;
+  }
 
-    const start = partIndex * CHUNK_SIZE;
-    const end = Math.min(start + CHUNK_SIZE, fileSize);
-    const chunkBytes = await readUploadChunk(filePathOrFile, isPathInput, start, end);
+  const encryptor = advanced?.encryptionKey
+    ? new StreamEncryptor(advanced.encryptionKey, E2EE_BLOCK_SIZE, presetFileSalt)
+    : null;
 
-    if (hasher) {
-      try {
-        hasher.update(chunkBytes);
-      } catch (err) {
-        console.warn("[uploader] SHA-256 update failed; uploading without hash:", err);
-        hasher = null;
+  const uploadedSegments: TeleFileSegment[] = [];
+  let primaryMessage: any = null;
+  let completedPlainPriorSegs = 0;
+
+  // Replay completed segments locally for deterministic SHA-256 & nonce state
+  const priorCompletedCount = activeCheckpoint?.completedSegments?.length ?? 0;
+  for (let i = 0; i < totalSegs; i++) {
+    const seg = plannedSegments[i];
+    const isMulti = totalSegs > 1;
+    const baseTelegramFileName = isEncrypted
+      ? advanced?.anonymizedFileName || `encrypted_${Math.random().toString(36).slice(2, 10)}.tde`
+      : isMulti
+      ? `${fileName}.part${String(i + 1).padStart(3, "0")}`
+      : fileName;
+
+    if (
+      activeCheckpoint &&
+      i < priorCompletedCount &&
+      activeCheckpoint.completedSegments[i]?.messageId > 0
+    ) {
+      if (hasher) {
+        for (let off = 0; off < seg.size; off += CHUNK_SIZE) {
+          const end = Math.min(off + CHUNK_SIZE, seg.size);
+          const buf = await readUploadChunk(
+            filePathOrFile,
+            isPathInput,
+            seg.offset + off,
+            seg.offset + end
+          );
+          try {
+            hasher.update(buf);
+          } catch {
+            hasher = null;
+            break;
+          }
+        }
+      }
+      if (encryptor) {
+        encryptor.advanceBlockIndex(Math.ceil(seg.size / E2EE_BLOCK_SIZE));
+      }
+      uploadedSegments.push(activeCheckpoint.completedSegments[i]);
+      completedPlainPriorSegs += seg.size;
+      onProgress?.(completedPlainPriorSegs, fileSize);
+      continue;
+    }
+
+    const segWireSize = encryptor
+      ? (i === 0 ? E2EE_HEADER_BYTES : 0) +
+        seg.size +
+        Math.ceil(seg.size / E2EE_BLOCK_SIZE) * E2EE_FRAME_OVERHEAD
+      : seg.size;
+    const segTotalParts = Math.ceil(segWireSize / CHUNK_SIZE);
+    const isBigSeg = segWireSize > 10 * 1024 * 1024;
+
+    const uploadThisSegment = async (
+      allowResumeCheckpoint: boolean,
+      skipHashUpdate: boolean
+    ): Promise<{ sentMsg: any; wireSize: number }> => {
+      const canResume =
+        allowResumeCheckpoint &&
+        activeCheckpoint &&
+        activeCheckpoint.segmentIndex === i &&
+        activeCheckpoint.totalParts === segTotalParts &&
+        activeCheckpoint.completedParts > 0 &&
+        activeCheckpoint.completedParts < segTotalParts;
+
+      const segFileId = canResume
+        ? bigInt(activeCheckpoint!.fileIdStr)
+        : bigInt(Math.floor(Math.random() * 1e15));
+      const resumeFromPart = canResume ? activeCheckpoint!.completedParts : 0;
+
+      let partConcurrency = isBigSeg ? DEFAULT_BIG_PART_CONCURRENCY : 1;
+      let wireSentBytes = 0;
+      let abortedError: any = null;
+      const inFlight = new Set<Promise<void>>();
+      const ackedParts = new Set<number>();
+      let contiguousAcked = resumeFromPart;
+      for (let p = 0; p < resumeFromPart; p++) ackedParts.add(p);
+
+      const persistProgress = () => {
+        if (!checkpointKey) return;
+        saveUploadCheckpoint({
+          key: checkpointKey,
+          segmentIndex: i,
+          fileIdStr: segFileId.toString(),
+          totalParts: segTotalParts,
+          completedParts: contiguousAcked,
+          fileSaltB64: encryptor?.fileSaltB64,
+          completedSegments: [...uploadedSegments],
+          encrypted: isEncrypted,
+          updatedAt: Date.now(),
+        });
+      };
+
+      const dispatchPart = async (partIndex: number, wireBytes: Uint8Array) => {
+        while (inFlight.size >= partConcurrency && !abortedError) {
+          await Promise.race(inFlight).catch(() => {});
+        }
+        if (abortedError) return;
+
+        const chunkLabel = `${isBigSeg ? "SaveBigFilePart" : "SaveFilePart"}(${partIndex}/${segTotalParts})`;
+        let task!: Promise<void>;
+        task = (async () => {
+          await withTelegramRetry(
+            () =>
+              withTimeout(
+                isBigSeg
+                  ? client.invoke(
+                      new Api.upload.SaveBigFilePart({
+                        fileId: segFileId,
+                        filePart: partIndex,
+                        fileTotalParts: segTotalParts,
+                        bytes: Buffer.from(wireBytes),
+                      })
+                    )
+                  : client.invoke(
+                      new Api.upload.SaveFilePart({
+                        fileId: segFileId,
+                        filePart: partIndex,
+                        bytes: Buffer.from(wireBytes),
+                      })
+                    ),
+                CHUNK_TIMEOUT_MS,
+                chunkLabel
+              ),
+            chunkLabel,
+            5,
+            (e) => {
+              if (e.floodSeconds !== null && partConcurrency > 1) {
+                partConcurrency = 1;
+              }
+              onRetry?.({
+                ...e,
+                label: chunkLabel,
+              });
+            }
+          );
+
+          wireSentBytes += wireBytes.length;
+          ackedParts.add(partIndex);
+          while (ackedParts.has(contiguousAcked)) {
+            contiguousAcked++;
+          }
+          if (checkpointKey && (contiguousAcked % 5 === 0 || contiguousAcked === segTotalParts)) {
+            persistProgress();
+          }
+
+          const segFraction = segWireSize > 0 ? Math.min(1, wireSentBytes / segWireSize) : 1;
+          const approxPlainDone =
+            completedPlainPriorSegs + Math.round(seg.size * segFraction);
+          onProgress?.(Math.min(approxPlainDone, fileSize), fileSize);
+        })()
+          .catch((err) => {
+            if (!abortedError) abortedError = err;
+          })
+          .finally(() => {
+            inFlight.delete(task);
+          });
+        inFlight.add(task);
+      };
+
+      if (encryptor) {
+        let pendingCipher: Uint8Array = i === 0 ? encryptor.header : new Uint8Array(0);
+        let plainCursor = 0;
+        let outPartIndex = 0;
+
+        while ((plainCursor < seg.size || pendingCipher.length > 0) && !abortedError) {
+          while (pendingCipher.length < CHUNK_SIZE && plainCursor < seg.size) {
+            const take = Math.min(E2EE_BLOCK_SIZE, seg.size - plainCursor);
+            const rawBlock = await readUploadChunk(
+              filePathOrFile,
+              isPathInput,
+              seg.offset + plainCursor,
+              seg.offset + plainCursor + take
+            );
+            plainCursor += take;
+
+            if (hasher && !skipHashUpdate) {
+              try {
+                hasher.update(rawBlock);
+              } catch (err) {
+                console.warn("[uploader] SHA-256 update failed; uploading without hash:", err);
+                hasher = null;
+              }
+            }
+
+            const encryptedFrame = await encryptor.encryptBlock(rawBlock);
+            pendingCipher = appendChunkBytes(pendingCipher, encryptedFrame);
+          }
+
+          const emitLen = Math.min(CHUNK_SIZE, pendingCipher.length);
+          const wirePart = pendingCipher.slice(0, emitLen);
+          pendingCipher = pendingCipher.slice(emitLen);
+          const currentPartIdx = outPartIndex++;
+
+          if (currentPartIdx < resumeFromPart) {
+            wireSentBytes += wirePart.length;
+            continue;
+          }
+          await dispatchPart(currentPartIdx, wirePart);
+        }
+      } else {
+        for (let partIndex = 0; partIndex < segTotalParts; partIndex++) {
+          if (abortedError) break;
+          const start = partIndex * CHUNK_SIZE;
+          const end = Math.min(start + CHUNK_SIZE, seg.size);
+
+          // Skip disk read completely for resumed parts when hash isn't requested
+          if (partIndex < resumeFromPart && (!hasher || skipHashUpdate)) {
+            wireSentBytes += end - start;
+            continue;
+          }
+
+          const chunkBytes = await readUploadChunk(
+            filePathOrFile,
+            isPathInput,
+            seg.offset + start,
+            seg.offset + end
+          );
+
+          if (hasher && !skipHashUpdate) {
+            try {
+              hasher.update(chunkBytes);
+            } catch (err) {
+              console.warn("[uploader] SHA-256 update failed; uploading without hash:", err);
+              hasher = null;
+            }
+          }
+
+          if (partIndex < resumeFromPart) {
+            wireSentBytes += chunkBytes.length;
+            continue;
+          }
+          await dispatchPart(partIndex, chunkBytes);
+        }
+      }
+
+      if (inFlight.size > 0) {
+        await Promise.allSettled(inFlight);
+      }
+      if (abortedError) {
+        persistProgress();
+        throw abortedError;
+      }
+
+      const inputFile: Api.TypeInputFile = isBigSeg
+        ? new Api.InputFileBig({
+            id: segFileId,
+            parts: segTotalParts,
+            name: baseTelegramFileName,
+          })
+        : new Api.InputFile({
+            id: segFileId,
+            parts: segTotalParts,
+            name: baseTelegramFileName,
+            md5Checksum: "",
+          });
+
+      const caption =
+        i === 0
+          ? `teledrive_file:${JSON.stringify({
+              folder: folderPath,
+              ...(isMulti ? { name: fileName, seg: 0, totalSegs } : {}),
+            })}`
+          : `teledrive_file_part:${JSON.stringify({
+              folder: folderPath,
+              name: fileName,
+              seg: i,
+              totalSegs,
+            })}`;
+
+      const finalizeLabel = "client.sendFile";
+      const thumbFile =
+        i === 0 && !isEncrypted && thumbBytes && thumbBytes.length > 0
+          ? buildTelegramThumbFile(thumbBytes)
+          : undefined;
+
+      const sentMsg = await withTelegramRetry(
+        () =>
+          withTimeout(
+            client.sendFile(canonicalChannelId(channelId), {
+              file: inputFile,
+              forceDocument: true,
+              caption,
+              ...(thumbFile ? { thumb: thumbFile as any } : {}),
+            }),
+            SENDFILE_TIMEOUT_MS,
+            finalizeLabel
+          ),
+        finalizeLabel,
+        3,
+        onRetry
+          ? (e) =>
+              onRetry({
+                ...e,
+                label: finalizeLabel,
+              })
+          : undefined
+      );
+
+      return { sentMsg, wireSize: segWireSize };
+    };
+
+    let segResult: { sentMsg: any; wireSize: number };
+    const segStartBlockIndex = Math.ceil(seg.offset / E2EE_BLOCK_SIZE);
+    try {
+      encryptor?.setBlockIndex(segStartBlockIndex);
+      segResult = await uploadThisSegment(true, false);
+    } catch (err: any) {
+      if (checkpointKey && activeCheckpoint && isStaleResumeError(err)) {
+        clearUploadCheckpoint(checkpointKey);
+        activeCheckpoint = null;
+        encryptor?.setBlockIndex(segStartBlockIndex);
+        segResult = await uploadThisSegment(false, true);
+      } else {
+        throw err;
       }
     }
 
-    let task!: Promise<void>;
-    task = uploadSinglePart(partIndex, chunkBytes)
-      .catch((err) => {
-        if (!abortedError) {
-          abortedError = err;
-        }
-      })
-      .finally(() => {
-        inFlight.delete(task);
+    if (i === 0) primaryMessage = segResult.sentMsg;
+    uploadedSegments.push({
+      messageId: Number(segResult.sentMsg.id),
+      size: segResult.wireSize,
+    });
+    completedPlainPriorSegs += seg.size;
+    onProgress?.(completedPlainPriorSegs, fileSize);
+
+    if (checkpointKey && i + 1 < totalSegs) {
+      saveUploadCheckpoint({
+        key: checkpointKey,
+        segmentIndex: i + 1,
+        fileIdStr: "0",
+        totalParts: 0,
+        completedParts: 0,
+        fileSaltB64: encryptor?.fileSaltB64,
+        completedSegments: [...uploadedSegments],
+        encrypted: isEncrypted,
+        updatedAt: Date.now(),
       });
-    inFlight.add(task);
+    }
   }
 
-  if (inFlight.size > 0) {
-    await Promise.allSettled(inFlight);
-  }
-  if (abortedError) {
-    throw abortedError;
+  if (checkpointKey) {
+    clearUploadCheckpoint(checkpointKey);
   }
 
-  // Finalize upload inside Telegram
-  let inputFile: Api.TypeInputFile;
-  if (isBig) {
-    inputFile = new Api.InputFileBig({
-      id: fileId,
-      parts: totalParts,
-      name: fileName,
-    });
-  } else {
-    inputFile = new Api.InputFile({
-      id: fileId,
-      parts: totalParts,
-      name: fileName,
-      md5Checksum: "",
-    });
-  }
-
-  // Send document to storage channel with folder path JSON metadata caption.
-  // Finalize also goes through the retry helper — the file is already fully
-  // uploaded to Telegram at this point, so the only failure modes here are
-  // transient network/rate-limit issues.
-  const caption = `teledrive_file:${JSON.stringify({ folder: folderPath })}`;
-  const finalizeLabel = "client.sendFile";
-  const thumbFile = thumbBytes && thumbBytes.length > 0
-    ? buildTelegramThumbFile(thumbBytes)
+  const finalSegments = uploadedSegments.length > 1 ? uploadedSegments : undefined;
+  const encMeta: TeleFileEncryption | undefined = isEncrypted
+    ? {
+        v: 1,
+        s: advanced?.encryptionSaltB64 || encryptor!.fileSaltB64,
+        plainSize: fileSize,
+      }
     : undefined;
-  const result = await withTelegramRetry(
-    () =>
-      withTimeout(
-        client.sendFile(canonicalChannelId(channelId), {
-          file: inputFile,
-          forceDocument: true,
-          caption,
-          ...(thumbFile ? { thumb: thumbFile as any } : {}),
-        }),
-        SENDFILE_TIMEOUT_MS,
-        finalizeLabel
-      ),
-    finalizeLabel,
-    // Finalize cap: 3 attempts × 30s = 90s worst case. The chunks
-    // are already on Telegram, so a 90s wait is plenty.
-    3,
-    onRetry
-      ? (e) =>
-          onRetry({
-            ...e,
-            label: finalizeLabel,
-          })
-      : undefined,
-  );
 
-  if (!hash) return result;
+  if (!hash && !finalSegments && !encMeta) {
+    return primaryMessage;
+  }
 
   let contentHash: string | null = null;
   if (hasher) {
@@ -390,5 +722,11 @@ export async function uploadFileToTelegram(
       console.warn("[uploader] SHA-256 digest failed; uploading without hash:", err);
     }
   }
-  return { message: result, hash: contentHash } satisfies HashedUploadResult;
+
+  return {
+    message: primaryMessage,
+    hash: contentHash,
+    ...(finalSegments ? { segments: finalSegments } : {}),
+    ...(encMeta ? { enc: encMeta } : {}),
+  } satisfies HashedUploadResult;
 }

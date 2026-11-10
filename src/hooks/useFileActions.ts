@@ -15,6 +15,7 @@ import {
   recordDeletedMessages,
 } from "../lib/storage/tombstones";
 import { isBackupItem } from "../lib/backup/visibility";
+import { getFileMessageIds } from "../lib/files/segmentHelpers";
 import { removeManifestEntriesByMessageIds } from "../lib/backup/manifest";
 import { invoke } from "@tauri-apps/api/core";
 import {
@@ -220,11 +221,27 @@ async function applyOptimistic(
 }
 
 function messageIdsFor(files: TeleFile[]): number[] {
-  return [...new Set(
-    files
-      .map((f) => Number(f.messageId))
-      .filter((id) => Number.isFinite(id) && id > 0),
-  )];
+  return [...new Set(files.flatMap((f) => getFileMessageIds(f)))];
+}
+
+async function deleteRemoteResourcesForFiles(
+  channelId: string,
+  targets: TeleFile[],
+  logContext: string
+): Promise<void> {
+  await Promise.allSettled(targets.map((f) => removeOfflineCache(f.id)));
+  const msgIds = messageIdsFor(targets);
+  if (msgIds.length === 0) return;
+  await Promise.allSettled(
+    msgIds.map((msgId) =>
+      deleteTelegramMessage(channelId, msgId).catch((err) => {
+        console.warn(
+          `[${logContext}] Could not delete message ${msgId}:`,
+          err?.message || err
+        );
+      })
+    )
+  );
 }
 
 /** Remove durable manifest rows for backup files the user deleted. */
@@ -582,18 +599,7 @@ export function useFileActions() {
       // applyOptimistic would have rolled back and we'd never reach here.
       void (async () => {
         try {
-          await Promise.allSettled(targets.map((f) => removeOfflineCache(f.id)));
-          const deletionPromises = targets
-            .filter((f) => f.messageId && f.messageId !== 0)
-            .map((f) =>
-              deleteTelegramMessage(channelId, f.messageId).catch((err) => {
-                console.warn(
-                  `[deletePermanently] Could not delete message ${f.messageId} for "${f.name}":`,
-                  err?.message || err
-                );
-              })
-            );
-          await Promise.allSettled(deletionPromises);
+          await deleteRemoteResourcesForFiles(channelId, targets, "deletePermanently");
           logEvent({ type: "file.deleted.acknowledged", payload: { fileId } });
         } catch (err) {
           console.error("[deletePermanently] Background deletion error:", err);
@@ -627,18 +633,7 @@ export function useFileActions() {
       // After the index commits, asynchronously clear cache & delete telegram messages in background
       void (async () => {
         try {
-          await Promise.allSettled(trashed.map((f) => removeOfflineCache(f.id)));
-          const deletionPromises = trashed
-            .filter((f) => f.messageId && f.messageId !== 0)
-            .map((f) =>
-              deleteTelegramMessage(channelId, f.messageId).catch((err) => {
-                console.warn(
-                  `[emptyTrash] Could not delete message ${f.messageId} for "${f.name}":`,
-                  err?.message || err
-                );
-              })
-            );
-          await Promise.allSettled(deletionPromises);
+          await deleteRemoteResourcesForFiles(channelId, trashed, "emptyTrash");
         } catch (err) {
           console.error("[emptyTrash] Background deletion error:", err);
         }
@@ -742,18 +737,7 @@ export function useFileActions() {
       // After the index commits, asynchronously clear cache & delete telegram messages in background
       void (async () => {
         try {
-          await Promise.allSettled(targets.map((f) => removeOfflineCache(f.id)));
-          const deletionPromises = targets
-            .filter((f) => f.messageId && f.messageId !== 0)
-            .map((f) =>
-              deleteTelegramMessage(channelId, f.messageId).catch((err) => {
-                console.warn(
-                  `[deleteMultiplePermanently] Could not delete message ${f.messageId} for "${f.name}":`,
-                  err?.message || err
-                );
-              })
-            );
-          await Promise.allSettled(deletionPromises);
+          await deleteRemoteResourcesForFiles(channelId, targets, "deleteMultiplePermanently");
         } catch (err) {
           console.error("[deleteMultiplePermanently] Background deletion error:", err);
         }
@@ -872,7 +856,11 @@ export function useFileActions() {
 
         if (nextOffline) {
           toast.info(t("actions.offline.downloading", { name: file.name }));
-          await cacheFileOffline(channelId, file.messageId, file.id);
+          await cacheFileOffline(channelId, file.messageId, file.id, undefined, {
+            segments: file.segments,
+            enc: file.enc,
+            plainSize: file.enc?.plainSize ?? file.size,
+          });
           toast.success(t("actions.offline.available", { name: file.name }));
         } else {
           await removeOfflineCache(file.id);

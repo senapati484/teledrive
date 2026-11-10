@@ -67,7 +67,18 @@ describe("uploadFileToTelegram enhancements", () => {
     const fakeFile = new File([new Uint8Array(1)], "oversize.iso");
 
     await expect(
-      uploadFileToTelegram("-100123", "oversize.iso", overFreeSize, fakeFile)
+      uploadFileToTelegram(
+        "-100123",
+        "oversize.iso",
+        overFreeSize,
+        fakeFile,
+        "/",
+        undefined,
+        undefined,
+        false,
+        null,
+        { allowMultiSegment: false }
+      )
     ).rejects.toThrow();
 
     expect(invokeMock).not.toHaveBeenCalled();

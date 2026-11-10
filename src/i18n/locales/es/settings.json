@@ -9,7 +9,8 @@
     "appearance": "Apariencia",
     "language": "Idioma",
     "storage": "Almacenamiento",
-    "about": "Acerca de"
+    "about": "Acerca de",
+    "encryption": "Cifrado"
   },
   "language": {
     "title": "Idioma",
@@ -237,6 +238,53 @@
       "openLinkFailed": "No se pudo abrir el enlace.",
       "upToDate": "¡Estás actualizado!",
       "latestVersion": "TeleDrive v{{version}} es la última versión disponible."
+    }
+  },
+  "encryption": {
+    "title": "Cifrado de Conocimiento Cero (E2EE)",
+    "description": "Cifra archivos localmente con AES-256-GCM antes de salir de tu dispositivo. Serán ilegibles en Telegram.",
+    "setupTitle": "Configura tu frase de cifrado",
+    "setupHint": "TeleDrive nunca envía ni guarda tu frase en servidores. Guárdala bien: no se puede recuperar si se pierde.",
+    "newPassphrasePlaceholder": "Crear frase secreta (mín. 6 caracteres)",
+    "confirmPassphrasePlaceholder": "Confirmar frase secreta",
+    "passphrasePlaceholder": "Introduce tu frase de cifrado",
+    "encryptNewByDefault": "Cifrar automáticamente los nuevos archivos subidos",
+    "rememberOnDevice": "Recordar clave de forma segura en este dispositivo",
+    "enableButton": "Activar Cifrado",
+    "statusUnlocked": "Bóveda de cifrado desbloqueada",
+    "statusLocked": "Bóveda de cifrado bloqueada",
+    "unlockedSubtitle": "Los archivos cifrados se descifran automáticamente al previsualizar o descargar.",
+    "lockedSubtitle": "Introduce tu frase para desbloquear o subir archivos cifrados.",
+    "lockButton": "Bloquear bóveda",
+    "unlockButton": "Desbloquear",
+    "encryptNewTitle": "Cifrar nuevas subidas",
+    "encryptNewHelp": "Los archivos nuevos se suben con AES-256-GCM y nombre anónimo en el canal.",
+    "rememberTitle": "Recordar clave en este dispositivo",
+    "rememberHelp": "Desbloquea automáticamente tu bóveda al abrir TeleDrive.",
+    "on": "Activado",
+    "off": "Desactivado",
+    "disableButton": "Desactivar configuración de cifrado",
+    "disableConfirm": "Desactivar",
+    "unlockDialog": {
+      "title": "Desbloquear archivos cifrados",
+      "description": "Introduce tu frase E2EE para descifrar este archivo localmente."
+    },
+    "disableDialog": {
+      "title": "¿Desactivar la bóveda de cifrado local?",
+      "description": "Los archivos ya cifrados en Telegram seguirán cifrados y pedirán tu frase original al abrirlos."
+    },
+    "errors": {
+      "tooShort": "La frase debe tener al menos 6 caracteres.",
+      "mismatch": "Las frases no coinciden.",
+      "wrongPassphrase": "Frase incorrecta. Inténtalo de nuevo.",
+      "setupFailed": "Error al configurar el cifrado.",
+      "unlockFailed": "No se pudo desbloquear la bóveda."
+    },
+    "toasts": {
+      "enabled": "Cifrado E2EE activado para nuevas subidas.",
+      "unlocked": "Bóveda de cifrado desbloqueada.",
+      "locked": "Bóveda de cifrado bloqueada.",
+      "disabled": "Configuración de cifrado local eliminada."
     }
   }
 }

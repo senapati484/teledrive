@@ -31,7 +31,8 @@
     "failed": "無法上傳“{{name}}”：{{message}}",
     "emptyFile": "“{{name}}”為空。 Telegram 不支援空檔案（0 位元組）。",
     "exceedsFreeLimit": "「{{name}}」超過標準 Telegram 帳號約 2 GB 的單一檔案上傳上限（Telegram Premium 最高支援約 4 GB）。",
-    "exceedsPremiumLimit": "「{{name}}」超過 Telegram 約 4 GB 的單一檔案上傳上限。"
+    "exceedsPremiumLimit": "「{{name}}」超過 Telegram 約 4 GB 的單一檔案上傳上限。",
+    "duplicateSkipped": "此資料夾中已存在相同內容的「{{name}}」。"
   },
   "download": {
     "cancelled": "下載已取消。",

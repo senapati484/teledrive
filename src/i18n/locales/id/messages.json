@@ -31,7 +31,8 @@
     "failed": "Gagal mengunggah \"{{name}}\": {{message}}",
     "emptyFile": "\"{{name}}\" kosong. Berkas kosong (0 byte) tidak didukung oleh Telegram.",
     "exceedsFreeLimit": "\"{{name}}\" melebihi batas unggahan ~2 GB untuk akun standar Telegram (Telegram Premium mendukung hingga ~4 GB).",
-    "exceedsPremiumLimit": "\"{{name}}\" melebihi batas satu file ~4 GB Telegram."
+    "exceedsPremiumLimit": "\"{{name}}\" melebihi batas satu file ~4 GB Telegram.",
+    "duplicateSkipped": "\"{{name}}\" sudah ada di folder ini dengan konten yang sama."
   },
   "download": {
     "cancelled": "Pengunduhan dibatalkan.",

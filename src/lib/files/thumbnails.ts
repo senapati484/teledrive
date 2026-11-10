@@ -36,8 +36,11 @@ function isTauriRuntime(): boolean {
   );
 }
 
-export function isThumbnailEligible(file: Pick<TeleFile, "name" | "mime" | "messageId" | "trashed">): boolean {
+export function isThumbnailEligible(
+  file: Pick<TeleFile, "name" | "mime" | "messageId" | "trashed" | "enc">
+): boolean {
   if (!file.messageId || file.messageId <= 0 || file.trashed) return false;
+  if (file.enc && file.enc.v === 1) return false;
   const ext = getFileExtension(file.name);
   if (UNRENDERABLE_IMAGE_EXTS.has(ext) || ext === "svg") return false;
   const mime = (file.mime || "").toLowerCase();
@@ -306,6 +309,7 @@ export async function generateUploadThumbnail(
 // Runtime session cache (`channelId:messageId` -> asset:// or blob: URL, or `null` if confirmed missing).
 const thumbMemoryCache = new Map<string, string | null>();
 const inflightThumbKeys = new Set<string>();
+const createdBlobUrls = new Set<string>();
 
 function thumbCacheKey(channelId: string, messageId: number): string {
   return `${channelId}:${messageId}`;
@@ -321,6 +325,12 @@ export function getCachedThumbnailUrl(
 }
 
 export function clearThumbnailMemoryCache(): void {
+  if (typeof URL !== "undefined" && typeof URL.revokeObjectURL === "function") {
+    for (const url of createdBlobUrls) {
+      URL.revokeObjectURL(url);
+    }
+  }
+  createdBlobUrls.clear();
   thumbMemoryCache.clear();
   inflightThumbKeys.clear();
 }
@@ -356,6 +366,7 @@ export async function seedThumbnailCache(
     const copy = new Uint8Array(bytes.length);
     copy.set(bytes);
     const url = URL.createObjectURL(new Blob([copy.buffer], { type: "image/jpeg" }));
+    createdBlobUrls.add(url);
     thumbMemoryCache.set(key, url);
     return url;
   }

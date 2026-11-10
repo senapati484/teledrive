@@ -31,7 +31,8 @@
     "failed": "Échec du téléversement de \"{{name}}\" : {{message}}",
     "emptyFile": "\"{{name}}\" est vide. Les fichiers vides (0 octet) ne sont pas pris en charge par Telegram.",
     "exceedsFreeLimit": "« {{name}} » dépasse la limite de ~2 Go de Telegram pour les comptes standard (Telegram Premium prend en charge jusqu'à ~4 Go).",
-    "exceedsPremiumLimit": "« {{name}} » dépasse la limite de ~4 Go par fichier sur Telegram."
+    "exceedsPremiumLimit": "« {{name}} » dépasse la limite de ~4 Go par fichier sur Telegram.",
+    "duplicateSkipped": "« {{name}} » existe déjà dans ce dossier avec un contenu identique."
   },
   "download": {
     "cancelled": "Téléchargement annulé.",

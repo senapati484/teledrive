@@ -25,6 +25,8 @@ const RemoteSyncOrchestrator = lazy(() => import("./components/RemoteSyncOrchest
 const StarPromptDialog = lazy(() => import("./components/support/StarPromptDialog"));
 const WhatsNewDialog = lazy(() => import("./components/support/WhatsNewDialog"));
 import { useSupportStore } from "./stores/supportStore";
+import { useEncryptionStore } from "./lib/secure/e2ee";
+import { UnlockEncryptionDialog } from "./components/files/UnlockEncryptionDialog";
 
 // Full-screen spinner fallback
 function LoadingFallback() {
@@ -78,6 +80,7 @@ function App() {
 
   useEffect(() => {
     useSupportStore.getState().initFirstLaunch();
+    void useEncryptionStore.getState().initFromVault();
     let active = true;
     async function initSession() {
       try {
@@ -216,6 +219,7 @@ function App() {
           <WhatsNewDialog />
         </Suspense>
       )}
+      <UnlockEncryptionDialog />
       <Toaster />
     </BrowserRouter>
   );

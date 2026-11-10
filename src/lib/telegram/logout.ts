@@ -8,6 +8,9 @@ import { Api } from "telegram";
 import { disconnectClient, getClient } from "./client";
 import { saveFutureAuthToken } from "./futureAuth";
 import { clearPendingLogin } from "./loginStorage";
+import { resetCachedPremiumStatus } from "./uploader";
+import { clearThumbnailMemoryCache } from "../files/thumbnails";
+import { useEncryptionStore } from "../secure/e2ee";
 
 const LOGOUT_TIMEOUT_MS = 6000;
 
@@ -41,6 +44,11 @@ export async function logoutTelegram(): Promise<void> {
   } catch (err) {
     console.warn("[logout] auth.logOut failed (non-fatal):", err);
   } finally {
+    resetCachedPremiumStatus();
+    clearThumbnailMemoryCache();
+    if (!useEncryptionStore.getState().rememberKey) {
+      await useEncryptionStore.getState().lock().catch(() => {});
+    }
     await clearPendingLogin();
     await disconnectClient();
   }

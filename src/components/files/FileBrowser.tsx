@@ -22,6 +22,7 @@ import {
   Shield,
   AlertTriangle,
   RefreshCw,
+  Lock,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -504,12 +505,44 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
 
   // Lazily resolve compact thumbnails for visible Grid cards without writing
   // ephemeral local/blob URLs back into the synced Telegram Schema v3 index.
+  // Batches state commits in 50ms windows to avoid N full-grid re-renders per scroll.
   useEffect(() => {
     if (viewMode !== "grid" || regularFiles.length === 0) return;
     const visible = regularFiles.slice(0, renderLimit);
-    return requestFileThumbnails(visible, (fileId, url) => {
-      setThumbUrls((prev) => (prev[fileId] === url ? prev : { ...prev, [fileId]: url }));
+    const pendingBatch = new Map<string, string>();
+    let flushTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const flush = () => {
+      flushTimer = null;
+      if (pendingBatch.size === 0) return;
+      const entries = Array.from(pendingBatch.entries());
+      pendingBatch.clear();
+      setThumbUrls((prev) => {
+        let changed = false;
+        for (const [id, url] of entries) {
+          if (prev[id] !== url) {
+            changed = true;
+            break;
+          }
+        }
+        if (!changed) return prev;
+        const next = { ...prev };
+        for (const [id, url] of entries) next[id] = url;
+        return next;
+      });
+    };
+
+    const cancel = requestFileThumbnails(visible, (fileId, url) => {
+      pendingBatch.set(fileId, url);
+      if (!flushTimer) {
+        flushTimer = setTimeout(flush, 50);
+      }
     });
+
+    return () => {
+      if (flushTimer) clearTimeout(flushTimer);
+      cancel();
+    };
   }, [viewMode, regularFiles, renderLimit]);
 
   // Breadcrumbs — only recompute when folderPath/mode change.
@@ -632,7 +665,12 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
               tempFilePath,
               undefined,
               undefined,
-              file.size
+              file.size,
+              {
+                segments: file.segments,
+                enc: file.enc,
+                plainSize: file.enc?.plainSize ?? file.size,
+              }
             );
           }
         }
@@ -1255,7 +1293,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                         onTouchMove={handleTouchEndItem}
                         style={{ animationDelay: `${Math.min(folders.length + index, 15) * 20}ms` }}
                         className={cn(
-                          "group relative flex flex-col rounded-2xl transition-all duration-150 cursor-pointer overflow-hidden text-left select-none h-38 sm:h-48 md:h-52 bg-white dark:bg-[#111214] hover:bg-[#f8fafd] dark:hover:bg-[#161719] border border-slate-200/90 dark:border-white/[0.04] hover:border-slate-300 dark:hover:border-white/[0.08] hover:shadow-md",
+                          "group relative flex flex-col rounded-2xl transition-all duration-150 cursor-pointer overflow-hidden text-left select-none h-38 sm:h-48 md:h-52 bg-white dark:bg-[#111214] hover:bg-[#f8fafd] dark:hover:bg-[#161719] border border-slate-200/90 dark:border-white/[0.04] hover:border-slate-300 dark:hover:border-white/[0.08] hover:shadow-md [content-visibility:auto] [contain-intrinsic-size:auto_208px]",
                           isSelected
                             ? "bg-[#c2e7ff]/30 dark:bg-[#004a77]/30 ring-2 ring-[#0b57d0] dark:ring-[#a8c7fa] border-transparent shadow-xs"
                             : "",
@@ -1324,6 +1362,14 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
 
                           {file.starred && (
                             <Star className="absolute top-2 right-2 h-4 w-4 fill-amber-400 text-amber-400 drop-shadow-xs" />
+                          )}
+                          {file.enc?.v === 1 && (
+                            <Lock
+                              className={cn(
+                                "absolute top-2 h-3.5 w-3.5 text-[#0b57d0] dark:text-[#a8c7fa] drop-shadow-xs",
+                                file.starred ? "right-7" : "right-2"
+                              )}
+                            />
                           )}
                           {file.offline && (
                             <CheckCircle className="absolute top-2 left-2 h-4 w-4 text-emerald-500 fill-emerald-500/20 shrink-0" />
@@ -1407,7 +1453,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                       {...(isDir ? { 'data-folder-id': file.id } : {})}
                       style={{ animationDelay: `${Math.min(index, 15) * 20}ms` }}
                       className={cn(
-                        "group border-b border-slate-100 dark:border-white/[0.03] hover:bg-[#f0f4f9] dark:hover:bg-[#161719] cursor-pointer transition-colors duration-100 h-11 sm:h-12",
+                        "group border-b border-slate-100 dark:border-white/[0.03] hover:bg-[#f0f4f9] dark:hover:bg-[#161719] cursor-pointer transition-colors duration-100 h-11 sm:h-12 [content-visibility:auto] [contain-intrinsic-size:auto_48px]",
                         isSelected && "bg-[#c2e7ff]/40 dark:bg-[#004a77]/35 text-[#001d35] dark:text-[#c2e7ff]",
                         dragOverId === file.id && isDir && "bg-[#c2e7ff]/70 dark:bg-[#004a77]/70 ring-2 ring-[#0b57d0]",
                         (draggedId !== null && (draggedId === file.id || (isSelected && selectedIdsSet.has(draggedId)))) && "opacity-40"

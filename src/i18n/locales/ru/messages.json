@@ -31,7 +31,8 @@
     "failed": "Не удалось загрузить «{{name}}»: {{message}}",
     "emptyFile": "«{{name}}» пуст. Пустые файлы (0 байт) не поддерживаются в Telegram.",
     "exceedsFreeLimit": "«{{name}}» превышает лимит загрузки ~2 ГБ для обычных аккаунтов Telegram (Telegram Premium поддерживает до ~4 ГБ).",
-    "exceedsPremiumLimit": "«{{name}}» превышает лимит Telegram в ~4 ГБ на один файл."
+    "exceedsPremiumLimit": "«{{name}}» превышает лимит Telegram в ~4 ГБ на один файл.",
+    "duplicateSkipped": "Файл «{{name}}» с таким же содержимым уже существует в этой папке."
   },
   "download": {
     "cancelled": "Скачивание отменено.",

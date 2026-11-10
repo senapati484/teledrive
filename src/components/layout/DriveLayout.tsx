@@ -404,7 +404,11 @@ export default function DriveLayout() {
         });
         return;
       }
-      downloadFileFromTelegram(file.channelId, file.messageId, file.name).catch((err) => {
+      downloadFileFromTelegram(file.channelId, file.messageId, file.name, undefined, {
+        segments: file.segments,
+        enc: file.enc,
+        plainSize: file.enc?.plainSize ?? file.size,
+      }).catch((err) => {
         console.error("Download failed:", err);
       });
     };

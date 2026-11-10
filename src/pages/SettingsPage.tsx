@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, ChevronRight, Smartphone, Eye, HardDrive, Info, Shield, Languages } from "lucide-react";
+import { ArrowLeft, ChevronRight, Smartphone, Eye, HardDrive, Info, Shield, Languages, Lock } from "lucide-react";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { Button } from "@/components/ui/button";
 import TelegramAccountSection from "@/components/settings/TelegramAccountSection";
@@ -9,10 +9,11 @@ import AppearanceSection from "@/components/settings/AppearanceSection";
 import LanguageSection from "@/components/settings/LanguageSection";
 import StorageSection from "@/components/settings/StorageSection";
 import BackupSection from "@/components/settings/BackupSection";
+import EncryptionSection from "@/components/settings/EncryptionSection";
 import AboutSection from "@/components/settings/AboutSection";
 import RecoveryDialog from "@/components/settings/RecoveryDialog";
 
-type SectionType = "account" | "appearance" | "language" | "storage" | "backup" | "about";
+type SectionType = "account" | "backup" | "encryption" | "appearance" | "language" | "storage" | "about";
 
 export default function SettingsPage() {
   const { t } = useTranslation("settings");
@@ -37,6 +38,12 @@ export default function SettingsPage() {
       label: t("nav.backup"),
       icon: Shield,
       component: BackupSection,
+    },
+    {
+      id: "encryption" as const,
+      label: t("nav.encryption", "Encryption"),
+      icon: Lock,
+      component: EncryptionSection,
     },
     {
       id: "appearance" as const,

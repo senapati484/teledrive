@@ -1,6 +1,9 @@
 import { appLocalDataDir, join } from "@tauri-apps/api/path";
 import { readFile, remove, mkdir, exists } from "@tauri-apps/plugin-fs";
-import { streamFileToLocalPath } from "../telegram/downloader";
+import {
+  streamFileToLocalPath,
+  type DownloadFileOptions,
+} from "../telegram/downloader";
 import { TeleFile } from "../types";
 
 /**
@@ -35,10 +38,11 @@ export async function cacheFileOffline(
   channelId: string,
   messageId: number,
   fileId: string,
-  onProgress?: (progress: number) => void
+  onProgress?: (progress: number) => void,
+  options?: DownloadFileOptions
 ): Promise<void> {
   const localPath = await getOfflineFilePath(fileId);
-  await streamFileToLocalPath(channelId, messageId, localPath, onProgress);
+  await streamFileToLocalPath(channelId, messageId, localPath, onProgress, undefined, 0, options);
 }
 
 /**

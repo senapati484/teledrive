@@ -13,14 +13,15 @@ import { concatChunks, downloadEta, downloadPercent, downloadSpeed } from "../tr
 import { normalizeFolderPath } from "../utils";
 import type { TeleFile } from "../types";
 import { getClient } from "./client";
-import { canonicalChannelId } from "./peerId";
 import {
   getWriteBatchBytes,
+  iterateTelegramPlainChunks,
   registerExternalTransferControl,
+  resolveDownloadSegments,
   unregisterExternalTransferControl,
 } from "./downloader";
+import { EncryptionError, requireEncryptionKey } from "../secure/e2ee";
 
-const DOWNLOAD_CHUNK_SIZE = 512 * 1024;
 const PROGRESS_THROTTLE_MS = 200;
 const PAUSE_POLL_MS = 100;
 
@@ -153,16 +154,6 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function resolvePeer(channelId: string): Promise<any> {
-  const client = getClient();
-  const id = canonicalChannelId(channelId);
-  try {
-    return await client.getInputEntity(id);
-  } catch {
-    return await client.getEntity(id);
-  }
-}
-
 /**
  * Streams one or more selected TeleDrive files/folders into a single `.zip`
  * archive using `fflate` zero-copy streaming (`ZipPassThrough`) piped straight
@@ -182,6 +173,17 @@ export async function downloadSelectionAsZip(
     return;
   }
 
+  let sharedEncKey: CryptoKey | null = null;
+  const firstEncrypted = entries.find((e) => e.file.enc?.v === 1);
+  if (firstEncrypted) {
+    try {
+      sharedEncKey = await requireEncryptionKey(firstEncrypted.file.enc!.s);
+    } catch (err) {
+      if (err instanceof EncryptionError && err.code === "locked") return;
+      throw err;
+    }
+  }
+
   const archiveName = suggestZipArchiveName(selectedItems);
   const inTauri = isTauriRuntime();
   let targetPath: string | null = null;
@@ -197,7 +199,10 @@ export async function downloadSelectionAsZip(
     }
   }
 
-  const totalBytes = entries.reduce((sum, e) => sum + Math.max(0, Number(e.file.size) || 0), 0);
+  const totalBytes = entries.reduce(
+    (sum, e) => sum + Math.max(0, Number(e.file.enc?.plainSize ?? e.file.size) || 0),
+    0
+  );
   const jobId = `zip:${Date.now()}:${Math.random().toString(36).slice(2, 7)}`;
 
   useTransferStore.getState().addDownload({
@@ -303,23 +308,19 @@ export async function downloadSelectionAsZip(
       enqueueOutWrite(data, final);
     });
 
-    const peerCache = new Map<string, any>();
-
     for (const entry of entries) {
       if ((state as string) === "cancelling") break;
       const { file, archivePath } = entry;
 
-      let peer = peerCache.get(file.channelId);
-      if (!peer) {
-        peer = await resolvePeer(file.channelId);
-        peerCache.set(file.channelId, peer);
-      }
-
-      const msgs = await client.getMessages(peer, { ids: [file.messageId] });
-      const msg = msgs?.[0];
-      if (!msg?.media) {
-        throw new Error(i18n.t("messages:download.errors.mediaNotFound"));
-      }
+      const { peer, segments } = await resolveDownloadSegments(
+        file.channelId,
+        file.messageId,
+        {
+          segments: file.segments,
+          enc: file.enc,
+          plainSize: file.enc?.plainSize ?? file.size,
+        }
+      );
 
       const zipEntry = new ZipPassThrough(archivePath);
       if (file.uploadedAt && Number.isFinite(file.uploadedAt)) {
@@ -327,20 +328,17 @@ export async function downloadSelectionAsZip(
       }
       zip.add(zipEntry);
 
-      const iterator = client.iterDownload({
-        file: msg.media,
-        requestSize: DOWNLOAD_CHUNK_SIZE,
-        msgData: [peer, file.messageId],
-      });
-
-      for await (const rawChunk of iterator) {
+      for await (const chunk of iterateTelegramPlainChunks({
+        peer,
+        segments,
+        enc: file.enc,
+        encryptionKey: file.enc?.v === 1 ? sharedEncKey : null,
+      })) {
         while ((state as string) === "paused") {
           await sleep(PAUSE_POLL_MS);
         }
         if ((state as string) === "cancelling") break;
 
-        const chunk =
-          rawChunk instanceof Uint8Array ? rawChunk : new Uint8Array(rawChunk);
         zipEntry.push(chunk, false);
         receivedBytes += chunk.length;
 

@@ -9,7 +9,8 @@
     "appearance": "外観",
     "language": "言語",
     "storage": "ストレージ",
-    "about": "について"
+    "about": "について",
+    "encryption": "暗号化"
   },
   "language": {
     "title": "言語",
@@ -232,6 +233,53 @@
       "openLinkFailed": "リンクを開けませんでした。",
       "upToDate": "最新情報を入手しました!",
       "latestVersion": "TeleDrive v{{version}} が最新バージョンです。"
+    }
+  },
+  "encryption": {
+    "title": "ゼロ知識暗号化 (E2EE)",
+    "description": "デバイスから送信する前に AES-256-GCM でローカル暗号化します。",
+    "setupTitle": "暗号化パスフレーズを設定",
+    "setupHint": "TeleDrive がパスフレーズを外部に送信・保存することはありません。忘れないよう保管してください。",
+    "newPassphrasePlaceholder": "パスフレーズを作成（6文字以上）",
+    "confirmPassphrasePlaceholder": "パスフレーズを確認",
+    "passphrasePlaceholder": "暗号化パスフレーズを入力",
+    "encryptNewByDefault": "新規アップロードを自動的に暗号化する",
+    "rememberOnDevice": "このデバイスに鍵を安全に保存する",
+    "enableButton": "暗号化を有効化",
+    "statusUnlocked": "暗号化ボールト：ロック解除済み",
+    "statusLocked": "暗号化ボールト：ロック中",
+    "unlockedSubtitle": "暗号化ファイルはプレビューやダウンロード時にローカルで復号されます。",
+    "lockedSubtitle": "暗号化ファイルを開く・アップロードするにはパスフレーズを入力してください。",
+    "lockButton": "ボールトをロック",
+    "unlockButton": "解除",
+    "encryptNewTitle": "新規アップロードを暗号化",
+    "encryptNewHelp": "匿名ファイル名と AES-256-GCM 形式でアップロードされます。",
+    "rememberTitle": "このデバイスに鍵を保持",
+    "rememberHelp": "起動時に自動で暗号化ボールトを解除します。",
+    "on": "有効",
+    "off": "無効",
+    "disableButton": "暗号化設定を無効化",
+    "disableConfirm": "無効化",
+    "unlockDialog": {
+      "title": "暗号化ファイルのロック解除",
+      "description": "このファイルをローカルで復号するため、E2EE パスフレーズを入力してください。"
+    },
+    "disableDialog": {
+      "title": "ローカル暗号化設定を無効にしますか？",
+      "description": "Telegram 上の既存暗号化ファイルは暗号化されたまま残り、開く際に元のパスフレーズが必要になります。"
+    },
+    "errors": {
+      "tooShort": "パスフレーズは6文字以上で入力してください。",
+      "mismatch": "パスフレーズが一致しません。",
+      "wrongPassphrase": "パスフレーズが正しくありません。",
+      "setupFailed": "暗号化の設定に失敗しました。",
+      "unlockFailed": "ボールトを解除できませんでした。"
+    },
+    "toasts": {
+      "enabled": "ゼロ知識暗号化を有効にしました。",
+      "unlocked": "暗号化ボールトを解除しました。",
+      "locked": "暗号化ボールトをロックしました。",
+      "disabled": "ローカル暗号化設定をクリアしました。"
     }
   }
 }

@@ -64,7 +64,16 @@ import {
   streamFileToLocalPath,
 } from "@/lib/telegram/downloader";
 import { updateFileLocal, deleteTelegramMessage } from "@/lib/storage/metadataStore";
-import { uploadFileToTelegram } from "@/lib/telegram/uploader";
+import {
+  isHashedUploadResult,
+  uploadFileToTelegram,
+} from "@/lib/telegram/uploader";
+import {
+  EncryptionError,
+  requireEncryptionKey,
+  useEncryptionStore,
+} from "@/lib/secure/e2ee";
+import { getFileMessageIds } from "@/lib/files/segmentHelpers";
 import { enqueueSave } from "@/lib/storage/indexQueue";
 import {
   readOfflineCache,
@@ -742,6 +751,12 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
     let current = true;
     const abortController = new AbortController();
 
+    const buildDownloadOpts = (targetFile: TeleFile) => ({
+      segments: targetFile.segments,
+      enc: targetFile.enc,
+      plainSize: targetFile.enc?.plainSize ?? targetFile.size,
+    });
+
     const streamToPreviewCache = async (targetFile: TeleFile): Promise<string> => {
       if (targetFile.offline && (await isCachedOffline(targetFile.id))) {
         if (current) setProgress(100);
@@ -749,9 +764,10 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
       }
       const safeName = targetFile.name.replace(/[/\\?%*:|"<>]/g, "_").trim() || "preview.bin";
       const cacheKey = `${targetFile.id}_${safeName}`;
+      const expectedPlainSize = targetFile.enc?.plainSize ?? targetFile.size;
       const existing = await invoke<string | null>("check_preview_cache", {
         fileName: cacheKey,
-        expectedSize: targetFile.size > 0 ? targetFile.size : null,
+        expectedSize: expectedPlainSize > 0 ? expectedPlainSize : null,
       }).catch(() => null);
       if (existing) {
         if (current) setProgress(100);
@@ -766,7 +782,8 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
         targetPath,
         (pct) => { if (current) setProgress(pct); },
         abortController.signal,
-        targetFile.size
+        targetFile.size,
+        buildDownloadOpts(targetFile)
       );
       void invoke("cleanup_preview_cache", {}).catch(() => {});
       return targetPath;
@@ -868,7 +885,8 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
             file.channelId,
             file.messageId,
             (pct) => { if (current) setProgress(pct); },
-            abortController.signal
+            abortController.signal,
+            buildDownloadOpts(file)
           );
           if (!current || abortController.signal.aborted) return;
           const mediaMime = getMediaMimeType(
@@ -929,7 +947,8 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
             file.messageId,
             MAX_TEXT_PREVIEW_BYTES,
             (pct) => { if (current) setProgress(pct); },
-            abortController.signal
+            abortController.signal,
+            buildDownloadOpts(file)
           );
           if (!current || abortController.signal.aborted) return;
           buffer = res.data;
@@ -941,7 +960,8 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
             file.messageId,
             64 * 1024,
             (pct) => { if (current) setProgress(Math.min(50, pct)); },
-            abortController.signal
+            abortController.signal,
+            buildDownloadOpts(file)
           );
           if (!current || abortController.signal.aborted) return;
           if (containsNullByte(sniff.data, 4096)) {
@@ -953,7 +973,8 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
             file.messageId,
             MAX_TEXT_PREVIEW_BYTES,
             (pct) => { if (current) setProgress(pct); },
-            abortController.signal
+            abortController.signal,
+            buildDownloadOpts(file)
           );
           if (!current || abortController.signal.aborted) return;
           buffer = textPrefix.data;
@@ -969,14 +990,16 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
             buffer = await downloadFileToBuffer(
               file.channelId, file.messageId,
               (pct) => { if (current) setProgress(pct); },
-              abortController.signal
+              abortController.signal,
+              buildDownloadOpts(file)
             );
           }
         } else {
           buffer = await downloadFileToBuffer(
             file.channelId, file.messageId,
             (pct) => { if (current) setProgress(pct); },
-            abortController.signal
+            abortController.signal,
+            buildDownloadOpts(file)
           );
         }
         if (!current || abortController.signal.aborted) return;
@@ -1078,6 +1101,10 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
         if (err?.name === "AbortError" || abortController.signal.aborted) {
           return;
         }
+        if (err instanceof EncryptionError && err.code === "locked") {
+          onClose();
+          return;
+        }
         if (current) {
           if (!navigator.onLine && !file.offline) {
             setError(t("errors.offlineUnavailable"));
@@ -1107,7 +1134,17 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
   // ── Handlers (memoized) ──────────────────────────────────────────────────
   const handleDownload = useCallback(() => {
     if (currentFile) {
-      downloadFileFromTelegram(currentFile.channelId, currentFile.messageId, currentFile.name).catch((err) => {
+      downloadFileFromTelegram(
+        currentFile.channelId,
+        currentFile.messageId,
+        currentFile.name,
+        undefined,
+        {
+          segments: currentFile.segments,
+          enc: currentFile.enc,
+          plainSize: currentFile.enc?.plainSize ?? currentFile.size,
+        }
+      ).catch((err) => {
         console.error("Download failed:", err);
       });
     }
@@ -1164,7 +1201,12 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
               tempFilePath,
               undefined,
               undefined,
-              currentFile.size
+              currentFile.size,
+              {
+                segments: currentFile.segments,
+                enc: currentFile.enc,
+                plainSize: currentFile.enc?.plainSize ?? currentFile.size,
+              }
             );
           }
         }
@@ -1181,7 +1223,17 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
     } catch (err: any) {
       console.error("Failed to open document in system app:", err);
       toast.error(t("toast.systemViewerFailed"));
-      downloadFileFromTelegram(currentFile.channelId, currentFile.messageId, currentFile.name).catch(() => {});
+      downloadFileFromTelegram(
+        currentFile.channelId,
+        currentFile.messageId,
+        currentFile.name,
+        undefined,
+        {
+          segments: currentFile.segments,
+          enc: currentFile.enc,
+          plainSize: currentFile.enc?.plainSize ?? currentFile.size,
+        }
+      ).catch(() => {});
     }
   }, [currentFile, t]);
 
@@ -1267,17 +1319,46 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
     try {
       const bytes = new TextEncoder().encode(editContent);
       const newFile = new File([bytes], currentFile.name, { type: currentFile.mime });
+      const wasEncrypted = currentFile.enc?.v === 1;
+      const encryptionKey = wasEncrypted
+        ? await requireEncryptionKey(currentFile.enc?.s)
+        : null;
+      const encryptionSaltB64 = wasEncrypted
+        ? currentFile.enc?.s ?? useEncryptionStore.getState().config?.saltB64 ?? null
+        : null;
 
-      // 1) Upload the new bytes to Telegram.
-      const message = await uploadFileToTelegram(
-        currentFile.channelId, currentFile.name, bytes.length, newFile, currentFile.folderPath ?? "/", () => {}
+      // 1) Upload the new bytes to Telegram (preserving E2EE encryption if encrypted).
+      const uploadRes = await uploadFileToTelegram(
+        currentFile.channelId,
+        currentFile.name,
+        bytes.length,
+        newFile,
+        currentFile.folderPath ?? "/",
+        () => {},
+        undefined,
+        true,
+        null,
+        {
+          allowMultiSegment: true,
+          encryptionKey,
+          encryptionSaltB64,
+          anonymizedFileName: wasEncrypted ? `${currentFile.id}.tde` : undefined,
+        }
       );
+
+      const newMessage = isHashedUploadResult(uploadRes) ? uploadRes.message : uploadRes;
+      const newHash = isHashedUploadResult(uploadRes) ? uploadRes.hash : undefined;
+      const newSegments = isHashedUploadResult(uploadRes) ? uploadRes.segments : undefined;
+      const newEnc = isHashedUploadResult(uploadRes) ? uploadRes.enc : undefined;
 
       const updated: TeleFile = {
         ...currentFile,
-        messageId: message.id,
+        messageId: newMessage.id,
         size: bytes.length,
         uploadedAt: Date.now(),
+        ...(newHash ? { hash: newHash } : {}),
+        segments: newSegments,
+        enc: newEnc,
       };
 
       // 2) Build the optimistic files array (replaces the old entry by id).
@@ -1297,16 +1378,17 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
       useFileStore.getState().popSnapshot();
       pushedSnapshot = false;
 
-      // 4) Fire-and-forget delete of the old Telegram message. We do this
-      //    AFTER the index commit so a slow delete doesn't block the UI,
-      //    and a failure here doesn't roll back the index update.
-      if (currentFile.messageId && currentFile.messageId !== message.id) {
-        deleteTelegramMessage(currentFile.channelId, currentFile.messageId).catch((err) => {
-          console.warn(
-            `[FilePreviewModal] Could not delete old message ${currentFile.messageId} for "${currentFile.name}":`,
-            err?.message || err
-          );
-        });
+      // 4) Fire-and-forget delete of all old Telegram segment message(s).
+      const newIds = new Set(getFileMessageIds(updated));
+      for (const oldId of getFileMessageIds(currentFile)) {
+        if (!newIds.has(oldId)) {
+          deleteTelegramMessage(currentFile.channelId, oldId).catch((err) => {
+            console.warn(
+              `[FilePreviewModal] Could not delete old message ${oldId} for "${currentFile.name}":`,
+              err?.message || err
+            );
+          });
+        }
       }
 
       // 5) Refresh current active file reference, buffer, parent layout, and view state

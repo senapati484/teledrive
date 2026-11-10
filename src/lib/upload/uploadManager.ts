@@ -16,7 +16,10 @@ import {
   reconstructMissingFolders,
 } from "../storage/metadataStore";
 import { getClient } from "../telegram/client";
-import { uploadFileToTelegram } from "../telegram/uploader";
+import {
+  isHashedUploadResult,
+  uploadFileToTelegram,
+} from "../telegram/uploader";
 import { TeleFile, UploadItem } from "../types";
 import { normalizeFolderPath } from "../utils";
 import {
@@ -27,6 +30,15 @@ import {
   generateUploadThumbnail,
   seedThumbnailCache,
 } from "../files/thumbnails";
+import { buildUploadCheckpointKey } from "./uploadCheckpoints";
+import {
+  cloneTelegramFileMessages,
+  computeUploadSourceSha256,
+  findUploadDuplicateMatch,
+  hasUploadDuplicateSizeCandidate,
+  MANUAL_UPLOAD_HASH_CAP_BYTES,
+} from "./dedupeCheck";
+import { requireEncryptionKey, useEncryptionStore } from "../secure/e2ee";
 
 // ---------------------------------------------------------------------------
 // MIME type inference from file extension
@@ -329,65 +341,175 @@ export async function processQueue(): Promise<void> {
             ? rawMime
             : getMimeFromExtension(item.name);
 
+          // Check whether E2EE zero-knowledge encryption is enabled for new uploads.
+          const encStore = useEncryptionStore.getState();
+          if (!encStore.initialized) {
+            await encStore.initFromVault().catch(() => {});
+          }
+          const latestEnc = useEncryptionStore.getState();
+          const shouldEncrypt = latestEnc.configured && latestEnc.encryptNewUploads;
+          let encryptionKey: CryptoKey | null = null;
+          let encryptionSaltB64: string | null = null;
+          if (shouldEncrypt) {
+            encryptionKey = await requireEncryptionKey();
+            encryptionSaltB64 = useEncryptionStore.getState().config?.saltB64 ?? null;
+          }
+
+          // Only pay a pre-upload disk read when an active drive file actually
+          // shares the exact byte size & encryption state; otherwise stream SHA-256
+          // in a single pass during upload (0ms pre-flight overhead).
+          const candidateFiles = useFileStore.getState().files;
+          const preHash = hasUploadDuplicateSizeCandidate(
+            candidateFiles,
+            item.size,
+            shouldEncrypt
+          )
+            ? await computeUploadSourceSha256(fileSource, item.size)
+            : null;
+          let message: any = null;
+          let resolvedHash: string | null = preHash;
+          let uploadedSegments = undefined;
+          let uploadedEnc = undefined;
+          let clonedZeroByte = false;
+
+          if (preHash) {
+            const match = findUploadDuplicateMatch(
+              useFileStore.getState().files,
+              destinationFolder,
+              item.name,
+              item.size,
+              preHash,
+              shouldEncrypt
+            );
+
+            if (match?.kind === "exact_in_folder") {
+              updateQueueItem(item.id, { status: "done", progress: 100 });
+              toast.info(
+                i18n.t("messages:upload.duplicateSkipped", {
+                  name: item.name,
+                  defaultValue: `"${item.name}" already exists in this folder with identical content.`,
+                })
+              );
+              return;
+            }
+
+            if (match?.kind === "cloneable") {
+              try {
+                const cloned = await cloneTelegramFileMessages(
+                  activeChannelId,
+                  match.existing,
+                  destinationFolder,
+                  item.name
+                );
+                message = cloned.message;
+                uploadedSegments = cloned.segments;
+                uploadedEnc = shouldEncrypt && match.existing.enc
+                  ? { ...match.existing.enc }
+                  : undefined;
+                clonedZeroByte = true;
+              } catch (cloneErr) {
+                console.warn(
+                  `[uploadManager] Clone failed for ${item.name}, falling back to upload:`,
+                  cloneErr
+                );
+              }
+            }
+          }
+
+          // Do not upload plaintext image/video thumbnails when E2EE mode is active.
           const thumbBytes =
-            fileSource instanceof File
+            !shouldEncrypt && !clonedZeroByte && fileSource instanceof File
               ? await generateUploadThumbnail(fileSource, item.name, mimeType).catch(() => null)
               : null;
 
-          const message = await uploadFileToTelegram(
-            activeChannelId,
-            item.name,
-            item.size,
-            fileSource,
-            destinationFolder,
-            (uploaded, total) => {
-              const now = Date.now();
+          if (!clonedZeroByte) {
+            const sourceKey =
+              fileSource instanceof File
+                ? fileSource.lastModified
+                : typeof fileSource === "string"
+                ? fileSource
+                : "";
+            const checkpointKey = buildUploadCheckpointKey({
+              channelId: activeChannelId,
+              folderPath: destinationFolder,
+              name: item.name,
+              size: item.size,
+              sourceKey,
+            });
+            const wantHashInUpload =
+              !preHash && item.size <= MANUAL_UPLOAD_HASH_CAP_BYTES;
 
-              // Record sample
-              speedSamples.push([now, uploaded]);
-              // Prune samples older than the rolling window
-              const cutoff = now - SPEED_WINDOW_MS;
-              while (speedSamples.length > 1 && speedSamples[0][0] < cutoff) {
-                speedSamples.shift();
-              }
+            const uploadResult = await uploadFileToTelegram(
+              activeChannelId,
+              item.name,
+              item.size,
+              fileSource,
+              destinationFolder,
+              (uploaded, total) => {
+                const now = Date.now();
 
-              // Compute rolling speed (bytes/s)
-              let speed: number | undefined;
-              let eta: number | undefined;
-              if (speedSamples.length >= 2) {
-                const oldest = speedSamples[0];
-                const dt = (now - oldest[0]) / 1000; // seconds
-                if (dt > 0) {
-                  speed = (uploaded - oldest[1]) / dt;
-                  const remaining = total - uploaded;
-                  eta = speed > 0 ? Math.round(remaining / speed) : undefined;
+                // Record sample
+                speedSamples.push([now, uploaded]);
+                // Prune samples older than the rolling window
+                const cutoff = now - SPEED_WINDOW_MS;
+                while (speedSamples.length > 1 && speedSamples[0][0] < cutoff) {
+                  speedSamples.shift();
                 }
-              }
 
-              // Throttle state dispatch
-              if (now - lastDispatchAt >= PROGRESS_THROTTLE_MS || uploaded >= total) {
-                lastDispatchAt = now;
-                const pct = Math.round((uploaded / total) * 100);
+                // Compute rolling speed (bytes/s)
+                let speed: number | undefined;
+                let eta: number | undefined;
+                if (speedSamples.length >= 2) {
+                  const oldest = speedSamples[0];
+                  const dt = (now - oldest[0]) / 1000; // seconds
+                  if (dt > 0) {
+                    speed = (uploaded - oldest[1]) / dt;
+                    const remaining = total - uploaded;
+                    eta = speed > 0 ? Math.round(remaining / speed) : undefined;
+                  }
+                }
+
+                // Throttle state dispatch
+                if (now - lastDispatchAt >= PROGRESS_THROTTLE_MS || uploaded >= total) {
+                  lastDispatchAt = now;
+                  const pct = Math.round((uploaded / total) * 100);
+                  updateQueueItem(item.id, {
+                    progress: Math.min(pct, 95),
+                    uploadedBytes: uploaded,
+                    speed,
+                    eta,
+                    error: undefined,
+                  });
+                }
+              },
+              (retryEvent) => {
+                const sec = retryEvent.floodSeconds ?? Math.ceil(retryEvent.waitMs / 1000);
                 updateQueueItem(item.id, {
-                  progress: Math.min(pct, 95),
-                  uploadedBytes: uploaded,
-                  speed,
-                  eta,
-                  error: undefined,
+                  error: retryEvent.floodSeconds
+                    ? `Telegram rate limit: pausing for ${sec}s...`
+                    : `Network retry ${retryEvent.attempt}/${retryEvent.maxAttempts} in ${sec}s...`,
                 });
+              },
+              wantHashInUpload,
+              thumbBytes,
+              {
+                checkpointKey,
+                allowMultiSegment: true,
+                encryptionKey,
+                encryptionSaltB64,
+                anonymizedFileName: shouldEncrypt ? `${item.id}.tde` : undefined,
               }
-            },
-            (retryEvent) => {
-              const sec = retryEvent.floodSeconds ?? Math.ceil(retryEvent.waitMs / 1000);
-              updateQueueItem(item.id, {
-                error: retryEvent.floodSeconds
-                  ? `Telegram rate limit: pausing for ${sec}s...`
-                  : `Network retry ${retryEvent.attempt}/${retryEvent.maxAttempts} in ${sec}s...`,
-              });
-            },
-            false,
-            thumbBytes
-          );
+            );
+
+            if (isHashedUploadResult(uploadResult)) {
+              message = uploadResult.message;
+              resolvedHash = resolvedHash || uploadResult.hash;
+              uploadedSegments = uploadResult.segments;
+              uploadedEnc = uploadResult.enc;
+            } else {
+              message = uploadResult;
+            }
+          }
 
           if (thumbBytes && thumbBytes.length > 0 && message?.id) {
             void seedThumbnailCache(activeChannelId, Number(message.id), thumbBytes).catch(() => {});
@@ -402,6 +524,9 @@ export async function processQueue(): Promise<void> {
             messageId: message.id,
             channelId: activeChannelId,
             uploadedAt: Date.now(),
+            ...(resolvedHash ? { hash: resolvedHash } : {}),
+            ...(uploadedSegments ? { segments: uploadedSegments } : {}),
+            ...(uploadedEnc ? { enc: uploadedEnc } : {}),
             starred: false,
             trashed: false,
           };

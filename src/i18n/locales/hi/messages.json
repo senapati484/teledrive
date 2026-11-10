@@ -31,7 +31,8 @@
     "failed": "\"{{name}}\" अपलोड करने में विफल: {{message}}",
     "emptyFile": "\"{{name}}\" खाली है। खाली फ़ाइलें (0 बाइट्स) Telegram द्वारा समर्थित नहीं हैं।",
     "exceedsFreeLimit": "\"{{name}}\" सामान्य Telegram खातों की ~2 GB अपलोड सीमा से अधिक है (Telegram Premium ~4 GB तक सपोर्ट करता है)।",
-    "exceedsPremiumLimit": "\"{{name}}\" Telegram की ~4 GB एकल फ़ाइल सीमा से अधिक है।"
+    "exceedsPremiumLimit": "\"{{name}}\" Telegram की ~4 GB एकल फ़ाइल सीमा से अधिक है।",
+    "duplicateSkipped": "\"{{name}}\" समान सामग्री के साथ इस फ़ोल्डर में पहले से मौजूद है।"
   },
   "download": {
     "cancelled": "डाउनलोड रद्द किया गया।",

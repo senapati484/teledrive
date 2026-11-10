@@ -9,7 +9,8 @@
     "appearance": "外貌",
     "language": "语言",
     "storage": "贮存",
-    "about": "关于"
+    "about": "关于",
+    "encryption": "端到端加密"
   },
   "language": {
     "title": "语言",
@@ -232,6 +233,53 @@
       "openLinkFailed": "无法打开链接。",
       "upToDate": "你是最新的！",
       "latestVersion": "TeleDrive v{{version}} 是最新版本。"
+    }
+  },
+  "encryption": {
+    "title": "零知识端到端加密 (E2EE)",
+    "description": "文件在离开设备前于本地使用 AES-256-GCM 加密，Telegram 频道内无法查看明文。",
+    "setupTitle": "设置加密口令",
+    "setupHint": "TeleDrive 绝不会上传或保存您的口令。请妥善备份，丢失无法找回。",
+    "newPassphrasePlaceholder": "创建口令（至少 6 个字符）",
+    "confirmPassphrasePlaceholder": "确认口令",
+    "passphrasePlaceholder": "输入加密口令",
+    "encryptNewByDefault": "自动加密所有新上传的文件",
+    "rememberOnDevice": "在此设备上安全记住密钥",
+    "enableButton": "启用加密",
+    "statusUnlocked": "加密保险库已解锁",
+    "statusLocked": "加密保险库已锁定",
+    "unlockedSubtitle": "预览或下载已加密文件时将在本地透明解密。",
+    "lockedSubtitle": "输入口令以解锁或上传加密文件。",
+    "lockButton": "锁定保险库",
+    "unlockButton": "解锁",
+    "encryptNewTitle": "加密新上传内容",
+    "encryptNewHelp": "新文件将以 AES-256-GCM 封装并使用匿名文件名上传。",
+    "rememberTitle": "在此设备上记住密钥",
+    "rememberHelp": "启动 TeleDrive 时自动解锁您的加密保险库。",
+    "on": "已开启",
+    "off": "已关闭",
+    "disableButton": "清除本地加密配置",
+    "disableConfirm": "确认禁用",
+    "unlockDialog": {
+      "title": "解锁加密文件",
+      "description": "输入您的零知识 E2EE 口令以在本地解密此文件。"
+    },
+    "disableDialog": {
+      "title": "清除本地加密配置？",
+      "description": "Telegram 中已加密的文件仍会保持加密状态，打开时将提示输入原口令。"
+    },
+    "errors": {
+      "tooShort": "口令长度至少需要 6 个字符。",
+      "mismatch": "两次输入的口令不一致。",
+      "wrongPassphrase": "口令不正确，请重试。",
+      "setupFailed": "设置加密失败。",
+      "unlockFailed": "无法解锁加密保险库。"
+    },
+    "toasts": {
+      "enabled": "已为新上传启用零知识加密。",
+      "unlocked": "加密保险库已解锁。",
+      "locked": "加密保险库已锁定。",
+      "disabled": "已清除本地加密设置。"
     }
   }
 }

@@ -9,7 +9,8 @@
     "appearance": "Aussehen",
     "language": "Sprache",
     "storage": "Lagerung",
-    "about": "Um"
+    "about": "Um",
+    "encryption": "Verschlüsselung"
   },
   "language": {
     "title": "Sprache",
@@ -232,6 +233,53 @@
       "openLinkFailed": "Link konnte nicht geöffnet werden.",
       "upToDate": "TeleDrive ist auf dem neuesten Stand!",
       "latestVersion": "TeleDrive v{{version}} ist die neueste Version."
+    }
+  },
+  "encryption": {
+    "title": "Zero-Knowledge-Verschlüsselung (E2EE)",
+    "description": "Verschlüsseln Sie Dateien lokal mit AES-256-GCM, bevor sie Ihr Gerät verlassen.",
+    "setupTitle": "Verschlüsselungs-Passphrase festlegen",
+    "setupHint": "TeleDrive speichert Ihre Passphrase niemals auf Servern. Verloren gegangene Passphrasen können nicht wiederhergestellt werden.",
+    "newPassphrasePlaceholder": "Passphrase erstellen (mind. 6 Zeichen)",
+    "confirmPassphrasePlaceholder": "Passphrase bestätigen",
+    "passphrasePlaceholder": "Verschlüsselungs-Passphrase eingeben",
+    "encryptNewByDefault": "Alle neu hochgeladenen Dateien automatisch verschlüsseln",
+    "rememberOnDevice": "Schlüssel sicher auf diesem Gerät merken",
+    "enableButton": "Verschlüsselung aktivieren",
+    "statusUnlocked": "Tresor entsperrt",
+    "statusLocked": "Tresor gesperrt",
+    "unlockedSubtitle": "Verschlüsselte Dateien werden bei Vorschau und Download lokal entschlüsselt.",
+    "lockedSubtitle": "Geben Sie Ihre Passphrase ein, um verschlüsselte Dateien zu öffnen oder hochzuladen.",
+    "lockButton": "Tresor sperren",
+    "unlockButton": "Entsperren",
+    "encryptNewTitle": "Neue Uploads verschlüsseln",
+    "encryptNewHelp": "Neue Dateien werden im AES-256-GCM-Format mit anonymisiertem Namen hochgeladen.",
+    "rememberTitle": "Schlüssel auf diesem Gerät merken",
+    "rememberHelp": "Entsperrt Ihren Tresor beim Öffnen automatisch.",
+    "on": "Aktiviert",
+    "off": "Deaktiviert",
+    "disableButton": "Verschlüsselung deaktivieren",
+    "disableConfirm": "Deaktivieren",
+    "unlockDialog": {
+      "title": "Verschlüsselte Dateien entsperren",
+      "description": "Geben Sie Ihre E2EE-Passphrase ein, um diese Datei lokal zu entschlüsseln."
+    },
+    "disableDialog": {
+      "title": "Lokale Verschlüsselung deaktivieren?",
+      "description": "Bereits verschlüsselte Dateien bleiben verschlüsselt und fragen beim Öffnen nach Ihrer ursprünglichen Passphrase."
+    },
+    "errors": {
+      "tooShort": "Die Passphrase muss mindestens 6 Zeichen lang sein.",
+      "mismatch": "Passphrasen stimmen nicht überein.",
+      "wrongPassphrase": "Falsche Passphrase. Bitte erneut versuchen.",
+      "setupFailed": "Verschlüsselung konnte nicht eingerichtet werden.",
+      "unlockFailed": "Tresor konnte nicht entsperrt werden."
+    },
+    "toasts": {
+      "enabled": "Zero-Knowledge-Verschlüsselung aktiviert.",
+      "unlocked": "Tresor entsperrt.",
+      "locked": "Tresor gesperrt.",
+      "disabled": "Lokale Verschlüsselungs-Konfiguration gelöscht."
     }
   }
 }

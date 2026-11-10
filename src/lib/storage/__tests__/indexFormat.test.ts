@@ -321,3 +321,43 @@ describe("epochTimestamp", () => {
     ).toBe(0);
   });
 });
+
+describe("Phase 2 TeleFile segments and E2EE roundtrip", () => {
+  it("preserves segments and enc metadata through packChunks, serializeChunk, and parseIndexMessage", () => {
+    const segmentedEncryptedFile: TeleFile = {
+      ...makeFile(1, "/Vault"),
+      name: "archive.tar",
+      size: 3_800 * 1024 * 1024 + 524_288 + 64,
+      segments: [
+        { messageId: 1001, size: 1_900 * 1024 * 1024 },
+        { messageId: 1002, size: 1_900 * 1024 * 1024 + 524_288 + 64 },
+      ],
+      enc: {
+        v: 1,
+        s: "c2FsdC1iNjQ=",
+        plainSize: 3_800 * 1024 * 1024 + 524_288,
+      },
+    };
+
+    const { chunks } = packChunks([segmentedEncryptedFile]);
+    expect(chunks).toHaveLength(1);
+
+    const text = serializeChunk({
+      teledrive_index: true,
+      version: 3,
+      chunkIndex: 0,
+      totalChunks: 1,
+      savedAt: 1700000000123,
+      chunkMsgIds: [900],
+      files: chunks[0],
+    });
+
+    expect(text.startsWith("teledrive_index gz:")).toBe(true);
+    const parsed = parseIndexMessage({ id: 900, text });
+    expect(parsed).not.toBeNull();
+    expect(parsed?.version).toBe(3);
+    expect(parsed?.files).toHaveLength(1);
+    expect(parsed?.files[0].segments).toEqual(segmentedEncryptedFile.segments);
+    expect(parsed?.files[0].enc).toEqual(segmentedEncryptedFile.enc);
+  });
+});
