@@ -173,11 +173,12 @@ export async function downloadSelectionAsZip(
     return;
   }
 
-  let sharedEncKey: CryptoKey | null = null;
-  const firstEncrypted = entries.find((e) => e.file.enc?.v === 1);
-  if (firstEncrypted) {
+  const keyBySalt = new Map<string, CryptoKey>();
+  for (const entry of entries) {
+    const salt = entry.file.enc?.v === 1 ? entry.file.enc.s : null;
+    if (!salt || keyBySalt.has(salt)) continue;
     try {
-      sharedEncKey = await requireEncryptionKey(firstEncrypted.file.enc!.s);
+      keyBySalt.set(salt, await requireEncryptionKey(salt));
     } catch (err) {
       if (err instanceof EncryptionError && err.code === "locked") return;
       throw err;
@@ -332,7 +333,7 @@ export async function downloadSelectionAsZip(
         peer,
         segments,
         enc: file.enc,
-        encryptionKey: file.enc?.v === 1 ? sharedEncKey : null,
+        encryptionKey: file.enc?.v === 1 ? (keyBySalt.get(file.enc.s) ?? null) : null,
       })) {
         while ((state as string) === "paused") {
           await sleep(PAUSE_POLL_MS);

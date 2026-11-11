@@ -22,7 +22,6 @@ import {
   Shield,
   AlertTriangle,
   RefreshCw,
-  Lock,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -1381,14 +1380,6 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
 
                           {file.starred && (
                             <Star className="absolute top-2 right-2 h-4 w-4 fill-amber-400 text-amber-400 drop-shadow-xs" />
-                          )}
-                          {file.enc?.v === 1 && (
-                            <Lock
-                              className={cn(
-                                "absolute top-2 h-3.5 w-3.5 text-[#0b57d0] dark:text-[#a8c7fa] drop-shadow-xs",
-                                file.starred ? "right-7" : "right-2"
-                              )}
-                            />
                           )}
                           {file.offline && (
                             <CheckCircle className="absolute top-2 left-2 h-4 w-4 text-emerald-500 fill-emerald-500/20 shrink-0" />

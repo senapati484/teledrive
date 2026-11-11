@@ -360,6 +360,69 @@ describe("Phase 2 TeleFile segments and E2EE roundtrip", () => {
     expect(parsed?.files[0].segments).toEqual(segmentedEncryptedFile.segments);
     expect(parsed?.files[0].enc).toEqual(segmentedEncryptedFile.enc);
   });
+
+  it("roundtrips RemoteVaultMetadata only on chunk 0 and ignores malformed or non-zero chunk headers", () => {
+    const e2ee = {
+      v: 2 as const,
+      vaultId: "vault-abc-123",
+      saltB64: "c2FsdC1iNjQ=",
+      canaryIvB64: "aXYtYjY0",
+      canaryCtB64: "Y3QtYjY0",
+      mode: "auto" as const,
+      accountKeyB64: "cmF3LWtleS1iNjQ=",
+      encryptNewUploads: false,
+      updatedAt: 1700000000999,
+    };
+
+    const chunk0Text = serializeChunk({
+      teledrive_index: true,
+      version: 3,
+      chunkIndex: 0,
+      totalChunks: 2,
+      savedAt: 1700000000123,
+      chunkMsgIds: [901],
+      e2ee,
+      files: [makeFile(1, "/")],
+    });
+    const parsed0 = parseIndexMessage({ id: 900, text: chunk0Text });
+    expect(parsed0?.e2ee).toEqual(e2ee);
+
+    const chunk1Text = serializeChunk({
+      teledrive_index: true,
+      version: 3,
+      chunkIndex: 1,
+      totalChunks: 2,
+      savedAt: 1700000000123,
+      e2ee,
+      files: [makeFile(2, "/")],
+    });
+    const parsed1 = parseIndexMessage({ id: 901, text: chunk1Text });
+    expect(parsed1?.e2ee).toBeUndefined();
+
+    // Auto mode without accountKeyB64 must be rejected by validator
+    const badChunk0 = serializeChunk({
+      teledrive_index: true,
+      version: 3,
+      chunkIndex: 0,
+      totalChunks: 1,
+      e2ee: { ...e2ee, accountKeyB64: undefined },
+      files: [],
+    });
+    expect(parseIndexMessage({ id: 902, text: badChunk0 })?.e2ee).toBeUndefined();
+
+    // Header budget reservation keeps chunk 0 bounded when headerBytes is specified
+    const packed = packChunks(makeFiles(80), undefined, JSON.stringify(e2ee).length);
+    expect(packed.chunks.length).toBeGreaterThanOrEqual(1);
+    const firstChunkWithHeader = serializeChunk({
+      teledrive_index: true,
+      version: 3,
+      chunkIndex: 0,
+      totalChunks: packed.chunks.length,
+      e2ee,
+      files: packed.chunks[0],
+    });
+    expect(firstChunkWithHeader.length).toBeLessThanOrEqual(4096);
+  });
 });
 
 describe("layout-preserving append-stable packChunks", () => {

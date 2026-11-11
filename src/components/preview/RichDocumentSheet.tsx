@@ -82,7 +82,7 @@ export function RichDocumentSheet({ htmlContent, slides, isDark }: RichDocumentS
 
   return (
     <div
-      className="absolute inset-0 overflow-y-auto px-4 py-8 md:py-12 pointer-events-auto select-text flex justify-center"
+      className="absolute inset-0 overflow-y-auto px-4 py-6 md:py-10 pointer-events-auto select-text"
       style={{
         scrollbarWidth: "thin",
         scrollbarColor: isDark ? "#202225 transparent" : "#e0e2e7 transparent",
@@ -90,7 +90,7 @@ export function RichDocumentSheet({ htmlContent, slides, isDark }: RichDocumentS
       }}
     >
       <div
-        className="w-full max-w-4xl bg-white dark:bg-[#111214] border border-[#e0e2e7] dark:border-white/[0.04] rounded-2xl shadow-sm p-8 md:p-14 my-auto min-h-full teledrive-markdown-body"
+        className="w-full max-w-4xl mx-auto bg-white dark:bg-[#111214] border border-[#e0e2e7] dark:border-white/[0.04] rounded-2xl shadow-sm p-6 sm:p-8 md:p-14 teledrive-markdown-body"
         onClick={(e) => {
           const target = (e.target as HTMLElement).closest("a");
           if (target && target.href) {

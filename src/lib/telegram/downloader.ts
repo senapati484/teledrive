@@ -84,6 +84,7 @@ interface DownloadJob {
   media: any;
   segments: ResolvedDownloadSegment[];
   decryptor: StreamDecryptor | null;
+  encSaltB64?: string;
   size: number;
   received: number;
   written: number;
@@ -235,12 +236,8 @@ async function runDownload(job: DownloadJob): Promise<void> {
       receivedBytes: job.received,
     });
   } catch (error: any) {
-    if (
-      error instanceof EncryptionError &&
-      error.code === "invalid_passphrase" &&
-      !useEncryptionStore.getState().configured
-    ) {
-      void useEncryptionStore.getState().lock();
+    if (error instanceof EncryptionError && error.code === "invalid_passphrase") {
+      void useEncryptionStore.getState().evictDerivedKey(job.encSaltB64);
     }
     const cancelled = job.state === "cancelling";
     await discardDownloadFile(job.targetPath);
@@ -460,12 +457,8 @@ export async function* iterateTelegramPlainChunks(params: {
     }
     finishedAllSegments = true;
   } catch (err: any) {
-    if (
-      err instanceof EncryptionError &&
-      err.code === "invalid_passphrase" &&
-      !useEncryptionStore.getState().configured
-    ) {
-      void useEncryptionStore.getState().lock();
+    if (err instanceof EncryptionError && err.code === "invalid_passphrase") {
+      void useEncryptionStore.getState().evictDerivedKey(params.enc?.s);
     }
     throw err;
   } finally {
@@ -632,6 +625,7 @@ export async function downloadFileFromTelegram(
       media: segments[0].media,
       segments,
       decryptor: decryptionKey ? new StreamDecryptor(decryptionKey) : null,
+      encSaltB64: options?.enc?.s,
       size: totalSize,
       received: 0,
       written: 0,

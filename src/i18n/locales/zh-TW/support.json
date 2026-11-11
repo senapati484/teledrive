@@ -10,7 +10,7 @@
     "title": "TeleDrive 最新功能",
     "badge": "v{{version}}",
     "features": [
-      "零知識端對端加密 (TDE1) — 用戶端 AES-256-GCM 分塊加密，支援復原金鑰與區塊隨機定位",
+      "強化的多帳號安全保險庫 — 自動管理獨立帳號金鑰與中繼資料隔離，保障多端穩定啟動",
       ">2/4 GB 斷點續傳與分段傳輸 — 支援上傳斷點續傳、自動分段及 SHA-256 去重秒傳",
       "極速啟動與 3× 管線化下載 — IndexedDB 本機快取、Catalog v3 與並行 MTProto 串流",
       "萬用內建預覽與網格縮圖 — 支援 DOCX、ODT、RTF、EPUB、XLSX/ODS、PPTX/ODP、ZIP/TAR、HTML 與 PDF/影片縮圖",

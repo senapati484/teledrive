@@ -10,7 +10,7 @@
     "title": "Apa yang Baru di TeleDrive",
     "badge": "v{{version}}",
     "features": [
-      "Enkripsi Zero-Knowledge (TDE1) — Enkripsi AES-256-GCM sisi klien dengan kunci pemulihan & akses blok langsung",
+      "Keamanan Vault Multi-Akun — Kunci vault otomatis per akun dengan isolasi sesi & perangkat yang aman",
       "Transfer Multi-Segmen >2/4 GB — Dukungan checkpoint lanjutkan, pemecahan otomatis & deduplikasi SHA-256",
       "Startup Instan & Streaming 3× Pipeline — Cache IndexedDB, Katalog v3 & unduhan MTProto paralel",
       "Pratinjau Universal & Thumbnail Grid — DOCX, ODT, RTF, EPUB, XLSX/ODS, PPTX/ODP, ZIP/TAR, HTML serta thumbnail PDF/video",

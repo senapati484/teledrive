@@ -10,7 +10,7 @@
     "title": "Novidades no TeleDrive",
     "badge": "v{{version}}",
     "features": [
-      "Criptografia Zero-Knowledge (TDE1) — AES-256-GCM no cliente com chave de recuperação e busca por bloco",
+      "Cofre Seguro Multiconta — Chaves automáticas isoladas por conta com proteção consistente de sessão e metadados",
       "Transferências >2/4 GB retomáveis — Pontos de retomada, divisão automática em segmentos e deduplicação SHA-256",
       "Inicialização instantânea e pipeline 3× — Cache IndexedDB, Catálogo v3 e downloads MTProto paralelos",
       "Visualização universal e miniaturas — DOCX, ODT, RTF, EPUB, XLSX/ODS, PPTX/ODP, ZIP/TAR, HTML e miniaturas de PDF/vídeo",

@@ -53,8 +53,8 @@ vi.mock("../indexFormat", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../indexFormat")>();
   return {
     ...actual,
-    packChunks: (files: TeleFile[], previousChunks?: TeleFile[][]) => {
-      const result = actual.packChunks(files, previousChunks);
+    packChunks: (files: TeleFile[], previousChunks?: TeleFile[][], headerBytes?: number) => {
+      const result = actual.packChunks(files, previousChunks, headerBytes);
       return h.forceOmit ? { ...result, manifestOmitted: true } : result;
     },
   };
@@ -249,6 +249,37 @@ describe("atomic index writer", () => {
     const after = parseIndexMessage({ id: ids[0], text: edits()[0].text! })!;
     expect(after.chunkMsgIds).toEqual(before.chunkMsgIds);
     expect(after.savedAt).toBeGreaterThan(before.savedAt!);
+  });
+
+  it("fast-edits chunk 0 when vault metadata changes even with unchanged files", async () => {
+    const files = makeFiles(500);
+    const { ids } = seed(files);
+    fake.calls = [];
+
+    const vaultMeta = {
+      v: 2 as const,
+      vaultId: "vault-sync-test",
+      saltB64: "c2FsdA==",
+      canaryIvB64: "aXY=",
+      canaryCtB64: "Y3Q=",
+      mode: "auto" as const,
+      accountKeyB64: "cmF3",
+      encryptNewUploads: false,
+      updatedAt: 1700000000123,
+    };
+    getIndexQueue(CHANNEL).setVaultMetadata(vaultMeta);
+
+    await enqueueSave(CHANNEL, files);
+
+    expect(edits()).toHaveLength(1);
+    expect(edits()[0].id).toBe(ids[0]);
+    const parsed0 = parseIndexMessage({ id: ids[0], text: edits()[0].text! })!;
+    expect(parsed0.e2ee).toEqual(vaultMeta);
+
+    // Repeating save with identical vault metadata performs zero Telegram edits
+    fake.calls = [];
+    await enqueueSave(CHANNEL, files);
+    expect(edits()).toHaveLength(0);
   });
 
   it("structural grow sends changed chunks, commits chunk 0 last, then deletes old ids", async () => {

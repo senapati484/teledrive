@@ -1,5 +1,5 @@
 import { gzipSync, gunzipSync, strFromU8, strToU8 } from "fflate";
-import type { TeleFile } from "../types";
+import type { RemoteVaultMetadata, TeleFile } from "../types";
 import { normalizeFolderPath } from "../files/pathUtils";
 
 export const INDEX_VERSION = 3;
@@ -18,6 +18,7 @@ export interface IndexChunkPayload {
   totalChunks: number;
   savedAt?: number;
   chunkMsgIds?: number[];
+  e2ee?: RemoteVaultMetadata;
   files: TeleFile[];
 }
 
@@ -28,6 +29,7 @@ export interface ParsedIndexChunk {
   totalChunks: number;
   savedAt?: number;
   chunkMsgIds?: number[];
+  e2ee?: RemoteVaultMetadata;
   files: TeleFile[];
   editedAt: number;
 }
@@ -196,6 +198,8 @@ export function parseIndexMessage(msg: any): ParsedIndexChunk | null {
   const version =
     typeof data.version === "number" && Number.isFinite(data.version) ? data.version : 1;
 
+  const e2ee = chunkIndex === 0 ? parseRemoteVaultMetadata(data.e2ee) : undefined;
+
   return {
     msgId,
     version,
@@ -203,8 +207,61 @@ export function parseIndexMessage(msg: any): ParsedIndexChunk | null {
     totalChunks,
     savedAt,
     chunkMsgIds,
+    ...(e2ee ? { e2ee } : {}),
     files,
     editedAt: messageTimestampMs(msg),
+  };
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.length > 0;
+}
+
+export function parseRemoteVaultMetadata(raw: unknown): RemoteVaultMetadata | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const candidate = raw as Record<string, unknown>;
+  const v = candidate.v;
+  if (v !== 1 && v !== 2) return undefined;
+  if (
+    !isNonEmptyString(candidate.vaultId) ||
+    !isNonEmptyString(candidate.saltB64) ||
+    !isNonEmptyString(candidate.canaryIvB64) ||
+    !isNonEmptyString(candidate.canaryCtB64)
+  ) {
+    return undefined;
+  }
+  const mode = candidate.mode === "auto" || candidate.mode === "passphrase"
+    ? candidate.mode
+    : v === 1
+      ? "passphrase"
+      : undefined;
+  if (!mode) return undefined;
+
+  const accountKeyB64 =
+    mode === "auto" && isNonEmptyString(candidate.accountKeyB64)
+      ? candidate.accountKeyB64
+      : undefined;
+  if (mode === "auto" && !accountKeyB64) return undefined;
+
+  const updatedAt =
+    typeof candidate.updatedAt === "number" &&
+    Number.isFinite(candidate.updatedAt) &&
+    candidate.updatedAt >= 0
+      ? candidate.updatedAt
+      : 0;
+
+  return {
+    v,
+    vaultId: candidate.vaultId,
+    saltB64: candidate.saltB64,
+    canaryIvB64: candidate.canaryIvB64,
+    canaryCtB64: candidate.canaryCtB64,
+    mode,
+    ...(accountKeyB64 ? { accountKeyB64 } : {}),
+    ...(typeof candidate.encryptNewUploads === "boolean"
+      ? { encryptNewUploads: candidate.encryptNewUploads }
+      : {}),
+    updatedAt,
   };
 }
 
@@ -376,17 +433,20 @@ function packWithLayout(
 
 function estimateChunkCount(
   files: TeleFile[],
-  previousChunks?: TeleFile[][]
+  previousChunks?: TeleFile[][],
+  extraFirstBytes = 0
 ): number {
+  const firstLimit = Math.max(400, TELEGRAM_TEXT_LIMIT - 24 - extraFirstBytes);
   if (previousChunks && previousChunks.length > 0) {
-    return packWithLayout(files, previousChunks, TELEGRAM_TEXT_LIMIT - 24).length;
+    return packWithLayout(files, previousChunks, firstLimit).length;
   }
-  return packWithFirstBudget(files, TELEGRAM_TEXT_LIMIT - 24).length;
+  return packWithFirstBudget(files, firstLimit).length;
 }
 
 export function packChunks(
   files: TeleFile[],
-  previousChunks?: TeleFile[][]
+  previousChunks?: TeleFile[][],
+  headerBytes = 0
 ): {
   chunks: TeleFile[][];
   manifestOmitted: boolean;
@@ -395,18 +455,19 @@ export function packChunks(
     return { chunks: [[]], manifestOmitted: false };
   }
 
+  const extra = Math.max(0, Math.round(headerBytes));
   const useLayout = Boolean(previousChunks && previousChunks.length > 0);
   const runPack = (limit: number) =>
     useLayout
       ? packWithLayout(files, previousChunks!, limit)
       : packWithFirstBudget(files, limit);
 
-  let totalChunks = Math.max(1, estimateChunkCount(files, previousChunks));
-  let chunks = runPack(TELEGRAM_TEXT_LIMIT - 24);
+  let totalChunks = Math.max(1, estimateChunkCount(files, previousChunks, extra));
+  let chunks = runPack(Math.max(400, TELEGRAM_TEXT_LIMIT - 24 - extra));
 
   for (let attempt = 0; attempt < 6; attempt++) {
     const budget = manifestBudget(totalChunks);
-    const firstBudget = Math.max(400, 3600 - budget);
+    const firstBudget = Math.max(400, 3600 - budget - extra);
     const candidate = runPack(firstBudget);
     chunks = candidate;
     if (candidate.length === totalChunks) break;

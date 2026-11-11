@@ -10,7 +10,7 @@
     "title": "Was ist neu in TeleDrive",
     "badge": "v{{version}}",
     "features": [
-      "Zero-Knowledge-Verschlüsselung (TDE1) — Clientseitige AES-256-GCM-Verschlüsselung mit Wiederherstellungsschlüssel & Block-Seeking",
+      "Sicheres Multi-Konto-Vault — Automatisch verwaltete Kontodaten mit sicherer Isolation über Geräte & Sitzungen hinweg",
       "Fortsetzbare >2/4-GB-Transfers — Checkpoints, automatische Segmentierung & SHA-256-Deduplizierung ohne erneuten Upload",
       "Sofortstart & 3×-Pipelining — IndexedDB-Snapshot-Cache, Katalog v3 & paralleles MTProto-Streaming",
       "Universelle Vorschau & Grid-Thumbnails — DOCX, ODT, RTF, EPUB, XLSX/ODS, PPTX/ODP, ZIP/TAR, HTML sowie PDF-/Video-Vorschaubilder",

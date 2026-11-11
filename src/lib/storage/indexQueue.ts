@@ -60,7 +60,7 @@ export class IndexRetryExhaustedError extends Error {
   }
 }
 
-import type { TeleFile } from "../types";
+import type { RemoteVaultMetadata, TeleFile } from "../types";
 import {
   writePendingMarker,
   clearPendingMarker,
@@ -214,9 +214,19 @@ class ChannelQueue {
   private known: KnownIndex | null = null;
   /** Old epoch retained across a hard-error recovery so COW can clean it up. */
   private recoveryOld: KnownIndex | null = null;
+  /** Synced per-account vault metadata persisted on chunk 0 when present. */
+  private vaultMetadata: RemoteVaultMetadata | undefined = undefined;
 
   constructor(channelId: string) {
     this.channelId = channelId;
+  }
+
+  setVaultMetadata(meta: RemoteVaultMetadata | undefined): void {
+    this.vaultMetadata = meta;
+  }
+
+  getVaultMetadata(): RemoteVaultMetadata | undefined {
+    return this.vaultMetadata;
   }
 
   /**
@@ -241,6 +251,9 @@ class ChannelQueue {
     }
     const savedAt = msgIds.map((id) => parsedById.get(id)?.savedAt ?? 0);
     const zero = parsedById.get(msgIds[0]);
+    if (this.vaultMetadata === undefined && zero?.e2ee) {
+      this.vaultMetadata = zero.e2ee;
+    }
     this.known = {
       ids: [...msgIds],
       texts,
@@ -678,7 +691,13 @@ class ChannelQueue {
             ?.files ?? []
         : []
     );
-    const { chunks, manifestOmitted } = packChunks(state, prevChunks);
+    const vaultBudget = this.vaultMetadata
+      ? JSON.stringify(this.vaultMetadata).length
+      : 0;
+    const { chunks, manifestOmitted } =
+      vaultBudget > 0
+        ? packChunks(state, prevChunks, vaultBudget)
+        : packChunks(state, prevChunks);
     const totalChunks = chunks.length;
     if (manifestOmitted) {
       await this.log(
@@ -822,7 +841,10 @@ class ChannelQueue {
         !parsed ||
         parsed.chunkIndex !== i ||
         parsed.totalChunks !== totalChunks ||
-        canonicalJson(parsed.files) !== canonicalJson(chunks[i])
+        canonicalJson(parsed.files) !== canonicalJson(chunks[i]) ||
+        (i === 0 &&
+          canonicalJson(parsed.e2ee ?? null) !==
+            canonicalJson(this.vaultMetadata ?? null))
       ) {
         changed.push(i);
       }
@@ -838,7 +860,7 @@ class ChannelQueue {
   ): string | null {
     if (ids.length !== totalChunks) return null;
     const text = serializeChunk({
-      ...chunkPayload(files, 0, totalChunks, savedAt),
+      ...chunkPayload(files, 0, totalChunks, savedAt, this.vaultMetadata),
       chunkMsgIds: ids.slice(1),
     });
     if (text.length > TELEGRAM_TEXT_LIMIT) return null;
@@ -1011,7 +1033,9 @@ class ChannelQueue {
       hasManifest = zeroText !== null;
     }
     if (zeroText === null) {
-      zeroText = serializeChunk(chunkPayload(chunks[0], 0, totalChunks, savedAt));
+      zeroText = serializeChunk(
+        chunkPayload(chunks[0], 0, totalChunks, savedAt, this.vaultMetadata)
+      );
       if (zeroText.length > TELEGRAM_TEXT_LIMIT) {
         await this.logOrphans(orphans);
         throw new Error("Index chunk 0 exceeds Telegram's text limit");
@@ -1170,7 +1194,8 @@ function chunkPayload(
   files: TeleFile[],
   chunkIndex: number,
   totalChunks: number,
-  savedAt: number
+  savedAt: number,
+  e2ee?: RemoteVaultMetadata
 ) {
   return {
     teledrive_index: true as const,
@@ -1178,6 +1203,7 @@ function chunkPayload(
     chunkIndex,
     totalChunks,
     savedAt,
+    ...(chunkIndex === 0 && e2ee ? { e2ee } : {}),
     files,
   };
 }
