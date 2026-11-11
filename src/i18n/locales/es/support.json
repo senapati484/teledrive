@@ -10,7 +10,7 @@
     "title": "Novedades en TeleDrive",
     "badge": "v{{version}}",
     "features": [
-      "Cifrado de conocimiento cero (TDE1) — AES-256-GCM en el cliente con clave de recuperación y búsqueda aleatoria",
+      "Bóveda Segura Multicuenta — Almacenamiento aislado automáticamente por cuenta en metadatos y dispositivo",
       "Transferencias >2/4 GB reanudables — Puntos de control, división automática y deduplicación SHA-256 sin resubida",
       "Inicio instantáneo y 3× pipelining — Caché IndexedDB, Catálogo v3 y descargas MTProto en paralelo",
       "Vista previa universal y miniaturas — DOCX, ODT, RTF, EPUB, XLSX/ODS, PPTX/ODP, ZIP/TAR, HTML y miniaturas PDF/vídeo",

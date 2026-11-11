@@ -12,6 +12,9 @@ import {
 } from "../storage/metadataStore";
 import { useAuthStore } from "../../stores/authStore";
 import { useFileStore } from "../../stores/fileStore";
+import { useEncryptionStore } from "../secure/e2ee";
+import { getIndexQueue } from "../storage/indexQueue";
+import { isIndexReady } from "./indexReadiness";
 import { TeleFile } from "../types";
 import { invoke } from "@tauri-apps/api/core";
 import {
@@ -117,6 +120,16 @@ async function bootstrapTeleDriveInner(
     // uploads it finds and persists a fresh index.
     useFileStore.getState().setIndexLoadState("ready", null);
     outcome = { status: "ready", files: outcome.files, savedAt: 0 };
+    try {
+      const vaultSync = await useEncryptionStore
+        .getState()
+        .syncFromRemoteMetadata(channelId, null);
+      if (vaultSync.vaultMetadata) {
+        getIndexQueue(channelId).setVaultMetadata(vaultSync.vaultMetadata);
+      }
+    } catch (vaultErr) {
+      console.warn("[bootstrap] Failed to initialize account vault on empty channel:", vaultErr);
+    }
     await invoke("log_vault_state", {
       state: `BOOTSTRAP_NO_INDEX_REBUILD files=${outcome.files.length}`,
     }).catch(() => {});
@@ -570,7 +583,17 @@ async function bootstrapTeleDriveInner(
         resolve();
       }, 14000);
     }),
-  ]);
+  ]).then(() => {
+    const encState = useEncryptionStore.getState();
+    if (
+      isIndexReady() &&
+      encState.activeChannelId === channelId &&
+      encState.needsRemotePublish
+    ) {
+      encState.markRemotePublished(channelId);
+      fireAndForgetSaveIndex(channelId, useFileStore.getState().files);
+    }
+  });
 
   // Gate was released right after `setFiles(files)` near the top of this
   // function. We do NOT re-set it here — doing so would clobber the early

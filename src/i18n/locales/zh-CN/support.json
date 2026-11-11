@@ -10,7 +10,7 @@
     "title": "TeleDrive 最新动态",
     "badge": "v{{version}}",
     "features": [
-      "零知识端到端加密 (TDE1) — 客户端 AES-256-GCM 分块加密，支持恢复密钥与按块随机跳转",
+      "强化的多账号安全保险库 — 自动管理独立账号密钥与元数据隔离，保障多端稳定启动",
       ">2/4 GB 断点续传与分片传输 — 支持上传断点恢复、自动分段及 SHA-256 秒传去重",
       "极速冷启动与 3× 并发下载 — IndexedDB 本地快照缓存、Catalog v3 与并行 MTProto 拉取",
       "全格式内置预览与网格缩略图 — 原生预览 DOCX、ODT、RTF、EPUB、XLSX/ODS、PPTX/ODP、ZIP/TAR、HTML 与 PDF/视频缩略图",

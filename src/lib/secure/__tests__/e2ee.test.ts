@@ -16,9 +16,12 @@ import {
   computeE2eeSeekPlan,
   deriveMasterKeyFromPassphrase,
   E2EE_BLOCK_SIZE,
+  e2eeConfigKey,
+  e2eeRawKey,
   E2EE_HEADER_BYTES,
   encryptedSizeForPlainSize,
   EncryptionError,
+  requireEncryptionKey,
   StreamDecryptor,
   StreamEncryptor,
   useEncryptionStore,
@@ -26,7 +29,10 @@ import {
 
 beforeEach(async () => {
   vaultMap.clear();
-  await useEncryptionStore.getState().disableEncryption();
+  if (typeof localStorage !== "undefined") {
+    localStorage.clear();
+  }
+  useEncryptionStore.getState().resetSessionOnLogout();
 });
 
 describe("StreamEncryptor & StreamDecryptor (TDE1)", () => {
@@ -190,6 +196,108 @@ describe("useEncryptionStore lifecycle", () => {
     await useEncryptionStore.getState().unlockWithPassphrase("vault-pass-123");
     const derived = await waitKeyPromise;
     expect(derived).not.toBeNull();
+  });
+});
+
+describe("multi-device account vault sync & isolation", () => {
+  it("auto-generates a random key once per account, caches it in scoped vault, and syncs seamlessly to a second device", async () => {
+    // Device A: first login to channel "-1001" with empty metadata
+    const device1 = await useEncryptionStore
+      .getState()
+      .syncFromRemoteMetadata("-1001", null);
+
+    expect(device1.needsPublish).toBe(true);
+    expect(device1.vaultMetadata.mode).toBe("auto");
+    expect(device1.vaultMetadata.encryptNewUploads).toBe(false);
+    expect(device1.vaultMetadata.accountKeyB64).toBeTruthy();
+    expect(vaultMap.get(e2eeConfigKey("-1001"))).toBeTruthy();
+    expect(vaultMap.get(e2eeRawKey("-1001"))).toBe(
+      device1.vaultMetadata.accountKeyB64
+    );
+
+    const encKey1 = await requireEncryptionKey(device1.vaultMetadata.saltB64);
+    const enc = new StreamEncryptor(encKey1, E2EE_BLOCK_SIZE);
+    const secretPayload = new TextEncoder().encode("cross-device-payload");
+    const encryptedBlock = await enc.encryptBlock(secretPayload);
+    const wire = new Uint8Array(enc.header.length + encryptedBlock.length);
+    wire.set(enc.header, 0);
+    wire.set(encryptedBlock, enc.header.length);
+
+    // Simulate logging into a completely fresh Device B (empty local vault)
+    vaultMap.clear();
+    if (typeof localStorage !== "undefined") localStorage.clear();
+    useEncryptionStore.getState().resetSessionOnLogout();
+
+    const device2 = await useEncryptionStore
+      .getState()
+      .syncFromRemoteMetadata("-1001", device1.vaultMetadata);
+
+    expect(device2.needsPublish).toBe(false);
+    expect(useEncryptionStore.getState().unlocked).toBe(true);
+    expect(useEncryptionStore.getState().unlockPromptOpen).toBe(false);
+    expect(vaultMap.get(e2eeRawKey("-1001"))).toBe(
+      device1.vaultMetadata.accountKeyB64
+    );
+
+    // Decrypting with Device B's synced key must work with zero prompts
+    const encKey2 = await requireEncryptionKey(device1.vaultMetadata.saltB64);
+    const dec = new StreamDecryptor(encKey2);
+    const out = await dec.pushChunk(wire);
+    dec.finish();
+    expect(out).toEqual(secretPayload);
+  });
+
+  it("isolates persisted vaults across accounts on logout and requires explicit unlock for mismatched legacy salts", async () => {
+    const chanA = await useEncryptionStore
+      .getState()
+      .syncFromRemoteMetadata("-100A", null);
+    const keyA = chanA.vaultMetadata.accountKeyB64!;
+
+    // Switch accounts cleanly via resetSessionOnLogout()
+    useEncryptionStore.getState().resetSessionOnLogout();
+    expect(useEncryptionStore.getState().masterKey).toBeNull();
+    expect(vaultMap.get(e2eeRawKey("-100A"))).toBe(keyA);
+
+    const chanB = await useEncryptionStore
+      .getState()
+      .syncFromRemoteMetadata("-100B", null);
+    expect(chanB.vaultMetadata.accountKeyB64).not.toBe(keyA);
+    expect(vaultMap.get(e2eeRawKey("-100A"))).toBe(keyA);
+
+    // Asking for an unrecognized historical salt must NEVER silently return channel B's key
+    const waitPrompt = requireEncryptionKey("legacy-unknown-salt-b64");
+    await Promise.resolve();
+    expect(useEncryptionStore.getState().unlockPromptOpen).toBe(true);
+    useEncryptionStore.getState().cancelUnlockPrompt();
+    await expect(waitPrompt).rejects.toThrow(EncryptionError);
+  });
+
+  it("migrates a legacy local passphrase vault to non-secret channel metadata without uploading the key", async () => {
+    await useEncryptionStore.getState().setupPassphrase("legacy-secret-99", {
+      encryptNewUploads: true,
+      rememberKey: true,
+    });
+    const legacySalt = useEncryptionStore.getState().config!.saltB64;
+    useEncryptionStore.getState().resetSessionOnLogout();
+
+    const migrated = await useEncryptionStore
+      .getState()
+      .syncFromRemoteMetadata("-100LEGACY", null);
+
+    expect(migrated.needsPublish).toBe(true);
+    expect(migrated.vaultMetadata.mode).toBe("passphrase");
+    expect(migrated.vaultMetadata.saltB64).toBe(legacySalt);
+    expect(migrated.vaultMetadata.accountKeyB64).toBeUndefined();
+    expect(migrated.vaultMetadata.encryptNewUploads).toBe(false);
+    expect(vaultMap.get(e2eeRawKey("-100LEGACY"))).toBeTruthy();
+
+    // Subsequent unrelated channel login must NOT inherit the migrated legacy passphrase
+    useEncryptionStore.getState().resetSessionOnLogout();
+    const other = await useEncryptionStore
+      .getState()
+      .syncFromRemoteMetadata("-100OTHER", null);
+    expect(other.vaultMetadata.mode).toBe("auto");
+    expect(other.vaultMetadata.saltB64).not.toBe(legacySalt);
   });
 });
 

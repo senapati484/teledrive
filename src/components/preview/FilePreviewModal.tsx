@@ -68,11 +68,7 @@ import {
   isHashedUploadResult,
   uploadFileToTelegram,
 } from "@/lib/telegram/uploader";
-import {
-  EncryptionError,
-  requireEncryptionKey,
-  useEncryptionStore,
-} from "@/lib/secure/e2ee";
+import { EncryptionError } from "@/lib/secure/e2ee";
 import { getFileMessageIds } from "@/lib/files/segmentHelpers";
 import { enqueueSave } from "@/lib/storage/indexQueue";
 import {
@@ -1415,15 +1411,8 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
     try {
       const bytes = new TextEncoder().encode(editContent);
       const newFile = new File([bytes], currentFile.name, { type: currentFile.mime });
-      const wasEncrypted = currentFile.enc?.v === 1;
-      const encryptionKey = wasEncrypted
-        ? await requireEncryptionKey(currentFile.enc?.s)
-        : null;
-      const encryptionSaltB64 = wasEncrypted
-        ? currentFile.enc?.s ?? useEncryptionStore.getState().config?.saltB64 ?? null
-        : null;
 
-      // 1) Upload the new bytes to Telegram (preserving E2EE encryption if encrypted).
+      // 1) Upload the updated plaintext bytes cleanly to Telegram.
       const uploadRes = await uploadFileToTelegram(
         currentFile.channelId,
         currentFile.name,
@@ -1436,9 +1425,6 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
         null,
         {
           allowMultiSegment: true,
-          encryptionKey,
-          encryptionSaltB64,
-          anonymizedFileName: wasEncrypted ? `${currentFile.id}.tde` : undefined,
         }
       );
 

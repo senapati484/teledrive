@@ -12,6 +12,27 @@ export interface TeleFileEncryption {
   plainSize?: number;
 }
 
+export interface RemoteVaultMetadata {
+  /** Vault metadata schema version: 1 = legacy passphrase vault, 2 = auto-generated synced account key */
+  v: 1 | 2;
+  /** Unique identifier for this channel vault lineage */
+  vaultId: string;
+  /** Base64 key salt / epoch identifier */
+  saltB64: string;
+  /** Base64 AES-GCM IV for canary verification */
+  canaryIvB64: string;
+  /** Base64 AES-GCM ciphertext for canary verification */
+  canaryCtB64: string;
+  /** Provisioning mode: "auto" generates once per account and syncs via metadata + device vault */
+  mode: "auto" | "passphrase";
+  /** Base64 auto-generated 256-bit key (present only when mode === "auto" for multi-device sync) */
+  accountKeyB64?: string;
+  /** Whether new uploads should be encrypted automatically (false by default) */
+  encryptNewUploads?: boolean;
+  /** Epoch timestamp (ms) when this vault metadata was created or updated */
+  updatedAt: number;
+}
+
 export interface TeleFile {
   id: string;
   name: string;

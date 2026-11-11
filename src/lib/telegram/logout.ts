@@ -46,9 +46,7 @@ export async function logoutTelegram(): Promise<void> {
   } finally {
     resetCachedPremiumStatus();
     clearThumbnailMemoryCache();
-    if (!useEncryptionStore.getState().rememberKey) {
-      await useEncryptionStore.getState().lock().catch(() => {});
-    }
+    useEncryptionStore.getState().resetSessionOnLogout();
     await clearPendingLogin();
     await disconnectClient();
   }

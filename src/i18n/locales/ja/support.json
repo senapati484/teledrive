@@ -10,7 +10,7 @@
     "title": "TeleDrive の新機能",
     "badge": "v{{version}}",
     "features": [
-      "ゼロ知識暗号化 (TDE1) — 回復キーとブロックシークを備えたクライアント側 AES-256-GCM 暗号化",
+      "強化されたマルチアカウント Vault — アカウントごとの安全な鍵分離と高信頼メタデータ管理",
       ">2/4 GB 分割転送とチェックポイント再開 — 自動セグメント分割と SHA-256 重複排除",
       "高速起動と 3並列パイプライン転送 — IndexedDB キャッシュ、Catalog v3、並列 MTProto ダウンロード",
       "汎用プレビューとサムネイル表示 — DOCX/ODT/RTF/EPUB、XLSX/ODS、PPTX/ODP、ZIP/TAR、HTML、PDF・動画サムネイル対応",

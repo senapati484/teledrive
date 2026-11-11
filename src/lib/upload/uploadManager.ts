@@ -38,7 +38,6 @@ import {
   hasUploadDuplicateSizeCandidate,
   MANUAL_UPLOAD_HASH_CAP_BYTES,
 } from "./dedupeCheck";
-import { requireEncryptionKey, useEncryptionStore } from "../secure/e2ee";
 
 // ---------------------------------------------------------------------------
 // MIME type inference from file extension
@@ -341,19 +340,12 @@ export async function processQueue(): Promise<void> {
             ? rawMime
             : getMimeFromExtension(item.name);
 
-          // Check whether E2EE zero-knowledge encryption is enabled for new uploads.
-          const encStore = useEncryptionStore.getState();
-          if (!encStore.initialized) {
-            await encStore.initFromVault().catch(() => {});
-          }
-          const latestEnc = useEncryptionStore.getState();
-          const shouldEncrypt = latestEnc.configured && latestEnc.encryptNewUploads;
-          let encryptionKey: CryptoKey | null = null;
-          let encryptionSaltB64: string | null = null;
-          if (shouldEncrypt) {
-            encryptionKey = await requireEncryptionKey();
-            encryptionSaltB64 = useEncryptionStore.getState().config?.saltB64 ?? null;
-          }
+          // Upload new files directly (account vault keys sync via metadata
+          // for seamless backward decryption of legacy E2EE files without
+          // disabling thumbnails or Telegram media streaming on new uploads).
+          const shouldEncrypt = false;
+          const encryptionKey: CryptoKey | null = null;
+          const encryptionSaltB64: string | null = null;
 
           // Only pay a pre-upload disk read when an active drive file actually
           // shares the exact byte size & encryption state; otherwise stream SHA-256

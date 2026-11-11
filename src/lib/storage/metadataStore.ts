@@ -5,6 +5,7 @@ import { getClient } from "../telegram/client";
 import { canonicalChannelId } from "../telegram/peerId";
 import { TeleFile } from "../types";
 import { useFileStore } from "../../stores/fileStore";
+import { useEncryptionStore } from "../secure/e2ee";
 import { enqueueSave, getIndexQueue } from "./indexQueue";
 import { filterDeletedMessages } from "./tombstones";
 import { normalizeFolderPath } from "../utils";
@@ -1032,6 +1033,10 @@ export async function loadIndexOutcome(
   const store = useFileStore.getState();
 
   if (result.status !== "ready") {
+    // Hydrate offline from the channel-scoped local vault so previously cached
+    // encrypted files remain readable even when index discovery is offline.
+    await useEncryptionStore.getState().initFromVault(channelId).catch(() => {});
+
     // A remote-sync refresh must not downgrade a previously healthy index
     // because of one transient network failure — that would gate every local
     // write until a later retry succeeds.
@@ -1058,6 +1063,21 @@ export async function loadIndexOutcome(
       store.setLastIndexMsgId(maxChosenMsgId);
     }
     getIndexQueue(channelId).setKnownIndex(result.ids, result.texts, result.chunks);
+  }
+
+  try {
+    const remoteVault =
+      result.chunks.find((c) => c.chunkIndex === 0 && c.e2ee)?.e2ee ??
+      result.chunks[0]?.e2ee ??
+      null;
+    const vaultSync = await useEncryptionStore
+      .getState()
+      .syncFromRemoteMetadata(channelId, remoteVault);
+    if (vaultSync.vaultMetadata) {
+      getIndexQueue(channelId).setVaultMetadata(vaultSync.vaultMetadata);
+    }
+  } catch (err) {
+    console.warn("[metadataStore] Failed to sync account vault metadata:", err);
   }
 
   const visibleFiles = filterDeletedMessages(channelId, result.files);
