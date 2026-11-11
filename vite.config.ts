@@ -53,6 +53,36 @@ export default defineConfig(async () => ({
       chunkSizeWarningLimit: 2500,
     },
 
+    optimizeDeps: {
+      include: [
+        "react",
+        "react-dom",
+        "react-dom/client",
+        "react-router-dom",
+        "zustand",
+        "i18next",
+        "react-i18next",
+        "i18next-browser-languagedetector",
+        "lucide-react",
+        "sonner",
+        "radix-ui",
+        "next-themes",
+        "telegram",
+        "buffer",
+        "fflate",
+        "dompurify",
+        "highlight.js",
+        "marked",
+        "qrcode",
+        "@tauri-apps/api/core",
+        "@tauri-apps/api/app",
+        "@tauri-apps/api/event",
+        "@tauri-apps/plugin-opener",
+        "@tauri-apps/plugin-dialog",
+        "@tauri-apps/plugin-fs",
+      ],
+    },
+
     // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
     //
     // 1. prevent Vite from obscuring rust errors
@@ -61,7 +91,7 @@ export default defineConfig(async () => ({
     server: {
       port: 1420,
       strictPort: true,
-      host: host || "127.0.0.1",
+      host: host || "localhost",
       hmr: host
         ? {
           protocol: "ws",

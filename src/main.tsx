@@ -22,6 +22,7 @@ if (rootElement) {
       </ErrorBoundary>
     </React.StrictMode>,
   );
+  (window as unknown as { __TELEDRIVE_MOUNTED__?: boolean }).__TELEDRIVE_MOUNTED__ = true;
   console.log("main.tsx: React root mounted immediately.");
 } else {
   console.error("main.tsx: Root element not found in DOM!");
