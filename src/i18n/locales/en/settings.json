@@ -9,7 +9,8 @@
     "appearance": "Appearance",
     "language": "Language",
     "storage": "Storage",
-    "about": "About"
+    "about": "About",
+    "encryption": "Encryption"
   },
   "language": {
     "title": "Language",
@@ -232,6 +233,53 @@
       "openLinkFailed": "Failed to open link.",
       "upToDate": "You're up to date!",
       "latestVersion": "TeleDrive v{{version}} is the latest version."
+    }
+  },
+  "encryption": {
+    "title": "Zero-Knowledge Encryption (E2EE)",
+    "description": "Encrypt files locally using AES-256-GCM before any bytes leave your device. Files appear unreadable inside Telegram.",
+    "setupTitle": "Set Your Encryption Passphrase",
+    "setupHint": "TeleDrive never sends or stores your passphrase remotely. Keep a backup — lost passphrases cannot be recovered.",
+    "newPassphrasePlaceholder": "Create passphrase (min. 6 characters)",
+    "confirmPassphrasePlaceholder": "Confirm passphrase",
+    "passphrasePlaceholder": "Enter encryption passphrase",
+    "encryptNewByDefault": "Encrypt all newly uploaded files automatically",
+    "rememberOnDevice": "Remember key securely on this device",
+    "enableButton": "Enable Encryption",
+    "statusUnlocked": "Encryption Vault Unlocked",
+    "statusLocked": "Encryption Vault Locked",
+    "unlockedSubtitle": "Encrypted files decrypt transparently on preview and download.",
+    "lockedSubtitle": "Enter your passphrase to unlock or upload encrypted files.",
+    "lockButton": "Lock Vault",
+    "unlockButton": "Unlock",
+    "encryptNewTitle": "Encrypt new uploads",
+    "encryptNewHelp": "New files upload inside an AES-256-GCM envelope with anonymized channel names.",
+    "rememberTitle": "Remember key on this device",
+    "rememberHelp": "Auto-unlocks your vault when opening TeleDrive on this device.",
+    "on": "Enabled",
+    "off": "Disabled",
+    "disableButton": "Disable Encryption Setup",
+    "disableConfirm": "Disable",
+    "unlockDialog": {
+      "title": "Unlock Encrypted Files",
+      "description": "Enter your Zero-Knowledge E2EE passphrase to decrypt this file locally on your device."
+    },
+    "disableDialog": {
+      "title": "Disable Local Encryption Vault?",
+      "description": "Existing encrypted files in Telegram remain encrypted and will ask for your original passphrase whenever opened."
+    },
+    "errors": {
+      "tooShort": "Passphrase must be at least 6 characters long.",
+      "mismatch": "Passphrases do not match.",
+      "wrongPassphrase": "Incorrect passphrase. Please try again.",
+      "setupFailed": "Failed to set up encryption.",
+      "unlockFailed": "Unable to unlock vault."
+    },
+    "toasts": {
+      "enabled": "Zero-Knowledge Encryption enabled for uploads.",
+      "unlocked": "Encryption vault unlocked.",
+      "locked": "Encryption vault locked.",
+      "disabled": "Local encryption setup cleared."
     }
   }
 }

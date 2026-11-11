@@ -78,7 +78,15 @@
     "badge": "{{ext}} アーカイブ",
     "description": "圧縮されたアーカイブをブラウザーで直接プレビューすることはできません。このアーカイブをダウンロードして、その内容をコンピュータに抽出して表示します。",
     "download": "アーカイブをダウンロード",
-    "openInSystem": "システムアプリで開く"
+    "openInSystem": "システムアプリで開く",
+    "entryTooLarge": "25 MB のインラインプレビュー上限を超えています。ローカルに保存するには展開を使用してください。",
+    "extractFailed": "ファイルを展開できませんでした。",
+    "binaryEntryNotice": "バイナリ項目は直接表示できません。展開してローカルで開いてください。",
+    "backToList": "ファイル一覧に戻る",
+    "summary": "{{count}} 件のファイル · {{unpacked}} 展開時 ({{packed}} 圧縮時)",
+    "searchPlaceholder": "アーカイブ内のファイルを検索…",
+    "noMatchingEntries": "一致するファイルがありません。",
+    "extractFile": "ファイルを展開"
   },
   "unsupported": {
     "description": "このファイル タイプではプレビューを利用できません。ダウンロードして、システム上の互換性のあるアプリケーションで開くことができます。",
@@ -155,5 +163,10 @@
     "ariaLabel": "コードビューア",
     "largeFile_one": "大きなファイル ({{count, number}} 行) - パフォーマンスのために構文の強調表示はスキップされます",
     "largeFile_other": "大きなファイル ({{count, number}} 行) — パフォーマンスのために構文の強調表示はスキップされます"
+  },
+  "document": {
+    "slideLabel": "スライド {{number}} / {{total}}",
+    "emptySlide": "空のスライド",
+    "speakerNotes": "ノート:"
   }
 }

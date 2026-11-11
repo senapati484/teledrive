@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { Star, X } from "lucide-react";
-import { openUrl } from "@tauri-apps/plugin-opener";
 import { toast } from "sonner";
+import { runtimeOpenUrl } from "@/lib/runtime/bridge";
 
 import {
   Dialog,
@@ -72,7 +72,7 @@ export default function StarPromptDialog() {
 
   const handleStar = async () => {
     try {
-      await openUrl(GITHUB_URL);
+      await runtimeOpenUrl(GITHUB_URL);
     } catch {
       toast.error("Failed to open link.");
     }

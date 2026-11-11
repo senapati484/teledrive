@@ -9,7 +9,8 @@
     "appearance": "Apparence",
     "language": "Langue",
     "storage": "Stockage",
-    "about": "À propos"
+    "about": "À propos",
+    "encryption": "Chiffrement"
   },
   "language": {
     "title": "Langue",
@@ -277,6 +278,53 @@
       "openLinkFailed": "Échec de l'ouverture du lien.",
       "upToDate": "Vous êtes à jour !",
       "latestVersion": "TeleDrive v{{version}} est la dernière version."
+    }
+  },
+  "encryption": {
+    "title": "Chiffrement Zero-Knowledge (E2EE)",
+    "description": "Chiffrez vos fichiers localement en AES-256-GCM avant tout envoi vers Telegram.",
+    "setupTitle": "Définir votre phrase secrète",
+    "setupHint": "TeleDrive n'envoie ni ne conserve jamais votre phrase à distance. Conservez une sauvegarde.",
+    "newPassphrasePlaceholder": "Créer une phrase secrète (min. 6 caractères)",
+    "confirmPassphrasePlaceholder": "Confirmer la phrase secrète",
+    "passphrasePlaceholder": "Saisissez votre phrase de chiffrement",
+    "encryptNewByDefault": "Chiffrer automatiquement tous les nouveaux envois",
+    "rememberOnDevice": "Mémoriser la clé sur cet appareil",
+    "enableButton": "Activer le chiffrement",
+    "statusUnlocked": "Coffre déverrouillé",
+    "statusLocked": "Coffre verrouillé",
+    "unlockedSubtitle": "Les fichiers sont déchiffrés à la volée lors de l'aperçu et du téléchargement.",
+    "lockedSubtitle": "Saisissez votre phrase pour déverrouiller ou téléverser des fichiers chiffrés.",
+    "lockButton": "Verrouiller",
+    "unlockButton": "Déverrouiller",
+    "encryptNewTitle": "Chiffrer les nouveaux envois",
+    "encryptNewHelp": "Les nouveaux fichiers utilisent une enveloppe AES-256-GCM et un nom anonymisé.",
+    "rememberTitle": "Mémoriser la clé sur cet appareil",
+    "rememberHelp": "Déverrouille automatiquement votre coffre au lancement.",
+    "on": "Activé",
+    "off": "Désactivé",
+    "disableButton": "Désactiver le chiffrement local",
+    "disableConfirm": "Désactiver",
+    "unlockDialog": {
+      "title": "Déverrouiller les fichiers chiffrés",
+      "description": "Saisissez votre phrase E2EE pour déchiffrer ce fichier localement."
+    },
+    "disableDialog": {
+      "title": "Désactiver le coffre local ?",
+      "description": "Les fichiers déjà chiffrés sur Telegram resteront chiffrés et demanderont votre phrase d'origine."
+    },
+    "errors": {
+      "tooShort": "La phrase doit contenir au moins 6 caractères.",
+      "mismatch": "Les phrases ne correspondent pas.",
+      "wrongPassphrase": "Phrase incorrecte. Veuillez réessayer.",
+      "setupFailed": "Impossible de configurer le chiffrement.",
+      "unlockFailed": "Impossible de déverrouiller le coffre."
+    },
+    "toasts": {
+      "enabled": "Chiffrement Zero-Knowledge activé.",
+      "unlocked": "Coffre déverrouillé.",
+      "locked": "Coffre verrouillé.",
+      "disabled": "Configuration locale supprimée."
     }
   }
 }

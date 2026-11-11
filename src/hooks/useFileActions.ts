@@ -15,8 +15,9 @@ import {
   recordDeletedMessages,
 } from "../lib/storage/tombstones";
 import { isBackupItem } from "../lib/backup/visibility";
+import { getFileMessageIds } from "../lib/files/segmentHelpers";
 import { removeManifestEntriesByMessageIds } from "../lib/backup/manifest";
-import { invoke } from "@tauri-apps/api/core";
+import { logVaultState } from "../lib/runtime/bridge";
 import {
   enqueueSave,
   flushAllQueues,
@@ -148,9 +149,9 @@ async function applyOptimistic(
   // persisting an optimistic state on top of unknown Telegram state can
   // overwrite a newer index with a stale/partial one.
   if (!isIndexReady() || !store.bootstrapComplete) {
-    await invoke("log_vault_state", {
-      state: `ACTION_SUPPRESSED_INDEX_NOT_READY state=${store.indexLoadState} files=${nextFiles.length}`,
-    }).catch(() => {});
+    await logVaultState(
+      `ACTION_SUPPRESSED_INDEX_NOT_READY state=${store.indexLoadState} files=${nextFiles.length}`
+    );
     // Nothing was applied yet, so there is nothing to roll back. Popping a
     // snapshot here would restore a *previous* action's state.
     toast.error(i18n.t("files:actions.bootstrapPending"));
@@ -169,9 +170,7 @@ async function applyOptimistic(
     // Commit succeeded (or is being transparently retried). Clear this
     // snapshot from the ring — the optimistic state is now canonical.
     useFileStore.getState().popSnapshot();
-    await invoke("log_vault_state", {
-      state: `ACTION_OK files=${nextFiles.length}`,
-    }).catch(() => {});
+    await logVaultState(`ACTION_OK files=${nextFiles.length}`);
     // Audit-log this action. Fire-and-forget — failures never interrupt
     // the user's flow. Caller passes `eventType` for known actions;
     // falls back to a generic type for un-tagged callers (none today,
@@ -189,16 +188,12 @@ async function applyOptimistic(
       if (isCurrentOptimisticState(appliedFiles)) {
         useFileStore.getState().popSnapshot();
       }
-      await invoke("log_vault_state", {
-        state: `ACTION_INDEX_STUCK kept=true: ${err?.message ?? err}`,
-      }).catch(() => {});
+      await logVaultState(`ACTION_INDEX_STUCK kept=true: ${err?.message ?? err}`);
       toast.warning(i18n.t("files:actions.indexStuck"));
       return;
     }
     if (options.skipRollbackOnHardError) {
-      await invoke("log_vault_state", {
-        state: `ACTION_HARD_ERR_NO_ROLLBACK: ${err?.message ?? err}`,
-      }).catch(() => {});
+      await logVaultState(`ACTION_HARD_ERR_NO_ROLLBACK: ${err?.message ?? err}`);
       throw err;
     }
     // Only roll back if the store still holds *this* action's optimistic
@@ -206,9 +201,9 @@ async function applyOptimistic(
     // back then would clobber it.
     const isCurrent = isCurrentOptimisticState(appliedFiles);
     const rolled = isCurrent ? rollbackToLastSnapshot() : false;
-    await invoke("log_vault_state", {
-      state: `ACTION_HARD_ERR rolled=${rolled} current=${isCurrent}: ${err?.message ?? err}`,
-    }).catch(() => {});
+    await logVaultState(
+      `ACTION_HARD_ERR rolled=${rolled} current=${isCurrent}: ${err?.message ?? err}`
+    );
     if (!isCurrent) throw err;
     toast.error(
       i18n.t("files:actions.saveFailed", { error: err?.message ?? i18n.t("files:actions.unknownError") })
@@ -220,11 +215,27 @@ async function applyOptimistic(
 }
 
 function messageIdsFor(files: TeleFile[]): number[] {
-  return [...new Set(
-    files
-      .map((f) => Number(f.messageId))
-      .filter((id) => Number.isFinite(id) && id > 0),
-  )];
+  return [...new Set(files.flatMap((f) => getFileMessageIds(f)))];
+}
+
+async function deleteRemoteResourcesForFiles(
+  channelId: string,
+  targets: TeleFile[],
+  logContext: string
+): Promise<void> {
+  await Promise.allSettled(targets.map((f) => removeOfflineCache(f.id)));
+  const msgIds = messageIdsFor(targets);
+  if (msgIds.length === 0) return;
+  await Promise.allSettled(
+    msgIds.map((msgId) =>
+      deleteTelegramMessage(channelId, msgId).catch((err) => {
+        console.warn(
+          `[${logContext}] Could not delete message ${msgId}:`,
+          err?.message || err
+        );
+      })
+    )
+  );
 }
 
 /** Remove durable manifest rows for backup files the user deleted. */
@@ -582,18 +593,7 @@ export function useFileActions() {
       // applyOptimistic would have rolled back and we'd never reach here.
       void (async () => {
         try {
-          await Promise.allSettled(targets.map((f) => removeOfflineCache(f.id)));
-          const deletionPromises = targets
-            .filter((f) => f.messageId && f.messageId !== 0)
-            .map((f) =>
-              deleteTelegramMessage(channelId, f.messageId).catch((err) => {
-                console.warn(
-                  `[deletePermanently] Could not delete message ${f.messageId} for "${f.name}":`,
-                  err?.message || err
-                );
-              })
-            );
-          await Promise.allSettled(deletionPromises);
+          await deleteRemoteResourcesForFiles(channelId, targets, "deletePermanently");
           logEvent({ type: "file.deleted.acknowledged", payload: { fileId } });
         } catch (err) {
           console.error("[deletePermanently] Background deletion error:", err);
@@ -627,18 +627,7 @@ export function useFileActions() {
       // After the index commits, asynchronously clear cache & delete telegram messages in background
       void (async () => {
         try {
-          await Promise.allSettled(trashed.map((f) => removeOfflineCache(f.id)));
-          const deletionPromises = trashed
-            .filter((f) => f.messageId && f.messageId !== 0)
-            .map((f) =>
-              deleteTelegramMessage(channelId, f.messageId).catch((err) => {
-                console.warn(
-                  `[emptyTrash] Could not delete message ${f.messageId} for "${f.name}":`,
-                  err?.message || err
-                );
-              })
-            );
-          await Promise.allSettled(deletionPromises);
+          await deleteRemoteResourcesForFiles(channelId, trashed, "emptyTrash");
         } catch (err) {
           console.error("[emptyTrash] Background deletion error:", err);
         }
@@ -742,18 +731,7 @@ export function useFileActions() {
       // After the index commits, asynchronously clear cache & delete telegram messages in background
       void (async () => {
         try {
-          await Promise.allSettled(targets.map((f) => removeOfflineCache(f.id)));
-          const deletionPromises = targets
-            .filter((f) => f.messageId && f.messageId !== 0)
-            .map((f) =>
-              deleteTelegramMessage(channelId, f.messageId).catch((err) => {
-                console.warn(
-                  `[deleteMultiplePermanently] Could not delete message ${f.messageId} for "${f.name}":`,
-                  err?.message || err
-                );
-              })
-            );
-          await Promise.allSettled(deletionPromises);
+          await deleteRemoteResourcesForFiles(channelId, targets, "deleteMultiplePermanently");
         } catch (err) {
           console.error("[deleteMultiplePermanently] Background deletion error:", err);
         }
@@ -872,7 +850,11 @@ export function useFileActions() {
 
         if (nextOffline) {
           toast.info(t("actions.offline.downloading", { name: file.name }));
-          await cacheFileOffline(channelId, file.messageId, file.id);
+          await cacheFileOffline(channelId, file.messageId, file.id, undefined, {
+            segments: file.segments,
+            enc: file.enc,
+            plainSize: file.enc?.plainSize ?? file.size,
+          });
           toast.success(t("actions.offline.available", { name: file.name }));
         } else {
           await removeOfflineCache(file.id);

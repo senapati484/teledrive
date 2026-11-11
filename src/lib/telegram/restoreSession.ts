@@ -5,8 +5,9 @@ import {
   VAULT_KEY_API_ID,
   VAULT_KEY_API_HASH,
 } from "../secure/vault";
-import { DEFAULT_API_ID, DEFAULT_API_HASH } from "./config";
 import { invoke } from "@tauri-apps/api/core";
+import { DEFAULT_API_ID, DEFAULT_API_HASH } from "./config";
+import { logVaultState } from "../runtime/bridge";
 
 /**
  * Attempts to restore a previously saved Telegram session.
@@ -32,19 +33,19 @@ export async function restoreSession(): Promise<boolean> {
       sessionString = stored?.session ?? null;
       phoneNumber   = stored?.phone   ?? "";
       const maskedPhone = phoneNumber ? phoneNumber.slice(0, 4) + "****" + phoneNumber.slice(-4) : "empty";
-      await invoke("log_vault_state", {
-        state: `RESTORE_LAUNCH: hasSession=${!!sessionString} sessionLen=${sessionString?.length ?? 0} phone=${maskedPhone}`,
-      });
+      await logVaultState(
+        `RESTORE_LAUNCH: hasSession=${!!sessionString} sessionLen=${sessionString?.length ?? 0} phone=${maskedPhone}`
+      );
     } catch (loadErr: any) {
-      await invoke("log_vault_state", {
-        state: `RESTORE_LOAD_ERR: ${loadErr?.message ?? JSON.stringify(loadErr)}`,
-      });
+      await logVaultState(
+        `RESTORE_LOAD_ERR: ${loadErr?.message ?? JSON.stringify(loadErr)}`
+      );
       // If we can't load, fall through and return false
       return false;
     }
 
     if (!sessionString) {
-      await invoke("log_vault_state", { state: "RESTORE_DONE: No session stored." });
+      await logVaultState("RESTORE_DONE: No session stored.");
       return false;
     }
 
@@ -71,24 +72,22 @@ export async function restoreSession(): Promise<boolean> {
     const client = getClient();
 
     const isAuthorized = await client.isUserAuthorized();
-    await invoke("log_vault_state", {
-      state: `RESTORE_AUTH_CHECK: isAuthorized=${isAuthorized}`,
-    });
+    await logVaultState(`RESTORE_AUTH_CHECK: isAuthorized=${isAuthorized}`);
 
     if (isAuthorized) {
       useAuthStore.getState().setSession(sessionString, phoneNumber);
-      await invoke("log_vault_state", { state: "RESTORE_SUCCESS: Session restored successfully." });
+      await logVaultState("RESTORE_SUCCESS: Session restored successfully.");
       return true;
     } else {
       // Session is stale — clear it so the user is not stuck
       await invoke("clear_session").catch(() => {});
       useAuthStore.getState().logout();
-      await invoke("log_vault_state", { state: "RESTORE_FAIL: Session not authorized. Cleared." });
+      await logVaultState("RESTORE_FAIL: Session not authorized. Cleared.");
       return false;
     }
   } catch (error: any) {
     const errorStr = `RESTORE_EXC: ${error?.message ?? "no_msg"}\nStack: ${error?.stack ?? "no_stack"}`;
-    await invoke("log_vault_state", { state: errorStr }).catch(() => {});
+    await logVaultState(errorStr);
     
     // Check if this error is due to a network connection failure (e.g. offline)
     const errorMsg = (error?.message || "").toLowerCase();

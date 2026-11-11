@@ -78,7 +78,15 @@
     "badge": "{{ext}} ARCHIVE",
     "description": "Compressed archives cannot be previewed directly in-browser. You can open it directly in your system archive tool or download it.",
     "openInSystem": "Open in System App",
-    "download": "Download Archive"
+    "download": "Download Archive",
+    "entryTooLarge": "File exceeds 25 MB inline preview limit. Use Extract to save it locally.",
+    "extractFailed": "Could not extract file.",
+    "binaryEntryNotice": "Binary entry cannot be displayed directly. Extract it to view locally.",
+    "backToList": "Back to files",
+    "summary": "{{count}} files · {{unpacked}} unpacked ({{packed}} compressed)",
+    "searchPlaceholder": "Filter archive files…",
+    "noMatchingEntries": "No files match your filter.",
+    "extractFile": "Extract file"
   },
   "unsupported": {
     "description": "No in-app preview is available for this file type. You can open it directly in your default system application or download it.",
@@ -155,5 +163,10 @@
     "ariaLabel": "Code viewer",
     "largeFile_one": "Large file ({{count, number}} line) — syntax highlighting skipped for performance",
     "largeFile_other": "Large file ({{count, number}} lines) — syntax highlighting skipped for performance"
+  },
+  "document": {
+    "slideLabel": "Slide {{number}} of {{total}}",
+    "emptySlide": "Empty slide",
+    "speakerNotes": "Notes:"
   }
 }

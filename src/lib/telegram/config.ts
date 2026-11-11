@@ -19,11 +19,17 @@ const _AID = "MzAwNjEwNDU=";
 // "457f14bd4e74ea235a9c7262792cab15" — Base64 encoded
 const _AHASH = "NDU3ZjE0YmQ0ZTc0ZWEyMzVhOWM3MjYyNzkyY2FiMTU=";
 
-const _envId = Number(import.meta.env.VITE_TELEGRAM_API_ID);
-const _envHash =
-  typeof import.meta.env.VITE_TELEGRAM_API_HASH === "string"
-    ? import.meta.env.VITE_TELEGRAM_API_HASH
-    : "";
+const metaEnv = (import.meta as unknown as { env?: Record<string, string | undefined> })
+  ?.env;
+const procEnv =
+  typeof process !== "undefined" ? process.env : undefined;
+
+const _envId = Number(
+  metaEnv?.VITE_TELEGRAM_API_ID ?? procEnv?.VITE_TELEGRAM_API_ID
+);
+const _rawHash =
+  metaEnv?.VITE_TELEGRAM_API_HASH ?? procEnv?.VITE_TELEGRAM_API_HASH;
+const _envHash = typeof _rawHash === "string" ? _rawHash : "";
 
 export const DEFAULT_API_ID: number =
   Number.isFinite(_envId) && _envId > 0 ? _envId : parseInt(atob(_AID), 10);

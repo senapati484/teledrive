@@ -26,6 +26,7 @@ import { clearPendingMarker, writePendingMarker } from "./pendingIndex";
 import type { TeleFile } from "../types";
 import { invoke } from "@tauri-apps/api/core";
 import { filterDeletedMessages, getDeletedMessageIds } from "./tombstones";
+import { getFileMessageIds } from "../files/segmentHelpers";
 
 const MAX_SCAN_CHUNKS = 5000;
 const MAX_SCAN_MS = 60_000;
@@ -366,10 +367,8 @@ export async function scanIndexHistory(
   const current = useFileStore.getState().files;
   const currentIds = new Set(current.map((f) => f.id));
   const currentPathKeys = new Set(current.map(pathKey));
-  const seenMessageIds = new Set(
-    current
-      .map((f) => Number(f.messageId))
-      .filter((id) => Number.isFinite(id) && id > 0)
+  const seenMessageIds = new Set<number>(
+    current.flatMap((f) => getFileMessageIds(f))
   );
   const seenIds = new Set<string>();
   const seenContent = new Set<string>();
@@ -378,16 +377,16 @@ export async function scanIndexHistory(
   candidates.sort((a, b) => b.at - a.at);
   for (const epoch of candidates) {
     for (const file of epoch.files) {
-      const messageId = Number(file.messageId);
+      const fileMsgIds = getFileMessageIds(file);
       if (currentIds.has(file.id)) continue;
-      if (Number.isFinite(messageId) && messageId > 0 && seenMessageIds.has(messageId)) {
+      if (fileMsgIds.some((id) => seenMessageIds.has(id))) {
         continue;
       }
       if (seenIds.has(file.id)) continue;
       const key = contentKey(file);
       if (seenContent.has(key)) continue;
       seenIds.add(file.id);
-      if (Number.isFinite(messageId) && messageId > 0) seenMessageIds.add(messageId);
+      for (const id of fileMsgIds) seenMessageIds.add(id);
       seenContent.add(key);
       recoverable.push({
         file,
@@ -452,29 +451,26 @@ export async function verifyExistingMessages(
 ): Promise<{ live: TeleFile[]; missing: TeleFile[] }> {
   const client = getClient();
   const peer = await resolveChannelInputPeer(channelId);
-  const ids = [
-    ...new Set(
-      files
-        .map((f) => Number(f.messageId))
-        .filter((id) => Number.isFinite(id) && id > 0)
-    ),
-  ];
+  const ids = [...new Set(files.flatMap((f) => getFileMessageIds(f)))];
   const found = await fetchMessagesByIds(client, peer, ids);
   const live: TeleFile[] = [];
   const missing: TeleFile[] = [];
   for (const file of files) {
-    const id = Number(file.messageId);
-    if (!Number.isFinite(id) || id <= 0) {
+    const fileIds = getFileMessageIds(file);
+    if (fileIds.length === 0) {
       live.push(file);
       continue;
     }
-    const msg = found.get(id);
-    const empty =
-      !msg ||
-      msg.className === "MessageEmpty" ||
-      msg._ === "messageEmpty" ||
-      msg?.empty === true;
-    if (empty) missing.push(file);
+    const anyMissing = fileIds.some((id) => {
+      const msg = found.get(id);
+      return (
+        !msg ||
+        msg.className === "MessageEmpty" ||
+        msg._ === "messageEmpty" ||
+        msg?.empty === true
+      );
+    });
+    if (anyMissing) missing.push(file);
     else live.push(file);
   }
   return { live, missing };

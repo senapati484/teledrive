@@ -321,3 +321,80 @@ describe("epochTimestamp", () => {
     ).toBe(0);
   });
 });
+
+describe("Phase 2 TeleFile segments and E2EE roundtrip", () => {
+  it("preserves segments and enc metadata through packChunks, serializeChunk, and parseIndexMessage", () => {
+    const segmentedEncryptedFile: TeleFile = {
+      ...makeFile(1, "/Vault"),
+      name: "archive.tar",
+      size: 3_800 * 1024 * 1024 + 524_288 + 64,
+      segments: [
+        { messageId: 1001, size: 1_900 * 1024 * 1024 },
+        { messageId: 1002, size: 1_900 * 1024 * 1024 + 524_288 + 64 },
+      ],
+      enc: {
+        v: 1,
+        s: "c2FsdC1iNjQ=",
+        plainSize: 3_800 * 1024 * 1024 + 524_288,
+      },
+    };
+
+    const { chunks } = packChunks([segmentedEncryptedFile]);
+    expect(chunks).toHaveLength(1);
+
+    const text = serializeChunk({
+      teledrive_index: true,
+      version: 3,
+      chunkIndex: 0,
+      totalChunks: 1,
+      savedAt: 1700000000123,
+      chunkMsgIds: [900],
+      files: chunks[0],
+    });
+
+    expect(text.startsWith("teledrive_index gz:")).toBe(true);
+    const parsed = parseIndexMessage({ id: 900, text });
+    expect(parsed).not.toBeNull();
+    expect(parsed?.version).toBe(3);
+    expect(parsed?.files).toHaveLength(1);
+    expect(parsed?.files[0].segments).toEqual(segmentedEncryptedFile.segments);
+    expect(parsed?.files[0].enc).toEqual(segmentedEncryptedFile.enc);
+  });
+});
+
+describe("layout-preserving append-stable packChunks", () => {
+  it("keeps earlier chunks byte-identical when prepending a new folder or deleting a file in chunk 0", () => {
+    const initialFiles = makeFiles(240);
+    const { chunks: initialChunks } = packChunks(initialFiles);
+    expect(initialChunks.length).toBeGreaterThanOrEqual(4);
+
+    // Prepend a new folder (matching collapseDuplicateFolders array layout)
+    const newFolder: TeleFile = {
+      ...makeFile(999, "/"),
+      id: "folder_new",
+      name: "BrandNew",
+      mime: "inode/directory",
+      messageId: 0,
+      size: 0,
+    };
+    const withFolder = [newFolder, ...initialFiles];
+    const afterFolder = packChunks(withFolder, initialChunks);
+
+    // Chunks 0..(len-2) remain completely unchanged; only the tail grows
+    for (let i = 0; i < initialChunks.length - 1; i++) {
+      expect(afterFolder.chunks[i].map((f) => f.id)).toEqual(
+        initialChunks[i].map((f) => f.id)
+      );
+    }
+    expect(afterFolder.chunks.flat().map((f) => f.id)).toContain("folder_new");
+
+    // Deleting a file from chunk 0 only mutates chunk 0; downstream chunks stay put
+    const afterDelete = packChunks(initialFiles.slice(1), initialChunks);
+    expect(afterDelete.chunks[0].length).toBe(initialChunks[0].length - 1);
+    for (let i = 1; i < initialChunks.length; i++) {
+      expect(afterDelete.chunks[i].map((f) => f.id)).toEqual(
+        initialChunks[i].map((f) => f.id)
+      );
+    }
+  });
+});

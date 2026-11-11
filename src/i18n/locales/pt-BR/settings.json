@@ -9,7 +9,8 @@
     "appearance": "Aparência",
     "language": "Idioma",
     "storage": "Armazenamento",
-    "about": "Sobre"
+    "about": "Sobre",
+    "encryption": "Criptografia"
   },
   "language": {
     "title": "Idioma",
@@ -237,6 +238,53 @@
       "openLinkFailed": "Não foi possível abrir o link.",
       "upToDate": "Você está com a versão mais recente!",
       "latestVersion": "O TeleDrive v{{version}} é a versão mais recente."
+    }
+  },
+  "encryption": {
+    "title": "Criptografia Zero-Knowledge (E2EE)",
+    "description": "Criptografe arquivos localmente com AES-256-GCM antes de sair do seu dispositivo.",
+    "setupTitle": "Defina sua frase secreta",
+    "setupHint": "O TeleDrive nunca envia ou armazena sua frase remotamente. Guarde um backup seguro.",
+    "newPassphrasePlaceholder": "Criar frase secreta (mín. 6 caracteres)",
+    "confirmPassphrasePlaceholder": "Confirmar frase secreta",
+    "passphrasePlaceholder": "Digite sua frase secreta",
+    "encryptNewByDefault": "Criptografar novos envios automaticamente",
+    "rememberOnDevice": "Lembrar chave com segurança neste dispositivo",
+    "enableButton": "Ativar Criptografia",
+    "statusUnlocked": "Cofre desbloqueado",
+    "statusLocked": "Cofre bloqueado",
+    "unlockedSubtitle": "Arquivos criptografados são descriptografados localmente na pré-visualização e download.",
+    "lockedSubtitle": "Digite sua frase secreta para abrir ou enviar arquivos criptografados.",
+    "lockButton": "Bloquear cofre",
+    "unlockButton": "Desbloquear",
+    "encryptNewTitle": "Criptografar novos envios",
+    "encryptNewHelp": "Novos arquivos usam envelope AES-256-GCM com nome anônimo no Telegram.",
+    "rememberTitle": "Lembrar chave neste dispositivo",
+    "rememberHelp": "Desbloqueia automaticamente o cofre ao abrir o TeleDrive.",
+    "on": "Ativado",
+    "off": "Desativado",
+    "disableButton": "Desativar criptografia local",
+    "disableConfirm": "Desativar",
+    "unlockDialog": {
+      "title": "Desbloquear Arquivos Criptografados",
+      "description": "Digite sua frase secreta E2EE para descriptografar este arquivo localmente."
+    },
+    "disableDialog": {
+      "title": "Desativar cofre de criptografia local?",
+      "description": "Arquivos já criptografados permanecerão protegidos e pedirão sua frase original ao abrir."
+    },
+    "errors": {
+      "tooShort": "A frase secreta deve ter pelo menos 6 caracteres.",
+      "mismatch": "As frases secretas não coincidem.",
+      "wrongPassphrase": "Frase secreta incorreta. Tente novamente.",
+      "setupFailed": "Falha ao configurar a criptografia.",
+      "unlockFailed": "Não foi possível desbloquear o cofre."
+    },
+    "toasts": {
+      "enabled": "Criptografia Zero-Knowledge ativada.",
+      "unlocked": "Cofre de criptografia desbloqueado.",
+      "locked": "Cofre de criptografia bloqueado.",
+      "disabled": "Configuração local de criptografia removida."
     }
   }
 }

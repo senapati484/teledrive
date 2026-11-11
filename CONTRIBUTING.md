@@ -92,24 +92,28 @@ npm run dev
 # Run unit and integration tests:
 npm test
 
-# Verify production frontend build:
+# Verify TypeScript types and production frontend build:
 npm run build
 
-# Verify Rust backend compilation:
+# Verify and test Rust backend:
 cargo check --manifest-path src-tauri/Cargo.toml
+cargo test --manifest-path src-tauri/Cargo.toml
 ```
+
+For a complete module map, MTProto/Schema v3 data flows, `TDE1` E2EE wire layout, and Rust command inventory, review the [**Architecture Guide (docs/ARCHITECTURE.md)**](docs/ARCHITECTURE.md).
 
 ---
 
 ## 📋 Pull Request Checklist
 
 Before submitting your PR, verify the following:
-- [ ] The app builds cleanly with zero compile warnings or errors:
+- [ ] All tests and build checks pass cleanly:
   ```bash
-  npm run build
+  npm test && npm run build && cargo test --manifest-path src-tauri/Cargo.toml
   ```
 - [ ] No temporary debug statements (`console.log`, `println!`) remain in production code pathways.
 - [ ] The code runs correctly under both **light** and **dark** themes.
 - [ ] Clickable controls include proper cursor styles (`cursor-pointer`).
-- [ ] You have updated the `README.md` or other documentation if your pull request introduces config changes or new dependencies.
+- [ ] New i18n keys exist in all 11 locale folders under `src/i18n/locales/`.
+- [ ] You have updated `README.md`, `docs/ARCHITECTURE.md`, or related docs if your pull request introduces architectural changes, config changes, or new dependencies.
 - [ ] (If visual) Please attach before/after screenshots to your pull request description.

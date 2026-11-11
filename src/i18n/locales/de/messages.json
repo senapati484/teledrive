@@ -31,7 +31,8 @@
     "failed": "Fehler beim Hochladen von „{{name}}“: {{message}}",
     "emptyFile": "„{{name}}“ ist leer. Leere Dateien (0 Bytes) werden von Telegram nicht unterstützt.",
     "exceedsFreeLimit": "„{{name}}“ überschreitet das Upload-Limit von ~2 GB für Standardkonten (Telegram Premium unterstützt bis zu ~4 GB).",
-    "exceedsPremiumLimit": "„{{name}}“ überschreitet das Telegram-Einzeldateilimit von ~4 GB."
+    "exceedsPremiumLimit": "„{{name}}“ überschreitet das Telegram-Einzeldateilimit von ~4 GB.",
+    "duplicateSkipped": "„{{name}}“ existiert bereits mit identischem Inhalt in diesem Ordner."
   },
   "download": {
     "cancelled": "Download abgebrochen.",

@@ -44,7 +44,7 @@ tokio = { version = "1", features = ["sync", "time"] }
 # Tray icons are desktop-only; keep the feature off mobile builds so the
 # underlying platform crates are never pulled into Android/iOS.
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
-tauri = { version = "2", features = ["tray-icon"] }
+tauri = { version = "2", features = ["protocol-asset", "tray-icon"] }
 
 [profile.release]
 opt-level = 3

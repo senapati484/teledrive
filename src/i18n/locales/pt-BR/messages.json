@@ -31,7 +31,8 @@
     "failed": "Falha ao enviar \"{{name}}\": {{message}}",
     "emptyFile": "\"{{name}}\" está vazio. O Telegram não aceita arquivos vazios (0 bytes).",
     "exceedsFreeLimit": "\"{{name}}\" excede o limite de ~2 GB do Telegram para contas padrão (Telegram Premium suporta até ~4 GB).",
-    "exceedsPremiumLimit": "\"{{name}}\" excede o limite de ~4 GB por arquivo no Telegram."
+    "exceedsPremiumLimit": "\"{{name}}\" excede o limite de ~4 GB por arquivo no Telegram.",
+    "duplicateSkipped": "\"{{name}}\" já existe nesta pasta com conteúdo idêntico."
   },
   "download": {
     "cancelled": "Download cancelado.",

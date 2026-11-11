@@ -64,7 +64,16 @@ import {
   streamFileToLocalPath,
 } from "@/lib/telegram/downloader";
 import { updateFileLocal, deleteTelegramMessage } from "@/lib/storage/metadataStore";
-import { uploadFileToTelegram } from "@/lib/telegram/uploader";
+import {
+  isHashedUploadResult,
+  uploadFileToTelegram,
+} from "@/lib/telegram/uploader";
+import {
+  EncryptionError,
+  requireEncryptionKey,
+  useEncryptionStore,
+} from "@/lib/secure/e2ee";
+import { getFileMessageIds } from "@/lib/files/segmentHelpers";
 import { enqueueSave } from "@/lib/storage/indexQueue";
 import {
   readOfflineCache,
@@ -83,16 +92,31 @@ import {
   ARCHIVE_EXTS,
   UNRENDERABLE_IMAGE_EXTS,
   NON_PREVIEWABLE_BINARY_EXTS,
-  containsNullByte,
+  RICH_DOCUMENT_EXTS,
+  SPREADSHEET_WORKBOOK_EXTS,
+  PRESENTATION_EXTS,
+  INSPECTABLE_ARCHIVE_EXTS,
+  decodeTextBuffer,
   getMediaMimeType,
 } from "@/lib/files/fileUtils";
-import { getPlatform } from "@/lib/platform";
+import {
+  extractDocumentPreview,
+  extractPresentationSlides,
+  extractSpreadsheetSheets,
+  inspectArchiveEntries,
+  type ArchiveEntryInfo,
+  type ExtractedSlide,
+  type ExtractedSpreadsheetSheet,
+} from "@/lib/files/richPreviewExtractors";
+import { sanitizePreviewHtml } from "@/lib/files/sanitizeHtml";
 import { detectLang } from "@/lib/files/langDetect";
 import { useDarkMode } from "@/hooks/useDarkMode";
 import { SyntaxHighlighter } from "./SyntaxHighlighter";
 import { CodeEditor } from "./CodeEditor";
 import { CsvTableViewer } from "./CsvTableViewer";
 import { PdfViewer } from "./PdfViewer";
+import { RichDocumentSheet } from "./RichDocumentSheet";
+import { ArchiveExplorer } from "./ArchiveExplorer";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import i18n from "@/i18n";
@@ -124,8 +148,7 @@ class PdfErrorBoundary extends Component<{ children: ReactNode; onRetry?: () => 
     return this.props.children;
   }
 }
-import DOMPurify from "dompurify";
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { isWebRuntime, runtimeOpenUrl } from "../../lib/runtime/bridge";
 
 // ─── O2 Code Editor — runnable language map ────────────────────────────────
 // Maps our hljsLang alias → O2's route value.
@@ -154,10 +177,10 @@ function FileTypeIcon({ mime, name }: { mime: string; name: string }) {
   if (mime.startsWith("image/") || ext === "svg" || IMAGE_EXTS.has(ext)) return <ImageIcon className="h-4 w-4 text-purple-500 shrink-0" />;
   if (mime.startsWith("video/") || VIDEO_EXTS.has(ext)) return <Film className="h-4 w-4 text-pink-500 shrink-0" />;
   if (mime.startsWith("audio/") || AUDIO_EXTS.has(ext)) return <Music className="h-4 w-4 text-teal-500 shrink-0" />;
-  if (["csv", "tsv", "xls", "xlsx"].includes(ext)) return <FileSpreadsheet className="h-4 w-4 text-emerald-500 shrink-0" />;
+  if (["csv", "tsv", "xls", "xlsx", "ods"].includes(ext)) return <FileSpreadsheet className="h-4 w-4 text-emerald-500 shrink-0" />;
   if (ARCHIVE_EXTS.has(ext)) return <FolderArchive className="h-4 w-4 text-amber-500 shrink-0" />;
   if (["json", "jsonc", "json5"].includes(ext)) return <FileJson className="h-4 w-4 text-yellow-500 shrink-0" />;
-  if (["md", "markdown"].includes(ext)) return <FileText className="h-4 w-4 text-blue-500 shrink-0" />;
+  if (["md", "markdown"].includes(ext) || RICH_DOCUMENT_EXTS.has(ext) || PRESENTATION_EXTS.has(ext)) return <FileText className="h-4 w-4 text-blue-500 shrink-0" />;
   if (isEditableFile({ mime, name } as TeleFile)) return <FileCode2 className="h-4 w-4 text-blue-500 shrink-0" />;
   return <FileText className="h-4 w-4 text-slate-400 shrink-0" />;
 }
@@ -178,25 +201,6 @@ function formatTime(seconds: number): string {
   const pad = (n: number) => n.toString().padStart(2, "0");
   if (h > 0) return `${h}:${pad(m)}:${pad(s)}`;
   return `${pad(m)}:${pad(s)}`;
-}
-
-function sanitizeHtml(html: string): string {
-  return DOMPurify.sanitize(html, {
-    USE_PROFILES: { html: true },
-    ALLOWED_TAGS: [
-      "h1", "h2", "h3", "h4", "h5", "h6",
-      "p", "a", "ul", "ol", "li", "blockquote",
-      "code", "pre", "table", "thead", "tbody", "tr", "th", "td",
-      "strong", "em", "del", "hr", "br", "img", "span", "div", "sup", "sub",
-      "details", "summary", "input"
-    ],
-    ALLOWED_ATTR: [
-      "href", "src", "alt", "title", "class", "target", "rel", "type", "checked", "disabled"
-    ],
-    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.-:]|$))/i,
-    FORBID_TAGS: ["script", "iframe", "object", "embed", "form", "base", "link", "style"],
-    FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "onfocus", "onblur", "style"],
-  });
 }
 
 // ─── Props ────────────────────────────────────────────────────────────────
@@ -228,10 +232,17 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
   const [error, setError]             = useState<string | null>(null);
   const [contentUrl, setContentUrl]   = useState<string | null>(null);
   const [textContent, setTextContent] = useState<string | null>(null);
+  const [textEncoding, setTextEncoding] = useState<string>("UTF-8");
   const [markdownHtml, setMarkdownHtml] = useState<string | null>(null);
+  const [richDocHtml, setRichDocHtml] = useState<string | null>(null);
+  const [workbookSheets, setWorkbookSheets] = useState<ExtractedSpreadsheetSheet[] | null>(null);
+  const [activeSheetIdx, setActiveSheetIdx] = useState(0);
+  const [presentationSlides, setPresentationSlides] = useState<ExtractedSlide[] | null>(null);
+  const [archiveEntries, setArchiveEntries] = useState<ArchiveEntryInfo[] | null>(null);
 
   // ── Multi-format View Mode states ───────────────────────────────────────
   const [mdViewMode, setMdViewMode]     = useState<"preview" | "source">("preview");
+  const [htmlViewMode, setHtmlViewMode] = useState<"preview" | "source">("preview");
   const [csvViewMode, setCsvViewMode]   = useState<"table" | "source">("table");
   const [svgViewMode, setSvgViewMode]   = useState<"image" | "code">("image");
   const [wrapLines, setWrapLines]       = useState(false);
@@ -261,7 +272,8 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
   const pdfBufferRef                            = useRef<Uint8Array | null>(null);
   const fileBufferRef                           = useRef<Uint8Array | null>(null);
   const cachedMediaPathRef                      = useRef<string | null>(null);
-  const mediaBlobFallbackRef                    = useRef(false);
+  const mediaBlobRetryRef                       = useRef(0);
+  const imageBlobRetryRef                       = useRef(false);
   const [pdfData, setPdfData]                   = useState<Uint8Array | null>(null);
   const [pdfUrl, setPdfUrl]                     = useState<string | null>(null);
 
@@ -291,7 +303,12 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
   // Video autohide controls effect
   const lastActiveRef = useRef<number>(Date.now());
   useEffect(() => {
-    if (!currentFile || !currentFile.mime.startsWith("video/")) return;
+    const vExt = currentFile?.name.split(".").pop()?.toLowerCase() ?? "";
+    const isCurrentVideo = Boolean(
+      currentFile &&
+        ((currentFile.mime || "").toLowerCase().startsWith("video/") || VIDEO_EXTS.has(vExt))
+    );
+    if (!isCurrentVideo) return;
     const handleMouseMove = () => {
       setShowVideoControls(true);
       lastActiveRef.current = Date.now();
@@ -725,11 +742,14 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
         return null;
       });
       setTextContent(null); setMarkdownHtml(null);
+      setRichDocHtml(null); setWorkbookSheets(null); setActiveSheetIdx(0);
+      setPresentationSlides(null); setArchiveEntries(null); setTextEncoding("UTF-8");
       setError(null); setIsEditMode(false); setEditContent(""); setSaveStatus("idle");
       pdfBufferRef.current = null;
       fileBufferRef.current = null;
       cachedMediaPathRef.current = null;
-      mediaBlobFallbackRef.current = false;
+      mediaBlobRetryRef.current = 0;
+      imageBlobRetryRef.current = false;
       setPdfData(null);
       setPdfUrl(null);
       setIsTruncatedPreview(false);
@@ -742,6 +762,12 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
     let current = true;
     const abortController = new AbortController();
 
+    const buildDownloadOpts = (targetFile: TeleFile) => ({
+      segments: targetFile.segments,
+      enc: targetFile.enc,
+      plainSize: targetFile.enc?.plainSize ?? targetFile.size,
+    });
+
     const streamToPreviewCache = async (targetFile: TeleFile): Promise<string> => {
       if (targetFile.offline && (await isCachedOffline(targetFile.id))) {
         if (current) setProgress(100);
@@ -749,9 +775,10 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
       }
       const safeName = targetFile.name.replace(/[/\\?%*:|"<>]/g, "_").trim() || "preview.bin";
       const cacheKey = `${targetFile.id}_${safeName}`;
+      const expectedPlainSize = targetFile.enc?.plainSize ?? targetFile.size;
       const existing = await invoke<string | null>("check_preview_cache", {
         fileName: cacheKey,
-        expectedSize: targetFile.size > 0 ? targetFile.size : null,
+        expectedSize: expectedPlainSize > 0 ? expectedPlainSize : null,
       }).catch(() => null);
       if (existing) {
         if (current) setProgress(100);
@@ -766,7 +793,8 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
         targetPath,
         (pct) => { if (current) setProgress(pct); },
         abortController.signal,
-        targetFile.size
+        targetFile.size,
+        buildDownloadOpts(targetFile)
       );
       void invoke("cleanup_preview_cache", {}).catch(() => {});
       return targetPath;
@@ -775,17 +803,24 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
     (async () => {
       setLoading(true); setProgress(0); setError(null);
       setTextContent(null);
+      setTextEncoding("UTF-8");
       setContentUrl((prev) => {
         revokeIfBlob(prev);
         return null;
       });
       setMarkdownHtml(null);
-      setMdViewMode("preview"); setCsvViewMode("table"); setSvgViewMode("image");
+      setRichDocHtml(null);
+      setWorkbookSheets(null);
+      setActiveSheetIdx(0);
+      setPresentationSlides(null);
+      setArchiveEntries(null);
+      setMdViewMode("preview"); setHtmlViewMode("preview"); setCsvViewMode("table"); setSvgViewMode("image");
       setWrapLines(false); setCopiedCode(false);
       pdfBufferRef.current = null;
       fileBufferRef.current = null;
       cachedMediaPathRef.current = null;
-      mediaBlobFallbackRef.current = false;
+      mediaBlobRetryRef.current = 0;
+      imageBlobRetryRef.current = false;
       setPdfData(null);
       setPdfUrl(null);
       setIsTruncatedPreview(false);
@@ -801,13 +836,20 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
 
       const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
       const mimeLower = (file.mime || "").toLowerCase();
-      const isSvgFile = ext === "svg" || file.name.toLowerCase().endsWith(".svg") || mimeLower === "image/svg+xml";
+      const lowerName = file.name.toLowerCase();
+      const isSvgFile = ext === "svg" || lowerName.endsWith(".svg") || mimeLower === "image/svg+xml";
       const isPdfFile = ext === "pdf" || mimeLower === "application/pdf" || mimeLower.includes("pdf");
       const isHeicFile = ext === "heic" || ext === "heif" || mimeLower === "image/heic" || mimeLower === "image/heif";
       const isImageFile = (mimeLower.startsWith("image/") || IMAGE_EXTS.has(ext)) && !isSvgFile;
       const isVideoFile = mimeLower.startsWith("video/") || VIDEO_EXTS.has(ext);
       const isAudioFile = mimeLower.startsWith("audio/") || AUDIO_EXTS.has(ext);
-      const isArchiveFile = ARCHIVE_EXTS.has(ext);
+      const isRichDocument = RICH_DOCUMENT_EXTS.has(ext) && file.size <= 50 * 1024 * 1024;
+      const isWorkbook = SPREADSHEET_WORKBOOK_EXTS.has(ext) && file.size <= 40 * 1024 * 1024;
+      const isPresentation = PRESENTATION_EXTS.has(ext) && file.size <= 60 * 1024 * 1024;
+      const isInspectableArchive =
+        (INSPECTABLE_ARCHIVE_EXTS.has(ext) || lowerName.endsWith(".tar.gz")) &&
+        file.size <= 80 * 1024 * 1024;
+      const isArchiveFile = ARCHIVE_EXTS.has(ext) || lowerName.endsWith(".tar.gz");
       const isTextMime = (
         mimeLower.startsWith("text/") ||
         mimeLower.includes("javascript") || mimeLower.includes("typescript") ||
@@ -817,13 +859,17 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
       );
       const isExplicitTextOrCode = isTextMime || isEditableFile(file) || isSvgFile;
       const isKnownBinaryNoPreview =
-        isArchiveFile ||
+        (isArchiveFile && !isInspectableArchive) ||
         (NON_PREVIEWABLE_BINARY_EXTS.has(ext) &&
           !isExplicitTextOrCode &&
           !isImageFile &&
           !isVideoFile &&
           !isAudioFile &&
-          !isPdfFile);
+          !isPdfFile &&
+          !isRichDocument &&
+          !isWorkbook &&
+          !isPresentation &&
+          !isInspectableArchive);
       const isUnrenderableImage =
         isImageFile &&
         UNRENDERABLE_IMAGE_EXTS.has(ext) &&
@@ -833,9 +879,9 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
       const isTauri = typeof window !== "undefined" && Boolean((window as any).__TAURI_INTERNALS__);
 
       try {
-        // 1. Instant 0-download handling for archives, installers, Office binaries,
-        //    and camera RAW/PSD images (streams to disk only on "Open in System App").
-        if (isArchiveFile || isKnownBinaryNoPreview) {
+        // 1. Instant 0-download handling for non-inspectable archives, installers,
+        //    legacy binary formats, oversized rich containers, and camera RAW/PSD images.
+        if (isKnownBinaryNoPreview) {
           return;
         }
         if (isUnrenderableImage) {
@@ -868,7 +914,8 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
             file.channelId,
             file.messageId,
             (pct) => { if (current) setProgress(pct); },
-            abortController.signal
+            abortController.signal,
+            buildDownloadOpts(file)
           );
           if (!current || abortController.signal.aborted) return;
           const mediaMime = getMediaMimeType(
@@ -920,7 +967,14 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
         let buffer: Uint8Array;
         let prefixTruncated = false;
 
-        const isUnknownType = !isImageFile && !isPdfFile && !isExplicitTextOrCode;
+        const isUnknownType =
+          !isImageFile &&
+          !isPdfFile &&
+          !isRichDocument &&
+          !isWorkbook &&
+          !isPresentation &&
+          !isInspectableArchive &&
+          !isExplicitTextOrCode;
 
         if (!file.offline && isExplicitTextOrCode && !isSvgFile && !initialEditMode && file.size > MAX_TEXT_PREVIEW_BYTES) {
           // 5a. Oversized text/code/CSV/log files: fetch ONLY the 3 MiB prefix.
@@ -929,7 +983,8 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
             file.messageId,
             MAX_TEXT_PREVIEW_BYTES,
             (pct) => { if (current) setProgress(pct); },
-            abortController.signal
+            abortController.signal,
+            buildDownloadOpts(file)
           );
           if (!current || abortController.signal.aborted) return;
           buffer = res.data;
@@ -941,10 +996,11 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
             file.messageId,
             64 * 1024,
             (pct) => { if (current) setProgress(Math.min(50, pct)); },
-            abortController.signal
+            abortController.signal,
+            buildDownloadOpts(file)
           );
           if (!current || abortController.signal.aborted) return;
-          if (containsNullByte(sniff.data, 4096)) {
+          if (!decodeTextBuffer(sniff.data.subarray(0, 4096)).isText) {
             if (current) setProgress(100);
             return;
           }
@@ -953,7 +1009,8 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
             file.messageId,
             MAX_TEXT_PREVIEW_BYTES,
             (pct) => { if (current) setProgress(pct); },
-            abortController.signal
+            abortController.signal,
+            buildDownloadOpts(file)
           );
           if (!current || abortController.signal.aborted) return;
           buffer = textPrefix.data;
@@ -969,14 +1026,16 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
             buffer = await downloadFileToBuffer(
               file.channelId, file.messageId,
               (pct) => { if (current) setProgress(pct); },
-              abortController.signal
+              abortController.signal,
+              buildDownloadOpts(file)
             );
           }
         } else {
           buffer = await downloadFileToBuffer(
             file.channelId, file.messageId,
             (pct) => { if (current) setProgress(pct); },
-            abortController.signal
+            abortController.signal,
+            buildDownloadOpts(file)
           );
         }
         if (!current || abortController.signal.aborted) return;
@@ -989,6 +1048,53 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
           pdfBufferRef.current = buffer;
           setPdfData(buffer);
           return;
+        }
+
+        if (isRichDocument) {
+          try {
+            const docPreview = extractDocumentPreview(buffer, file.name);
+            if (current) setRichDocHtml(docPreview.content);
+            return;
+          } catch (richErr) {
+            console.warn("[FilePreviewModal] Rich document extraction failed:", richErr);
+            return;
+          }
+        }
+
+        if (isWorkbook) {
+          try {
+            const sheets = extractSpreadsheetSheets(buffer, file.name);
+            if (current && sheets.length > 0) {
+              setWorkbookSheets(sheets);
+              setActiveSheetIdx(0);
+            }
+            return;
+          } catch (sheetErr) {
+            console.warn("[FilePreviewModal] Workbook extraction failed:", sheetErr);
+            return;
+          }
+        }
+
+        if (isPresentation) {
+          try {
+            const slides = extractPresentationSlides(buffer, file.name);
+            if (current) setPresentationSlides(slides);
+            return;
+          } catch (slideErr) {
+            console.warn("[FilePreviewModal] Presentation extraction failed:", slideErr);
+            return;
+          }
+        }
+
+        if (isInspectableArchive) {
+          try {
+            const entries = inspectArchiveEntries(buffer, file.name);
+            if (current && entries.length > 0) setArchiveEntries(entries);
+            return;
+          } catch (archErr) {
+            console.warn("[FilePreviewModal] Archive inspection failed:", archErr);
+            return;
+          }
         }
 
         // HEIC image conversion for seamless in-app preview
@@ -1040,21 +1146,20 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
           }
         }
 
-        const hasNullByte = containsNullByte(buffer, 4096);
-        const shouldDecodeText = (
+        let isTruncated = prefixTruncated;
+        let sliceBuffer = buffer;
+        if (buffer.length > MAX_TEXT_PREVIEW_BYTES) {
+          sliceBuffer = buffer.subarray(0, MAX_TEXT_PREVIEW_BYTES);
+          isTruncated = true;
+        }
+
+        const decoded = decodeTextBuffer(sliceBuffer);
+        const shouldDecodeText =
           isExplicitTextOrCode ||
-          (!hasNullByte && !isImageFile)
-        );
+          (decoded.isText && !isImageFile);
 
         if (shouldDecodeText) {
-          let isTruncated = prefixTruncated;
-          let sliceBuffer = buffer;
-          if (buffer.length > MAX_TEXT_PREVIEW_BYTES) {
-            sliceBuffer = buffer.subarray(0, MAX_TEXT_PREVIEW_BYTES);
-            isTruncated = true;
-          }
-
-          let text = new TextDecoder().decode(sliceBuffer);
+          let text = decoded.isText ? decoded.text : new TextDecoder().decode(sliceBuffer);
           // Normalize line endings to LF (\n) to ensure consistent line counting and rendering
           text = text.replace(/\r\n|\r/g, "\n");
           if (isTruncated) {
@@ -1062,11 +1167,12 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
           }
           if (!current) return;
           setIsTruncatedPreview(isTruncated);
+          setTextEncoding(decoded.isText ? decoded.encoding : "UTF-8");
           setTextContent(text);
 
           if (mimeLower === "text/markdown" || file.name.toLowerCase().endsWith(".md") || file.name.toLowerCase().endsWith(".markdown")) {
             const html = await marked.parse(text);
-            if (current) setMarkdownHtml(sanitizeHtml(html));
+            if (current) setMarkdownHtml(sanitizePreviewHtml(html));
           }
 
           if (initialEditMode && !isTruncated && current) {
@@ -1076,6 +1182,10 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
         }
       } catch (err: any) {
         if (err?.name === "AbortError" || abortController.signal.aborted) {
+          return;
+        }
+        if (err instanceof EncryptionError && err.code === "locked") {
+          onClose();
           return;
         }
         if (current) {
@@ -1107,7 +1217,17 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
   // ── Handlers (memoized) ──────────────────────────────────────────────────
   const handleDownload = useCallback(() => {
     if (currentFile) {
-      downloadFileFromTelegram(currentFile.channelId, currentFile.messageId, currentFile.name).catch((err) => {
+      downloadFileFromTelegram(
+        currentFile.channelId,
+        currentFile.messageId,
+        currentFile.name,
+        undefined,
+        {
+          segments: currentFile.segments,
+          enc: currentFile.enc,
+          plainSize: currentFile.enc?.plainSize ?? currentFile.size,
+        }
+      ).catch((err) => {
         console.error("Download failed:", err);
       });
     }
@@ -1115,6 +1235,10 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
 
   const handleOpenInSystemApp = useCallback(async () => {
     if (!currentFile) return;
+    if (isWebRuntime()) {
+      handleDownload();
+      return;
+    }
     try {
       const { appLocalDataDir, join } = await import("@tauri-apps/api/path");
       const { openPath } = await import("@tauri-apps/plugin-opener");
@@ -1131,9 +1255,10 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
 
       if (!targetPath) {
         const previewKey = `${currentFile.id}_${safeName}`;
+        const expectedPlainSize = currentFile.enc?.plainSize ?? currentFile.size;
         targetPath = await invoke<string | null>("check_preview_cache", {
           fileName: previewKey,
-          expectedSize: currentFile.size > 0 ? currentFile.size : null,
+          expectedSize: expectedPlainSize > 0 ? expectedPlainSize : null,
         }).catch(() => null);
       }
 
@@ -1164,7 +1289,12 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
               tempFilePath,
               undefined,
               undefined,
-              currentFile.size
+              currentFile.size,
+              {
+                segments: currentFile.segments,
+                enc: currentFile.enc,
+                plainSize: currentFile.enc?.plainSize ?? currentFile.size,
+              }
             );
           }
         }
@@ -1181,7 +1311,17 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
     } catch (err: any) {
       console.error("Failed to open document in system app:", err);
       toast.error(t("toast.systemViewerFailed"));
-      downloadFileFromTelegram(currentFile.channelId, currentFile.messageId, currentFile.name).catch(() => {});
+      downloadFileFromTelegram(
+        currentFile.channelId,
+        currentFile.messageId,
+        currentFile.name,
+        undefined,
+        {
+          segments: currentFile.segments,
+          enc: currentFile.enc,
+          plainSize: currentFile.enc?.plainSize ?? currentFile.size,
+        }
+      ).catch(() => {});
     }
   }, [currentFile, t]);
 
@@ -1190,35 +1330,43 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
       setMediaError(true);
       return;
     }
-    const platform = getPlatform();
-    const isLinuxDesktop =
-      platform === "desktop" &&
-      typeof navigator !== "undefined" &&
-      /linux/i.test(navigator.userAgent);
     const localPath = cachedMediaPathRef.current;
     const MAX_BLOB_FALLBACK_BYTES = 150 * 1024 * 1024;
     if (
-      (platform === "android" || isLinuxDesktop) &&
       localPath &&
-      !mediaBlobFallbackRef.current &&
+      mediaBlobRetryRef.current < 2 &&
       currentFile.size > 0 &&
       currentFile.size <= MAX_BLOB_FALLBACK_BYTES
     ) {
-      mediaBlobFallbackRef.current = true;
+      const attempt = mediaBlobRetryRef.current;
+      mediaBlobRetryRef.current += 1;
       try {
         const { readFile } = await import("@tauri-apps/plugin-fs");
         const bytes = await readFile(localPath);
         const ext = currentFile.name.split(".").pop()?.toLowerCase() ?? "";
         const mimeLower = (currentFile.mime || "").toLowerCase();
         const kind = mimeLower.startsWith("video/") || VIDEO_EXTS.has(ext) ? "video" : "audio";
-        const blob = new Blob([bytes as any], {
-          type: getMediaMimeType(currentFile.name, currentFile.mime, kind),
-        });
-        setContentUrl((prev) => {
-          if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
-          return URL.createObjectURL(blob);
-        });
-        return;
+        const primaryMime = getMediaMimeType(currentFile.name, currentFile.mime, kind);
+        const fallbackMime =
+          attempt === 0
+            ? primaryMime
+            : kind === "video"
+              ? primaryMime === "video/mp4"
+                ? "video/webm"
+                : "video/mp4"
+              : primaryMime === "audio/mp4"
+                ? "audio/mpeg"
+                : "audio/mp4";
+        if (attempt === 0 || fallbackMime !== primaryMime) {
+          const copy = new Uint8Array(bytes.length);
+          copy.set(bytes);
+          const blob = new Blob([copy.buffer], { type: fallbackMime });
+          setContentUrl((prev) => {
+            if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+            return URL.createObjectURL(blob);
+          });
+          return;
+        }
       } catch (fallbackErr) {
         console.warn("[FilePreviewModal] Blob media fallback failed:", fallbackErr);
       }
@@ -1267,17 +1415,46 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
     try {
       const bytes = new TextEncoder().encode(editContent);
       const newFile = new File([bytes], currentFile.name, { type: currentFile.mime });
+      const wasEncrypted = currentFile.enc?.v === 1;
+      const encryptionKey = wasEncrypted
+        ? await requireEncryptionKey(currentFile.enc?.s)
+        : null;
+      const encryptionSaltB64 = wasEncrypted
+        ? currentFile.enc?.s ?? useEncryptionStore.getState().config?.saltB64 ?? null
+        : null;
 
-      // 1) Upload the new bytes to Telegram.
-      const message = await uploadFileToTelegram(
-        currentFile.channelId, currentFile.name, bytes.length, newFile, currentFile.folderPath ?? "/", () => {}
+      // 1) Upload the new bytes to Telegram (preserving E2EE encryption if encrypted).
+      const uploadRes = await uploadFileToTelegram(
+        currentFile.channelId,
+        currentFile.name,
+        bytes.length,
+        newFile,
+        currentFile.folderPath ?? "/",
+        () => {},
+        undefined,
+        true,
+        null,
+        {
+          allowMultiSegment: true,
+          encryptionKey,
+          encryptionSaltB64,
+          anonymizedFileName: wasEncrypted ? `${currentFile.id}.tde` : undefined,
+        }
       );
+
+      const newMessage = isHashedUploadResult(uploadRes) ? uploadRes.message : uploadRes;
+      const newHash = isHashedUploadResult(uploadRes) ? uploadRes.hash : undefined;
+      const newSegments = isHashedUploadResult(uploadRes) ? uploadRes.segments : undefined;
+      const newEnc = isHashedUploadResult(uploadRes) ? uploadRes.enc : undefined;
 
       const updated: TeleFile = {
         ...currentFile,
-        messageId: message.id,
+        messageId: newMessage.id,
         size: bytes.length,
         uploadedAt: Date.now(),
+        ...(newHash ? { hash: newHash } : {}),
+        segments: newSegments,
+        enc: newEnc,
       };
 
       // 2) Build the optimistic files array (replaces the old entry by id).
@@ -1297,16 +1474,17 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
       useFileStore.getState().popSnapshot();
       pushedSnapshot = false;
 
-      // 4) Fire-and-forget delete of the old Telegram message. We do this
-      //    AFTER the index commit so a slow delete doesn't block the UI,
-      //    and a failure here doesn't roll back the index update.
-      if (currentFile.messageId && currentFile.messageId !== message.id) {
-        deleteTelegramMessage(currentFile.channelId, currentFile.messageId).catch((err) => {
-          console.warn(
-            `[FilePreviewModal] Could not delete old message ${currentFile.messageId} for "${currentFile.name}":`,
-            err?.message || err
-          );
-        });
+      // 4) Fire-and-forget delete of all old Telegram segment message(s).
+      const newIds = new Set(getFileMessageIds(updated));
+      for (const oldId of getFileMessageIds(currentFile)) {
+        if (!newIds.has(oldId)) {
+          deleteTelegramMessage(currentFile.channelId, oldId).catch((err) => {
+            console.warn(
+              `[FilePreviewModal] Could not delete old message ${oldId} for "${currentFile.name}":`,
+              err?.message || err
+            );
+          });
+        }
       }
 
       // 5) Refresh current active file reference, buffer, parent layout, and view state
@@ -1316,7 +1494,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
 
       setTextContent(editContent);
       if (currentFile.name.endsWith(".md")) {
-        setMarkdownHtml(sanitizeHtml(await marked.parse(editContent)));
+        setMarkdownHtml(sanitizePreviewHtml(await marked.parse(editContent)));
       } else {
         setMarkdownHtml(null);
       }
@@ -1356,21 +1534,25 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
     const url = `https://o2code.vercel.app/${o2Lang}?code=${encoded}&run=true`;
     
     try {
-      await openUrl(url);
+      await runtimeOpenUrl(url);
     } catch (err) {
-      console.error("Failed to open URL in native browser:", err);
+      console.error("Failed to open URL in browser:", err);
       window.open(url, "_blank", "noopener,noreferrer");
     }
   }, [file, textContent, editContent, isEditMode]);
 
   const handleCopyContent = useCallback(() => {
-    const current = isEditMode ? editContent : (textContent ?? "");
+    const activeSheetText =
+      workbookSheets && workbookSheets.length > 0
+        ? (workbookSheets[activeSheetIdx]?.csv ?? workbookSheets[0]?.csv ?? "")
+        : null;
+    const current = isEditMode ? editContent : (activeSheetText ?? textContent ?? "");
     if (!current) return;
     navigator.clipboard.writeText(current);
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
     toast.success(t("toast.copied"));
-  }, [isEditMode, editContent, textContent, t]);
+  }, [isEditMode, editContent, textContent, workbookSheets, activeSheetIdx, t]);
 
   const cycleFontSize = useCallback(() => {
     setCodeFontSize(prev => {
@@ -1407,21 +1589,36 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
   const isAudio         = mimeLower.startsWith("audio/") || AUDIO_EXTS.has(ext);
   const isPdf           = ext === "pdf" || mimeLower === "application/pdf" || mimeLower.includes("pdf");
   const isMarkdownFile  = ext === "md" || ext === "markdown" || (mimeLower === "text/markdown");
+  const isHtmlFile      = ext === "html" || ext === "htm" || ext === "xhtml" || mimeLower === "text/html";
   const isCsvFile       = ext === "csv" || (mimeLower === "text/csv");
   const isTsvFile       = ext === "tsv" || (mimeLower === "text/tab-separated-values");
-  const isTableData     = (isCsvFile || isTsvFile) && textContent !== null;
+  const isWorkbookFile  = workbookSheets !== null && workbookSheets.length > 0;
+  const activeWorkbookSheet = isWorkbookFile
+    ? (workbookSheets[activeSheetIdx] ?? workbookSheets[0])
+    : null;
+  const activeTableContent = activeWorkbookSheet ? activeWorkbookSheet.csv : textContent;
+  const isTableData     = ((isCsvFile || isTsvFile) && textContent !== null) || isWorkbookFile;
   const isJsonFile      = ext === "json" || ext === "jsonc" || ext === "json5" || mimeLower.includes("json");
-  const isArchive       = ARCHIVE_EXTS.has(ext);
+  const isArchive       = ARCHIVE_EXTS.has(ext) || Boolean(currentFile?.name.toLowerCase().endsWith(".tar.gz"));
 
-  const isMarkdownPreview = isMarkdownFile && mdViewMode === "preview" && !isEditMode;
-  const isTableView       = isTableData && csvViewMode === "table" && !isEditMode;
-  const isSvgImageView    = isSvg && svgViewMode === "image" && !isEditMode;
-  const isCode            = textContent !== null && !isMarkdownPreview && !isTableView && !isSvgImageView;
+  const isMarkdownPreview   = isMarkdownFile && mdViewMode === "preview" && !isEditMode;
+  const isHtmlPreview       = isHtmlFile && htmlViewMode === "preview" && !isEditMode && textContent !== null;
+  const isRichDocView       = richDocHtml !== null && !isEditMode;
+  const isPresentationView  = presentationSlides !== null && !isEditMode;
+  const isArchiveExplorer   = archiveEntries !== null;
+  const isTableView         = isTableData && csvViewMode === "table" && !isEditMode && activeTableContent !== null;
+  const isSvgImageView      = isSvg && svgViewMode === "image" && !isEditMode;
+  const isCode              =
+    (textContent !== null || (isWorkbookFile && csvViewMode === "source")) &&
+    !isMarkdownPreview &&
+    !isHtmlPreview &&
+    !isTableView &&
+    !isSvgImageView;
   const canEdit           = Boolean(currentFile && isEditableFile(currentFile) && !isTruncatedPreview && !loading && !error && textContent !== null);
   const canRunInO2        = textContent !== null && !loading && !error && O2_LANG_MAP[langInfo.hljsLang] !== undefined;
 
   const statusParts: string[] = [];
-  if (langInfo.displayName && !isImage && !isVideo && !isAudio && !isPdf && !isArchive) {
+  if (langInfo.displayName && !isImage && !isVideo && !isAudio && !isPdf && !isArchive && !isWorkbookFile) {
     statusParts.push(langInfo.displayName);
   }
   if (isMarkdownPreview && textContent) {
@@ -1429,16 +1626,23 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
     const readingMin = Math.max(1, Math.ceil(words / 200));
     statusParts.push(t("status.words", { count: words }));
     statusParts.push(t("status.readingTime", { count: readingMin }));
-  } else if (isTableView && textContent) {
-    const lines = textContent.split("\n").filter(l => l.trim().length > 0).length;
+  } else if (isTableView && activeTableContent) {
+    const lines = activeTableContent.split("\n").filter(l => l.trim().length > 0).length;
     statusParts.push(t("status.rows", { count: lines }));
-  } else if (textContent !== null) {
-    const lc = (isEditMode ? editContent : textContent).split("\n").length;
+    if (workbookSheets && workbookSheets.length > 1) {
+      statusParts.push(`${workbookSheets.length} sheets`);
+    }
+  } else if (isPresentationView && presentationSlides) {
+    statusParts.push(`${presentationSlides.length} slides`);
+  } else if (textContent !== null || (isWorkbookFile && activeTableContent !== null)) {
+    const lc = (isEditMode ? editContent : (activeTableContent ?? "")).split("\n").length;
     statusParts.push(t("status.lines", { count: lc }));
     statusParts.push(wrapLines ? t("status.wrapOn") : t("status.wrapOff"));
     statusParts.push(`${codeFontSize}px`);
   }
-  statusParts.push("UTF-8");
+  if (!isPresentationView) {
+    statusParts.push(textEncoding);
+  }
   if (isEditMode) statusParts.push(t("status.cursor", { line: cursorPos.line, col: cursorPos.col }));
 
   if (!file || !currentFile) return null;
@@ -1571,6 +1775,36 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
                   </div>
                 )}
 
+                {isHtmlFile && textContent !== null && (
+                  <div
+                    className="flex items-center p-0.5 rounded-lg border text-xs mr-1"
+                    style={{ borderColor: colors.border, background: colors.badgeBg }}
+                  >
+                    <button
+                      onClick={() => setHtmlViewMode("preview")}
+                      className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
+                        htmlViewMode === "preview"
+                          ? "bg-white dark:bg-[#1f2124] text-blue-600 dark:text-blue-400 shadow-xs"
+                          : "text-[#444746] dark:text-[#8e918f] hover:text-black dark:hover:text-white"
+                      }`}
+                    >
+                      <Eye className="h-3 w-3" />
+                      <span>{t("viewMode.preview")}</span>
+                    </button>
+                    <button
+                      onClick={() => setHtmlViewMode("source")}
+                      className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
+                        htmlViewMode === "source"
+                          ? "bg-white dark:bg-[#1f2124] text-blue-600 dark:text-blue-400 shadow-xs"
+                          : "text-[#444746] dark:text-[#8e918f] hover:text-black dark:hover:text-white"
+                      }`}
+                    >
+                      <Code className="h-3 w-3" />
+                      <span>{t("viewMode.source")}</span>
+                    </button>
+                  </div>
+                )}
+
                 {isTableData && (
                   <div
                     className="flex items-center p-0.5 rounded-lg border text-xs mr-1"
@@ -1645,7 +1879,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
                   </button>
                 )}
 
-                {(isCode || (isMarkdownFile && mdViewMode === "source") || (isTableData && csvViewMode === "source") || (isSvg && svgViewMode === "code")) && (
+                {(isCode || (isMarkdownFile && mdViewMode === "source") || (isHtmlFile && htmlViewMode === "source") || (isTableData && csvViewMode === "source") || (isSvg && svgViewMode === "code")) && (
                   <>
                     <button
                       onClick={() => setWrapLines(!wrapLines)}
@@ -1673,7 +1907,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
                   </>
                 )}
 
-                {textContent !== null && (
+                {(textContent !== null || isWorkbookFile) && (
                   <button
                     onClick={handleCopyContent}
                     title={t("topbar.copyTitle")}
@@ -1774,7 +2008,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
                   </button>
                 )}
 
-                {textContent !== null && (
+                {(textContent !== null || isWorkbookFile) && (
                   <button
                     onClick={handleCopyContent}
                     title={t("topbar.copyTitle")}
@@ -1816,6 +2050,18 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
                       </DropdownMenuItem>
                     )}
 
+                    {isHtmlFile && textContent !== null && (
+                      <DropdownMenuItem
+                        onClick={() => setHtmlViewMode(htmlViewMode === "preview" ? "source" : "preview")}
+                        className="flex items-center justify-between text-xs py-2 px-2.5 rounded-lg cursor-pointer hover:bg-slate-100 dark:hover:bg-white/[0.08]"
+                      >
+                        <span className="flex items-center gap-2">
+                          {htmlViewMode === "preview" ? <Code className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" /> : <Eye className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />}
+                          {htmlViewMode === "preview" ? t("viewMode.source") : t("viewMode.preview")}
+                        </span>
+                      </DropdownMenuItem>
+                    )}
+
                     {isTableData && (
                       <DropdownMenuItem
                         onClick={() => setCsvViewMode(csvViewMode === "table" ? "source" : "table")}
@@ -1840,7 +2086,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
                       </DropdownMenuItem>
                     )}
 
-                    {(isCode || (isMarkdownFile && mdViewMode === "source") || (isTableData && csvViewMode === "source") || (isSvg && svgViewMode === "code")) && (
+                    {(isCode || (isMarkdownFile && mdViewMode === "source") || (isHtmlFile && htmlViewMode === "source") || (isTableData && csvViewMode === "source") || (isSvg && svgViewMode === "code")) && (
                       <>
                         <DropdownMenuItem
                           onClick={() => setWrapLines(!wrapLines)}
@@ -2088,7 +2334,38 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
                             setDimensions({ width: img.naturalWidth, height: img.naturalHeight });
                             setImageError(false);
                           }}
-                          onError={() => {
+                          onError={async () => {
+                            const localPath = cachedMediaPathRef.current;
+                            if (
+                              localPath &&
+                              !imageBlobRetryRef.current &&
+                              currentFile &&
+                              currentFile.size > 0 &&
+                              currentFile.size <= 80 * 1024 * 1024
+                            ) {
+                              imageBlobRetryRef.current = true;
+                              try {
+                                const { readFile } = await import("@tauri-apps/plugin-fs");
+                                const bytes = await readFile(localPath);
+                                const imgExt = currentFile.name.split(".").pop()?.toLowerCase() ?? "";
+                                const fallbackMime =
+                                  currentFile.mime && currentFile.mime.startsWith("image/")
+                                    ? currentFile.mime
+                                    : `image/${imgExt === "jpg" ? "jpeg" : imgExt || "png"}`;
+                                const copy = new Uint8Array(bytes.length);
+                                copy.set(bytes);
+                                const blobUrl = URL.createObjectURL(
+                                  new Blob([copy.buffer], { type: fallbackMime })
+                                );
+                                setContentUrl((prev) => {
+                                  if (prev && prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+                                  return blobUrl;
+                                });
+                                return;
+                              } catch {
+                                // Fall through to image decode error card
+                              }
+                            }
                             console.warn(`[FilePreviewModal] Image failed to render: ${file.name}`);
                             setImageError(true);
                           }}
@@ -2651,43 +2928,56 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
 
             {/* MARKDOWN — Elevated Document Sheet */}
             {isMarkdownPreview && (
-              <div
-                className="absolute inset-0 overflow-y-auto px-4 py-8 md:py-12 pointer-events-auto select-text flex justify-center"
-                style={{
-                  scrollbarWidth: "thin",
-                  scrollbarColor: isDark ? "#202225 transparent" : "#e0e2e7 transparent",
-                  background: isDark ? "#000000" : "#f0f4f9",
-                }}
-              >
-                <div
-                  className="w-full max-w-4xl bg-white dark:bg-[#111214] border border-[#e0e2e7] dark:border-white/[0.04] rounded-2xl shadow-sm p-8 md:p-14 my-auto min-h-full teledrive-markdown-body"
-                  onClick={(e) => {
-                    const target = (e.target as HTMLElement).closest("a");
-                    if (target && target.href) {
-                      e.preventDefault();
-                      try {
-                        const parsed = new URL(target.href);
-                        if (parsed.protocol === "http:" || parsed.protocol === "https:") {
-                          openUrl(target.href).catch(() => window.open(target.href, "_blank", "noopener,noreferrer"));
-                        }
-                      } catch {
-                        // ignore malformed URL
-                      }
-                    }
-                  }}
-                  dangerouslySetInnerHTML={{ __html: markdownHtml ?? "" }}
-                />
-              </div>
+              <RichDocumentSheet htmlContent={markdownHtml} isDark={isDark} />
             )}
 
-            {/* CSV / TSV — Interactive Spreadsheet Grid */}
-            {isTableView && textContent !== null && (
-              <div className="absolute inset-0">
-                <CsvTableViewer
-                  content={textContent}
-                  isTsv={isTsvFile}
-                  isDark={isDark}
-                />
+            {/* RICH DOCUMENTS (DOCX, ODT, RTF, EPUB) */}
+            {isRichDocView && (
+              <RichDocumentSheet htmlContent={richDocHtml} isDark={isDark} />
+            )}
+
+            {/* PRESENTATIONS (PPTX, ODP) */}
+            {isPresentationView && (
+              <RichDocumentSheet slides={presentationSlides} isDark={isDark} />
+            )}
+
+            {/* SANDBOXED HTML PREVIEW */}
+            {isHtmlPreview && textContent !== null && (
+              <iframe
+                sandbox=""
+                srcDoc={textContent}
+                title={currentFile.name}
+                className="w-full h-full border-0 bg-white"
+              />
+            )}
+
+            {/* CSV / TSV / XLSX / ODS — Interactive Spreadsheet Grid */}
+            {isTableView && activeTableContent !== null && (
+              <div className="absolute inset-0 flex flex-col">
+                {workbookSheets && workbookSheets.length > 1 && (
+                  <div className="shrink-0 flex items-center gap-1 px-3 py-1.5 border-b border-slate-200 dark:border-white/[0.06] bg-slate-50 dark:bg-[#111214] overflow-x-auto no-scrollbar">
+                    {workbookSheets.map((sheet, idx) => (
+                      <button
+                        key={`${sheet.name}-${idx}`}
+                        onClick={() => setActiveSheetIdx(idx)}
+                        className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+                          idx === activeSheetIdx
+                            ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30"
+                            : "text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-white/[0.05]"
+                        }`}
+                      >
+                        {sheet.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="flex-1 min-h-0 relative">
+                  <CsvTableViewer
+                    content={activeTableContent}
+                    isTsv={isTsvFile && !isWorkbookFile}
+                    isDark={isDark}
+                  />
+                </div>
               </div>
             )}
 
@@ -2705,16 +2995,28 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
             {/* CODE / SOURCE — Read Mode */}
             {isCode && !isEditMode && (
               <SyntaxHighlighter
-                code={textContent!}
-                fileName={file.name}
+                code={activeTableContent ?? textContent ?? ""}
+                fileName={isWorkbookFile ? `${file.name}.csv` : file.name}
                 wrapLines={wrapLines}
                 fontSize={codeFontSize}
                 className="absolute inset-0"
               />
             )}
 
-            {/* ARCHIVE PREVIEW CARD */}
-            {isArchive && !textContent && !contentUrl && (
+            {/* INSPECTABLE ARCHIVE EXPLORER */}
+            {isArchiveExplorer && (
+              <ArchiveExplorer
+                fileName={currentFile.name}
+                archiveSize={currentFile.size}
+                entries={archiveEntries!}
+                isDark={isDark}
+                onOpenSystemApp={handleOpenInSystemApp}
+                onDownloadArchive={handleDownload}
+              />
+            )}
+
+            {/* ARCHIVE PREVIEW CARD (non-inspectable / oversized) */}
+            {isArchive && !isArchiveExplorer && !textContent && !contentUrl && (
               <div className="w-full h-full flex items-center justify-center p-6">
                 <div
                   className="flex flex-col items-center max-w-md w-full p-8 rounded-3xl text-center shadow-sm"
@@ -2761,7 +3063,19 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
             )}
 
             {/* UNSUPPORTED BINARY FILE */}
-            {!isImage && !isSvgImageView && !isVideo && !isAudio && !isPdf && !isMarkdownPreview && !isTableView && !isCode && !isArchive && (
+            {!isImage &&
+              !isSvgImageView &&
+              !isVideo &&
+              !isAudio &&
+              !isPdf &&
+              !isMarkdownPreview &&
+              !isRichDocView &&
+              !isPresentationView &&
+              !isHtmlPreview &&
+              !isTableView &&
+              !isCode &&
+              !isArchive &&
+              !isArchiveExplorer && (
               <div className="w-full h-full flex items-center justify-center p-6">
                 <div
                   className="flex flex-col items-center max-w-md w-full p-8 rounded-3xl text-center shadow-sm"
@@ -2811,7 +3125,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
       </div>
 
       {/* ── Status bar ───────────────────────────────────────────────────── */}
-      {(isCode || isMarkdownFile || isTableData || isEditMode) && !loading && !error && textContent !== null ? (
+      {(isCode || isMarkdownFile || isHtmlFile || isTableData || isPresentationView || isEditMode) && !loading && !error && (textContent !== null || isWorkbookFile || isPresentationView) ? (
         <div
           className="flex items-center justify-between px-3 sm:px-4 shrink-0 select-none overflow-x-auto no-scrollbar pb-[env(safe-area-inset-bottom,0px)]"
           style={{

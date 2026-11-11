@@ -2,6 +2,10 @@ import { create } from "zustand";
 import { TeleFile, UploadItem } from "../lib/types";
 import { normalizeFolderPath } from "../lib/utils";
 import { filterDeletedMessages } from "../lib/storage/tombstones";
+import {
+  saveCachedFilesSnapshot,
+  syncSmallCacheFallback,
+} from "../lib/storage/localIndexCache";
 
 export type IndexQueueState =
   | "idle"
@@ -90,8 +94,10 @@ interface FileState {
   setBootstrapComplete: (v: boolean) => void;
   /** Update discovery status; `error` is the incomplete reason (if any). */
   setIndexLoadState: (state: IndexLoadState, error?: string | null) => void;
-  /** Write the debounced localStorage cache immediately (logout/quota). */
+  /** Write the debounced snapshot cache immediately (logout/quota/pending marker). */
   flushFileCacheNow: () => void;
+  /** Hydrate initial file list from async IndexedDB cache on launch without scheduling a writeback. */
+  hydrateCachedFiles: (files: TeleFile[]) => void;
   /**
    * Merge remote deltas (multi-device sync) into the in-memory file list
    * WITHOUT triggering a Telegram index write. Resolves when the merge
@@ -132,17 +138,54 @@ const getInitialFiles = (): TeleFile[] => {
 };
 
 let cacheTimeout: ReturnType<typeof setTimeout> | null = null;
-const debouncedCacheFiles = (files: TeleFile[]) => {
-  if (typeof localStorage === "undefined") return;
-  if (cacheTimeout) clearTimeout(cacheTimeout);
-  cacheTimeout = setTimeout(() => {
-    try {
-      localStorage.setItem("teledrive_cached_files", JSON.stringify(files));
-    } catch (err) {
-      console.warn("[fileStore] Failed to cache files to localStorage:", err);
-    }
-  }, 300);
+let idleCallbackId: number | null = null;
+
+type IdleCallbackHost = {
+  requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+  cancelIdleCallback?: (id: number) => void;
 };
+
+const clearScheduledCacheWrite = () => {
+  if (cacheTimeout) {
+    clearTimeout(cacheTimeout);
+    cacheTimeout = null;
+  }
+  if (idleCallbackId !== null) {
+    const cancel = (globalThis as IdleCallbackHost).cancelIdleCallback;
+    if (typeof cancel === "function") cancel(idleCallbackId);
+    idleCallbackId = null;
+  }
+};
+
+const hasPendingOrUploading = (queue: UploadItem[]): boolean =>
+  queue.some((item) => item.status === "uploading" || item.status === "pending");
+
+const debouncedCacheFiles = (files: TeleFile[], hasActiveTransfers = false) => {
+  if (typeof localStorage === "undefined" && typeof indexedDB === "undefined") {
+    return;
+  }
+  clearScheduledCacheWrite();
+  const delayMs = hasActiveTransfers ? 1000 : 300;
+  cacheTimeout = setTimeout(() => {
+    cacheTimeout = null;
+    const write = () => {
+      idleCallbackId = null;
+      void saveCachedFilesSnapshot(files);
+    };
+    const rIC = (globalThis as IdleCallbackHost).requestIdleCallback;
+    if (typeof rIC === "function") {
+      idleCallbackId = rIC(write, { timeout: 1500 });
+    } else {
+      write();
+    }
+  }, delayMs);
+};
+
+function isFolderPathCanonical(path: string | undefined): boolean {
+  if (!path || path[0] !== "/") return false;
+  if (path.length === 1) return true;
+  return !path.endsWith("/") && !path.includes("//");
+}
 
 const SNAPSHOT_RING_LIMIT = 3;
 
@@ -172,11 +215,22 @@ export const useFileStore = create<FileState>((set, get) => ({
   lastRemoteSyncAt: null,
   lastBackupAt: null,
   setFiles: (rawFiles) => {
-    const files = rawFiles.map((f) => ({
-      ...f,
-      folderPath: normalizeFolderPath(f.folderPath),
-    }));
-    debouncedCacheFiles(files);
+    let anyNormalized = false;
+    for (let i = 0; i < rawFiles.length; i++) {
+      if (!isFolderPathCanonical(rawFiles[i].folderPath)) {
+        anyNormalized = true;
+        break;
+      }
+    }
+    const files = anyNormalized
+      ? rawFiles.map((f) =>
+          isFolderPathCanonical(f.folderPath)
+            ? f
+            : { ...f, folderPath: normalizeFolderPath(f.folderPath) }
+        )
+      : rawFiles;
+    const hasActiveTransfers = hasPendingOrUploading(get().uploadQueue);
+    debouncedCacheFiles(files, hasActiveTransfers);
     set({ files });
   },
   setSyncing: (isSyncing) => set({ isSyncing }),
@@ -244,16 +298,22 @@ export const useFileStore = create<FileState>((set, get) => ({
   setIndexLoadState: (indexLoadState, indexLoadError = null) =>
     set({ indexLoadState, indexLoadError }),
   flushFileCacheNow: () => {
-    if (cacheTimeout) {
-      clearTimeout(cacheTimeout);
-      cacheTimeout = null;
-    }
-    if (typeof localStorage === "undefined") return;
-    try {
-      localStorage.setItem("teledrive_cached_files", JSON.stringify(get().files));
-    } catch (err) {
-      console.warn("[fileStore] Failed to flush files cache:", err);
-    }
+    clearScheduledCacheWrite();
+    const current = get().files;
+    syncSmallCacheFallback(current);
+    void saveCachedFilesSnapshot(current);
+  },
+  hydrateCachedFiles: (rawFiles) => {
+    if (rawFiles.length === 0) return;
+    set((state) => {
+      if (state.files.length > 0 && state.bootstrapComplete) return state;
+      const files = rawFiles.map((f) =>
+        isFolderPathCanonical(f.folderPath)
+          ? f
+          : { ...f, folderPath: normalizeFolderPath(f.folderPath) }
+      );
+      return { files, bootstrapComplete: true };
+    });
   },
   /**
    * Merge new files arriving from another device's sync poll (or any other
@@ -281,7 +341,7 @@ export const useFileStore = create<FileState>((set, get) => ({
       const { healedFiles } = reconstructMissingFolders(merged, channelId);
       const visibleFiles = filterDeletedMessages(channelId, healedFiles);
       if (visibleFiles.length === state.files.length) return state;
-      debouncedCacheFiles(visibleFiles);
+      debouncedCacheFiles(visibleFiles, hasPendingOrUploading(state.uploadQueue));
       return {
         files: visibleFiles,
         lastRemoteSyncAt: Date.now(),
@@ -305,7 +365,7 @@ export const useFileStore = create<FileState>((set, get) => ({
       );
       const { healedFiles } = reconstructMissingFolders(merged, channelId);
       const visibleFiles = filterDeletedMessages(channelId, healedFiles);
-      debouncedCacheFiles(visibleFiles);
+      debouncedCacheFiles(visibleFiles, hasPendingOrUploading(state.uploadQueue));
       return {
         files: visibleFiles,
         lastRemoteSyncAt: Date.now(),

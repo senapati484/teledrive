@@ -31,7 +31,8 @@
     "failed": "No se pudo cargar \"{{name}}\": {{message}}",
     "emptyFile": "\"{{name}}\" está vacío. Telegram no admite archivos vacíos (0 bytes).",
     "exceedsFreeLimit": "\"{{name}}\" supera el límite de ~2 GB de Telegram para cuentas estándar (Telegram Premium admite hasta ~4 GB).",
-    "exceedsPremiumLimit": "\"{{name}}\" supera el límite de ~4 GB por archivo en Telegram."
+    "exceedsPremiumLimit": "\"{{name}}\" supera el límite de ~4 GB por archivo en Telegram.",
+    "duplicateSkipped": "\"{{name}}\" ya existe en esta carpeta con contenido idéntico."
   },
   "download": {
     "cancelled": "Descarga cancelada.",

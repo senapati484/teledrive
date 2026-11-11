@@ -12,9 +12,8 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { getVersion } from "@tauri-apps/api/app";
-import { openUrl } from "@tauri-apps/plugin-opener";
 import { toast } from "sonner";
+import { runtimeGetVersion, runtimeOpenUrl } from "@/lib/runtime/bridge";
 
 import {
   Dialog,
@@ -173,18 +172,10 @@ export default function WhatsNewDialog() {
     window.addEventListener("teledrive:show-whats-new", handleTrigger);
     (window as unknown as { showWhatsNew?: () => void }).showWhatsNew = handleTrigger;
 
-    getVersion()
+    runtimeGetVersion("0.1.3")
       .then((v) => {
         setVersion(v);
         if (v !== lastSeenVersion) {
-          setOpen(true);
-        }
-      })
-      .catch(() => {
-        // Tauri not available (dev browser mode)
-        const fallbackVersion = "0.1.3";
-        setVersion(fallbackVersion);
-        if (fallbackVersion !== lastSeenVersion) {
           setOpen(true);
         }
       });
@@ -204,7 +195,7 @@ export default function WhatsNewDialog() {
 
   const handleStar = async () => {
     try {
-      await openUrl(GITHUB_URL);
+      await runtimeOpenUrl(GITHUB_URL);
     } catch {
       toast.error("Failed to open link.");
     }

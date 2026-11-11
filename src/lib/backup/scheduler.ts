@@ -35,6 +35,7 @@ import { isIndexReady } from "../telegram/indexReadiness";
 import { getBackupScheduleEnabledAt, useLicenseStore } from "@/stores/licenseStore";
 import { useAuthStore } from "@/stores/authStore";
 import { channelIdKey, getSecret } from "../secure/vault";
+import { isWebRuntime } from "../runtime/bridge";
 
 let tickUnlisten: UnlistenFn | null = null;
 let currentIntervalMinutes: number | null = null;
@@ -48,6 +49,10 @@ let currentIntervalMinutes: number | null = null;
  * so any interval change is honored).
  */
 export async function applyIntervalChange(intervalMinutes: number | null): Promise<void> {
+  if (isWebRuntime()) {
+    currentIntervalMinutes = intervalMinutes;
+    return;
+  }
   if (intervalMinutes === currentIntervalMinutes) {
     return;
   }
@@ -70,6 +75,7 @@ export async function applyIntervalChange(intervalMinutes: number | null): Promi
  * listener first so a re-start (e.g. on logout/login) doesn't double-fire.
  */
 export async function ensureTickListenerStarted(): Promise<void> {
+  if (isWebRuntime()) return;
   if (tickUnlisten) {
     await tickUnlisten();
     tickUnlisten = null;
@@ -86,6 +92,10 @@ export async function stopBackupSchedule(): Promise<void> {
   if (tickUnlisten) {
     await tickUnlisten();
     tickUnlisten = null;
+  }
+  if (isWebRuntime()) {
+    currentIntervalMinutes = null;
+    return;
   }
   try {
     await invoke("stop_backup_scheduler");

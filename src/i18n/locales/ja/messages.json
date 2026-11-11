@@ -31,7 +31,8 @@
     "failed": "「{{name}}」をアップロードできませんでした: {{message}}",
     "emptyFile": "「{{名前}}」は空です。空のファイル (0 バイト) は Telegram ではサポートされていません。",
     "exceedsFreeLimit": "「{{name}}」は通常アカウントの Telegram アップロード上限（約 2 GB）を超えています（Telegram Premium は最大約 4 GB 対応）。",
-    "exceedsPremiumLimit": "「{{name}}」は Telegram の単一ファイル上限（約 4 GB）を超えています。"
+    "exceedsPremiumLimit": "「{{name}}」は Telegram の単一ファイル上限（約 4 GB）を超えています。",
+    "duplicateSkipped": "「{{name}}」は同じ内容で既にこのフォルダーに存在します。"
   },
   "download": {
     "cancelled": "ダウンロードがキャンセルされました。",

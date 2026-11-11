@@ -9,7 +9,8 @@
     "appearance": "外貌",
     "language": "語言",
     "storage": "貯存",
-    "about": "關於"
+    "about": "關於",
+    "encryption": "端對端加密"
   },
   "language": {
     "title": "語言",
@@ -232,6 +233,53 @@
       "openLinkFailed": "無法開啟連結。",
       "upToDate": "你是最新的！",
       "latestVersion": "TeleDrive v{{version}} 是最新版本。"
+    }
+  },
+  "encryption": {
+    "title": "零知識端對端加密 (E2EE)",
+    "description": "檔案在離開裝置前於本機使用 AES-256-GCM 加密，Telegram 頻道內無法檢視明文。",
+    "setupTitle": "設定加密密碼片語",
+    "setupHint": "TeleDrive 絕不會上傳或儲存您的密碼片語。請妥善備份，遺失將無法復原。",
+    "newPassphrasePlaceholder": "建立密碼片語（至少 6 個字元）",
+    "confirmPassphrasePlaceholder": "確認密碼片語",
+    "passphrasePlaceholder": "輸入加密密碼片語",
+    "encryptNewByDefault": "自動加密所有新上傳的檔案",
+    "rememberOnDevice": "在此裝置上安全記住金鑰",
+    "enableButton": "啟用加密",
+    "statusUnlocked": "加密保險庫已解鎖",
+    "statusLocked": "加密保險庫已鎖定",
+    "unlockedSubtitle": "預覽或下載加密檔案時會在本機透明解密。",
+    "lockedSubtitle": "輸入密碼片語以解鎖或上傳加密檔案。",
+    "lockButton": "鎖定保險庫",
+    "unlockButton": "解鎖",
+    "encryptNewTitle": "加密新上傳項目",
+    "encryptNewHelp": "新檔案將以 AES-256-GCM 封裝並使用匿名檔名上傳。",
+    "rememberTitle": "在此裝置上記住金鑰",
+    "rememberHelp": "開啟 TeleDrive 時自動解鎖您的加密保險庫。",
+    "on": "已開啟",
+    "off": "已關閉",
+    "disableButton": "清除本機加密設定",
+    "disableConfirm": "確認停用",
+    "unlockDialog": {
+      "title": "解鎖加密檔案",
+      "description": "輸入您的零知識 E2EE 密碼片語以於本機解密此檔案。"
+    },
+    "disableDialog": {
+      "title": "清除本機加密設定？",
+      "description": "Telegram 中已加密的檔案仍會維持加密狀態，開啟時會要求輸入原密碼片語。"
+    },
+    "errors": {
+      "tooShort": "密碼片語長度至少需為 6 個字元。",
+      "mismatch": "兩次輸入的密碼片語不相符。",
+      "wrongPassphrase": "密碼片語不正確，請重試。",
+      "setupFailed": "無法設定加密。",
+      "unlockFailed": "無法解鎖加密保險庫。"
+    },
+    "toasts": {
+      "enabled": "已為新上傳啟用零知識加密。",
+      "unlocked": "加密保險庫已解鎖。",
+      "locked": "加密保險庫已鎖定。",
+      "disabled": "已清除本機加密設定。"
     }
   }
 }

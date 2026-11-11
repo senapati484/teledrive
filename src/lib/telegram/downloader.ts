@@ -16,6 +16,25 @@ import {
 } from "../transfer/downloadMath";
 import { toast } from "sonner";
 import i18n from "@/i18n";
+import type { TeleFileEncryption, TeleFileSegment } from "../types";
+import {
+  EncryptionError,
+  requireEncryptionKey,
+  StreamDecryptor,
+  useEncryptionStore,
+} from "../secure/e2ee";
+import {
+  DEFAULT_DOWNLOAD_CONCURRENCY,
+  iteratePipelinedDownloadParts,
+} from "./pipelinedDownload";
+import { isWebRuntime, triggerBrowserBlobDownload } from "../runtime/bridge";
+
+export interface DownloadFileOptions {
+  segments?: TeleFileSegment[];
+  enc?: TeleFileEncryption;
+  encryptionKey?: CryptoKey | null;
+  plainSize?: number;
+}
 
 const DOWNLOAD_CHUNK_SIZE = 512 * 1024;
 const DESKTOP_WRITE_BATCH_BYTES = 2 * 1024 * 1024;
@@ -49,6 +68,12 @@ export function unregisterExternalTransferControl(id: string): void {
   externalTransferControls.delete(id);
 }
 
+interface ResolvedDownloadSegment {
+  messageId: number;
+  media: any;
+  size: number;
+}
+
 interface DownloadJob {
   id: string;
   channelId: string;
@@ -57,12 +82,15 @@ interface DownloadJob {
   targetPath: string;
   peer: any;
   media: any;
+  segments: ResolvedDownloadSegment[];
+  decryptor: StreamDecryptor | null;
   size: number;
   received: number;
   written: number;
   pending: Uint8Array[];
   pendingBytes: number;
   state: "running" | "paused" | "cancelling";
+  abortController: AbortController;
   running: boolean;
   lastTickAt: number;
   lastTickBytes: number;
@@ -127,38 +155,47 @@ async function runDownload(job: DownloadJob): Promise<void> {
       await client.connect();
     }
 
-    // Keep one iterator alive for the whole transfer so pausing only stops
-    // consuming chunks — resuming never restarts the offset and cannot race
-    // with a previous loop appending to the same file.
-    const iterator = client.iterDownload({
-      file: job.media,
-      requestSize: DOWNLOAD_CHUNK_SIZE,
-      msgData: [job.peer, job.messageId],
-    });
-
-    for await (const rawChunk of iterator) {
-      let state: string = job.state;
-      if (state === "cancelling") break;
-
-      while (state === "paused") {
+    const waitWhilePaused = async (): Promise<boolean> => {
+      while ((job.state as string) === "paused") {
         await sleep(PAUSE_POLL_MS);
-        state = job.state;
-        if (state === "cancelling") break;
       }
-      if (state === "cancelling") break;
+      return (job.state as string) !== "cancelling";
+    };
 
-      const chunk =
-        rawChunk instanceof Uint8Array ? rawChunk : new Uint8Array(rawChunk);
-      job.pending.push(chunk);
-      job.pendingBytes += chunk.length;
-      job.received += chunk.length;
-      if (job.pendingBytes >= getWriteBatchBytes()) {
-        await flushDownloadBuffer(job);
+    for (const seg of job.segments) {
+      if ((job.state as string) === "cancelling") break;
+
+      const iterator = iteratePipelinedDownloadParts({
+        client,
+        media: seg.media,
+        peer: job.peer,
+        messageId: seg.messageId,
+        fileSize: seg.size,
+        requestSize: DOWNLOAD_CHUNK_SIZE,
+        concurrency: DEFAULT_DOWNLOAD_CONCURRENCY,
+        signal: job.abortController.signal,
+        waitWhilePaused,
+      });
+
+      for await (const wireChunk of iterator) {
+        if ((job.state as string) === "cancelling") break;
+        const outChunk = job.decryptor
+          ? await job.decryptor.pushChunk(wireChunk)
+          : wireChunk;
+
+        if (outChunk.length > 0) {
+          job.pending.push(outChunk);
+          job.pendingBytes += outChunk.length;
+          job.received += outChunk.length;
+          if (job.pendingBytes >= getWriteBatchBytes()) {
+            await flushDownloadBuffer(job);
+          }
+          updateProgress(job);
+        }
       }
-      updateProgress(job);
     }
 
-    if (job.state === "cancelling") {
+    if ((job.state as string) === "cancelling") {
       await discardDownloadFile(job.targetPath);
       activeDownloads.delete(job.id);
       useTransferStore.getState().updateDownload(job.id, {
@@ -167,6 +204,10 @@ async function runDownload(job: DownloadJob): Promise<void> {
         eta: undefined,
       });
       return;
+    }
+
+    if (job.decryptor) {
+      job.decryptor.finish();
     }
 
     if (job.received <= 0) {
@@ -194,6 +235,13 @@ async function runDownload(job: DownloadJob): Promise<void> {
       receivedBytes: job.received,
     });
   } catch (error: any) {
+    if (
+      error instanceof EncryptionError &&
+      error.code === "invalid_passphrase" &&
+      !useEncryptionStore.getState().configured
+    ) {
+      void useEncryptionStore.getState().lock();
+    }
     const cancelled = job.state === "cancelling";
     await discardDownloadFile(job.targetPath);
     activeDownloads.delete(job.id);
@@ -205,7 +253,7 @@ async function runDownload(job: DownloadJob): Promise<void> {
     });
     if (!cancelled) {
       console.error("[downloader] Download failed:", error);
-      toast.error(i18n.t("messages:download.failed"));
+      toast.error(error?.message || i18n.t("messages:download.failed"));
     }
   } finally {
     job.running = false;
@@ -265,6 +313,7 @@ export function cancelDownload(id: string): void {
     return;
   }
   job.state = "cancelling";
+  job.abortController.abort();
   activeDownloads.delete(id);
   useTransferStore.getState().updateDownload(id, {
     status: "cancelled",
@@ -301,6 +350,131 @@ async function resolvePeer(channelId: string): Promise<any> {
   }
 }
 
+export async function resolveDownloadSegments(
+  channelId: string,
+  messageId: number,
+  options?: DownloadFileOptions
+): Promise<{ peer: any; segments: ResolvedDownloadSegment[]; totalSize: number }> {
+  const client = getClient();
+  if (!client.connected) {
+    await client.connect();
+  }
+
+  const peer = await resolvePeer(channelId);
+  const segSpecs =
+    options?.segments && options.segments.length > 0
+      ? options.segments
+      : [{ messageId, size: 0 }];
+
+  const messages = await client.getMessages(peer, {
+    ids: segSpecs.map((s) => s.messageId),
+  });
+  const byId = new Map<number, any>();
+  for (const m of Array.isArray(messages) ? messages : []) {
+    if (m?.id) byId.set(Number(m.id), m);
+  }
+
+  const resolved: ResolvedDownloadSegment[] = [];
+  let wireTotal = 0;
+
+  for (let i = 0; i < segSpecs.length; i++) {
+    const spec = segSpecs[i];
+    let msg = byId.get(Number(spec.messageId));
+    if (!msg && segSpecs.length === 1 && Array.isArray(messages) && messages.length === 1) {
+      msg = messages[0];
+    }
+    if (!msg || !msg.media) {
+      throw new Error(i18n.t("messages:download.errors.mediaNotFound"));
+    }
+    const segSize = toNumber(
+      (msg as any).file?.size ??
+        (msg.media as any)?.document?.size ??
+        spec.size ??
+        0
+    );
+    wireTotal += segSize;
+    resolved.push({
+      messageId: Number(spec.messageId),
+      media: msg.media,
+      size: segSize,
+    });
+  }
+
+  const totalSize = options?.plainSize ?? options?.enc?.plainSize ?? wireTotal;
+  return { peer, segments: resolved, totalSize };
+}
+
+/**
+ * Unified multi-segment & E2EE plaintext chunk stream used across disk streaming,
+ * preview prefix reads, ZIP bundling, and memory buffer fallbacks.
+ */
+export async function* iterateTelegramPlainChunks(params: {
+  peer: any;
+  segments: ResolvedDownloadSegment[];
+  enc?: TeleFileEncryption;
+  encryptionKey?: CryptoKey | null;
+  requestSize?: number;
+  signal?: AbortSignal;
+}): AsyncGenerator<Uint8Array> {
+  const client = getClient();
+  const decryptor =
+    params.enc && params.enc.v === 1
+      ? new StreamDecryptor(
+          params.encryptionKey ?? (await requireEncryptionKey(params.enc.s))
+        )
+      : null;
+
+  let finishedAllSegments = false;
+  try {
+    for (const seg of params.segments) {
+      if (params.signal?.aborted) {
+        throw new DOMException("Download aborted", "AbortError");
+      }
+      const iterator = iteratePipelinedDownloadParts({
+        client,
+        media: seg.media,
+        peer: params.peer,
+        messageId: seg.messageId,
+        fileSize: seg.size,
+        requestSize: params.requestSize ?? DOWNLOAD_CHUNK_SIZE,
+        concurrency: DEFAULT_DOWNLOAD_CONCURRENCY,
+        signal: params.signal,
+      });
+
+      for await (const wireChunk of iterator) {
+        if (params.signal?.aborted) {
+          throw new DOMException("Download aborted", "AbortError");
+        }
+        const outChunk = decryptor ? await decryptor.pushChunk(wireChunk) : wireChunk;
+        if (outChunk.length > 0) {
+          yield outChunk;
+        }
+      }
+    }
+
+    if (params.signal?.aborted) {
+      throw new DOMException("Download aborted", "AbortError");
+    }
+    if (decryptor) {
+      decryptor.finish();
+    }
+    finishedAllSegments = true;
+  } catch (err: any) {
+    if (
+      err instanceof EncryptionError &&
+      err.code === "invalid_passphrase" &&
+      !useEncryptionStore.getState().configured
+    ) {
+      void useEncryptionStore.getState().lock();
+    }
+    throw err;
+  } finally {
+    // Do not validate stream EOF truncation if caller intentionally broke early
+    // (e.g., prefix inspection at 64 KiB).
+    void finishedAllSegments;
+  }
+}
+
 /**
  * Downloads a file from the Telegram channel and saves it to disk using Tauri file dialog.
  */
@@ -308,34 +482,125 @@ export async function downloadFileFromTelegram(
   channelId: string,
   messageId: number,
   fileName: string,
-  onProgress?: (progress: number) => void
+  onProgress?: (progress: number) => void,
+  options?: DownloadFileOptions
 ): Promise<void> {
   try {
-    const client = getClient();
-    if (!client.connected) {
-      console.log("[downloader] Client disconnected, reconnecting...");
-      await client.connect();
+    let decryptionKey: CryptoKey | null = options?.encryptionKey ?? null;
+    if (options?.enc && options.enc.v === 1 && !decryptionKey) {
+      decryptionKey = await requireEncryptionKey(options.enc.s);
     }
 
-    const peer = await resolvePeer(channelId);
-    const messages = await client.getMessages(peer, {
-      ids: [messageId],
-    });
-
-    const message = messages[0];
-    if (!message || !message.media) {
-      throw new Error(i18n.t("messages:download.errors.mediaNotFound"));
-    }
-
-    const size = toNumber(
-      (message as any).file?.size ??
-        (message.media as any)?.document?.size ??
-        0
+    const { peer, segments, totalSize } = await resolveDownloadSegments(
+      channelId,
+      messageId,
+      options
     );
 
     // Ask where to save before burning bandwidth.
     const safeFileName =
       fileName.replace(/[/\\?%*:|"<>]/g, "_").trim() || "download";
+
+    if (isWebRuntime()) {
+      const BROWSER_DOWNLOAD_RAM_LIMIT = 1.5 * 1024 * 1024 * 1024;
+      if (totalSize > BROWSER_DOWNLOAD_RAM_LIMIT) {
+        throw new Error(
+          "Files larger than 1.5 GiB require the desktop or mobile app to stream directly to disk."
+        );
+      }
+      const id = `${channelId}:${messageId}:${Date.now()}`;
+      const ac = new AbortController();
+      let paused = false;
+      registerExternalTransferControl(id, {
+        pause: () => {
+          paused = true;
+          useTransferStore.getState().updateDownload(id, { status: "paused", speed: undefined, eta: undefined });
+        },
+        resume: () => {
+          paused = false;
+          useTransferStore.getState().updateDownload(id, { status: "downloading", error: undefined });
+        },
+        cancel: () => {
+          ac.abort();
+          unregisterExternalTransferControl(id);
+          useTransferStore.getState().updateDownload(id, { status: "cancelled", speed: undefined, eta: undefined });
+        },
+      });
+      useTransferStore.getState().addDownload({
+        id,
+        name: fileName,
+        size: totalSize,
+        progress: 0,
+        receivedBytes: 0,
+        status: "downloading",
+        channelId,
+        messageId,
+      });
+
+      const chunks: Uint8Array[] = [];
+      let received = 0;
+      let lastTickAt = Date.now();
+      let lastTickBytes = 0;
+      try {
+        for await (const chunk of iterateTelegramPlainChunks({
+          peer,
+          segments,
+          enc: options?.enc,
+          encryptionKey: decryptionKey,
+          requestSize: DOWNLOAD_CHUNK_SIZE,
+          signal: ac.signal,
+        })) {
+          while (paused && !ac.signal.aborted) {
+            await sleep(PAUSE_POLL_MS);
+          }
+          if (ac.signal.aborted) break;
+          chunks.push(chunk);
+          received += chunk.length;
+          const now = Date.now();
+          const elapsed = now - lastTickAt;
+          if (elapsed >= PROGRESS_THROTTLE_MS) {
+            const pct = Math.min(99, downloadPercent(received, totalSize));
+            const rawSpeed = downloadSpeed(received, lastTickBytes, elapsed);
+            const speed = rawSpeed > 0 ? rawSpeed : undefined;
+            const eta = speed !== undefined ? downloadEta(totalSize, received, speed) : undefined;
+            useTransferStore.getState().updateDownload(id, {
+              progress: pct,
+              receivedBytes: received,
+              speed,
+              eta,
+            });
+            onProgress?.(pct);
+            lastTickAt = now;
+            lastTickBytes = received;
+          }
+        }
+        if (ac.signal.aborted) return;
+        const blob = new Blob(chunks as BlobPart[]);
+        triggerBrowserBlobDownload(blob, safeFileName);
+        onProgress?.(100);
+        useTransferStore.getState().updateDownload(id, {
+          status: "done",
+          progress: 100,
+          receivedBytes: received,
+          speed: undefined,
+          eta: undefined,
+        });
+      } catch (err: any) {
+        if (!ac.signal.aborted) {
+          useTransferStore.getState().updateDownload(id, {
+            status: "error",
+            error: err?.message || String(err),
+            speed: undefined,
+            eta: undefined,
+          });
+          throw err;
+        }
+      } finally {
+        unregisterExternalTransferControl(id);
+      }
+      return;
+    }
+
     const targetPath = await tauriSaveDialog({
       defaultPath: safeFileName,
     });
@@ -349,7 +614,7 @@ export async function downloadFileFromTelegram(
     useTransferStore.getState().addDownload({
       id,
       name: fileName,
-      size,
+      size: totalSize,
       progress: 0,
       receivedBytes: 0,
       status: "downloading",
@@ -364,13 +629,16 @@ export async function downloadFileFromTelegram(
       name: fileName,
       targetPath,
       peer,
-      media: message.media,
-      size,
+      media: segments[0].media,
+      segments,
+      decryptor: decryptionKey ? new StreamDecryptor(decryptionKey) : null,
+      size: totalSize,
       received: 0,
       written: 0,
       pending: [],
       pendingBytes: 0,
       state: "running",
+      abortController: new AbortController(),
       running: false,
       lastTickAt: Date.now(),
       lastTickBytes: 0,
@@ -381,15 +649,17 @@ export async function downloadFileFromTelegram(
     void runDownload(job);
   } catch (error: any) {
     console.error("Failed to download file:", error);
-    toast.error(i18n.t("messages:download.failed"));
+    if (error instanceof EncryptionError && error.code === "locked") {
+      return;
+    }
+    toast.error(error?.message || i18n.t("messages:download.failed"));
     throw error;
   }
 }
 
 /**
- * Streams a Telegram file directly to a local filesystem path in bounded batches
- * without accumulating the full file in JavaScript RAM.
- * Supports AbortSignal cancellation and automatically cleans up partial temp files.
+ * Streams a Telegram file (single or multi-segment, plain or E2EE) directly to
+ * a local filesystem path in bounded batches without buffering in JavaScript RAM.
  */
 export async function streamFileToLocalPath(
   channelId: string,
@@ -397,35 +667,24 @@ export async function streamFileToLocalPath(
   targetPath: string,
   onProgress?: (progress: number) => void,
   signal?: AbortSignal,
-  expectedSize = 0
+  expectedSize = 0,
+  options?: DownloadFileOptions
 ): Promise<number> {
   if (signal?.aborted) {
     throw new DOMException("Download aborted", "AbortError");
   }
 
-  const client = getClient();
-  if (!client.connected) {
-    await client.connect();
-  }
-  if (signal?.aborted) {
-    throw new DOMException("Download aborted", "AbortError");
+  let decryptionKey: CryptoKey | null = options?.encryptionKey ?? null;
+  if (options?.enc && options.enc.v === 1 && !decryptionKey) {
+    decryptionKey = await requireEncryptionKey(options.enc.s);
   }
 
-  const peer = await resolvePeer(channelId);
-  const messages = await client.getMessages(peer, {
-    ids: [messageId],
-  });
-
-  const message = messages[0];
-  if (!message || !message.media) {
-    throw new Error(i18n.t("messages:download.errors.mediaNotFound"));
-  }
-
-  const size = toNumber(
-    (message as any).file?.size ??
-      (message.media as any)?.document?.size ??
-      expectedSize
+  const { peer, segments, totalSize } = await resolveDownloadSegments(
+    channelId,
+    messageId,
+    options
   );
+  const effectiveSize = totalSize > 0 ? totalSize : expectedSize;
 
   const batchLimit = getWriteBatchBytes();
   let pending: Uint8Array[] = [];
@@ -444,19 +703,18 @@ export async function streamFileToLocalPath(
   };
 
   try {
-    const iterator = client.iterDownload({
-      file: message.media,
+    for await (const chunk of iterateTelegramPlainChunks({
+      peer,
+      segments,
+      enc: options?.enc,
+      encryptionKey: decryptionKey,
       requestSize: DOWNLOAD_CHUNK_SIZE,
-      msgData: [peer, messageId],
-    });
-
-    for await (const rawChunk of iterator) {
+      signal,
+    })) {
       if (signal?.aborted) {
         await discardDownloadFile(targetPath);
         throw new DOMException("Download aborted", "AbortError");
       }
-      const chunk =
-        rawChunk instanceof Uint8Array ? rawChunk : new Uint8Array(rawChunk);
       pending.push(chunk);
       pendingBytes += chunk.length;
       received += chunk.length;
@@ -465,8 +723,8 @@ export async function streamFileToLocalPath(
         await flushBatch();
       }
 
-      if (size > 0) {
-        const pct = Math.min(99, downloadPercent(received, size));
+      if (effectiveSize > 0) {
+        const pct = Math.min(99, downloadPercent(received, effectiveSize));
         if (pct !== lastProgressPct) {
           lastProgressPct = pct;
           onProgress?.(pct);
@@ -494,64 +752,55 @@ export async function streamFileToLocalPath(
 }
 
 /**
- * Downloads at most `maxBytes` from the start of a Telegram file into memory.
- * Stops chunk iteration early so previewing huge text/log/CSV files or sniffing
- * unknown binary headers never downloads or buffers the entire file in RAM.
+ * Downloads at most `maxBytes` of plaintext from the start of a Telegram file into memory.
  */
 export async function downloadFilePrefixToBuffer(
   channelId: string,
   messageId: number,
   maxBytes: number,
   onProgress?: (progress: number) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  options?: DownloadFileOptions
 ): Promise<{ data: Uint8Array; truncated: boolean; totalSize: number }> {
   if (signal?.aborted) {
     throw new DOMException("Download aborted", "AbortError");
   }
 
-  const client = getClient();
-  if (!client.connected) {
-    await client.connect();
-  }
-  if (signal?.aborted) {
-    throw new DOMException("Download aborted", "AbortError");
+  let decryptionKey: CryptoKey | null = options?.encryptionKey ?? null;
+  if (options?.enc && options.enc.v === 1 && !decryptionKey) {
+    decryptionKey = await requireEncryptionKey(options.enc.s);
   }
 
-  const peer = await resolvePeer(channelId);
-  const messages = await client.getMessages(peer, {
-    ids: [messageId],
-  });
-
-  const message = messages[0];
-  if (!message || !message.media) {
-    throw new Error(i18n.t("messages:download.errors.mediaNotFound"));
-  }
-
-  const totalSize = toNumber(
-    (message as any).file?.size ??
-      (message.media as any)?.document?.size ??
-      0
+  const { peer, segments, totalSize } = await resolveDownloadSegments(
+    channelId,
+    messageId,
+    options
   );
+
+  // For E2EE streams, block 0 framing requires >= 512 KiB chunks to yield decrypted output cleanly.
   const requestSize =
-    maxBytes <= 64 * 1024 ? 64 * 1024 : DOWNLOAD_CHUNK_SIZE;
+    options?.enc?.v === 1
+      ? DOWNLOAD_CHUNK_SIZE
+      : maxBytes <= 64 * 1024
+      ? 64 * 1024
+      : DOWNLOAD_CHUNK_SIZE;
   const progressDenominator =
     totalSize > 0 ? Math.min(totalSize, maxBytes) : maxBytes;
 
   const chunks: Uint8Array[] = [];
   let received = 0;
 
-  const iterator = client.iterDownload({
-    file: message.media,
+  for await (const chunk of iterateTelegramPlainChunks({
+    peer,
+    segments,
+    enc: options?.enc,
+    encryptionKey: decryptionKey,
     requestSize,
-    msgData: [peer, messageId],
-  });
-
-  for await (const rawChunk of iterator) {
+    signal,
+  })) {
     if (signal?.aborted) {
       throw new DOMException("Download aborted", "AbortError");
     }
-    const chunk =
-      rawChunk instanceof Uint8Array ? rawChunk : new Uint8Array(rawChunk);
     if (chunk.length === 0) continue;
 
     const remaining = maxBytes - received;
@@ -587,47 +836,79 @@ export async function downloadFilePrefixToBuffer(
 }
 
 /**
- * Downloads a file's media from Telegram into a memory buffer (Uint8Array).
- * Primarily used for smaller in-app file previews (text, images, PDFs).
+ * Downloads a file's media (plain, encrypted, or multi-segment) into memory.
  */
 export async function downloadFileToBuffer(
   channelId: string,
   messageId: number,
   onProgress?: (progress: number) => void,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  options?: DownloadFileOptions
 ): Promise<Uint8Array> {
   if (signal?.aborted) {
     throw new DOMException("Download aborted", "AbortError");
   }
+
+  // Fast path: when multi-segment or E2EE is involved, stream sequentially and decrypt.
+  if (options?.enc?.v === 1 || (options?.segments && options.segments.length > 1)) {
+    let decryptionKey: CryptoKey | null = options?.encryptionKey ?? null;
+    if (options?.enc && options.enc.v === 1 && !decryptionKey) {
+      decryptionKey = await requireEncryptionKey(options.enc.s);
+    }
+    const { peer, segments, totalSize } = await resolveDownloadSegments(
+      channelId,
+      messageId,
+      options
+    );
+    const chunks: Uint8Array[] = [];
+    let received = 0;
+    for await (const chunk of iterateTelegramPlainChunks({
+      peer,
+      segments,
+      enc: options?.enc,
+      encryptionKey: decryptionKey,
+      requestSize: DOWNLOAD_CHUNK_SIZE,
+      signal,
+    })) {
+      chunks.push(chunk);
+      received += chunk.length;
+      if (totalSize > 0) {
+        onProgress?.(Math.min(99, downloadPercent(received, totalSize)));
+      }
+    }
+    if (received <= 0) {
+      throw new Error(i18n.t("messages:download.errors.mediaFailed"));
+    }
+    onProgress?.(100);
+    return concatChunks(chunks, received);
+  }
+
   const client = getClient();
-  
   try {
     if (!client.connected) {
-      console.log("[downloader] Client disconnected, reconnecting...");
       await client.connect();
     }
     if (signal?.aborted) {
       throw new DOMException("Download aborted", "AbortError");
     }
-    
+
     const peer = await resolvePeer(channelId);
     const messages = await client.getMessages(peer, {
       ids: [messageId],
     });
-    
+
     const message = messages[0];
     if (!message || !message.media) {
       throw new Error(i18n.t("messages:download.errors.mediaNotFound"));
     }
-    
+
     const buffer = (await client.downloadMedia(message.media, {
       progressCallback: (downloadedBytes: any, totalBytes: any) => {
         if (signal?.aborted) return;
         const downloaded = toNumber(downloadedBytes);
         const total = toNumber(totalBytes);
         if (total > 0) {
-          const pct = Math.round((downloaded / total) * 100);
-          onProgress?.(pct);
+          onProgress?.(Math.round((downloaded / total) * 100));
         }
       },
     })) as any;
@@ -635,11 +916,11 @@ export async function downloadFileToBuffer(
     if (signal?.aborted) {
       throw new DOMException("Download aborted", "AbortError");
     }
-    
+
     if (!buffer) {
       throw new Error(i18n.t("messages:download.errors.mediaFailed"));
     }
-    
+
     if (typeof Buffer !== "undefined" && Buffer.isBuffer(buffer)) {
       return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
     } else if (buffer instanceof Uint8Array) {

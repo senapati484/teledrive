@@ -9,7 +9,8 @@
     "appearance": "Tampilan",
     "language": "Bahasa",
     "storage": "Penyimpanan",
-    "about": "Tentang"
+    "about": "Tentang",
+    "encryption": "Enkripsi"
   },
   "language": {
     "title": "Bahasa",
@@ -277,6 +278,53 @@
       "openLinkFailed": "Gagal membuka tautan.",
       "upToDate": "Aplikasi sudah versi terbaru!",
       "latestVersion": "TeleDrive v{{version}} adalah versi terbaru."
+    }
+  },
+  "encryption": {
+    "title": "Enkripsi Zero-Knowledge (E2EE)",
+    "description": "Enkripsi file secara lokal dengan AES-256-GCM sebelum dikirim ke Telegram.",
+    "setupTitle": "Atur Frasa Sandi Enkripsi",
+    "setupHint": "TeleDrive tidak pernah mengirim atau menyimpan frasa sandi Anda di server mana pun.",
+    "newPassphrasePlaceholder": "Buat frasa sandi (min. 6 karakter)",
+    "confirmPassphrasePlaceholder": "Konfirmasi frasa sandi",
+    "passphrasePlaceholder": "Masukkan frasa sandi enkripsi",
+    "encryptNewByDefault": "Enkripsi semua unggahan baru secara otomatis",
+    "rememberOnDevice": "Ingat kunci secara aman di perangkat ini",
+    "enableButton": "Aktifkan Enkripsi",
+    "statusUnlocked": "Brankas Enkripsi Terbuka",
+    "statusLocked": "Brankas Enkripsi Terkunci",
+    "unlockedSubtitle": "File terenkripsi didekripsi otomatis saat pratinjau dan unduh.",
+    "lockedSubtitle": "Masukkan frasa sandi untuk membuka atau mengunggah file terenkripsi.",
+    "lockButton": "Kunci Brankas",
+    "unlockButton": "Buka",
+    "encryptNewTitle": "Enkripsi unggahan baru",
+    "encryptNewHelp": "File baru diunggah dengan AES-256-GCM dan nama saluran anonim.",
+    "rememberTitle": "Ingat kunci di perangkat ini",
+    "rememberHelp": "Membuka brankas secara otomatis saat TeleDrive dibuka.",
+    "on": "Aktif",
+    "off": "Nonaktif",
+    "disableButton": "Nonaktifkan Pengaturan Enkripsi",
+    "disableConfirm": "Nonaktifkan",
+    "unlockDialog": {
+      "title": "Buka File Terenkripsi",
+      "description": "Masukkan frasa sandi E2EE Anda untuk mendekripsi file ini secara lokal."
+    },
+    "disableDialog": {
+      "title": "Nonaktifkan Brankas Enkripsi Lokal?",
+      "description": "File terenkripsi yang ada tetap terenkripsi dan akan meminta frasa sandi asli saat dibuka."
+    },
+    "errors": {
+      "tooShort": "Frasa sandi minimal 6 karakter.",
+      "mismatch": "Frasa sandi tidak cocok.",
+      "wrongPassphrase": "Frasa sandi salah. Silakan coba lagi.",
+      "setupFailed": "Gagal menyiapkan enkripsi.",
+      "unlockFailed": "Tidak dapat membuka brankas."
+    },
+    "toasts": {
+      "enabled": "Enkripsi Zero-Knowledge diaktifkan.",
+      "unlocked": "Brankas enkripsi dibuka.",
+      "locked": "Brankas enkripsi dikunci.",
+      "disabled": "Pengaturan enkripsi lokal dihapus."
     }
   }
 }

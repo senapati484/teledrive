@@ -78,7 +78,15 @@
     "badge": "ARCHIVE {{ext}}",
     "description": "Les archives compressées ne peuvent pas être prévisualisées directement. Téléchargez cette archive pour extraire et afficher son contenu.",
     "download": "Télécharger l'archive",
-    "openInSystem": "Ouvrir dans l'application système"
+    "openInSystem": "Ouvrir dans l'application système",
+    "entryTooLarge": "Le fichier dépasse la limite d'aperçu de 25 Mo. Utilisez Extraire pour l'enregistrer localement.",
+    "extractFailed": "Impossible d'extraire le fichier.",
+    "binaryEntryNotice": "L'entrée binaire ne peut pas être affichée directement. Extrayez-la pour l'ouvrir localement.",
+    "backToList": "Retour aux fichiers",
+    "summary": "{{count}} fichiers · {{unpacked}} décompressés ({{packed}} compressés)",
+    "searchPlaceholder": "Filtrer les fichiers de l'archive…",
+    "noMatchingEntries": "Aucun fichier ne correspond à votre filtre.",
+    "extractFile": "Extraire le fichier"
   },
   "unsupported": {
     "description": "Aucun aperçu n'est disponible pour ce type de fichier. Vous pouvez le télécharger et l'ouvrir dans une application compatible.",
@@ -158,5 +166,10 @@
     "ariaLabel": "Visualiseur de code",
     "largeFile_one": "Fichier volumineux ({{count, number}} ligne) — coloration syntaxique désactivée pour la performance",
     "largeFile_other": "Fichier volumineux ({{count, number}} lignes) — coloration syntaxique désactivée pour la performance"
+  },
+  "document": {
+    "slideLabel": "Diapositive {{number}} sur {{total}}",
+    "emptySlide": "Diapositive vide",
+    "speakerNotes": "Notes :"
   }
 }

@@ -53,8 +53,8 @@ vi.mock("../indexFormat", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../indexFormat")>();
   return {
     ...actual,
-    packChunks: (files: TeleFile[]) => {
-      const result = actual.packChunks(files);
+    packChunks: (files: TeleFile[], previousChunks?: TeleFile[][]) => {
+      const result = actual.packChunks(files, previousChunks);
       return h.forceOmit ? { ...result, manifestOmitted: true } : result;
     },
   };
@@ -465,5 +465,20 @@ describe("atomic index writer", () => {
     expect(fake.calls.find((c) => c.op === "delete")!.ids!.sort()).toEqual(
       [...ids].sort()
     );
+  });
+
+  it("uses single-chunk fast edit when deleting from chunk 0 on a multi-chunk index", async () => {
+    const files = makeFiles(500);
+    const { chunks, ids } = seed(files);
+    expect(chunks.length).toBeGreaterThanOrEqual(4);
+    const next = files.slice(1).map((f) => ({ ...f }));
+    fake.calls = [];
+
+    await enqueueSave(CHANNEL, next);
+
+    expect(edits()).toHaveLength(1);
+    expect(edits()[0].id).toBe(ids[0]);
+    expect(fake.calls.some((c) => c.op === "send")).toBe(false);
+    expect(fake.calls.some((c) => c.op === "delete")).toBe(false);
   });
 });

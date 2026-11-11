@@ -45,7 +45,8 @@
     "failed": "Failed to upload \"{{name}}\": {{message}}",
     "emptyFile": "\"{{name}}\" is empty. Empty files (0 bytes) are not supported by Telegram.",
     "exceedsFreeLimit": "\"{{name}}\" exceeds Telegram's ~2 GB upload limit for standard accounts (Telegram Premium supports up to ~4 GB).",
-    "exceedsPremiumLimit": "\"{{name}}\" exceeds Telegram's ~4 GB single-file upload limit."
+    "exceedsPremiumLimit": "\"{{name}}\" exceeds Telegram's ~4 GB single-file upload limit.",
+    "duplicateSkipped": "\"{{name}}\" already exists in this folder with identical content."
   },
   "download": {
     "cancelled": "Download cancelled.",

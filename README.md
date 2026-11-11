@@ -55,7 +55,7 @@ Zero server costs. Zero subscriptions. Direct MTProto encryption straight to Tel
 
 <br/>
 
-[**Website**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**Downloads**](#-downloads) • [**What's New in v0.1.3 📝**](https://github.com/senapati484/teledrive/releases/tag/v0.1.3) • [**Beta Testing Poll 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**Video Demo**](#-video-walkthrough--demo) • [**Report a Bug**](https://github.com/senapati484/teledrive/issues/new/choose) • [**Request a Feature**](https://github.com/senapati484/teledrive/issues/new/choose)
+[**Website**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**Downloads**](#-downloads) • [**Architecture Docs 🏗️**](docs/ARCHITECTURE.md) • [**Star History ⭐**](#-star-history) • [**What's New in v0.1.3 📝**](https://github.com/senapati484/teledrive/releases/tag/v0.1.3) • [**Beta Testing Poll 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**Video Demo**](#-video-walkthrough--demo) • [**Report a Bug**](https://github.com/senapati484/teledrive/issues/new/choose) • [**Request a Feature**](https://github.com/senapati484/teledrive/issues/new/choose)
 
 </div>
 
@@ -88,8 +88,8 @@ Zero server costs. Zero subscriptions. Direct MTProto encryption straight to Tel
 Telegram offers virtually unlimited cloud storage in private channels, but lacks a folder hierarchy, virtual catalog, and drive-style desktop workflow. **TeleDrive** bridges that gap:
 
 - **Zero Relay Backend**: All file operations and MTProto connections happen directly from your local machine to Telegram data centers.
-- **Virtual Drive**: Nested directories, search, starred files, archive, and trash are indexed in a pinned catalog inside your channel.
-- **Hardware-Encrypted Vault**: Credentials and session keys are locked in Tauri Stronghold using Argon2id-derived keys.
+- **Virtual Drive**: Nested directories, instant search, starred files, archive, and trash are indexed in a gzipped Schema v3 catalog pinned inside your channel and cached locally in IndexedDB.
+- **Client-Side Privacy & Vault**: Local credentials reside in an atomic Rust key-value vault / Tauri Stronghold snapshot, with optional zero-knowledge `TDE1` AES-256-GCM encryption for uploaded files.
 - **Multi-Account**: Switch between multiple phone numbers with complete session and local vault isolation.
 
 ---
@@ -137,12 +137,16 @@ shasum -a 256 <filename>
 
 ## ✨ Features
 
-- **Unlimited Cloud**: Uses your private Telegram channel as the backing store with 0 recurring fees.
-- **Native Cross-Platform**: Ultra-lightweight binaries across 5 platforms (macOS, Windows, Linux, Android, and iOS) built on Tauri v2 & Rust.
+- **Unlimited Cloud**: Uses your private Telegram channel as the backing store with `0` recurring fees, SHA-256 duplicate detection (`<= 2 GiB` zero-upload message cloning), and resumable upload checkpoints.
+- **Bypass Single-File Caps (`> 2/4 GB`)**: Automatically splits oversized files into deterministic ordered segments and seamlessly streams them back together on download.
+- **Optional Zero-Knowledge E2EE (`TDE1`)**: Client-side PBKDF2-SHA256 + 512 KiB chunked AES-256-GCM encryption with random-access block seeking.
+- **Universal In-App Previewer & Grid Thumbnails**:
+  - Real Grid thumbnails for images, browser-playable videos, and PDFs (page 1).
+  - Native viewers for PDFs (`pdf.js`), Office & OpenDocument files (`.docx`, `.odt`, `.rtf`, `.epub`), multi-sheet spreadsheets (`.xlsx`, `.ods`, `.csv`, `.tsv`), presentation decks (`.pptx`, `.odp`), interactive archives (`.zip`, `.tar`, `.tar.gz`, `.tgz`, `.gz`, `.apk`, `.jar`), sandboxed HTML, CodeMirror 6 code editing (50+ languages), UTF-16 text, HEIC images, and media streaming.
+- **Native Cross-Platform**: Lightweight binaries across 5 platforms (macOS, Windows, Linux, Android, and iOS) built on Tauri v2 & Rust.
+- **Automated Folder Backups & Cross-Device Sync**: Journaled `v2` local manifests for crash-safe incremental folder backups and read-only multi-device channel delta polling.
 - **11 Localized Languages**: Full native UI support for English, Portuguese, Spanish, Traditional Chinese, Simplified Chinese, Hindi, French, Indonesian, Russian, Japanese, and German.
-- **Direct MTProto Streaming**: GramJS engine streams 512 KB chunks directly with up to 4 concurrent upload threads.
-- **Privacy-First**: No TeleDrive tracking, telemetry, or middleman servers. Your files stay between you and Telegram.
-- **Instant Search & Organization**: Breadcrumbs, file type filters, grid/list view, and keyboard navigation.
+- **Pipelined MTProto Engine**: Direct 512 KiB chunk streaming with up to `3` concurrent MTProto `upload.GetFile` / `SaveBigFilePart` workers and adaptive `FloodWait` rate-limit handling.
 
 ---
 
@@ -168,8 +172,10 @@ shasum -a 256 <filename>
 ```
 
 1. **Direct Connection**: Authenticates directly with Telegram's MTProto servers over TLS port 443.
-2. **Chunked Media Upload**: Slices large files into 512 KB fragments streamed concurrently.
-3. **Pinned Catalog Index**: Maintains an encrypted JSON descriptor catalog pinned to your private channel for directory navigation across devices.
+2. **Pipelined Media Transfer**: Slices files into 512 KiB chunks with resumable checkpoints, optional `TDE1` AEAD encryption, and multi-segment splitting for files past 2/4 GiB.
+3. **Pinned Catalog Index & Local Cache**: Maintains a gzip-compressed Schema v3 JSON index pinned to your channel via a coalescing single-writer `IndexQueue`, hydrated on startup from IndexedDB (`teledrive_cache_v1`).
+
+> 📘 **Deep Dive:** Explore system boundaries, sequence diagrams, Tauri Rust IPC commands, encryption wire layout, and module references in the [**Technical Architecture & Engineering Guide (`docs/ARCHITECTURE.md`)**](docs/ARCHITECTURE.md).
 
 ---
 
@@ -252,8 +258,9 @@ npm test
 # Verify TypeScript types and Vite bundle
 npm run build
 
-# Verify Rust backend compilation
+# Verify and test Rust backend compilation
 cargo check --manifest-path src-tauri/Cargo.toml
+cargo test --manifest-path src-tauri/Cargo.toml
 ```
 
 ---
@@ -301,7 +308,8 @@ We welcome issues, feedback, ideas, and pull requests!
 
 - 🧪 **Beta Testing**: [Want to beta test the next version of TeleDrive? 🧪](https://github.com/senapati484/teledrive/discussions/35) — Vote in the community poll!
 - 💬 **Discussions**: Join our [GitHub Discussions](https://github.com/senapati484/teledrive/discussions) to ask questions or suggest ideas.
-- 🛠️ **Development Guide**: Read [**CONTRIBUTING.md**](CONTRIBUTING.md) for local environment setup, architecture notes, and PR guidelines.
+- 🛠️ **Development Guide**: Read [**CONTRIBUTING.md**](CONTRIBUTING.md) for local environment setup, PR guidelines, and testing workflows.
+- 🏗️ **Architecture Reference**: Read [**docs/ARCHITECTURE.md**](docs/ARCHITECTURE.md) for deep technical documentation across the MTProto engine, Schema v3 catalog, E2EE wire format, and Rust core.
 - 🐛 **Report Issues**: Use our structured [Issue Forms](https://github.com/senapati484/teledrive/issues/new/choose).
 
 ---
@@ -311,6 +319,18 @@ We welcome issues, feedback, ideas, and pull requests!
 TeleDrive is open-source software licensed under the [GNU GPL-3.0 License](./LICENSE).
 
 *Disclaimer: TeleDrive is an independent open-source project and is not affiliated with, sponsored by, or endorsed by Telegram FZ-LLC. Storing large volumes of files is subject to Telegram's Terms of Service and API fair-use policies.*
+
+---
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=senapati484%2Fteledrive&type=date&releases=&legend=bottom-right">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&theme=dark&legend=bottom-right" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&legend=bottom-right" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&legend=bottom-right" />
+ </picture>
+</a>
 
 ---
 

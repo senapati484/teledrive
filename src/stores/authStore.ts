@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { clearCachedFilesSnapshot } from "../lib/storage/localIndexCache";
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -22,11 +23,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ sessionString, phoneNumber, isAuthenticated: true }),
   logout: (options) => {
     if (!options?.preserveCache) {
-      try {
-        localStorage.removeItem("teledrive_cached_files");
-      } catch (err) {
-        console.warn("[authStore] Failed to clear cached files on logout:", err);
-      }
+      void clearCachedFilesSnapshot();
     }
     set({
       sessionString: null,

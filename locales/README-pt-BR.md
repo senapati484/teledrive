@@ -57,7 +57,7 @@ Zero custos com servidores. Zero assinaturas. Criptografia MTProto direta para o
 
 <br/><br/>
 
-[**Site Oficial**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**Downloads**](#-downloads) • [**Novidades na v0.1.3 📝**](https://github.com/senapati484/teledrive/releases/tag/v0.1.3) • [**Beta Testing Poll 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**Vídeo Demonstrativo**](#-vídeo-demonstrativo) • [**Reportar um Erro**](https://github.com/senapati484/teledrive/issues/new/choose) • [**Sugerir Funcionalidade**](https://github.com/senapati484/teledrive/issues/new/choose)
+[**Site Oficial**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**Arquitetura 🏗️**](../docs/ARCHITECTURE.md) • [**Star History ⭐**](#star-history) • [**Downloads**](#-downloads) • [**Novidades na v0.1.3 📝**](https://github.com/senapati484/teledrive/releases/tag/v0.1.3) • [**Beta Testing Poll 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**Vídeo Demonstrativo**](#-vídeo-demonstrativo) • [**Reportar um Erro**](https://github.com/senapati484/teledrive/issues/new/choose) • [**Sugerir Funcionalidade**](https://github.com/senapati484/teledrive/issues/new/choose)
 
 </div>
 
@@ -89,7 +89,7 @@ O Telegram oferece armazenamento praticamente ilimitado em canais privados, mas 
 
 - **Zero Servidores Intermediários**: Todas as operações de arquivos e conexões MTProto acontecem diretamente da sua máquina local para os data centers do Telegram.
 - **Drive Virtual**: Pastas aninhadas, pesquisa instantânea, favoritos, arquivo e lixeira são indexados em um catálogo fixado dentro do seu canal privado.
-- **Cofre Criptografado por Hardware**: Suas credenciais e chaves de sessão ficam protegidas no Tauri Stronghold usando chaves derivadas com Argon2id.
+- **Cofre Local e E2EE (`TDE1`)**: Credenciais isoladas no cofre atômico Rust / Tauri Stronghold, com criptografia opcional no cliente PBKDF2-SHA256 + AES-256-GCM (`TDE1`) para arquivos.
 - **Múltiplas Contas**: Alterne entre vários números de telefone com isolamento completo de sessão e cofre local.
 
 ---
@@ -271,7 +271,7 @@ Contribuições, sugestões e correções são muito bem-vindas!
 
 - 🧪 **Beta Testing**: [Want to beta test the next version of TeleDrive? 🧪](https://github.com/senapati484/teledrive/discussions/35) — Vote in the community poll!
 1. Faça um Fork do repositório e crie uma branch: `git checkout -b feat/minha-feature`
-2. Execute os linters: `npm run lint` e `cargo fmt`
+2. Execute os linters: `npm test && npm run build` e `cargo fmt`
 3. Faça o commit com mensagens semânticas (ex: `feat(ui): ...`)
 4. Abra um Pull Request
 
@@ -282,6 +282,18 @@ Contribuições, sugestões e correções são muito bem-vindas!
 O TeleDrive é um software de código aberto licenciado sob a [GNU GPL-3.0 License](../LICENSE).
 
 *Aviso Legal: O TeleDrive é um projeto independente de código aberto e não é afiliado, patrocinado ou endossado pela Telegram FZ-LLC. O armazenamento de grandes volumes de arquivos está sujeito aos Termos de Serviço e às políticas de uso justo da API do Telegram.*
+
+---
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=senapati484%2Fteledrive&type=date&releases=&legend=bottom-right">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&theme=dark&legend=bottom-right" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&legend=bottom-right" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&legend=bottom-right" />
+ </picture>
+</a>
 
 ---
 

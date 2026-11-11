@@ -21,7 +21,7 @@ import { getClient } from "../telegram/client";
 import { resolveChannelInputPeer } from "../storage/metadataStore";
 import { withTelegramRetry } from "../telegram/rateLimit";
 import { useFileStore } from "@/stores/fileStore";
-import { invoke } from "@tauri-apps/api/core";
+import { logVaultState } from "../runtime/bridge";
 import type { TeleFile } from "../types";
 
 const SNAPSHOT_PREFIX = "teledrive_snapshot_v1";
@@ -118,9 +118,7 @@ export async function takeSnapshot(
   } catch (err) {
     errorMsg = err instanceof Error ? err.message : String(err);
     console.error("[backup] snapshot send failed:", err);
-    await invoke("log_vault_state", {
-      state: `BACKUP_SNAPSHOT_FAILED error=${errorMsg}`,
-    }).catch(() => {});
+    await logVaultState(`BACKUP_SNAPSHOT_FAILED error=${errorMsg}`);
   }
 
 

@@ -766,18 +766,30 @@ export async function discoverIndex(channelId: string): Promise<DiscoveryResult>
 
   const fetchChunkMessages = async (ids: number[]): Promise<void> => {
     const missing = ids.filter((id) => !messagesById.has(id));
+    if (missing.length === 0) return;
+
+    const batches: number[][] = [];
     for (let i = 0; i < missing.length; i += 100) {
-      const batch = missing.slice(i, i + 100);
-      try {
-        const result = await withTimeout(
-          client.getMessages(peer, { ids: batch }),
-          MANIFEST_FETCH_TIMEOUT_MS,
-          "client.getMessages(ids)"
-        );
-        if (Array.isArray(result)) addMessages(result);
-      } catch (err) {
-        console.warn("[metadataStore] discoverIndex: chunk id fetch failed:", err);
-      }
+      batches.push(missing.slice(i, i + 100));
+    }
+
+    const CHUNK_FETCH_CONCURRENCY = 3;
+    for (let i = 0; i < batches.length; i += CHUNK_FETCH_CONCURRENCY) {
+      const windowBatches = batches.slice(i, i + CHUNK_FETCH_CONCURRENCY);
+      await Promise.allSettled(
+        windowBatches.map(async (batch) => {
+          try {
+            const result = await withTimeout(
+              client.getMessages(peer, { ids: batch }),
+              MANIFEST_FETCH_TIMEOUT_MS,
+              "client.getMessages(ids)"
+            );
+            if (Array.isArray(result)) addMessages(result);
+          } catch (err) {
+            console.warn("[metadataStore] discoverIndex: chunk id fetch failed:", err);
+          }
+        })
+      );
     }
   };
 

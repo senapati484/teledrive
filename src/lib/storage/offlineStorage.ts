@@ -1,6 +1,10 @@
 import { appLocalDataDir, join } from "@tauri-apps/api/path";
 import { readFile, remove, mkdir, exists } from "@tauri-apps/plugin-fs";
-import { streamFileToLocalPath } from "../telegram/downloader";
+import { isWebRuntime } from "../runtime/bridge";
+import {
+  streamFileToLocalPath,
+  type DownloadFileOptions,
+} from "../telegram/downloader";
 import { TeleFile } from "../types";
 
 /**
@@ -35,10 +39,11 @@ export async function cacheFileOffline(
   channelId: string,
   messageId: number,
   fileId: string,
-  onProgress?: (progress: number) => void
+  onProgress?: (progress: number) => void,
+  options?: DownloadFileOptions
 ): Promise<void> {
   const localPath = await getOfflineFilePath(fileId);
-  await streamFileToLocalPath(channelId, messageId, localPath, onProgress);
+  await streamFileToLocalPath(channelId, messageId, localPath, onProgress, undefined, 0, options);
 }
 
 /**
@@ -82,6 +87,7 @@ export async function isCachedOffline(fileId: string): Promise<boolean> {
  * - If a file is marked offline but missing from disk, and the client is online, it downloads it in the background.
  */
 export async function syncOfflineStatusWithDisk(files: TeleFile[]): Promise<TeleFile[]> {
+  if (isWebRuntime()) return files;
   return await Promise.all(
     files.map(async (file) => {
       // Folders/directories cannot be cached offline

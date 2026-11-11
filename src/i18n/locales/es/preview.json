@@ -78,7 +78,15 @@
     "badge": "ARCHIVO {{ext}}",
     "description": "Los archivos comprimidos no se pueden previsualizar directamente en el navegador. Descarga este archivo para extraerlo y ver su contenido en tu ordenador.",
     "download": "Descargar archivo",
-    "openInSystem": "Abrir en aplicación del sistema"
+    "openInSystem": "Abrir en aplicación del sistema",
+    "entryTooLarge": "El archivo supera el límite de 25 MB para vista previa. Usa Extraer para guardarlo localmente.",
+    "extractFailed": "No se pudo extraer el archivo.",
+    "binaryEntryNotice": "Esta entrada binaria no se puede mostrar directamente. Extráela para verla localmente.",
+    "backToList": "Volver a archivos",
+    "summary": "{{count}} archivos · {{unpacked}} descomprimidos ({{packed}} comprimido)",
+    "searchPlaceholder": "Filtrar archivos del archivo…",
+    "noMatchingEntries": "Ningún archivo coincide con tu filtro.",
+    "extractFile": "Extraer archivo"
   },
   "unsupported": {
     "description": "No hay vista previa disponible para este tipo de archivo. Puedes descargarlo y abrirlo en una aplicación compatible de tu sistema.",
@@ -155,5 +163,10 @@
     "ariaLabel": "Visor de código",
     "largeFile_one": "Archivo grande ({{count, number}} línea): se omitió el resaltado de sintaxis para mejorar el rendimiento",
     "largeFile_other": "Archivo grande ({{count, number}} líneas): se omitió el resaltado de sintaxis para mejorar el rendimiento"
+  },
+  "document": {
+    "slideLabel": "Diapositiva {{number}} de {{total}}",
+    "emptySlide": "Diapositiva vacía",
+    "speakerNotes": "Notas:"
   }
 }

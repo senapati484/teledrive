@@ -57,7 +57,7 @@
 
 <br/><br/>
 
-[**वेबसाइट**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**डाउनलोड**](#-डाउनलोड) • [**बीटा टेस्टिंग पोल 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**वीडियो डेमो**](#-वीडियो-वॉकथ्रू-और-डेमो) • [**बग रिपोर्ट करें**](https://github.com/senapati484/teledrive/issues/new/choose) • [**सुविधा का अनुरोध करें**](https://github.com/senapati484/teledrive/issues/new/choose)
+[**वेबसाइट**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**आर्किटेक्चर 🏗️**](../docs/ARCHITECTURE.md) • [**Star History ⭐**](#star-history) • [**डाउनलोड**](#-डाउनलोड) • [**बीटा टेस्टिंग पोल 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**वीडियो डेमो**](#-वीडियो-वॉकथ्रू-और-डेमो) • [**बग रिपोर्ट करें**](https://github.com/senapati484/teledrive/issues/new/choose) • [**सुविधा का अनुरोध करें**](https://github.com/senapati484/teledrive/issues/new/choose)
 
 </div>
 
@@ -89,7 +89,7 @@
 
 - **शून्य मध्यस्थ सर्वर**: सभी फ़ाइल संचालन और MTProto कनेक्शन सीधे आपकी स्थानीय मशीन से टेलीग्राम डेटा केंद्रों तक होते हैं।
 - **वर्चुअल ड्राइव**: नेस्टेड डायरेक्टरीज़, त्वरित खोज, तारांकित फ़ाइलें, संग्रह और रीसायकल बिन आपके चैनल में पिन किए गए कैटलॉग में अनुक्रमित होते हैं।
-- **हार्डवेयर-एन्क्रिप्टेड वॉल्ट**: क्रेडेंशियल और सत्र कुंजी Argon2id-व्युत्पन्न कुंजियों का उपयोग करके Tauri Stronghold में सुरक्षित रूप से बंद हैं।
+- **स्थानीय वॉल्ट और E2EE (`TDE1`)**: क्रेडेंशियल Rust वॉल्ट / Tauri Stronghold में सुरक्षित रहते हैं, तथा वैकल्पिक क्लाइंट-साइड PBKDF2-SHA256 + AES-256-GCM (`TDE1`) एन्क्रिप्शन उपलब्ध है।
 - **मल्टी-अकाउंट**: पूर्ण सत्र और स्थानीय वॉल्ट अलगाव के साथ कई फ़ोन नंबरों के बीच सहजता से स्विच करें।
 
 ---
@@ -271,7 +271,7 @@ TeleDrive में स्थानीय परीक्षण के लिए
 
 - 🧪 **Beta Testing**: [Want to beta test the next version of TeleDrive? 🧪](https://github.com/senapati484/teledrive/discussions/35) — Vote in the community poll!
 1. इस रेपो को Fork करें और अपनी शाखा बनाएं: `git checkout -b feat/my-feature`
-2. कोड लिंटिंग चलाएं: `npm run lint` और `cargo fmt`
+2. कोड लिंटिंग चलाएं: `npm test && npm run build` और `cargo fmt`
 3. अर्थपूर्ण कमिट संदेश लिखें (उदा. `feat(ui): ...`)
 4. एक Pull Request खोलें
 
@@ -282,6 +282,18 @@ TeleDrive में स्थानीय परीक्षण के लिए
 TeleDrive [GNU GPL-3.0 License](../LICENSE) के तहत लाइसेंस प्राप्त एक ओपन-सोर्स सॉफ़्टवेयर है।
 
 *अस्वीकरण: TeleDrive एक स्वतंत्र ओपन-सोर्स प्रोजेक्ट है और यह Telegram FZ-LLC द्वारा प्रायोजित, समर्थित या उससे संबद्ध नहीं है। बड़ी फ़ाइलों का भंडारण टेलीग्राम की सेवा की शर्तों और API निष्पक्ष उपयोग नीतियों के अधीन है।*
+
+---
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=senapati484%2Fteledrive&type=date&releases=&legend=bottom-right">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&theme=dark&legend=bottom-right" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&legend=bottom-right" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&legend=bottom-right" />
+ </picture>
+</a>
 
 ---
 

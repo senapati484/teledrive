@@ -45,9 +45,9 @@ import {
   parseFloodWaitSeconds,
   FLOOD_WAIT_CAP_SECONDS,
 } from "../telegram/rateLimit";
-import { invoke } from "@tauri-apps/api/core";
 import i18n from "@/i18n";
 import { IndexNotReadyError, isIndexReady } from "../telegram/indexReadiness";
+import { logVaultState } from "../runtime/bridge";
 
 export { IndexNotReadyError } from "../telegram/indexReadiness";
 
@@ -540,11 +540,11 @@ class ChannelQueue {
           err?.message ?? String(err)
         }`
       );
-      void invoke("log_vault_state", {
-        state: `INDEX_QUEUE_GIVE_UP retries=${MAX_TRANSIENT_RETRIES} last_err=${
+      void logVaultState(
+        `INDEX_QUEUE_GIVE_UP retries=${MAX_TRANSIENT_RETRIES} last_err=${
           err?.message ?? String(err)
-        }`,
-      }).catch(() => {});
+        }`
+      );
       if (this.retryingEntry) {
         // Keep the newest state instead of dropping it. The caller is
         // rejected so uploads/backups can pause, but the UI keeps the
@@ -672,7 +672,13 @@ class ChannelQueue {
       }
     }
 
-    const { chunks, manifestOmitted } = packChunks(state);
+    const prevChunks = this.known?.texts.map((text, idx) =>
+      text
+        ? parseIndexMessage({ id: this.known!.ids[idx] || idx + 1, text })
+            ?.files ?? []
+        : []
+    );
+    const { chunks, manifestOmitted } = packChunks(state, prevChunks);
     const totalChunks = chunks.length;
     if (manifestOmitted) {
       await this.log(
@@ -1131,7 +1137,7 @@ class ChannelQueue {
   }
 
   private async log(state: string): Promise<void> {
-    await invoke("log_vault_state", { state }).catch(() => {});
+    await logVaultState(state);
   }
 }
 

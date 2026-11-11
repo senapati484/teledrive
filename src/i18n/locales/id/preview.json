@@ -78,7 +78,15 @@
     "badge": "ARSIP {{ext}}",
     "description": "Arsip terkompresi tidak dapat dipratinjau langsung di aplikasi. Unduh arsip ini untuk mengekstrak dan melihat isinya.",
     "download": "Unduh Arsip",
-    "openInSystem": "Buka di Aplikasi Sistem"
+    "openInSystem": "Buka di Aplikasi Sistem",
+    "entryTooLarge": "File melebihi batas pratinjau 25 MB. Gunakan Ekstrak untuk menyimpannya secara lokal.",
+    "extractFailed": "Tidak dapat mengekstrak file.",
+    "binaryEntryNotice": "Entri biner tidak dapat ditampilkan langsung. Ekstrak untuk melihat secara lokal.",
+    "backToList": "Kembali ke daftar file",
+    "summary": "{{count}} file · {{unpacked}} diekstrak ({{packed}} terkompresi)",
+    "searchPlaceholder": "Filter file arsip…",
+    "noMatchingEntries": "Tidak ada file yang cocok dengan filter Anda.",
+    "extractFile": "Ekstrak file"
   },
   "unsupported": {
     "description": "Tidak ada pratinjau yang tersedia untuk jenis berkas ini. Anda dapat mengunduh dan membukanya di aplikasi yang kompatibel.",
@@ -158,5 +166,10 @@
     "ariaLabel": "Penampil kode",
     "largeFile_one": "File besar ({{count, number}} baris) — penyorotan sintaksis dilewati untuk performa",
     "largeFile_other": "File besar ({{count, number}} baris) — penyorotan sintaksis dilewati untuk performa"
+  },
+  "document": {
+    "slideLabel": "Slide {{number}} dari {{total}}",
+    "emptySlide": "Slide kosong",
+    "speakerNotes": "Catatan:"
   }
 }

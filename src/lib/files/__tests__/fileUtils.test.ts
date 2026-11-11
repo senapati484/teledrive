@@ -4,6 +4,9 @@ import {
   getFileCategory,
   getMediaMimeType,
   NON_PREVIEWABLE_BINARY_EXTS,
+  PRESENTATION_EXTS,
+  RICH_DOCUMENT_EXTS,
+  SPREADSHEET_WORKBOOK_EXTS,
   UNRENDERABLE_IMAGE_EXTS,
 } from "../fileUtils";
 
@@ -48,13 +51,16 @@ describe("preview classification helpers", () => {
     }
   });
 
-  it("flags installers, office docs, databases, and fonts in NON_PREVIEWABLE_BINARY_EXTS", () => {
-    for (const ext of ["exe", "msi", "appimage", "docx", "xlsx", "pptx", "sqlite", "wasm", "woff2"]) {
+  it("flags installers, legacy OLE binaries, databases, and fonts in NON_PREVIEWABLE_BINARY_EXTS while excluding rich previewable docs", () => {
+    for (const ext of ["exe", "msi", "appimage", "doc", "xls", "ppt", "sqlite", "wasm", "woff2"]) {
       expect(NON_PREVIEWABLE_BINARY_EXTS.has(ext)).toBe(true);
     }
-    for (const ext of ["pdf", "txt", "json", "mp4", "mkv", "png", "csv"]) {
+    for (const ext of ["pdf", "txt", "json", "mp4", "mkv", "png", "csv", "docx", "xlsx", "pptx", "odt", "ods", "odp", "rtf", "epub"]) {
       expect(NON_PREVIEWABLE_BINARY_EXTS.has(ext)).toBe(false);
     }
+    expect(RICH_DOCUMENT_EXTS.has("docx")).toBe(true);
+    expect(SPREADSHEET_WORKBOOK_EXTS.has("xlsx")).toBe(true);
+    expect(PRESENTATION_EXTS.has("pptx")).toBe(true);
   });
 
   it("detects binary payloads via containsNullByte within the inspect window", () => {
