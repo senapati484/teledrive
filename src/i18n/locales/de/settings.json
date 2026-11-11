@@ -207,7 +207,9 @@
       "restoredPartial_other": "{{count}} Dateien hinzugefügt; {{skipped}} fehlende Nachrichten wurden übersprungen",
       "nothingNew": "Nichts Neues hinzuzufügen — diese Dateien befinden sich bereits in Ihrem Drive.",
       "failed": "Dateien konnten nicht wiederhergestellt werden",
-      "cancel": "Abbrechen"
+      "cancel": "Abbrechen",
+      "scanningHint": "Suche nach nicht indexierten Dateien und älteren Katalog-Snapshots in deinem Speicherkanal…",
+      "rateLimited": "Telegram-Ratenlimit erreicht – erneuter Versuch in {{seconds}}s…"
     }
   },
   "about": {

@@ -83,7 +83,8 @@
     "close": "Schließen",
     "queued": "In der Warteschlange",
     "uploading": "Hochladen...",
-    "retry": "Upload wiederholen"
+    "retry": "Upload wiederholen",
+    "remove": "Entfernen"
   },
   "backup": {
     "scanning": "Ordner scannen…",

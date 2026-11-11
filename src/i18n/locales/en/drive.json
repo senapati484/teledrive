@@ -83,7 +83,8 @@
     "close": "Close",
     "queued": "Queued",
     "uploading": "Uploading...",
-    "retry": "Retry upload"
+    "retry": "Retry upload",
+    "remove": "Remove"
   },
   "backup": {
     "scanning": "Scanning folders…",

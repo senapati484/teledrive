@@ -207,7 +207,9 @@
       "restoredPartial_other": "Added {{count}} files; {{skipped}} missing messages were skipped",
       "nothingNew": "Nothing new to add — those files are already in your drive.",
       "failed": "Could not restore files",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "scanningHint": "Looking for unindexed files and older catalog snapshots in your storage channel…",
+      "rateLimited": "Telegram rate limit reached — retrying in {{seconds}}s…"
     }
   },
   "about": {

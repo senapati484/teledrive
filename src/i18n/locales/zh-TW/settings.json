@@ -207,7 +207,9 @@
       "restoredPartial_other": "已新增 {{count}} 個檔案；略過了 {{skipped}} 則遺失的訊息",
       "nothingNew": "沒有需要新增的檔案 — 這些檔案已在您的雲端硬碟中。",
       "failed": "無法還原檔案",
-      "cancel": "取消"
+      "cancel": "取消",
+      "scanningHint": "正在儲存頻道中尋找未建立索引的檔案與較早的目錄快照…",
+      "rateLimited": "已達 Telegram 速率限制 — {{seconds}}秒後重試…"
     }
   },
   "about": {

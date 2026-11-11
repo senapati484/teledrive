@@ -207,7 +207,9 @@
       "restoredPartial_other": "{{count}} 件のファイルを追加しました（{{skipped}} 件の不明メッセージをスキップ）",
       "nothingNew": "追加する新しいファイルはありません — すでにドライブ内に存在します。",
       "failed": "ファイルを復元できませんでした",
-      "cancel": "キャンセル"
+      "cancel": "キャンセル",
+      "scanningHint": "ストレージチャンネル内の未インデックスファイルと過去のカタログスナップショットを検索しています…",
+      "rateLimited": "Telegram のレート制限に達しました — {{seconds}}秒後に再試行します…"
     }
   },
   "about": {

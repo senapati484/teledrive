@@ -83,7 +83,8 @@
     "close": "關閉",
     "queued": "排隊",
     "uploading": "正在上傳...",
-    "retry": "重試上傳"
+    "retry": "重試上傳",
+    "remove": "移除"
   },
   "backup": {
     "scanning": "正在掃描資料夾...",

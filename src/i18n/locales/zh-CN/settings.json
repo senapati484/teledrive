@@ -207,7 +207,9 @@
       "restoredPartial_other": "已添加 {{count}} 个文件；跳过了 {{skipped}} 条缺失的消息",
       "nothingNew": "无需添加 — 这些文件已在您的云盘中。",
       "failed": "无法恢复文件",
-      "cancel": "取消"
+      "cancel": "取消",
+      "scanningHint": "正在存储频道中查找未编入索引的文件和较早的目录快照…",
+      "rateLimited": "已达到 Telegram 速率限制 — {{seconds}}秒后重试…"
     }
   },
   "about": {

@@ -83,7 +83,8 @@
     "close": "Tutup",
     "queued": "Dalam antrean",
     "uploading": "Mengunggah...",
-    "retry": "Coba lagi unggah"
+    "retry": "Coba lagi unggah",
+    "remove": "Hapus"
   },
   "backup": {
     "scanning": "Memindai folder…",

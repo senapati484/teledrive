@@ -83,7 +83,8 @@
     "close": "关闭",
     "queued": "排队",
     "uploading": "正在上传...",
-    "retry": "重试上传"
+    "retry": "重试上传",
+    "remove": "移除"
   },
   "backup": {
     "scanning": "正在扫描文件夹...",
