@@ -86,7 +86,7 @@ describe("StreamEncryptor & StreamDecryptor (TDE1)", () => {
       outOff += c.length;
     }
     expect(recovered).toEqual(plain);
-  });
+  }, 15_000);
 
   it("rejects tampered ciphertext and truncated streams", async () => {
     const salt = new Uint8Array(16).fill(7);

@@ -1,20 +1,6 @@
 name: Build macOS DMG
 
 on:
-  push:
-    branches:
-      - main
-      - pro
-      - '0.*'
-      - '[0-9]+.[0-9]+.[0-9]+'
-    tags:
-      - 'v*'
-    paths-ignore:
-      - '**.md'
-      - 'locales/**'
-      - 'docs/**'
-      - '.github/ISSUE_TEMPLATE/**'
-      - '.gitignore'
   workflow_dispatch:
     inputs:
       target_arch:
@@ -35,6 +21,7 @@ jobs:
   build-mac:
     name: Build macOS Universal DMG
     runs-on: macos-latest
+    timeout-minutes: 45
 
     steps:
       - name: Checkout repository
@@ -43,7 +30,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Install Rust stable

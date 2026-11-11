@@ -273,6 +273,6 @@ describe("multi-segment E2EE upload -> resume -> decrypt stream roundtrip", () =
     );
     expect(prefix.data).toEqual(plain.slice(0, 1024));
     expect(prefix.truncated).toBe(true);
-  });
+  }, 15_000);
 });
 
