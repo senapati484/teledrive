@@ -83,7 +83,8 @@
     "close": "Fermer",
     "queued": "En attente",
     "uploading": "Téléversement...",
-    "retry": "Réessayer le téléversement"
+    "retry": "Réessayer le téléversement",
+    "remove": "Retirer"
   },
   "backup": {
     "scanning": "Analyse des dossiers…",

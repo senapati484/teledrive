@@ -86,7 +86,8 @@
     "failed_zero": "Falha em {{count}} envios",
     "complete_zero": "{{count}} envios concluídos",
     "uploadingItems_zero": "Enviando {{count}} itens ({{percent}}%)",
-    "retry": "Tentar upload novamente"
+    "retry": "Tentar upload novamente",
+    "remove": "Remover"
   },
   "backup": {
     "scanning": "Verificando pastas…",

@@ -243,7 +243,9 @@
       "restoredPartial_other": "Menambahkan {{count}} file; {{skipped}} pesan hilang dilewati",
       "nothingNew": "Tidak ada yang baru untuk ditambahkan — file-file tersebut sudah ada di drive Anda.",
       "failed": "Tidak dapat memulihkan file",
-      "cancel": "Batal"
+      "cancel": "Batal",
+      "scanningHint": "Mencari file yang belum terindeks dan snapshot katalog lama di saluran penyimpanan Anda…",
+      "rateLimited": "Batas laju Telegram tercapai — mencoba lagi dalam {{seconds}} detik…"
     }
   },
   "about": {

@@ -83,7 +83,8 @@
     "close": "Cerrar",
     "queued": "En cola",
     "uploading": "Subiendo...",
-    "retry": "Reintentar subida"
+    "retry": "Reintentar subida",
+    "remove": "Quitar"
   },
   "backup": {
     "scanning": "Escaneando carpetas…",

@@ -212,7 +212,9 @@
       "restoredPartial_other": "Adicionados {{count}} arquivos; {{skipped}} mensagens ausentes foram ignoradas",
       "nothingNew": "Nada novo para adicionar — esses arquivos já estão no seu drive.",
       "failed": "Não foi possível restaurar os arquivos",
-      "cancel": "Cancelar"
+      "cancel": "Cancelar",
+      "scanningHint": "Procurando arquivos não indexados e snapshots antigos do catálogo no seu canal de armazenamento…",
+      "rateLimited": "Limite do Telegram atingido — tentando novamente em {{seconds}}s…"
     }
   },
   "about": {

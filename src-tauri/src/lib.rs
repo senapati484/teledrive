@@ -980,13 +980,14 @@ fn decode_base64(input: &str) -> Result<Vec<u8>, String> {
     if bytes.is_empty() {
         return Ok(Vec::new());
     }
-    if bytes.len() % 4 != 0 {
+    if !bytes.len().is_multiple_of(4) {
         return Err("Invalid base64 length".to_string());
     }
 
-    let mut out = Vec::with_capacity((bytes.len() / 4) * 3);
-    for (idx, chunk) in bytes.chunks_exact(4).enumerate() {
-        let is_last = idx + 1 == bytes.len() / 4;
+    let (chunks, _) = bytes.as_chunks::<4>();
+    let mut out = Vec::with_capacity(chunks.len() * 3);
+    for (idx, chunk) in chunks.iter().enumerate() {
+        let is_last = idx + 1 == chunks.len();
         let a = val(chunk[0]).ok_or_else(|| "Invalid base64 character".to_string())?;
         let b = val(chunk[1]).ok_or_else(|| "Invalid base64 character".to_string())?;
         let c = if chunk[2] == b'=' {
@@ -1214,6 +1215,7 @@ fn write_file_chunk_sync(
 }
 
 #[tauri::command]
+#[allow(clippy::too_many_arguments)]
 async fn write_file_chunk(
     #[allow(unused)] app: AppHandle,
     path: String,
