@@ -289,9 +289,9 @@ TeleDrive es software libre y de código abierto bajo la [Licencia GNU GPL-3.0](
 
 <a href="https://www.star-history.com/?repos=senapati484%2Fteledrive&type=date&releases=&legend=bottom-right">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&theme=dark&legend=bottom-right" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&legend=bottom-right" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&legend=bottom-right" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&legend=top-left" />
  </picture>
 </a>
 
