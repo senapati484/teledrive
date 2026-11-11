@@ -10,15 +10,15 @@
     "title": "Nouveautés de TeleDrive",
     "badge": "v{{version}}",
     "features": [
-      "Sauvegarde d'appareil & stabilité de synchronisation — mise en miroir résiliente avec protection contre le gel et les limites de débit",
-      "Support officiel Android & Mobile — interface tactile native et synchronisation multiplateforme fluide",
-      "Aperçu moderne de fichiers & code — mise en page mobile responsive, coloration syntaxique, retour à la ligne et actions rapides",
-      "Renforcement de sécurité & stockage — empreintes SHA-256 des dossiers, coffre d'identifiants atomique et CSP strict",
-      "Parité multilingue — 11 langues avec traductions natives complètes et terminologie de disque localisée"
+      "Chiffrement Zero-Knowledge (TDE1) — AES-256-GCM côté client avec clé de récupération et accès direct par bloc",
+      "Transferts >2/4 Go reprenables — Reprise sur point d'arrêt, découpage multi-segments et déduplication SHA-256",
+      "Démarrage instantané & 3× pipelining — Cache IndexedDB, Catalogue v3 et flux MTProto parallèles",
+      "Aperçu universel & vignettes — DOCX, ODT, RTF, EPUB, XLSX/ODS, PPTX/ODP, ZIP/TAR, HTML et vignettes PDF/vidéo",
+      "Synchronisation multiplateforme — Performances Tauri v2 optimisées et 11 langues prises en charge"
     ],
     "starCta": "Vous aimez la mise à jour ? Donnez-nous une ⭐",
     "starButton": "⭐ Étoiler sur GitHub",
     "close": "Fermer",
-    "subtitle": "Points forts et améliorations de cette mise à jour"
+    "subtitle": "Nouveautés de TeleDrive v0.1.4"
   }
 }

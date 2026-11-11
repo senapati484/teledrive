@@ -38,7 +38,7 @@ describe("runtime bridge", () => {
     expect(isWebRuntime()).toBe(false);
     await logVaultState("HELLO");
     expect(invokeMock).toHaveBeenCalledWith("log_vault_state", { state: "HELLO" });
-    expect(await runtimeGetVersion("0.1.3")).toBe("9.9.9");
+    expect(await runtimeGetVersion("0.1.4")).toBe("9.9.9");
   });
 
   it("no-ops host IPC and uses window.open safely when running outside Tauri", async () => {
@@ -58,6 +58,6 @@ describe("runtime bridge", () => {
       "_blank",
       "noopener,noreferrer"
     );
-    expect(await runtimeGetVersion("0.1.3")).toBe("0.1.3");
+    expect(await runtimeGetVersion("0.1.4")).toBe("0.1.4");
   });
 });

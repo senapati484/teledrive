@@ -10,15 +10,15 @@
     "title": "Apa yang Baru di TeleDrive",
     "badge": "v{{version}}",
     "features": [
-      "Pencadangan Perangkat & Stabilitas Sinkronisasi — pencerminan otomatis yang tangguh dengan perlindungan batas laju dan pembekuan",
-      "Dukungan Resmi Android & Seluler — antarmuka sentuh native dan sinkronisasi lintas platform yang mulus",
-      "Peninjau Berkas & Kode Modern — tata letak responsif seluler, penyorotan sintaksis, pelipatan baris & aksi cepat",
-      "Penguatan Keamanan & Penyimpanan — ringkasan folder SHA-256, brankas kredensial atomik, dan kebijakan CSP yang ketat",
-      "Paritas Multi-Bahasa — 11 bahasa dengan terjemahan native lengkap dan terminologi drive terlokalisasi"
+      "Enkripsi Zero-Knowledge (TDE1) — Enkripsi AES-256-GCM sisi klien dengan kunci pemulihan & akses blok langsung",
+      "Transfer Multi-Segmen >2/4 GB — Dukungan checkpoint lanjutkan, pemecahan otomatis & deduplikasi SHA-256",
+      "Startup Instan & Streaming 3× Pipeline — Cache IndexedDB, Katalog v3 & unduhan MTProto paralel",
+      "Pratinjau Universal & Thumbnail Grid — DOCX, ODT, RTF, EPUB, XLSX/ODS, PPTX/ODP, ZIP/TAR, HTML serta thumbnail PDF/video",
+      "Sinkronisasi Lintas Platform — Performa Tauri v2 lebih mulus dengan dukungan penuh 11 bahasa"
     ],
     "starCta": "Suka pembaruannya? Beri kami ⭐",
     "starButton": "⭐ Beri Bintang di GitHub",
     "close": "Tutup",
-    "subtitle": "Sorotan dan peningkatan dalam rilis ini"
+    "subtitle": "Sorotan di TeleDrive v0.1.4"
   }
 }
