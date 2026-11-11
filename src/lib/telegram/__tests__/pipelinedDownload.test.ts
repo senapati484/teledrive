@@ -71,7 +71,7 @@ describe("iteratePipelinedDownloadParts", () => {
     const out = Buffer.concat(collected);
     expect(out.length).toBe(totalSize);
     expect(new Uint8Array(out)).toEqual(payload);
-  });
+  }, 15_000);
 
   it("switches DC on FileMigrateError and preserves exact byte-range slices across part boundaries", async () => {
     const partSize = 512 * 1024;

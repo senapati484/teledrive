@@ -1,20 +1,17 @@
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, it, expect } from "vitest";
 import { parseFeatureItem } from "../whatsNewLogic";
 
-const LOCALES_DIR = path.resolve(
-  import.meta.dirname,
-  "../../../i18n/locales"
-);
-const BOOTSTRAP_PATH = path.resolve(
-  import.meta.dirname,
-  "../../../../public/bootstrap.js"
-);
-const INDEX_HTML_PATH = path.resolve(
-  import.meta.dirname,
-  "../../../../index.html"
-);
+const TEST_DIR = path.dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = fs.existsSync(path.join(process.cwd(), "package.json"))
+  ? process.cwd()
+  : path.resolve(TEST_DIR, "../../../..");
+
+const LOCALES_DIR = path.join(REPO_ROOT, "src/i18n/locales");
+const BOOTSTRAP_PATH = path.join(REPO_ROOT, "public/bootstrap.js");
+const INDEX_HTML_PATH = path.join(REPO_ROOT, "index.html");
 
 describe("WhatsNewDialog feature parsing across locales", () => {
   it("parses non-empty titles and descriptions for all 11 locales", () => {
