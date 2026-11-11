@@ -57,7 +57,7 @@
 
 <br/><br/>
 
-[**官方網站**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**安裝包下載**](#-下載) • [**Beta 測試投票 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**影片示範**](#-影片示範與講解) • [**回報問題**](https://github.com/senapati484/teledrive/issues/new/choose) • [**建議新功能**](https://github.com/senapati484/teledrive/issues/new/choose)
+[**官方網站**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**架構文件 🏗️**](../docs/ARCHITECTURE.md) • [**Star History ⭐**](#star-history) • [**安裝包下載**](#-下載) • [**Beta 測試投票 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**影片示範**](#-影片示範與講解) • [**回報問題**](https://github.com/senapati484/teledrive/issues/new/choose) • [**建議新功能**](https://github.com/senapati484/teledrive/issues/new/choose)
 
 </div>
 
@@ -89,7 +89,7 @@ Telegram 在私人頻道中提供了幾乎無限的免費雲端儲存空間，�
 
 - **零中轉伺服器**：所有檔案上傳下載與 MTProto 網路互動均在本地裝置與 Telegram 資料中心之間直連完成。
 - **虛擬雲端硬碟**：支援多層級巢狀資料夾、全域秒搜、星標收藏、封存與垃圾桶，並在私人頻道中維護置頂加密目錄索引。
-- **硬體級加密保險庫**：工作階段憑證與金鑰均保存在 Tauri Stronghold 中，並透過 Argon2id 演算法生成強金鑰加密保護。
+- **本機保險庫與端對端加密 (`TDE1`)**：憑證隔離保存於 Rust 原子保險庫 / Tauri Stronghold，並支援可選的用戶端 PBKDF2-SHA256 + AES-256-GCM (`TDE1`) 檔案加密。
 - **多帳號無縫切換**：支援綁定多個 Telegram 手機號碼，各帳號工作階段與本地金鑰庫完全隔離。
 
 ---
@@ -271,7 +271,7 @@ TeleDrive 已內建開發憑證，開箱即用。若需使用您自己的 Telegr
 
 - 🧪 **Beta Testing**: [Want to beta test the next version of TeleDrive? 🧪](https://github.com/senapati484/teledrive/discussions/35) — Vote in the community poll!
 1. Fork 本倉庫並新建分支：`git checkout -b feat/my-feature`
-2. 執行程式碼檢查：`npm run lint` 和 `cargo fmt`
+2. 執行程式碼檢查：`npm test && npm run build` 和 `cargo fmt`
 3. 提交語意化 commit 訊息（如 `feat(ui): ...`）
 4. 發起 Pull Request
 
@@ -282,6 +282,18 @@ TeleDrive 已內建開發憑證，開箱即用。若需使用您自己的 Telegr
 TeleDrive 遵循 [GNU GPL-3.0 License](../LICENSE) 開源協議。
 
 *免責聲明：TeleDrive 是一個獨立的開源專案，未受 Telegram FZ-LLC 贊助、認可或存在附屬關係。儲存大容量檔案需遵守 Telegram 服務條款和 API 公平使用政策。*
+
+---
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=senapati484%2Fteledrive&type=date&releases=&legend=bottom-right">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&theme=dark&legend=bottom-right" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&legend=bottom-right" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&legend=bottom-right" />
+ </picture>
+</a>
 
 ---
 

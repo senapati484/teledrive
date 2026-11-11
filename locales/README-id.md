@@ -57,7 +57,7 @@ Tanpa biaya server. Tanpa biaya langganan bulanan. Enkripsi MTProto langsung ke 
 
 <br/><br/>
 
-[**Situs Web**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**Unduhan**](#-unduhan) • [**Jajak Pendapat Beta Testing 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**Demo Video**](#-panduan-video--demo) • [**Laporkan Bug**](https://github.com/senapati484/teledrive/issues/new/choose) • [**Minta Fitur Baru**](https://github.com/senapati484/teledrive/issues/new/choose)
+[**Situs Web**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**Arsitektur 🏗️**](../docs/ARCHITECTURE.md) • [**Star History ⭐**](#star-history) • [**Unduhan**](#-unduhan) • [**Jajak Pendapat Beta Testing 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**Demo Video**](#-panduan-video--demo) • [**Laporkan Bug**](https://github.com/senapati484/teledrive/issues/new/choose) • [**Minta Fitur Baru**](https://github.com/senapati484/teledrive/issues/new/choose)
 
 </div>
 
@@ -89,7 +89,7 @@ Telegram menyediakan penyimpanan cloud gratis yang hampir tak terbatas di salura
 
 - **Nol Server Perantara**: Semua operasi berkas dan koneksi MTProto terjadi langsung dari perangkat lokal Anda ke pusat data Telegram.
 - **Drive Virtual**: Folder bersarang, pencarian instan, berkas berbintang, arsip, dan tempat sampah diindeks dalam katalog terenkripsi yang disematkan di saluran pribadi Anda.
-- **Brankas Terenkripsi Perangkat Keras**: Kredensial dan kunci sesi diamankan di Tauri Stronghold menggunakan kunci turunan Argon2id.
+- **Brankas Lokal & E2EE (`TDE1`)**: Kredensial tersimpan pada brankas atomik Rust / Tauri Stronghold, dengan opsi enkripsi sisi klien PBKDF2-SHA256 + AES-256-GCM (`TDE1`) untuk berkas.
 - **Multi-Akun**: Beralih di antara beberapa nomor telepon dengan isolasi sesi dan brankas lokal yang menyeluruh.
 
 ---
@@ -271,7 +271,7 @@ Kami menyambut baik pelaporan bug, ide fitur baru, dan Pull Request!
 
 - 🧪 **Beta Testing**: [Want to beta test the next version of TeleDrive? 🧪](https://github.com/senapati484/teledrive/discussions/35) — Vote in the community poll!
 1. Fork repositori ini dan buat branch Anda: `git checkout -b feat/fitur-saya`
-2. Jalankan linter: `npm run lint` dan `cargo fmt`
+2. Jalankan linter: `npm test && npm run build` dan `cargo fmt`
 3. Buat pesan commit yang jelas (contoh: `feat(ui): ...`)
 4. Ajukan Pull Request
 
@@ -282,6 +282,18 @@ Kami menyambut baik pelaporan bug, ide fitur baru, dan Pull Request!
 TeleDrive adalah perangkat lunak sumber terbuka yang dilisensikan di bawah [GNU GPL-3.0 License](../LICENSE).
 
 *Pemberitahuan: TeleDrive adalah proyek open-source independen dan tidak berafiliasi, disponsori, atau didukung oleh Telegram FZ-LLC. Penyimpanan berkas berukuran besar tunduk pada Syarat Layanan dan kebijakan penggunaan wajar API Telegram.*
+
+---
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=senapati484%2Fteledrive&type=date&releases=&legend=bottom-right">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&theme=dark&legend=bottom-right" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&legend=bottom-right" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&legend=bottom-right" />
+ </picture>
+</a>
 
 ---
 

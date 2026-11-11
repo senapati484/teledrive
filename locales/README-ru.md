@@ -57,7 +57,7 @@
 
 <br/><br/>
 
-[**Веб-сайт**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**Скачать**](#-скачать) • [**Опрос бета-тестирования 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**Видео Демо**](#-видео-демонстрация) • [**Сообщить об ошибке**](https://github.com/senapati484/teledrive/issues/new/choose) • [**Предложить функцию**](https://github.com/senapati484/teledrive/issues/new/choose)
+[**Веб-сайт**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**Архитектура 🏗️**](../docs/ARCHITECTURE.md) • [**Star History ⭐**](#star-history) • [**Скачать**](#-скачать) • [**Опрос бета-тестирования 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**Видео Демо**](#-видео-демонстрация) • [**Сообщить об ошибке**](https://github.com/senapati484/teledrive/issues/new/choose) • [**Предложить функцию**](https://github.com/senapati484/teledrive/issues/new/choose)
 
 </div>
 
@@ -89,7 +89,7 @@ Telegram предоставляет практически неограниче�
 
 - **Без промежуточных серверов**: Все операции с файлами и сессии MTProto выполняются напрямую с вашего компьютера в дата-центры Telegram.
 - **Виртуальный диск**: Дерево папок, мгновенный поиск, избранное, архив и корзина индексируются в закрепленном зашифрованном каталоге внутри вашего канала.
-- **Аппаратное шифрование**: Учетные данные и ключи сессий защищены в Tauri Stronghold с использованием алгоритма Argon2id.
+- **Локальное хранилище и E2EE (`TDE1`)**: Учетные данные хранятся в атомарном Rust-хранилище / Tauri Stronghold; опционально доступно клиентское шифрование PBKDF2-SHA256 + AES-256-GCM (`TDE1`).
 - **Мультиаккаунт**: Легкое переключение между несколькими номерами телефонов с полной изоляцией сессий.
 
 ---
@@ -271,7 +271,7 @@ TeleDrive уже содержит встроенные ключи для раз�
 
 - 🧪 **Beta Testing**: [Want to beta test the next version of TeleDrive? 🧪](https://github.com/senapati484/teledrive/discussions/35) — Vote in the community poll!
 1. Сделайте Fork репозитория и создайте ветку: `git checkout -b feat/my-feature`
-2. Проверьте код линтерами: `npm run lint` и `cargo fmt`
+2. Проверьте код линтерами: `npm test && npm run build` и `cargo fmt`
 3. Сделайте коммит с понятным описанием (например: `feat(ui): ...`)
 4. Создайте Pull Request
 
@@ -282,6 +282,18 @@ TeleDrive уже содержит встроенные ключи для раз�
 TeleDrive распространяется под свободной лицензией [GNU GPL-3.0 License](../LICENSE).
 
 *Отказ от ответственности: TeleDrive является независимым проектом с открытым исходным кодом и не связан, не спонсируется и не поддерживается компанией Telegram FZ-LLC. Хранение файлов регулируется Условиями использования и политикой Telegram.*
+
+---
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=senapati484%2Fteledrive&type=date&releases=&legend=bottom-right">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&theme=dark&legend=bottom-right" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&legend=bottom-right" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&legend=bottom-right" />
+ </picture>
+</a>
 
 ---
 

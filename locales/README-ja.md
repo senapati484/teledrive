@@ -57,7 +57,7 @@
 
 <br/><br/>
 
-[**公式サイト**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**ダウンロード**](#-ダウンロード) • [**ベータテスト投票 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**デモ動画**](#-デモ動画) • [**バグ報告**](https://github.com/senapati484/teledrive/issues/new/choose) • [**機能リクエスト**](https://github.com/senapati484/teledrive/issues/new/choose)
+[**公式サイト**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**アーキテクチャ 🏗️**](../docs/ARCHITECTURE.md) • [**Star History ⭐**](#star-history) • [**ダウンロード**](#-ダウンロード) • [**ベータテスト投票 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**デモ動画**](#-デモ動画) • [**バグ報告**](https://github.com/senapati484/teledrive/issues/new/choose) • [**機能リクエスト**](https://github.com/senapati484/teledrive/issues/new/choose)
 
 </div>
 
@@ -89,7 +89,7 @@ Telegram はプライベートチャンネルで実質無制限のクラウド�
 
 - **中継サーバーなし**：すべてのファイル転送と MTProto 接続は、お使いの端末から Telegram データセンターへ直接行われます。
 - **仮想ドライブ構造**：階層フォルダ、高速検索、お気に入り、アーカイブ、ゴミ箱機能がチャンネル内のピン留め暗号化カタログで管理されます。
-- **ハードウェア暗号化ボールト**：認証セッションと暗号化キーは、Argon2id 導出キーを使用して Tauri Stronghold に安全に保管されます。
+- **ローカルVault & E2EE (`TDE1`)**: 認証情報は Rust Vault / Tauri Stronghold に保存され、任意のクライアント側 PBKDF2-SHA256 + AES-256-GCM (`TDE1`) 暗号化にも対応します。
 - **複数アカウント対応**：セッションとローカルストレージを完全分離した状態で、複数の電話番号を切り替え可能です。
 
 ---
@@ -271,7 +271,7 @@ TeleDrive には初期開発用の認証情報が組み込まれています。�
 
 - 🧪 **Beta Testing**: [Want to beta test the next version of TeleDrive? 🧪](https://github.com/senapati484/teledrive/discussions/35) — Vote in the community poll!
 1. リポジトリをフォークしてブランチを作成: `git checkout -b feat/my-feature`
-2. リンターの実行: `npm run lint` および `cargo fmt`
+2. リンターの実行: `npm test && npm run build` および `cargo fmt`
 3. コミットを作成（例: `feat(ui): ...`）
 4. Pull Request を作成
 
@@ -282,6 +282,18 @@ TeleDrive には初期開発用の認証情報が組み込まれています。�
 TeleDrive は [GNU GPL-3.0 License](../LICENSE) のもとで公開されているオープンソースソフトウェアです。
 
 *免責事項：TeleDrive は独立したオープンソースプロジェクトであり、Telegram FZ-LLC との提携、スポンサーシップ、保証関係はありません。大容量ファイルの保存には Telegram の利用規約および API フェアユースポリシーが適用されます。*
+
+---
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=senapati484%2Fteledrive&type=date&releases=&legend=bottom-right">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&theme=dark&legend=bottom-right" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&legend=bottom-right" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=senapati484/teledrive&type=date&legend=bottom-right" />
+ </picture>
+</a>
 
 ---
 
