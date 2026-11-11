@@ -13,6 +13,7 @@ import {
   Zap,
 } from "lucide-react";
 import { toast } from "sonner";
+import { APP_VERSION } from "@/lib/telegram/config";
 import { runtimeGetVersion, runtimeOpenUrl } from "@/lib/runtime/bridge";
 
 import {
@@ -79,6 +80,9 @@ function parseFeatureItem(featureText: string, index: number): ParsedFeature {
     Icon = Smartphone;
   } else if (
     lower.includes("preview") ||
+    lower.includes("thumbnail") ||
+    lower.includes("archive") ||
+    lower.includes("viewer") ||
     lower.includes("code") ||
     lower.includes("editor") ||
     lower.includes("visua") ||
@@ -96,17 +100,28 @@ function parseFeatureItem(featureText: string, index: number): ParsedFeature {
     Icon = FileCode2;
   } else if (
     lower.includes("secur") ||
+    lower.includes("encrypt") ||
+    lower.includes("tde1") ||
+    lower.includes("zero-knowledge") ||
     lower.includes("segur") ||
+    lower.includes("cifrad") ||
+    lower.includes("chiffr") ||
     lower.includes("sicher") ||
+    lower.includes("verschlüss") ||
     lower.includes("safe") ||
     lower.includes("vault") ||
     lower.includes("harden") ||
     lower.includes("fortalec") ||
     lower.includes("renforce") ||
     lower.includes("усил") ||
+    lower.includes("шифр") ||
     lower.includes("सुरक्षा") ||
+    lower.includes("एन्क्रिप्") ||
     lower.includes("keamanan") ||
-    lower.includes("安全")
+    lower.includes("enkrip") ||
+    lower.includes("安全") ||
+    lower.includes("加密") ||
+    lower.includes("暗号")
   ) {
     Icon = ShieldCheck;
   } else if (
@@ -140,6 +155,10 @@ function parseFeatureItem(featureText: string, index: number): ParsedFeature {
     lower.includes("fast") ||
     lower.includes("speed") ||
     lower.includes("cache") ||
+    lower.includes("pipeline") ||
+    lower.includes("segment") ||
+    lower.includes("dedup") ||
+    lower.includes("checkpoint") ||
     lower.includes("cold") ||
     lower.includes("rápido") ||
     lower.includes("schnell") ||
@@ -172,7 +191,7 @@ export default function WhatsNewDialog() {
     window.addEventListener("teledrive:show-whats-new", handleTrigger);
     (window as unknown as { showWhatsNew?: () => void }).showWhatsNew = handleTrigger;
 
-    runtimeGetVersion("0.1.3")
+    runtimeGetVersion(APP_VERSION)
       .then((v) => {
         setVersion(v);
         if (v !== lastSeenVersion) {

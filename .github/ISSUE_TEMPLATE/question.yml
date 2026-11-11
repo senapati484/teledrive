@@ -20,7 +20,7 @@ body:
     attributes:
       label: Environment
       description: TeleDrive version and operating system (if relevant).
-      placeholder: v0.1.3 on macOS / Windows
+      placeholder: v0.1.4 on macOS / Windows
   - type: textarea
     id: context
     attributes:
