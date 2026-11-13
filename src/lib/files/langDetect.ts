@@ -2,60 +2,84 @@
  * langDetect.ts
  * Maps file extensions to:
  *  - highlight.js language alias (for read/preview mode)
- *  - CodeMirror 6 language loader (lazy dynamic import, for edit mode)
+ *  - CodeMirror 6 language support (statically imported, for edit mode)
  *  - Human-readable display name (for status bar badge)
+ *
+ * IMPORTANT: All CodeMirror language packs are STATICALLY imported here so
+ * that Vite/Rollup bundles them into the codemirror-vendor chunk at build
+ * time. Dynamic import() calls for language packs fail silently in production
+ * Tauri builds because the asset:// protocol + CSP blocks late chunk loading.
  */
+
+// ─── Static imports — bundled into codemirror-vendor at build time ──────────
+import { python }     from "@codemirror/lang-python";
+import { javascript } from "@codemirror/lang-javascript";
+import { html }       from "@codemirror/lang-html";
+import { css }        from "@codemirror/lang-css";
+import { json }       from "@codemirror/lang-json";
+import { xml }        from "@codemirror/lang-xml";
+import { rust }       from "@codemirror/lang-rust";
+import { go }         from "@codemirror/lang-go";
+import { cpp }        from "@codemirror/lang-cpp";
+import { java }       from "@codemirror/lang-java";
+import { sql }        from "@codemirror/lang-sql";
+import { markdown }   from "@codemirror/lang-markdown";
 
 export interface LangInfo {
   /** highlight.js language alias — pass to hljs.highlight() */
   hljsLang: string;
   /** Display name shown in the status bar / language badge */
   displayName: string;
-  /** Lazy loader that returns a CodeMirror LanguageSupport */
-  cmLoader: (() => Promise<any>) | null;
+  /**
+   * Synchronous factory returning a CodeMirror LanguageSupport instance.
+   * Returns null for languages without CodeMirror pack support.
+   * NOTE: Kept as a function (not a bare value) so each editor gets a
+   * fresh LanguageSupport instance — CodeMirror extensions are stateful.
+   */
+  cmLoader: (() => any) | null;
 }
 
 const LANG_MAP: Record<string, LangInfo> = {
   // Python
-  py:   { hljsLang: "python",     displayName: "Python",      cmLoader: () => import("@codemirror/lang-python").then(m => m.python()) },
-  pyw:  { hljsLang: "python",     displayName: "Python",      cmLoader: () => import("@codemirror/lang-python").then(m => m.python()) },
+  py:   { hljsLang: "python",     displayName: "Python",      cmLoader: () => python() },
+  pyw:  { hljsLang: "python",     displayName: "Python",      cmLoader: () => python() },
 
   // JavaScript / TypeScript
-  js:   { hljsLang: "javascript", displayName: "JavaScript",  cmLoader: () => import("@codemirror/lang-javascript").then(m => m.javascript()) },
-  mjs:  { hljsLang: "javascript", displayName: "JavaScript",  cmLoader: () => import("@codemirror/lang-javascript").then(m => m.javascript()) },
-  cjs:  { hljsLang: "javascript", displayName: "JavaScript",  cmLoader: () => import("@codemirror/lang-javascript").then(m => m.javascript()) },
-  jsx:  { hljsLang: "javascript", displayName: "JSX",         cmLoader: () => import("@codemirror/lang-javascript").then(m => m.javascript({ jsx: true })) },
-  ts:   { hljsLang: "typescript", displayName: "TypeScript",  cmLoader: () => import("@codemirror/lang-javascript").then(m => m.javascript({ typescript: true })) },
-  tsx:  { hljsLang: "typescript", displayName: "TSX",         cmLoader: () => import("@codemirror/lang-javascript").then(m => m.javascript({ jsx: true, typescript: true })) },
+  js:   { hljsLang: "javascript", displayName: "JavaScript",  cmLoader: () => javascript() },
+  mjs:  { hljsLang: "javascript", displayName: "JavaScript",  cmLoader: () => javascript() },
+  cjs:  { hljsLang: "javascript", displayName: "JavaScript",  cmLoader: () => javascript() },
+  jsx:  { hljsLang: "javascript", displayName: "JSX",         cmLoader: () => javascript({ jsx: true }) },
+  ts:   { hljsLang: "typescript", displayName: "TypeScript",  cmLoader: () => javascript({ typescript: true }) },
+  tsx:  { hljsLang: "typescript", displayName: "TSX",         cmLoader: () => javascript({ jsx: true, typescript: true }) },
 
   // Web
-  html: { hljsLang: "html",       displayName: "HTML",        cmLoader: () => import("@codemirror/lang-html").then(m => m.html()) },
-  htm:  { hljsLang: "html",       displayName: "HTML",        cmLoader: () => import("@codemirror/lang-html").then(m => m.html()) },
-  css:  { hljsLang: "css",        displayName: "CSS",         cmLoader: () => import("@codemirror/lang-css").then(m => m.css()) },
-  scss: { hljsLang: "scss",       displayName: "SCSS",        cmLoader: () => import("@codemirror/lang-css").then(m => m.css()) },
-  less: { hljsLang: "less",       displayName: "Less",        cmLoader: () => import("@codemirror/lang-css").then(m => m.css()) },
+  html: { hljsLang: "html",       displayName: "HTML",        cmLoader: () => html() },
+  htm:  { hljsLang: "html",       displayName: "HTML",        cmLoader: () => html() },
+  css:  { hljsLang: "css",        displayName: "CSS",         cmLoader: () => css() },
+  scss: { hljsLang: "scss",       displayName: "SCSS",        cmLoader: () => css() },
+  less: { hljsLang: "less",       displayName: "Less",        cmLoader: () => css() },
 
   // Data formats
-  json:  { hljsLang: "json",      displayName: "JSON",        cmLoader: () => import("@codemirror/lang-json").then(m => m.json()) },
-  jsonc: { hljsLang: "json",      displayName: "JSONC",       cmLoader: () => import("@codemirror/lang-json").then(m => m.json()) },
+  json:  { hljsLang: "json",      displayName: "JSON",        cmLoader: () => json() },
+  jsonc: { hljsLang: "json",      displayName: "JSONC",       cmLoader: () => json() },
   yaml:  { hljsLang: "yaml",      displayName: "YAML",        cmLoader: null },
   yml:   { hljsLang: "yaml",      displayName: "YAML",        cmLoader: null },
   toml:  { hljsLang: "toml",      displayName: "TOML",        cmLoader: null },
-  xml:   { hljsLang: "xml",       displayName: "XML",         cmLoader: () => import("@codemirror/lang-xml").then(m => m.xml()) },
-  svg:   { hljsLang: "xml",       displayName: "SVG",         cmLoader: () => import("@codemirror/lang-xml").then(m => m.xml()) },
+  xml:   { hljsLang: "xml",       displayName: "XML",         cmLoader: () => xml() },
+  svg:   { hljsLang: "xml",       displayName: "SVG",         cmLoader: () => xml() },
 
   // Systems languages
-  rs:   { hljsLang: "rust",       displayName: "Rust",        cmLoader: () => import("@codemirror/lang-rust").then(m => m.rust()) },
-  go:   { hljsLang: "go",         displayName: "Go",          cmLoader: () => import("@codemirror/lang-go").then(m => m.go()) },
-  c:    { hljsLang: "c",          displayName: "C",           cmLoader: () => import("@codemirror/lang-cpp").then(m => m.cpp()) },
-  h:    { hljsLang: "c",          displayName: "C Header",    cmLoader: () => import("@codemirror/lang-cpp").then(m => m.cpp()) },
-  cpp:  { hljsLang: "cpp",        displayName: "C++",         cmLoader: () => import("@codemirror/lang-cpp").then(m => m.cpp()) },
-  cc:   { hljsLang: "cpp",        displayName: "C++",         cmLoader: () => import("@codemirror/lang-cpp").then(m => m.cpp()) },
-  cxx:  { hljsLang: "cpp",        displayName: "C++",         cmLoader: () => import("@codemirror/lang-cpp").then(m => m.cpp()) },
-  hpp:  { hljsLang: "cpp",        displayName: "C++ Header",  cmLoader: () => import("@codemirror/lang-cpp").then(m => m.cpp()) },
+  rs:   { hljsLang: "rust",       displayName: "Rust",        cmLoader: () => rust() },
+  go:   { hljsLang: "go",         displayName: "Go",          cmLoader: () => go() },
+  c:    { hljsLang: "c",          displayName: "C",           cmLoader: () => cpp() },
+  h:    { hljsLang: "c",          displayName: "C Header",    cmLoader: () => cpp() },
+  cpp:  { hljsLang: "cpp",        displayName: "C++",         cmLoader: () => cpp() },
+  cc:   { hljsLang: "cpp",        displayName: "C++",         cmLoader: () => cpp() },
+  cxx:  { hljsLang: "cpp",        displayName: "C++",         cmLoader: () => cpp() },
+  hpp:  { hljsLang: "cpp",        displayName: "C++ Header",  cmLoader: () => cpp() },
 
   // JVM
-  java: { hljsLang: "java",       displayName: "Java",        cmLoader: () => import("@codemirror/lang-java").then(m => m.java()) },
+  java: { hljsLang: "java",       displayName: "Java",        cmLoader: () => java() },
   kt:   { hljsLang: "kotlin",     displayName: "Kotlin",      cmLoader: null },
   kts:  { hljsLang: "kotlin",     displayName: "Kotlin",      cmLoader: null },
   scala:{ hljsLang: "scala",      displayName: "Scala",       cmLoader: null },
@@ -81,11 +105,11 @@ const LANG_MAP: Record<string, LangInfo> = {
   ps1:  { hljsLang: "powershell", displayName: "PowerShell",  cmLoader: null },
 
   // Database
-  sql:  { hljsLang: "sql",        displayName: "SQL",         cmLoader: () => import("@codemirror/lang-sql").then(m => m.sql()) },
+  sql:  { hljsLang: "sql",        displayName: "SQL",         cmLoader: () => sql() },
 
   // Markup / Docs
-  md:       { hljsLang: "markdown",   displayName: "Markdown",    cmLoader: () => import("@codemirror/lang-markdown").then(m => m.markdown()) },
-  markdown: { hljsLang: "markdown",   displayName: "Markdown",    cmLoader: () => import("@codemirror/lang-markdown").then(m => m.markdown()) },
+  md:       { hljsLang: "markdown",   displayName: "Markdown",    cmLoader: () => markdown() },
+  markdown: { hljsLang: "markdown",   displayName: "Markdown",    cmLoader: () => markdown() },
   rst:      { hljsLang: "plaintext",  displayName: "reStructured", cmLoader: null },
 
   // Config

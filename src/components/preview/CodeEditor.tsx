@@ -174,9 +174,12 @@ export function CodeEditor({ value, onChange, fileName, onCursorChange, classNam
         if (cancelled) return;
 
         // Language support (optional)
+        // cmLoader is now a synchronous factory (static imports bundled at build
+        // time) — no await needed. The try/catch guards against any edge-case
+        // where a language pack constructor throws at runtime.
         let langExt: any[] = [];
         if (langInfo.cmLoader) {
-          try { langExt = [await langInfo.cmLoader()]; } catch { /* skip */ }
+          try { langExt = [langInfo.cmLoader()]; } catch { /* skip */ }
         }
         if (cancelled) return;
 
