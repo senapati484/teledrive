@@ -42,7 +42,13 @@ export default defineConfig(async () => ({
     rollupOptions: {
       output: {
           manualChunks(id: string) {
-            // Split CodeMirror into its own large chunk (970KB+ raw) so it is only loaded when needed
+            // Bundle ALL CodeMirror + Lezer packages into one vendor chunk.
+            // This includes @codemirror/lang-* language packs which are
+            // statically imported from langDetect.ts so they are resolved at
+            // build time and never need a dynamic import() at runtime.
+            // (Dynamic lang imports were the root cause of missing syntax
+            // highlighting in the installed Tauri app — asset:// protocol +
+            // CSP 'script-src self' blocks late chunk loading.)
             if (id.includes("node_modules/@codemirror") || id.includes("node_modules/@lezer")) {
               return "codemirror-vendor";
             }
@@ -80,6 +86,26 @@ export default defineConfig(async () => ({
         "@tauri-apps/plugin-opener",
         "@tauri-apps/plugin-dialog",
         "@tauri-apps/plugin-fs",
+        // CodeMirror core + all language packs (statically imported — must be pre-bundled)
+        "@codemirror/view",
+        "@codemirror/state",
+        "@codemirror/commands",
+        "@codemirror/language",
+        "@codemirror/search",
+        "@codemirror/autocomplete",
+        "@codemirror/theme-one-dark",
+        "@codemirror/lang-python",
+        "@codemirror/lang-javascript",
+        "@codemirror/lang-html",
+        "@codemirror/lang-css",
+        "@codemirror/lang-json",
+        "@codemirror/lang-xml",
+        "@codemirror/lang-rust",
+        "@codemirror/lang-go",
+        "@codemirror/lang-cpp",
+        "@codemirror/lang-java",
+        "@codemirror/lang-sql",
+        "@codemirror/lang-markdown",
       ],
     },
 
