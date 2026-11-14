@@ -58,17 +58,19 @@
           "height": 400
         },
         "appPosition": {
-          "x": 175,
-          "y": 225
+          "x": 165,
+          "y": 215
         },
         "applicationFolderPosition": {
-          "x": 485,
-          "y": 225
+          "x": 482,
+          "y": 215
         }
       }
     },
     "windows": {
       "nsis": {
+        "sidebarImage": "icons/nsis-sidebar.bmp",
+        "headerImage": "icons/nsis-header.bmp",
         "languages": ["English"],
         "displayLanguageSelector": false
       },
