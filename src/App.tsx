@@ -44,20 +44,45 @@ function LoadingFallback() {
 }
 
 // Splash Screen Loader
-function SplashLoader({ status }: { status: string }) {
+function SplashLoader({
+  status,
+  progress,
+}: {
+  status: string;
+  progress?: number;
+}) {
   const { t } = useTranslation("drive");
+  const hasDeterminate = typeof progress === "number" && progress > 0;
+
   return (
     <div className="flex h-[100dvh] min-h-[100dvh] w-screen flex-col items-center justify-center bg-background text-foreground gap-4 select-none">
       <div className="flex flex-col items-center gap-4">
         <img
           src="/teledrive.png"
           alt={t("logoAlt")}
-          className="h-16 w-16 object-contain shrink-0"
+          className="h-16 w-16 object-contain shrink-0 drop-shadow-sm"
         />
         <div className="flex items-center gap-2.5 text-[#444746] dark:text-[#C4C7C5] font-medium bg-surface dark:bg-[#111214] border border-slate-200/80 dark:border-white/[0.04] px-5 py-2 rounded-full shadow-xs">
           <Loader2 className="h-4 w-4 animate-spin text-[#0B57D0] dark:text-[#A8C7FA]" />
           <span className="text-xs">{status}</span>
         </div>
+
+        {/* Google style linear progress bar */}
+        <div className="w-56 sm:w-64 h-1.5 rounded-full bg-slate-200/80 dark:bg-white/10 overflow-hidden relative shadow-inner">
+          {hasDeterminate ? (
+            <div
+              className="h-full rounded-full bg-[#0B57D0] dark:bg-[#A8C7FA] transition-all duration-300 ease-out"
+              style={{ width: `${Math.min(100, Math.max(progress, 8))}%` }}
+            />
+          ) : (
+            <div className="h-full w-2/5 rounded-full bg-[#0B57D0] dark:bg-[#A8C7FA] animate-indeterminate" />
+          )}
+        </div>
+        {hasDeterminate && (
+          <span className="text-[10px] font-mono font-medium text-slate-500 dark:text-slate-400">
+            {Math.round(progress)}%
+          </span>
+        )}
       </div>
     </div>
   );
@@ -80,9 +105,10 @@ import { useTheme } from "./hooks/useTheme";
 function App() {
   useTheme(); // Initialize theme logic
   const [isRestoring, setIsRestoring] = useState(true);
+  const [splashProgress, setSplashProgress] = useState(20);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const { t } = useTranslation("drive");
-  const status = t("splash.connecting");
+  const [status, setStatus] = useState(() => t("splash.connecting"));
 
   useEffect(() => {
     useSupportStore.getState().initFirstLaunch();
@@ -90,6 +116,7 @@ function App() {
     let active = true;
     async function initSession() {
       try {
+        setSplashProgress(25);
         // Fast local check first:
         const stored = await invoke<{ session: string | null; phone: string | null }>(
           "load_session"
@@ -100,6 +127,8 @@ function App() {
         if (sessionString && active) {
           // Pre-authenticate the user immediately so route guards resolve and layouts mount
           useAuthStore.getState().setSession(sessionString, phoneNumber);
+          setSplashProgress(45);
+          setStatus(t("splash.restoringSession", "Restoring session..."));
 
           const hasCacheHint = hasCachedFilesHint();
 
@@ -108,12 +137,14 @@ function App() {
           if (hasCacheHint && useFileStore.getState().files.length === 0) {
             const cachedSnapshot = await loadCachedFilesSnapshot().catch(() => []);
             if (active && cachedSnapshot.length > 0) {
+              setSplashProgress(65);
               useFileStore.getState().hydrateCachedFiles(cachedSnapshot);
             }
           }
 
           const hasHydratedFiles = useFileStore.getState().files.length > 0;
           if (hasHydratedFiles || hasCacheHint) {
+            setSplashProgress(100);
             setIsRestoring(false);
           }
 
@@ -122,10 +153,15 @@ function App() {
           (async () => {
             useFileStore.getState().setSyncing(true);
             try {
+              if (active) {
+                setSplashProgress(80);
+                setStatus(t("splash.connecting", "Connecting to Telegram..."));
+              }
               const restored = await restoreSession();
               if (active && restored) {
                 // Auth confirmed — show DriveLayout skeleton immediately while
                 // bootstrapTeleDrive fetches and decodes the remote index.
+                setSplashProgress(100);
                 setIsRestoring(false);
                 await bootstrapTeleDrive(undefined, phoneNumber);
               }
@@ -134,20 +170,27 @@ function App() {
             } finally {
               if (active) {
                 useFileStore.getState().setSyncing(false);
+                setSplashProgress(100);
                 setIsRestoring(false);
               }
             }
           })();
         } else {
           // No stored session, go to login page (bypass splash loader)
-          if (active) setIsRestoring(false);
+          if (active) {
+            setSplashProgress(100);
+            setIsRestoring(false);
+          }
         }
       } catch (err: any) {
         console.error("Failed to restore session on app launch:", err);
         await logVaultState(
           `BOOTSTRAP_ERR: ${err?.message || JSON.stringify(err)}\nStack: ${err?.stack || "no_stack"}`
         );
-        if (active) setIsRestoring(false);
+        if (active) {
+          setSplashProgress(100);
+          setIsRestoring(false);
+        }
       }
     }
     initSession();
@@ -157,7 +200,7 @@ function App() {
   }, []);
 
   if (isRestoring) {
-    return <SplashLoader status={status} />;
+    return <SplashLoader status={status} progress={splashProgress} />;
   }
 
   return (
