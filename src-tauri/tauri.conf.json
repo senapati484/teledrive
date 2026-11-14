@@ -55,7 +55,7 @@
         "background": "icons/dmg-background.png",
         "windowSize": {
           "width": 660,
-          "height": 440
+          "height": 428
         },
         "appPosition": {
           "x": 165,
