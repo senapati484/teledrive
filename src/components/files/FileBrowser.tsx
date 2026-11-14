@@ -68,15 +68,52 @@ import type { TFunction } from "i18next";
 import { retryIndexNow } from "@/lib/telegram/bootstrap";
 
 // ---------------------------------------------------------------------------
-// Utility: human-readable file size
+// Utility: human-readable file size (fast arithmetic loop, avoids Math.log)
 // ---------------------------------------------------------------------------
-function formatFileSize(bytes: unknown): string {
+const FILE_SIZE_UNITS = ["B", "KB", "MB", "GB", "TB"] as const;
+
+export function formatFileSize(bytes: unknown): string {
   const n = Number(bytes);
   if (!n || !isFinite(n) || n <= 0) return "—";
-  const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB", "TB"];
-  const i = Math.min(Math.floor(Math.log(n) / Math.log(k)), sizes.length - 1);
-  return `${parseFloat((n / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+  if (n < 1024) return `${n} B`;
+  let i = 0;
+  let val = n;
+  while (val >= 1024 && i < 4) {
+    val /= 1024;
+    i++;
+  }
+  return `${val.toFixed(val >= 100 || i === 0 ? 0 : val >= 10 ? 1 : 2)} ${FILE_SIZE_UNITS[i]}`;
+}
+
+// ---------------------------------------------------------------------------
+// Utility: cached date formatting & string sorting collator
+// Reusing Intl instances eliminates thousands of heavy ICU engine initializations.
+// ---------------------------------------------------------------------------
+const shortDateFormatterCache = new Map<string, Intl.DateTimeFormat>();
+const fullDateFormatterCache = new Map<string, Intl.DateTimeFormat>();
+
+export function formatShortDate(timestamp: number, locale: string): string {
+  let fmt = shortDateFormatterCache.get(locale);
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat(locale, { month: "short", day: "numeric" });
+    shortDateFormatterCache.set(locale, fmt);
+  }
+  return fmt.format(timestamp);
+}
+
+export function formatFullDate(timestamp: number, locale: string): string {
+  let fmt = fullDateFormatterCache.get(locale);
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat(locale);
+    fullDateFormatterCache.set(locale, fmt);
+  }
+  return fmt.format(timestamp);
+}
+
+const nameCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
+export function compareNames(a: string, b: string): number {
+  if (a === b) return 0;
+  return nameCollator.compare(a, b);
 }
 
 // ---------------------------------------------------------------------------
@@ -153,6 +190,452 @@ function isDirectory(file: TeleFile): boolean {
 // consumers (and React deps) see the SAME identity on every render instead
 // of allocating a fresh `[]` each time. Avoids spurious downstream re-runs.
 const EMPTY_FILES: readonly TeleFile[] = Object.freeze([]) as readonly TeleFile[];
+
+// ---------------------------------------------------------------------------
+// Memoized Item Components: FolderGridCard, FileGridCard, FileListRow
+// ---------------------------------------------------------------------------
+
+interface FolderGridCardProps {
+  folder: TeleFile;
+  index: number;
+  isSelected: boolean;
+  isBeingDragged: boolean;
+  isDragOver: boolean;
+  isDraggingActive: boolean;
+  isMobile: boolean;
+  onItemClick: (e: React.MouseEvent, file: TeleFile) => void;
+  onItemDoubleClick: (file: TeleFile) => void;
+  onPointerDown: (e: React.MouseEvent, file: TeleFile, variant: "folder-grid") => void;
+  onTouchStartItem: (file: TeleFile) => void;
+  onTouchEndItem: () => void;
+  onPreview: (file: TeleFile) => void;
+  onEdit: (file: TeleFile) => void;
+  onDownload: (file: TeleFile) => void;
+  onRename: (file: TeleFile) => void;
+  onStarToggle: (file: TeleFile) => void;
+  onTrash: (file: TeleFile) => void;
+  onDeletePermanently: (file: TeleFile) => void;
+  onArchive: (file: TeleFile) => void;
+  onUnarchive: (file: TeleFile) => void;
+}
+
+const FolderGridCard = React.memo(function FolderGridCard({
+  folder,
+  index,
+  isSelected,
+  isBeingDragged,
+  isDragOver,
+  isDraggingActive,
+  isMobile,
+  onItemClick,
+  onItemDoubleClick,
+  onPointerDown,
+  onTouchStartItem,
+  onTouchEndItem,
+  onPreview,
+  onEdit,
+  onDownload,
+  onRename,
+  onStarToggle,
+  onTrash,
+  onDeletePermanently,
+  onArchive,
+  onUnarchive,
+}: FolderGridCardProps) {
+  return (
+    <FileContextMenu
+      file={folder}
+      onPreview={onPreview}
+      onEdit={onEdit}
+      onDownload={onDownload}
+      onRename={onRename}
+      onStarToggle={onStarToggle}
+      onTrash={onTrash}
+      onDeletePermanently={onDeletePermanently}
+      onArchive={onArchive}
+      onUnarchive={onUnarchive}
+    >
+      <div
+        onClick={(e) => onItemClick(e, folder)}
+        onDoubleClick={() => onItemDoubleClick(folder)}
+        onMouseDown={(e) => onPointerDown(e, folder, "folder-grid")}
+        onTouchStart={() => onTouchStartItem(folder)}
+        onTouchEnd={onTouchEndItem}
+        onTouchMove={onTouchEndItem}
+        data-folder-id={folder.id}
+        style={{ animationDelay: `${Math.min(index, 15) * 20}ms` }}
+        className={cn(
+          "group relative flex items-center justify-between gap-2 h-11 sm:h-12 px-2.5 sm:px-3.5 rounded-xl transition-all duration-150 cursor-pointer select-none border border-transparent hover:border-slate-300/80 dark:hover:border-white/[0.08]",
+          isSelected
+            ? "bg-[#c2e7ff] text-[#001d35] dark:bg-[#004a77] dark:text-[#c2e7ff] font-medium shadow-xs border-transparent"
+            : isDragOver
+            ? "bg-[#c2e7ff]/60 dark:bg-[#004a77]/60 ring-2 ring-[#0b57d0]"
+            : "bg-[#f0f4f9] dark:bg-[#161719] hover:bg-[#e1e7ef] dark:hover:bg-[#1f2124] text-[#1f1f1f] dark:text-[#e3e3e3]",
+          isBeingDragged && "opacity-40"
+        )}
+      >
+        {isDragOver && isDraggingActive && (
+          <span className="absolute -right-2 -top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-[#0b57d0] text-white shadow-md ring-2 ring-white dark:ring-[#161719] pointer-events-none animate-folder-drop-badge">
+            <Plus className="h-3.5 w-3.5" />
+          </span>
+        )}
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 pointer-events-none">
+          <FolderIcon
+            size="sm"
+            className={cn(
+              "h-4.5 w-4.5 sm:h-5 sm:w-5 shrink-0 transition-transform duration-200 group-hover:scale-105",
+              isSelected
+                ? "text-[#001d35] dark:text-[#c2e7ff]"
+                : "text-[#444746] dark:text-[#c4c7c5]"
+            )}
+          />
+          <span className="text-xs sm:text-sm font-medium truncate">
+            {folder.name}
+          </span>
+        </div>
+        <div
+          className={cn(
+            "shrink-0 ml-auto transition-opacity",
+            isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+          )}
+          data-no-drag
+          onClick={(e) => e.stopPropagation()}
+        >
+          <FileActionsMenu
+            file={folder}
+            onPreview={onPreview}
+            onEdit={onEdit}
+            onDownload={onDownload}
+            onRename={onRename}
+            onStarToggle={onStarToggle}
+            onTrash={onTrash}
+            onDeletePermanently={onDeletePermanently}
+            onArchive={onArchive}
+            onUnarchive={onUnarchive}
+          />
+        </div>
+      </div>
+    </FileContextMenu>
+  );
+});
+
+interface FileGridCardProps {
+  file: TeleFile;
+  index: number;
+  foldersCount: number;
+  isSelected: boolean;
+  isBeingDragged: boolean;
+  isMobile: boolean;
+  thumbSrc: string | undefined;
+  formattedSize: string;
+  formattedDate: string;
+  onItemClick: (e: React.MouseEvent, file: TeleFile) => void;
+  onItemDoubleClick: (file: TeleFile) => void;
+  onPointerDown: (e: React.MouseEvent, file: TeleFile, variant: "file-grid") => void;
+  onTouchStartItem: (file: TeleFile) => void;
+  onTouchEndItem: () => void;
+  onThumbError: (file: TeleFile, badSrc: string) => void;
+  onPreview: (file: TeleFile) => void;
+  onOpenInSystemApp?: (file: TeleFile) => void;
+  onEdit: (file: TeleFile) => void;
+  onDownload: (file: TeleFile) => void;
+  onRename: (file: TeleFile) => void;
+  onStarToggle: (file: TeleFile) => void;
+  onTrash: (file: TeleFile) => void;
+  onDeletePermanently: (file: TeleFile) => void;
+  onArchive: (file: TeleFile) => void;
+  onUnarchive: (file: TeleFile) => void;
+  onOfflineToggle?: (file: TeleFile) => void;
+}
+
+const FileGridCard = React.memo(function FileGridCard({
+  file,
+  index,
+  foldersCount,
+  isSelected,
+  isBeingDragged,
+  isMobile,
+  thumbSrc,
+  formattedSize,
+  formattedDate,
+  onItemClick,
+  onItemDoubleClick,
+  onPointerDown,
+  onTouchStartItem,
+  onTouchEndItem,
+  onThumbError,
+  onPreview,
+  onOpenInSystemApp,
+  onEdit,
+  onDownload,
+  onRename,
+  onStarToggle,
+  onTrash,
+  onDeletePermanently,
+  onArchive,
+  onUnarchive,
+  onOfflineToggle,
+}: FileGridCardProps) {
+  return (
+    <FileContextMenu
+      file={file}
+      onPreview={onPreview}
+      onOpenInSystemApp={onOpenInSystemApp}
+      onEdit={onEdit}
+      onDownload={onDownload}
+      onRename={onRename}
+      onStarToggle={onStarToggle}
+      onTrash={onTrash}
+      onDeletePermanently={onDeletePermanently}
+      onArchive={onArchive}
+      onUnarchive={onUnarchive}
+      onOfflineToggle={onOfflineToggle}
+    >
+      <div
+        onClick={(e) => onItemClick(e, file)}
+        onDoubleClick={() => onItemDoubleClick(file)}
+        onMouseDown={(e) => onPointerDown(e, file, "file-grid")}
+        onTouchStart={() => onTouchStartItem(file)}
+        onTouchEnd={onTouchEndItem}
+        onTouchMove={onTouchEndItem}
+        style={{ animationDelay: `${Math.min(foldersCount + index, 15) * 20}ms` }}
+        className={cn(
+          "group relative flex flex-col rounded-2xl transition-all duration-150 cursor-pointer overflow-hidden text-left select-none h-38 sm:h-48 md:h-52 bg-white dark:bg-[#111214] hover:bg-[#f8fafd] dark:hover:bg-[#161719] border border-slate-200/90 dark:border-white/[0.04] hover:border-slate-300 dark:hover:border-white/[0.08] hover:shadow-md [content-visibility:auto] [contain-intrinsic-size:auto_208px]",
+          isSelected
+            ? "bg-[#c2e7ff]/30 dark:bg-[#004a77]/30 ring-2 ring-[#0b57d0] dark:ring-[#a8c7fa] border-transparent shadow-xs"
+            : "",
+          isBeingDragged && "opacity-40"
+        )}
+      >
+        {/* Top bar with mini typed icon, title, and action menu */}
+        <div className="flex items-center justify-between gap-1.5 px-2.5 sm:px-3.5 pt-2 sm:pt-3 pb-1 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 pointer-events-none">
+            <FileIcon name={file.name} mime={file.mime} size="sm" bare className="shrink-0" />
+            <p className="text-[11px] sm:text-xs font-medium text-[#1f1f1f] dark:text-[#e3e3e3] truncate">
+              {file.name}
+            </p>
+          </div>
+          <div
+            className={cn(
+              "shrink-0 transition-opacity",
+              isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+            )}
+            data-no-drag
+            onClick={(e) => e.stopPropagation()}
+          >
+            <FileActionsMenu
+              file={file}
+              triggerClassName="h-7 w-7"
+              onPreview={onPreview}
+              onEdit={onEdit}
+              onDownload={onDownload}
+              onRename={onRename}
+              onStarToggle={onStarToggle}
+              onTrash={onTrash}
+              onDeletePermanently={onDeletePermanently}
+              onArchive={onArchive}
+              onUnarchive={onUnarchive}
+              onOfflineToggle={onOfflineToggle}
+            />
+          </div>
+        </div>
+
+        {/* Centered Preview Canvas */}
+        <div className="flex-1 bg-[#f8fafd] dark:bg-[#0a0a0a] mx-2.5 my-1 rounded-xl border border-slate-100 dark:border-white/[0.04] flex items-center justify-center relative overflow-hidden pointer-events-none">
+          {thumbSrc ? (
+            <img
+              src={thumbSrc}
+              alt={file.name}
+              loading="lazy"
+              className="w-full h-full object-cover"
+              onError={() => onThumbError(file, thumbSrc)}
+            />
+          ) : (
+            <div className="w-16 h-20 bg-white dark:bg-[#161719] rounded-md shadow-xs border border-slate-200/80 dark:border-white/[0.04] p-2 flex flex-col items-center justify-between pointer-events-none select-none">
+              <div className="w-full space-y-1 mt-0.5 opacity-40">
+                <div className="h-0.5 bg-slate-300 dark:bg-slate-600 rounded-full w-full" />
+                <div className="h-0.5 bg-slate-300 dark:bg-slate-600 rounded-full w-4/5" />
+                <div className="h-0.5 bg-slate-300 dark:bg-slate-600 rounded-full w-3/5" />
+              </div>
+              <div className="my-auto py-0.5">
+                <FileIcon name={file.name} mime={file.mime} size="md" bare />
+              </div>
+              <div className="w-full space-y-1 mb-0.5 opacity-30">
+                <div className="h-0.5 bg-slate-300 dark:bg-slate-600 rounded-full w-full" />
+                <div className="h-0.5 bg-slate-300 dark:bg-slate-600 rounded-full w-2/3" />
+              </div>
+            </div>
+          )}
+
+          {file.starred && (
+            <Star className="absolute top-2 right-2 h-4 w-4 fill-amber-400 text-amber-400 drop-shadow-xs" />
+          )}
+          {file.offline && (
+            <CheckCircle className="absolute top-2 left-2 h-4 w-4 text-emerald-500 fill-emerald-500/20 shrink-0" />
+          )}
+        </div>
+
+        {/* Bottom details footer */}
+        <div className="px-3.5 py-2 flex items-center justify-between text-[11px] text-[#747775] dark:text-[#8e918f] pointer-events-none shrink-0 font-normal">
+          <span>{formattedSize}</span>
+          <span>{formattedDate}</span>
+        </div>
+      </div>
+    </FileContextMenu>
+  );
+});
+
+interface FileListRowProps {
+  file: TeleFile;
+  index: number;
+  isDir: boolean;
+  isSelected: boolean;
+  isBeingDragged: boolean;
+  isDragOver: boolean;
+  isMobile: boolean;
+  formattedSize: string;
+  formattedDateShort: string;
+  formattedDateFull: string;
+  fileTypeLabel: string;
+  onToggleSelect: (id: string) => void;
+  onItemClick: (e: React.MouseEvent, file: TeleFile) => void;
+  onItemDoubleClick: (file: TeleFile) => void;
+  onPointerDown: (e: React.MouseEvent, file: TeleFile, variant: "list-row") => void;
+  onTouchStartItem: (file: TeleFile) => void;
+  onTouchEndItem: () => void;
+  onPreview: (file: TeleFile) => void;
+  onOpenInSystemApp?: (file: TeleFile) => void;
+  onEdit: (file: TeleFile) => void;
+  onDownload: (file: TeleFile) => void;
+  onRename: (file: TeleFile) => void;
+  onStarToggle: (file: TeleFile) => void;
+  onTrash: (file: TeleFile) => void;
+  onDeletePermanently: (file: TeleFile) => void;
+  onArchive: (file: TeleFile) => void;
+  onUnarchive: (file: TeleFile) => void;
+  onOfflineToggle?: (file: TeleFile) => void;
+}
+
+const FileListRow = React.memo(function FileListRow({
+  file,
+  index,
+  isDir,
+  isSelected,
+  isBeingDragged,
+  isDragOver,
+  isMobile,
+  formattedSize,
+  formattedDateShort,
+  formattedDateFull,
+  fileTypeLabel,
+  onToggleSelect,
+  onItemClick,
+  onItemDoubleClick,
+  onPointerDown,
+  onTouchStartItem,
+  onTouchEndItem,
+  onPreview,
+  onOpenInSystemApp,
+  onEdit,
+  onDownload,
+  onRename,
+  onStarToggle,
+  onTrash,
+  onDeletePermanently,
+  onArchive,
+  onUnarchive,
+  onOfflineToggle,
+}: FileListRowProps) {
+  return (
+    <FileContextMenu
+      file={file}
+      onPreview={onPreview}
+      onOpenInSystemApp={onOpenInSystemApp}
+      onEdit={onEdit}
+      onDownload={onDownload}
+      onRename={onRename}
+      onStarToggle={onStarToggle}
+      onTrash={onTrash}
+      onDeletePermanently={onDeletePermanently}
+      onArchive={onArchive}
+      onUnarchive={onUnarchive}
+      onOfflineToggle={onOfflineToggle}
+    >
+      <tr
+        onClick={(e) => onItemClick(e, file)}
+        onDoubleClick={() => onItemDoubleClick(file)}
+        onMouseDown={(e) => onPointerDown(e, file, "list-row")}
+        onTouchStart={() => onTouchStartItem(file)}
+        onTouchEnd={onTouchEndItem}
+        onTouchMove={onTouchEndItem}
+        {...(isDir ? { "data-folder-id": file.id } : {})}
+        style={{ animationDelay: `${Math.min(index, 15) * 20}ms` }}
+        className={cn(
+          "group border-b border-slate-100 dark:border-white/[0.03] hover:bg-[#f0f4f9] dark:hover:bg-[#161719] cursor-pointer transition-colors duration-100 h-11 sm:h-12 [content-visibility:auto] [contain-intrinsic-size:auto_48px]",
+          isSelected && "bg-[#c2e7ff]/40 dark:bg-[#004a77]/35 text-[#001d35] dark:text-[#c2e7ff]",
+          isDragOver && isDir && "bg-[#c2e7ff]/70 dark:bg-[#004a77]/70 ring-2 ring-[#0b57d0]",
+          isBeingDragged && "opacity-40"
+        )}
+      >
+        <td className="py-2 sm:py-3 px-3 sm:px-4 text-center" data-no-drag onClick={(e) => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            checked={isSelected}
+            onChange={() => onToggleSelect(file.id)}
+            className="h-4 w-4 rounded-sm border-slate-300 dark:border-white/[0.1] text-[#0b57d0] focus:ring-[#0b57d0]/20 dark:bg-[#161719] transition-colors cursor-pointer"
+          />
+        </td>
+        <td className="py-2 sm:py-3 px-2.5 sm:px-4 font-medium text-[#1f1f1f] dark:text-[#e3e3e3] text-xs md:text-sm">
+          <div className="flex items-center gap-2.5 sm:gap-3 pointer-events-none">
+            <FileIcon name={file.name} mime={file.mime} size="sm" className="shrink-0" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-1.5">
+                <span className="truncate max-w-[170px] sm:max-w-xs">{file.name}</span>
+                {file.starred && (
+                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 shrink-0 ml-0.5" />
+                )}
+                {file.offline && (
+                  <CheckCircle className="h-3.5 w-3.5 text-emerald-500 fill-emerald-500/20 shrink-0 ml-0.5" />
+                )}
+              </div>
+              <div className="sm:hidden text-[10px] text-[#444746] dark:text-[#8e918f] font-normal flex items-center gap-1.5 mt-0.5">
+                <span>{formattedSize}</span>
+                <span>•</span>
+                <span>{formattedDateShort}</span>
+              </div>
+            </div>
+          </div>
+        </td>
+        <td className="py-3 px-4 hidden sm:table-cell text-xs text-[#444746] dark:text-[#8e918f] pointer-events-none">
+          {fileTypeLabel}
+        </td>
+        <td className="py-3 px-4 hidden md:table-cell text-xs text-[#444746] dark:text-[#8e918f] pointer-events-none">
+          {formattedSize}
+        </td>
+        <td className="py-3 px-4 hidden lg:table-cell text-xs text-[#444746] dark:text-[#8e918f] pointer-events-none">
+          {formattedDateFull}
+        </td>
+        <td className="py-2.5 sm:py-3 px-2 sm:px-4 text-center" data-no-drag onClick={(e) => e.stopPropagation()}>
+          <div className={cn("transition-opacity", isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100")}>
+            <FileActionsMenu
+              file={file}
+              onPreview={onPreview}
+              onEdit={onEdit}
+              onDownload={onDownload}
+              onRename={onRename}
+              onStarToggle={onStarToggle}
+              onTrash={onTrash}
+              onDeletePermanently={onDeletePermanently}
+              onArchive={onArchive}
+              onUnarchive={onUnarchive}
+              onOfflineToggle={onOfflineToggle}
+            />
+          </div>
+        </td>
+      </tr>
+    </FileContextMenu>
+  );
+});
 
 
 
@@ -243,11 +726,15 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
   const [failedThumbSrcs, setFailedThumbSrcs] = useState<Record<string, string>>({});
 
   // Progressive render limit for memory & DOM performance on large directories.
-  // 48 initial items cleanly fills all responsive grid column variants (2, 3, 4, 6, 8)
-  // without overburdening cold DOM mounts.
-  const INITIAL_RENDER_LIMIT = 48;
-  const SCROLL_BATCH_SIZE = 36;
+  // 72 initial items cleanly fills all responsive grid column variants (2, 3, 4, 6, 8)
+  // without ragged rows, while keeping cold DOM mounts ultra-fast.
+  const INITIAL_RENDER_LIMIT = 72;
+  const SCROLL_BATCH_SIZE = 72;
+  const SCROLL_TRIGGER_LOOKAHEAD_PX = 650;
   const [renderLimit, setRenderLimit] = useState(INITIAL_RENDER_LIMIT);
+  const renderLimitRef = useRef(INITIAL_RENDER_LIMIT);
+  renderLimitRef.current = renderLimit;
+  const isExpandingBatchRef = useRef(false);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const scrollSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const totalDisplayCountRef = useRef(0);
@@ -265,9 +752,17 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
     const scrollTop = target.scrollTop;
-    // 380px lookahead buffer ensures smooth scrolling without ever showing empty space
-    if (target.scrollTop + target.clientHeight >= target.scrollHeight - 380) {
-      setRenderLimit((prev) => (prev < totalDisplayCountRef.current ? prev + SCROLL_BATCH_SIZE : prev));
+    // 650px lookahead buffer ensures smooth scrolling without ever showing empty space or bottom hitch
+    if (
+      !isExpandingBatchRef.current &&
+      renderLimitRef.current < totalDisplayCountRef.current &&
+      target.scrollTop + target.clientHeight >= target.scrollHeight - SCROLL_TRIGGER_LOOKAHEAD_PX
+    ) {
+      isExpandingBatchRef.current = true;
+      setRenderLimit((prev) => Math.min(prev + SCROLL_BATCH_SIZE, totalDisplayCountRef.current));
+      requestAnimationFrame(() => {
+        isExpandingBatchRef.current = false;
+      });
     }
     if (scrollSaveTimerRef.current) {
       clearTimeout(scrollSaveTimerRef.current);
@@ -317,6 +812,8 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
 
   useEffect(() => {
     setRenderLimit(INITIAL_RENDER_LIMIT);
+    renderLimitRef.current = INITIAL_RENDER_LIMIT;
+    isExpandingBatchRef.current = false;
   }, [folderPath, mode, filterType, searchQuery, activeSortBy]);
 
   const activeFiles = useMemo(
@@ -498,13 +995,13 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       if (aIsDir && !bIsDir) return -1;
       if (!aIsDir && bIsDir) return 1;
       switch (activeSortBy) {
-        case "name_asc": return a.name.localeCompare(b.name);
-        case "name_desc": return b.name.localeCompare(a.name);
+        case "name_asc": return compareNames(a.name, b.name);
+        case "name_desc": return compareNames(b.name, a.name);
         case "date_asc": return (a.lastOpenedAt || a.uploadedAt) - (b.lastOpenedAt || b.uploadedAt);
         case "date_desc": return (b.lastOpenedAt || b.uploadedAt) - (a.lastOpenedAt || a.uploadedAt);
         case "size_asc": return a.size - b.size;
         case "size_desc": return b.size - a.size;
-        default: return a.name.localeCompare(b.name);
+        default: return compareNames(a.name, b.name);
       }
     });
 
@@ -526,7 +1023,8 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
   }, [dedupedActiveFiles, activeSortBy, filterType, indexedFiles, mode, searchQuery]);
 
   // Keep total display count ref fresh for the bounded scroll handler
-  totalDisplayCountRef.current = displayFiles.length;
+  totalDisplayCountRef.current =
+    viewMode === "grid" ? Math.max(folders.length, regularFiles.length) : displayFiles.length;
 
   // Lazily resolve compact thumbnails for visible Grid cards without writing
   // ephemeral local/blob URLs back into the synced Telegram Schema v3 index.
@@ -830,20 +1328,33 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
     };
   }, [openRenameDialog, deletePermanently, selectedIds, clearSelection]);
 
-  const handleTouchStartItem = (file: TeleFile) => {
+  const handleTouchStartItem = useCallback((file: TeleFile) => {
     if (!isMobile) return;
     if (touchTimeoutRef.current) window.clearTimeout(touchTimeoutRef.current);
     touchTimeoutRef.current = window.setTimeout(() => {
       setMobileContextFile(file);
     }, 600);
-  };
+  }, [isMobile]);
 
-  const handleTouchEndItem = () => {
+  const handleTouchEndItem = useCallback(() => {
     if (touchTimeoutRef.current) {
       window.clearTimeout(touchTimeoutRef.current);
       touchTimeoutRef.current = null;
     }
-  };
+  }, []);
+
+  const handleThumbError = useCallback((file: TeleFile, badSrc: string) => {
+    invalidateThumbnailCache(file);
+    setFailedThumbSrcs((prev) =>
+      prev[file.id] === badSrc ? prev : { ...prev, [file.id]: badSrc }
+    );
+    setThumbUrls((prev) => {
+      if (!prev[file.id]) return prev;
+      const next = { ...prev };
+      delete next[file.id];
+      return next;
+    });
+  }, []);
 
   // Bulk actions
   const handleBulkDownload = async () => {
@@ -1214,9 +1725,20 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                   const isSelected = selectedIdsSet.has(folder.id);
                   const isBeingDragged = draggedId !== null && (draggedId === folder.id || (isSelected && selectedIdsSet.has(draggedId)));
                   return (
-                    <FileContextMenu
+                    <FolderGridCard
                       key={folder.id}
-                      file={folder}
+                      folder={folder}
+                      index={index}
+                      isSelected={isSelected}
+                      isBeingDragged={isBeingDragged}
+                      isDragOver={dragOverId === folder.id}
+                      isDraggingActive={isDraggingActive}
+                      isMobile={isMobile}
+                      onItemClick={handleItemClick}
+                      onItemDoubleClick={handleItemDoubleClick}
+                      onPointerDown={handlePointerDown}
+                      onTouchStartItem={handleTouchStartItem}
+                      onTouchEndItem={handleTouchEndItem}
                       onPreview={toastPreview}
                       onEdit={handleEdit}
                       onDownload={handleDownload}
@@ -1226,62 +1748,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                       onDeletePermanently={setDeleteTarget}
                       onArchive={archiveFile}
                       onUnarchive={unarchiveFile}
-                    >
-                      <div
-                        onClick={(e) => handleItemClick(e, folder)}
-                        onDoubleClick={() => handleItemDoubleClick(folder)}
-                        onMouseDown={(e) => handlePointerDown(e, folder, "folder-grid")}
-                        onTouchStart={() => handleTouchStartItem(folder)}
-                        onTouchEnd={handleTouchEndItem}
-                        onTouchMove={handleTouchEndItem}
-                        data-folder-id={folder.id}
-                        style={{ animationDelay: `${Math.min(index, 15) * 20}ms` }}
-                        className={cn(
-                          "group relative flex items-center justify-between gap-2 h-11 sm:h-12 px-2.5 sm:px-3.5 rounded-xl transition-all duration-150 cursor-pointer select-none border border-transparent hover:border-slate-300/80 dark:hover:border-white/[0.08]",
-                          isSelected
-                            ? "bg-[#c2e7ff] text-[#001d35] dark:bg-[#004a77] dark:text-[#c2e7ff] font-medium shadow-xs border-transparent"
-                            : dragOverId === folder.id
-                            ? "bg-[#c2e7ff]/60 dark:bg-[#004a77]/60 ring-2 ring-[#0b57d0]"
-                            : "bg-[#f0f4f9] dark:bg-[#161719] hover:bg-[#e1e7ef] dark:hover:bg-[#1f2124] text-[#1f1f1f] dark:text-[#e3e3e3]",
-                          isBeingDragged && "opacity-40"
-                        )}
-                      >
-                        {/* Drop-target "+" badge */}
-                        {dragOverId === folder.id && isDraggingActive && (
-                          <span className="absolute -right-2 -top-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-[#0b57d0] text-white shadow-md ring-2 ring-white dark:ring-[#161719] pointer-events-none animate-folder-drop-badge">
-                            <Plus className="h-3.5 w-3.5" />
-                          </span>
-                        )}
-                        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1 pointer-events-none">
-                          <FolderIcon
-                            size="sm"
-                            className={cn(
-                              "h-4.5 w-4.5 sm:h-5 sm:w-5 shrink-0 transition-transform duration-200 group-hover:scale-105",
-                              isSelected
-                                ? "text-[#001d35] dark:text-[#c2e7ff]"
-                                : "text-[#444746] dark:text-[#c4c7c5]"
-                            )}
-                          />
-                          <span className="text-xs sm:text-sm font-medium truncate">
-                            {folder.name}
-                          </span>
-                        </div>
-                        <div className={cn("shrink-0 ml-auto transition-opacity", isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100")} data-no-drag onClick={(e) => e.stopPropagation()}>
-                          <FileActionsMenu
-                            file={folder}
-                            onPreview={toastPreview}
-                            onEdit={handleEdit}
-                            onDownload={handleDownload}
-                            onRename={openRenameDialog}
-                            onStarToggle={toggleStar}
-                            onTrash={moveToTrash}
-                            onDeletePermanently={setDeleteTarget}
-                            onArchive={archiveFile}
-                            onUnarchive={unarchiveFile}
-                          />
-                        </div>
-                      </div>
-                    </FileContextMenu>
+                    />
                   );
                 })}
               </div>
@@ -1299,10 +1766,31 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
               <div className="grid grid-cols-2 sm:grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-2.5 sm:gap-4 px-0.5">
                 {regularFiles.slice(0, renderLimit).map((file, index) => {
                   const isSelected = selectedIdsSet.has(file.id);
+                  const isBeingDragged =
+                    draggedId !== null && (draggedId === file.id || (isSelected && selectedIdsSet.has(draggedId)));
+                  const rawThumbSrc = file.thumbnailUrl || thumbUrls[file.id] || getCachedThumbnailUrl(file);
+                  const thumbSrc =
+                    rawThumbSrc && failedThumbSrcs[file.id] !== rawThumbSrc
+                      ? rawThumbSrc
+                      : undefined;
                   return (
-                    <FileContextMenu
+                    <FileGridCard
                       key={file.id}
                       file={file}
+                      index={index}
+                      foldersCount={folders.length}
+                      isSelected={isSelected}
+                      isBeingDragged={isBeingDragged}
+                      isMobile={isMobile}
+                      thumbSrc={thumbSrc}
+                      formattedSize={formatFileSize(file.size)}
+                      formattedDate={formatShortDate(file.uploadedAt, i18n.language)}
+                      onItemClick={handleItemClick}
+                      onItemDoubleClick={handleItemDoubleClick}
+                      onPointerDown={handlePointerDown}
+                      onTouchStartItem={handleTouchStartItem}
+                      onTouchEndItem={handleTouchEndItem}
+                      onThumbError={handleThumbError}
                       onPreview={toastPreview}
                       onOpenInSystemApp={handleOpenSystemApp}
                       onEdit={handleEdit}
@@ -1314,109 +1802,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                       onArchive={archiveFile}
                       onUnarchive={unarchiveFile}
                       onOfflineToggle={toggleOffline}
-                    >
-                      <div
-                        onClick={(e) => handleItemClick(e, file)}
-                        onDoubleClick={() => handleItemDoubleClick(file)}
-                        onMouseDown={(e) => handlePointerDown(e, file, "file-grid")}
-                        onTouchStart={() => handleTouchStartItem(file)}
-                        onTouchEnd={handleTouchEndItem}
-                        onTouchMove={handleTouchEndItem}
-                        style={{ animationDelay: `${Math.min(folders.length + index, 15) * 20}ms` }}
-                        className={cn(
-                          "group relative flex flex-col rounded-2xl transition-all duration-150 cursor-pointer overflow-hidden text-left select-none h-38 sm:h-48 md:h-52 bg-white dark:bg-[#111214] hover:bg-[#f8fafd] dark:hover:bg-[#161719] border border-slate-200/90 dark:border-white/[0.04] hover:border-slate-300 dark:hover:border-white/[0.08] hover:shadow-md [content-visibility:auto] [contain-intrinsic-size:auto_208px]",
-                          isSelected
-                            ? "bg-[#c2e7ff]/30 dark:bg-[#004a77]/30 ring-2 ring-[#0b57d0] dark:ring-[#a8c7fa] border-transparent shadow-xs"
-                            : "",
-                          (draggedId !== null && (draggedId === file.id || (isSelected && selectedIdsSet.has(draggedId)))) && "opacity-40"
-                        )}
-                      >
-                        {/* Top bar with mini typed icon, title, and action menu */}
-                        <div className="flex items-center justify-between gap-1.5 px-2.5 sm:px-3.5 pt-2 sm:pt-3 pb-1 shrink-0">
-                          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 pointer-events-none">
-                            <FileIcon name={file.name} mime={file.mime} size="sm" bare className="shrink-0" />
-                            <p className="text-[11px] sm:text-xs font-medium text-[#1f1f1f] dark:text-[#e3e3e3] truncate">
-                              {file.name}
-                            </p>
-                          </div>
-                          <div className={cn("shrink-0 transition-opacity", isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100")} data-no-drag onClick={(e) => e.stopPropagation()}>
-                            <FileActionsMenu
-                              file={file}
-                              triggerClassName="h-7 w-7"
-                              onPreview={toastPreview}
-                              onEdit={handleEdit}
-                              onDownload={handleDownload}
-                              onRename={openRenameDialog}
-                              onStarToggle={toggleStar}
-                              onTrash={moveToTrash}
-                              onDeletePermanently={setDeleteTarget}
-                              onArchive={archiveFile}
-                              onUnarchive={unarchiveFile}
-                              onOfflineToggle={toggleOffline}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Centered Preview Canvas */}
-                        <div className="flex-1 bg-[#f8fafd] dark:bg-[#0a0a0a] mx-2.5 my-1 rounded-xl border border-slate-100 dark:border-white/[0.04] flex items-center justify-center relative overflow-hidden pointer-events-none">
-                          {(() => {
-                            const rawThumbSrc = file.thumbnailUrl || thumbUrls[file.id] || getCachedThumbnailUrl(file);
-                            const thumbSrc =
-                              rawThumbSrc && failedThumbSrcs[file.id] !== rawThumbSrc
-                                ? rawThumbSrc
-                                : undefined;
-                            return thumbSrc ? (
-                              <img
-                                src={thumbSrc}
-                                alt={file.name}
-                                loading="lazy"
-                                className="w-full h-full object-cover"
-                                onError={() => {
-                                  invalidateThumbnailCache(file);
-                                  setFailedThumbSrcs((prev) =>
-                                    prev[file.id] === thumbSrc ? prev : { ...prev, [file.id]: thumbSrc }
-                                  );
-                                  setThumbUrls((prev) => {
-                                    if (!prev[file.id]) return prev;
-                                    const next = { ...prev };
-                                    delete next[file.id];
-                                    return next;
-                                  });
-                                }}
-                              />
-                            ) : (
-                              <div className="w-16 h-20 bg-white dark:bg-[#161719] rounded-md shadow-xs border border-slate-200/80 dark:border-white/[0.04] p-2 flex flex-col items-center justify-between pointer-events-none select-none">
-                                <div className="w-full space-y-1 mt-0.5 opacity-40">
-                                  <div className="h-0.5 bg-slate-300 dark:bg-slate-600 rounded-full w-full" />
-                                  <div className="h-0.5 bg-slate-300 dark:bg-slate-600 rounded-full w-4/5" />
-                                  <div className="h-0.5 bg-slate-300 dark:bg-slate-600 rounded-full w-3/5" />
-                                </div>
-                                <div className="my-auto py-0.5">
-                                  <FileIcon name={file.name} mime={file.mime} size="md" bare />
-                                </div>
-                                <div className="w-full space-y-1 mb-0.5 opacity-30">
-                                  <div className="h-0.5 bg-slate-300 dark:bg-slate-600 rounded-full w-full" />
-                                  <div className="h-0.5 bg-slate-300 dark:bg-slate-600 rounded-full w-2/3" />
-                                </div>
-                              </div>
-                            );
-                          })()}
-
-                          {file.starred && (
-                            <Star className="absolute top-2 right-2 h-4 w-4 fill-amber-400 text-amber-400 drop-shadow-xs" />
-                          )}
-                          {file.offline && (
-                            <CheckCircle className="absolute top-2 left-2 h-4 w-4 text-emerald-500 fill-emerald-500/20 shrink-0" />
-                          )}
-                        </div>
-
-                        {/* Bottom details footer */}
-                        <div className="px-3.5 py-2 flex items-center justify-between text-[11px] text-[#747775] dark:text-[#8e918f] pointer-events-none shrink-0 font-normal">
-                          <span>{formatFileSize(file.size)}</span>
-                          <span>{new Date(file.uploadedAt).toLocaleDateString(i18n.language, { month: "short", day: "numeric" })}</span>
-                        </div>
-                      </div>
-                    </FileContextMenu>
+                    />
                   );
                 })}
               </div>
@@ -1460,11 +1846,28 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
               {displayFiles.slice(0, renderLimit).map((file, index) => {
                 const isSelected = selectedIdsSet.has(file.id);
                 const isDir = file.mime === "inode/directory" || file.mime === "application/x-directory";
-                
+                const isBeingDragged =
+                  draggedId !== null && (draggedId === file.id || (isSelected && selectedIdsSet.has(draggedId)));
                 return (
-                  <FileContextMenu
+                  <FileListRow
                     key={file.id}
                     file={file}
+                    index={index}
+                    isDir={isDir}
+                    isSelected={isSelected}
+                    isBeingDragged={isBeingDragged}
+                    isDragOver={dragOverId === file.id}
+                    isMobile={isMobile}
+                    formattedSize={isDir ? "—" : formatFileSize(file.size)}
+                    formattedDateShort={formatShortDate(file.uploadedAt, i18n.language)}
+                    formattedDateFull={formatFullDate(file.uploadedAt, i18n.language)}
+                    fileTypeLabel={getFileType(file, t)}
+                    onToggleSelect={toggleSelect}
+                    onItemClick={handleItemClick}
+                    onItemDoubleClick={handleItemDoubleClick}
+                    onPointerDown={handlePointerDown}
+                    onTouchStartItem={handleTouchStartItem}
+                    onTouchEndItem={handleTouchEndItem}
                     onPreview={toastPreview}
                     onOpenInSystemApp={handleOpenSystemApp}
                     onEdit={handleEdit}
@@ -1476,80 +1879,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                     onArchive={archiveFile}
                     onUnarchive={unarchiveFile}
                     onOfflineToggle={toggleOffline}
-                  >
-                    <tr
-                      onClick={(e) => handleItemClick(e, file)}
-                      onDoubleClick={() => handleItemDoubleClick(file)}
-                      onMouseDown={(e) => handlePointerDown(e, file, "list-row")}
-                      onTouchStart={() => handleTouchStartItem(file)}
-                      onTouchEnd={handleTouchEndItem}
-                      onTouchMove={handleTouchEndItem}
-                      {...(isDir ? { 'data-folder-id': file.id } : {})}
-                      style={{ animationDelay: `${Math.min(index, 15) * 20}ms` }}
-                      className={cn(
-                        "group border-b border-slate-100 dark:border-white/[0.03] hover:bg-[#f0f4f9] dark:hover:bg-[#161719] cursor-pointer transition-colors duration-100 h-11 sm:h-12 [content-visibility:auto] [contain-intrinsic-size:auto_48px]",
-                        isSelected && "bg-[#c2e7ff]/40 dark:bg-[#004a77]/35 text-[#001d35] dark:text-[#c2e7ff]",
-                        dragOverId === file.id && isDir && "bg-[#c2e7ff]/70 dark:bg-[#004a77]/70 ring-2 ring-[#0b57d0]",
-                        (draggedId !== null && (draggedId === file.id || (isSelected && selectedIdsSet.has(draggedId)))) && "opacity-40"
-                      )}
-                    >
-                      <td className="py-2 sm:py-3 px-3 sm:px-4 text-center" data-no-drag onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => toggleSelect(file.id)}
-                          className="h-4 w-4 rounded-sm border-slate-300 dark:border-white/[0.1] text-[#0b57d0] focus:ring-[#0b57d0]/20 dark:bg-[#161719] transition-colors cursor-pointer"
-                        />
-                      </td>
-                      <td className="py-2 sm:py-3 px-2.5 sm:px-4 font-medium text-[#1f1f1f] dark:text-[#e3e3e3] text-xs md:text-sm">
-                        <div className="flex items-center gap-2.5 sm:gap-3 pointer-events-none">
-                          <FileIcon name={file.name} mime={file.mime} size="sm" className="shrink-0" />
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5">
-                              <span className="truncate max-w-[170px] sm:max-w-xs">{file.name}</span>
-                              {file.starred && (
-                                <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 shrink-0 ml-0.5" />
-                              )}
-                              {file.offline && (
-                                <CheckCircle className="h-3.5 w-3.5 text-emerald-500 fill-emerald-500/20 shrink-0 ml-0.5" />
-                              )}
-                            </div>
-                            <div className="sm:hidden text-[10px] text-[#444746] dark:text-[#8e918f] font-normal flex items-center gap-1.5 mt-0.5">
-                              <span>{isDir ? t("browser.fileType.folder") : formatFileSize(file.size)}</span>
-                              <span>•</span>
-                              <span>{new Date(file.uploadedAt).toLocaleDateString(i18n.language, { month: "short", day: "numeric" })}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="py-3 px-4 hidden sm:table-cell text-xs text-[#444746] dark:text-[#8e918f] pointer-events-none">
-                        {getFileType(file, t)}
-                      </td>
-                      <td className="py-3 px-4 hidden md:table-cell text-xs text-[#444746] dark:text-[#8e918f] pointer-events-none">
-                        {isDir ? "—" : formatFileSize(file.size)}
-                      </td>
-                      <td className="py-3 px-4 hidden lg:table-cell text-xs text-[#444746] dark:text-[#8e918f] pointer-events-none">
-                        {new Date(file.uploadedAt).toLocaleDateString(i18n.language)}
-                      </td>
-                      <td className="py-2.5 sm:py-3 px-2 sm:px-4 text-center" data-no-drag onClick={(e) => e.stopPropagation()}>
-                        <div className={cn("transition-opacity", isMobile ? "opacity-100" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100")}>
-                          <FileActionsMenu
-                            file={file}
-                            onPreview={toastPreview}
-                            onEdit={handleEdit}
-                            onDownload={handleDownload}
-                            onRename={openRenameDialog}
-                            onStarToggle={toggleStar}
-                            onTrash={moveToTrash}
-                            onDeletePermanently={setDeleteTarget}
-                            onArchive={archiveFile}
-                            onUnarchive={unarchiveFile}
-                            onOfflineToggle={toggleOffline}
-                          />
-                        </div>
-                      </td>
-                    </tr>
-                  </FileContextMenu>
+                  />
                 );
               })}
             </tbody>
