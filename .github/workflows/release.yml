@@ -74,6 +74,12 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+      - name: Set up Python for DMG packaging (macOS)
+        if: matrix.platform == 'macos-latest'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       - name: Build Tauri app
         env:
           TAURI_BUNDLER_DMG_IGNORE_CI: "true"
@@ -86,23 +92,26 @@ jobs:
           echo "=== Organizing deliverables for ${{ matrix.os_name }} ==="
 
           if [ "${{ matrix.os_name }}" = "macos" ]; then
-            python3 -m pip install dmgbuild ds_store mac_alias
+            python3 -m pip install --upgrade pip || true
+            python3 -m pip install --break-system-packages dmgbuild ds_store mac_alias 2>/dev/null || python3 -m pip install dmgbuild ds_store mac_alias || true
             APP_PATH=$(find src-tauri/target -name "TeleDrive.app" -type d 2>/dev/null | head -n 1)
-            if [ -d "$APP_PATH" ]; then
+            DMG_FALLBACK=$(find src-tauri/target -name "*.dmg" -not -name "rw.*" 2>/dev/null | head -n 1)
+
+            if [ -d "$APP_PATH" ] && python3 -c "import dmgbuild" 2>/dev/null; then
               echo "Packaging custom DMG using dmgbuild ($APP_PATH)..."
               export TELEDRIVE_APP_PATH="$APP_PATH"
               export REPO_ROOT="$(pwd)"
-              python3 -m dmgbuild -s scripts/dmg_settings.py "TeleDrive" staging/teledrive.dmg
-              echo "✓ Staged custom styled staging/teledrive.dmg"
+              python3 -m dmgbuild -s scripts/dmg_settings.py "TeleDrive" staging/teledrive.dmg || {
+                echo "Warning: dmgbuild failed; copying fallback DMG $DMG_FALLBACK"
+                cp "$DMG_FALLBACK" staging/teledrive.dmg
+              }
+              echo "✓ Staged staging/teledrive.dmg"
+            elif [ -n "$DMG_FALLBACK" ]; then
+              cp "$DMG_FALLBACK" staging/teledrive.dmg
+              echo "✓ Staged fallback $DMG_FALLBACK -> staging/teledrive.dmg"
             else
-              DMG_FILE=$(find src-tauri/target -name "*.dmg" -not -name "rw.*" 2>/dev/null | head -n 1)
-              if [ -n "$DMG_FILE" ]; then
-                cp "$DMG_FILE" staging/teledrive.dmg
-                echo "✓ Staged fallback $DMG_FILE -> staging/teledrive.dmg"
-              else
-                echo "::error::Neither TeleDrive.app nor DMG found"
-                exit 1
-              fi
+              echo "::error::Neither TeleDrive.app nor DMG found"
+              exit 1
             fi
           fi
 
