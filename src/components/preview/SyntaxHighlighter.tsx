@@ -2,9 +2,9 @@
  * SyntaxHighlighter.tsx
  * Read-only syntax-highlighted code view.
  *
- * Theme: One Dark Pro (dark) / GitHub Light (light) — both injected once.
+ * Theme: One Dark Pro (dark) / GitHub Light (light) — statically bundled in index.css.
  * Layout: sticky line-number gutter + scrollable code block (no table, fewer DOM nodes).
- * Performance: lazy highlight.js, React.memo, useMemo for line count.
+ * Performance: pre-bundled highlight.js, React.memo, useMemo for line count.
  */
 import { memo, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -12,40 +12,18 @@ import hljs from "highlight.js";
 import { useDarkMode } from "@/hooks/useDarkMode";
 import { detectLang } from "@/lib/files/langDetect";
 
-// Resolve hljs object safely across ESM/CJS bundling
-const hljsInstance: typeof hljs = (hljs as any)?.default || hljs;
-
-// ─── Theme CSS ─────────────────────────────────────────────────────────────
-
-const CSS_DARK = `
-.hljs{color:#abb2bf;background:transparent}
-.hljs-comment,.hljs-quote{color:#5c6370;font-style:italic}
-.hljs-doctag,.hljs-keyword,.hljs-formula{color:#c678dd}
-.hljs-section,.hljs-name,.hljs-selector-tag,.hljs-deletion,.hljs-subst{color:#e06c75}
-.hljs-literal{color:#56b6c2}
-.hljs-string,.hljs-regexp,.hljs-addition,.hljs-attribute,.hljs-meta-string{color:#98c379}
-.hljs-built_in,.hljs-class .hljs-title{color:#e6c07b}
-.hljs-attr,.hljs-variable,.hljs-template-variable,.hljs-type,.hljs-selector-class,.hljs-selector-attr,.hljs-selector-pseudo,.hljs-number{color:#d19a66}
-.hljs-symbol,.hljs-bullet,.hljs-link,.hljs-meta,.hljs-selector-id,.hljs-title{color:#61aeee}
-.hljs-emphasis{font-style:italic}
-.hljs-strong{font-weight:bold}
-.hljs-link{text-decoration:underline}
-`;
-
-const CSS_LIGHT = `
-.hljs{color:#24292f;background:transparent}
-.hljs-comment,.hljs-quote{color:#57606a;font-style:italic}
-.hljs-keyword,.hljs-doctag,.hljs-formula,.hljs-selector-tag{color:#cf222e}
-.hljs-section,.hljs-name,.hljs-deletion,.hljs-subst{color:#82071e}
-.hljs-literal{color:#0550ae}
-.hljs-string,.hljs-regexp,.hljs-addition,.hljs-attribute,.hljs-meta-string{color:#0a3069}
-.hljs-built_in,.hljs-class .hljs-title,.hljs-title{color:#8250df}
-.hljs-attr,.hljs-variable,.hljs-template-variable,.hljs-type,.hljs-selector-class,.hljs-number{color:#0550ae}
-.hljs-symbol,.hljs-bullet,.hljs-link,.hljs-meta,.hljs-selector-id{color:#0a3069}
-.hljs-emphasis{font-style:italic}
-.hljs-strong{font-weight:bold}
-.hljs-link{text-decoration:underline}
-`;
+/**
+ * Robust hljs resolver handling ESM default export, CJS export, and Vite bundling.
+ */
+function getHljs(): typeof hljs {
+  if (typeof (hljs as any)?.highlight === "function") {
+    return hljs;
+  }
+  if (typeof (hljs as any)?.default?.highlight === "function") {
+    return (hljs as any).default;
+  }
+  return hljs;
+}
 
 // Max lines to highlight; beyond this, show plain text with a notice
 const MAX_HIGHLIGHT_LINES = 3000;
@@ -75,21 +53,12 @@ export const SyntaxHighlighter = memo(function SyntaxHighlighter({
   const isTooLarge = lineCount > MAX_HIGHLIGHT_LINES;
   const lineHeightPx = Math.round(fontSize * 1.62);
 
-  // ── Inject theme CSS dynamically based on active theme ───────────────────
+  // Clean up any legacy dynamic style elements if present in DOM
   useEffect(() => {
-    // Clean up older conflicting tags if they exist
+    document.getElementById("hljs-theme")?.remove();
     document.getElementById("hljs-dark")?.remove();
     document.getElementById("hljs-light")?.remove();
-
-    const css = isDark ? CSS_DARK : CSS_LIGHT;
-    let el = document.getElementById("hljs-theme");
-    if (!el) {
-      el = document.createElement("style");
-      el.id = "hljs-theme";
-      document.head.appendChild(el);
-    }
-    el.textContent = css;
-  }, [isDark]);
+  }, []);
 
   // ── Highlight.js — synchronous, bundled, zero dynamic-import failure ─────
   const highlighted = useMemo(() => {
@@ -101,9 +70,10 @@ export const SyntaxHighlighter = memo(function SyntaxHighlighter({
     }
 
     try {
+      const h = getHljs();
       const lang = langInfo.hljsLang;
-      if (lang && lang !== "plaintext" && hljsInstance.getLanguage(lang)) {
-        return hljsInstance.highlight(code, {
+      if (lang && lang !== "plaintext" && typeof h?.getLanguage === "function" && h.getLanguage(lang)) {
+        return h.highlight(code, {
           language: lang,
           ignoreIllegals: true,
         }).value;
@@ -190,7 +160,7 @@ export const SyntaxHighlighter = memo(function SyntaxHighlighter({
             ⚠ {t("syntaxHighlighter.largeFile", { count: lineCount })}
           </div>
         )}
-        <code dangerouslySetInnerHTML={{ __html: highlighted }} />
+        <code className="hljs font-mono" dangerouslySetInnerHTML={{ __html: highlighted }} />
       </pre>
     </div>
   );

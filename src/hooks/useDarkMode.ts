@@ -7,6 +7,7 @@
 import { useState, useEffect } from "react";
 
 function isDarkNow(): boolean {
+  if (typeof document === "undefined") return false;
   return document.documentElement.classList.contains("dark");
 }
 
