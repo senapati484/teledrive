@@ -15,9 +15,9 @@ compression_level = 9
 filesystem = "HFS+"
 
 # Window configuration: ((x, y), (width, height))
-# Height 440 ensures the entire 400px background image (including bottom text) is fully visible
-# without being cropped by the 36-40px macOS window titlebar.
-window_rect = ((200, 120), (660, 440))
+# Height 428 provides a 396pt interior viewport that matches the 400px background image
+# without vertical clipping and prevents any white background bars from showing at the bottom.
+window_rect = ((200, 120), (660, 428))
 default_view = "icon-view"
 show_toolbar = False
 show_statusbar = False
@@ -90,11 +90,14 @@ def create_hook(mount_point, options):
                 set toolbar visible of container window to false
                 set statusbar visible of container window to false
                 set pathbar visible of container window to false
-                set the bounds of container window to {{200, 120, 860, 560}}
+                set the bounds of container window to {{200, 120, 860, 548}}
                 
                 set theViewOptions to the icon view options of container window
                 set arrangement of theViewOptions to not arranged
                 set icon size of theViewOptions to 72
+                try
+                    set background color of theViewOptions to {{514, 2570, 7710}}
+                end try
                 if exists file "{target_bg}" then
                     set background picture of theViewOptions to (POSIX file "{target_bg}")
                 end if
