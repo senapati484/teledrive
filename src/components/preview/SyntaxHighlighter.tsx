@@ -6,10 +6,14 @@
  * Layout: sticky line-number gutter + scrollable code block (no table, fewer DOM nodes).
  * Performance: lazy highlight.js, React.memo, useMemo for line count.
  */
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import hljs from "highlight.js";
 import { useDarkMode } from "@/hooks/useDarkMode";
 import { detectLang } from "@/lib/files/langDetect";
+
+// Resolve hljs object safely across ESM/CJS bundling
+const hljsInstance: typeof hljs = (hljs as any)?.default || hljs;
 
 // ─── Theme CSS ─────────────────────────────────────────────────────────────
 
@@ -65,8 +69,6 @@ export const SyntaxHighlighter = memo(function SyntaxHighlighter({
 }: Props) {
   const { t } = useTranslation("preview");
   const isDark = useDarkMode();
-  const [highlighted, setHighlighted] = useState<string>("");
-  const [hljsReady, setHljsReady] = useState(false);
   const langInfo = useMemo(() => detectLang(fileName), [fileName]);
 
   const lineCount = useMemo(() => code.split(/\r?\n/).length, [code]);
@@ -89,56 +91,28 @@ export const SyntaxHighlighter = memo(function SyntaxHighlighter({
     el.textContent = css;
   }, [isDark]);
 
-  // ── Highlight.js — lazy load + highlight ─────────────────────────────────
-  useEffect(() => {
+  // ── Highlight.js — synchronous, bundled, zero dynamic-import failure ─────
+  const highlighted = useMemo(() => {
+    const escapeHtml = (str: string) =>
+      str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
     if (isTooLarge) {
-      setHighlighted(
-        code
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-      );
-      setHljsReady(true);
-      return;
+      return escapeHtml(code);
     }
 
-    let cancelled = false;
-    (async () => {
-      try {
-        const hljs = (await import("highlight.js")).default;
-        if (cancelled) return;
-
-        let html: string;
-        if (langInfo.hljsLang !== "plaintext") {
-          html = hljs.highlight(code, {
-            language: langInfo.hljsLang,
-            ignoreIllegals: true,
-          }).value;
-        } else {
-          html = code
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;");
-        }
-
-        if (!cancelled) {
-          setHighlighted(html);
-          setHljsReady(true);
-        }
-      } catch {
-        if (!cancelled) {
-          setHighlighted(
-            code
-              .replace(/&/g, "&amp;")
-              .replace(/</g, "&lt;")
-              .replace(/>/g, "&gt;")
-          );
-          setHljsReady(true);
-        }
+    try {
+      const lang = langInfo.hljsLang;
+      if (lang && lang !== "plaintext" && hljsInstance.getLanguage(lang)) {
+        return hljsInstance.highlight(code, {
+          language: lang,
+          ignoreIllegals: true,
+        }).value;
       }
-    })();
-
-    return () => { cancelled = true; };
+      return escapeHtml(code);
+    } catch (err) {
+      console.warn("[SyntaxHighlighter] highlight error:", err);
+      return escapeHtml(code);
+    }
   }, [code, langInfo.hljsLang, isTooLarge]);
 
   // ── Theme-derived values ─────────────────────────────────────────────────
@@ -216,11 +190,7 @@ export const SyntaxHighlighter = memo(function SyntaxHighlighter({
             ⚠ {t("syntaxHighlighter.largeFile", { count: lineCount })}
           </div>
         )}
-        {hljsReady ? (
-          <code dangerouslySetInnerHTML={{ __html: highlighted }} />
-        ) : (
-          <code style={{ opacity: 0.5 }}>{code}</code>
-        )}
+        <code dangerouslySetInnerHTML={{ __html: highlighted }} />
       </pre>
     </div>
   );

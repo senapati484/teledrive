@@ -14,6 +14,25 @@ import { useTranslation } from "react-i18next";
 import { useDarkMode } from "@/hooks/useDarkMode";
 import { detectLang } from "@/lib/files/langDetect";
 
+import {
+  EditorView,
+  keymap,
+  lineNumbers,
+  highlightActiveLine,
+  highlightActiveLineGutter,
+  drawSelection,
+  dropCursor,
+  rectangularSelection,
+  crosshairCursor,
+  highlightSpecialChars,
+} from "@codemirror/view";
+import { EditorState, Compartment } from "@codemirror/state";
+import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
+import { indentOnInput, syntaxHighlighting, defaultHighlightStyle, bracketMatching, indentUnit } from "@codemirror/language";
+import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
+import { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap } from "@codemirror/autocomplete";
+import { oneDark } from "@codemirror/theme-one-dark";
+
 interface CursorPosition { line: number; col: number; }
 
 interface Props {
@@ -22,39 +41,6 @@ interface Props {
   fileName: string;
   onCursorChange?: (pos: CursorPosition) => void;
   className?: string;
-}
-
-// ─── Reusable CM6 setup (loaded once) ─────────────────────────────────────
-// Stored in module-level refs so the dynamic import only happens once.
-let cmModules: any = null;
-let cmLoading = false;
-const cmCallbacks: Array<(m: any) => void> = [];
-
-async function loadCM(): Promise<any> {
-  if (cmModules) return cmModules;
-  if (cmLoading) return new Promise(r => cmCallbacks.push(r));
-  cmLoading = true;
-  const [
-    viewMod,
-    stateMod,
-    commandsMod,
-    languageMod,
-    searchMod,
-    autocompleteMod,
-    oneDarkMod,
-  ] = await Promise.all([
-    import("@codemirror/view"),
-    import("@codemirror/state"),
-    import("@codemirror/commands"),
-    import("@codemirror/language"),
-    import("@codemirror/search"),
-    import("@codemirror/autocomplete"),
-    import("@codemirror/theme-one-dark"),
-  ]);
-  cmModules = { viewMod, stateMod, commandsMod, languageMod, searchMod, autocompleteMod, oneDarkMod };
-  cmCallbacks.forEach(r => r(cmModules));
-  cmCallbacks.length = 0;
-  return cmModules;
 }
 
 // ─── GitHub Light inline theme ─────────────────────────────────────────────
@@ -142,11 +128,11 @@ export function CodeEditor({ value, onChange, fileName, onCursorChange, classNam
   const { t } = useTranslation("preview");
   const isDark = useDarkMode();
   const containerRef = useRef<HTMLDivElement>(null);
-  const viewRef = useRef<any>(null);
-  const themeCompartmentRef = useRef<any>(null);
+  const viewRef = useRef<EditorView | null>(null);
+  const themeCompartmentRef = useRef<Compartment | null>(null);
   const onChangeRef = useRef(onChange);
   const onCursorRef = useRef(onCursorChange);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const langInfo = detectLang(fileName);
 
   // Keep callback refs fresh
@@ -156,99 +142,77 @@ export function CodeEditor({ value, onChange, fileName, onCursorChange, classNam
   // ── Build + mount editor (once per fileName) ─────────────────────────────
   useEffect(() => {
     if (!containerRef.current) return;
-    let cancelled = false;
-    let view: any = null;
+    let view: EditorView | null = null;
 
-    (async () => {
-      try {
-        const {
-          viewMod: { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter, drawSelection, dropCursor, rectangularSelection, crosshairCursor, highlightSpecialChars },
-          stateMod: { EditorState, Compartment },
-          commandsMod: { defaultKeymap, history, historyKeymap, indentWithTab },
-          languageMod: { indentOnInput, syntaxHighlighting, defaultHighlightStyle, bracketMatching, indentUnit },
-          searchMod: { searchKeymap, highlightSelectionMatches },
-          autocompleteMod: { autocompletion, completionKeymap, closeBrackets, closeBracketsKeymap },
-          oneDarkMod: { oneDark },
-        } = await loadCM();
-
-        if (cancelled) return;
-
-        // Language support (optional)
-        // cmLoader is now a synchronous factory (static imports bundled at build
-        // time) — no await needed. The try/catch guards against any edge-case
-        // where a language pack constructor throws at runtime.
-        let langExt: any[] = [];
-        if (langInfo.cmLoader) {
-          try { langExt = [langInfo.cmLoader()]; } catch { /* skip */ }
-        }
-        if (cancelled) return;
-
-        // Theme compartment — allows hot-swapping without recreating the editor
-        const themeCompartment = new Compartment();
-        themeCompartmentRef.current = { compartment: themeCompartment, EditorView, oneDark };
-
-        const isDarkNow = document.documentElement.classList.contains("dark");
-        const themeExt = themeCompartment.of(
-          isDarkNow ? buildDarkTheme(EditorView, oneDark) : buildLightTheme(EditorView)
-        );
-
-        const updateListener = EditorView.updateListener.of((update: any) => {
-          if (update.docChanged) onChangeRef.current(update.state.doc.toString());
-          if (update.selectionSet && onCursorRef.current) {
-            const pos = update.state.selection.main.head;
-            const line = update.state.doc.lineAt(pos);
-            onCursorRef.current({ line: line.number, col: pos - line.from + 1 });
-          }
-        });
-
-        const state = EditorState.create({
-          doc: value,
-          extensions: [
-            history(),
-            drawSelection(),
-            dropCursor(),
-            EditorState.allowMultipleSelections.of(true),
-            rectangularSelection(),
-            crosshairCursor(),
-            highlightSpecialChars(),
-            highlightSelectionMatches(),
-            lineNumbers(),
-            highlightActiveLine(),
-            highlightActiveLineGutter(),
-            indentOnInput(),
-            bracketMatching(),
-            closeBrackets(),
-            syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
-            indentUnit.of("  "),
-            autocompletion(),
-            keymap.of([
-              indentWithTab,
-              ...closeBracketsKeymap,
-              ...defaultKeymap,
-              ...historyKeymap,
-              ...searchKeymap,
-              ...completionKeymap,
-            ]),
-            EditorView.lineWrapping,
-            ...langExt,
-            themeExt,
-            updateListener,
-          ],
-        });
-
-        if (cancelled) return;
-
-        view = new EditorView({ state, parent: containerRef.current! });
-        viewRef.current = view;
-        setIsLoading(false);
-      } catch (err) {
-        console.error("[CodeEditor] init error:", err);
-        if (!cancelled) setIsLoading(false);
+    try {
+      // Language support (optional)
+      let langExt: any[] = [];
+      if (langInfo.cmLoader) {
+        try { langExt = [langInfo.cmLoader()]; } catch { /* skip */ }
       }
-    })();
+
+      // Theme compartment — allows hot-swapping without recreating the editor
+      const themeCompartment = new Compartment();
+      themeCompartmentRef.current = themeCompartment;
+
+      const isDarkNow = document.documentElement.classList.contains("dark");
+      const themeExt = themeCompartment.of(
+        isDarkNow ? buildDarkTheme(EditorView, oneDark) : buildLightTheme(EditorView)
+      );
+
+      const updateListener = EditorView.updateListener.of((update) => {
+        if (update.docChanged) onChangeRef.current(update.state.doc.toString());
+        if (update.selectionSet && onCursorRef.current) {
+          const pos = update.state.selection.main.head;
+          const line = update.state.doc.lineAt(pos);
+          onCursorRef.current({ line: line.number, col: pos - line.from + 1 });
+        }
+      });
+
+      const state = EditorState.create({
+        doc: value,
+        extensions: [
+          history(),
+          drawSelection(),
+          dropCursor(),
+          EditorState.allowMultipleSelections.of(true),
+          rectangularSelection(),
+          crosshairCursor(),
+          highlightSpecialChars(),
+          highlightSelectionMatches(),
+          lineNumbers(),
+          highlightActiveLine(),
+          highlightActiveLineGutter(),
+          indentOnInput(),
+          bracketMatching(),
+          closeBrackets(),
+          syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+          indentUnit.of("  "),
+          autocompletion(),
+          keymap.of([
+            indentWithTab,
+            ...closeBracketsKeymap,
+            ...defaultKeymap,
+            ...historyKeymap,
+            ...searchKeymap,
+            ...completionKeymap,
+          ]),
+          EditorView.lineWrapping,
+          ...langExt,
+          themeExt,
+          updateListener,
+        ],
+      });
+
+      view = new EditorView({ state, parent: containerRef.current });
+      viewRef.current = view;
+      setIsLoading(false);
+    } catch (err) {
+      console.error("[CodeEditor] init error:", err);
+      setIsLoading(false);
+    }
 
     return () => {
-      cancelled = true;
       view?.destroy();
       viewRef.current = null;
       themeCompartmentRef.current = null;
@@ -258,9 +222,8 @@ export function CodeEditor({ value, onChange, fileName, onCursorChange, classNam
 
   // ── Hot-swap theme via Compartment (no editor rebuild) ───────────────────
   useEffect(() => {
-    const ctx = themeCompartmentRef.current;
-    if (!ctx || !viewRef.current) return;
-    const { compartment, EditorView, oneDark } = ctx;
+    const compartment = themeCompartmentRef.current;
+    if (!compartment || !viewRef.current) return;
     viewRef.current.dispatch({
       effects: compartment.reconfigure(
         isDark ? buildDarkTheme(EditorView, oneDark) : buildLightTheme(EditorView)

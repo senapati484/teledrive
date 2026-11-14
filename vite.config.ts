@@ -42,14 +42,18 @@ export default defineConfig(async () => ({
     rollupOptions: {
       output: {
           manualChunks(id: string) {
-            // Bundle ALL CodeMirror + Lezer packages into one vendor chunk.
-            // This includes @codemirror/lang-* language packs which are
-            // statically imported from langDetect.ts so they are resolved at
-            // build time and never need a dynamic import() at runtime.
-            // (Dynamic lang imports were the root cause of missing syntax
-            // highlighting in the installed Tauri app — asset:// protocol +
-            // CSP 'script-src self' blocks late chunk loading.)
-            if (id.includes("node_modules/@codemirror") || id.includes("node_modules/@lezer")) {
+            // Bundle ALL CodeMirror + Lezer + Highlight.js packages into one vendor chunk.
+            // This includes @codemirror/lang-* language packs and highlight.js which are
+            // statically imported so they are resolved at build time and never need a
+            // dynamic import() at runtime.
+            // (Dynamic imports were the root cause of missing syntax highlighting
+            // in the installed Tauri app — asset:// protocol + CSP 'script-src self'
+            // blocks late chunk loading.)
+            if (
+              id.includes("node_modules/@codemirror") ||
+              id.includes("node_modules/@lezer") ||
+              id.includes("node_modules/highlight.js")
+            ) {
               return "codemirror-vendor";
             }
           },
