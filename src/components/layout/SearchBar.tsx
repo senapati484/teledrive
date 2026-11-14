@@ -1,4 +1,4 @@
-import React, { useState, useDeferredValue } from "react";
+import React, { useState, useDeferredValue, useMemo } from "react";
 import { Search, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -16,13 +16,20 @@ export default function SearchBar({ autoFocus, onBlur }: { autoFocus?: boolean; 
   
   const files = useFileStore((state) => state.files);
 
-  // Defer the expensive fuzzy-search computation so the input stays responsive
+  // Defer the fuzzy-search computation so the input stays responsive
   const deferredQuery = useDeferredValue(query);
 
+  // Memoize non-trashed files so keystrokes don't re-filter on every render
+  const nonTrashedFiles = useMemo(() => files.filter((f) => !f.trashed), [files]);
+
   // Get top 5 fuzzy match quick results for non-trashed files
-  const quickResults = deferredQuery.trim()
-    ? fuzzySearch(files.filter((f) => !f.trashed), deferredQuery).slice(0, 5)
-    : [];
+  const quickResults = useMemo(
+    () =>
+      deferredQuery.trim()
+        ? fuzzySearch(nonTrashedFiles, deferredQuery).slice(0, 5)
+        : [],
+    [nonTrashedFiles, deferredQuery]
+  );
 
   // Whether search results are stale (input faster than search)
   const isStale = deferredQuery !== query;

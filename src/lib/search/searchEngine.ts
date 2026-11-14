@@ -9,33 +9,36 @@ export function fuzzySearch(files: TeleFile[], query: string): TeleFile[] {
   if (!query.trim()) return [];
   
   const q = query.toLowerCase().trim();
-  const scored = files
-    .map((file) => {
-      let score = 0;
-      const name = file.name.toLowerCase();
-      const path = file.folderPath.toLowerCase();
-      const mime = file.mime.toLowerCase();
+  const scored: { file: TeleFile; score: number }[] = [];
 
-      // Ranks
-      if (name === q) {
-        score += 100; // Exact match
-      } else if (name.startsWith(q)) {
-        score += 80; // Prefix match
-      } else if (name.includes(q)) {
-        score += 50; // Partial substring match
-      }
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    let score = 0;
+    const name = file.name.toLowerCase();
 
-      if (path.includes(q)) {
-        score += 20; // Folder path match
-      }
+    // Ranks
+    if (name === q) {
+      score += 100; // Exact match
+    } else if (name.startsWith(q)) {
+      score += 80; // Prefix match
+    } else if (name.includes(q)) {
+      score += 50; // Partial substring match
+    }
 
-      if (mime.includes(q)) {
-        score += 10; // File type match
-      }
+    const path = file.folderPath.toLowerCase();
+    if (path.includes(q)) {
+      score += 20; // Folder path match
+    }
 
-      return { file, score };
-    })
-    .filter((item) => item.score > 0);
+    const mime = file.mime.toLowerCase();
+    if (mime.includes(q)) {
+      score += 10; // File type match
+    }
+
+    if (score > 0) {
+      scored.push({ file, score });
+    }
+  }
 
   // Sort by descending score, fallback to name alphabetically
   scored.sort((a, b) => {

@@ -246,6 +246,8 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
   const INITIAL_RENDER_LIMIT = 80;
   const [renderLimit, setRenderLimit] = useState(INITIAL_RENDER_LIMIT);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const scrollSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const totalDisplayCountRef = useRef(0);
 
   // Restore scroll position for current folder/mode
   useEffect(() => {
@@ -259,11 +261,26 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
+    const scrollTop = target.scrollTop;
     if (target.scrollTop + target.clientHeight >= target.scrollHeight - 300) {
-      setRenderLimit((prev) => prev + 50);
+      setRenderLimit((prev) => (prev < totalDisplayCountRef.current ? prev + 50 : prev));
     }
-    sessionStorage.setItem(`teledrive_scroll_${mode}_${folderPath}`, String(target.scrollTop));
+    if (scrollSaveTimerRef.current) {
+      clearTimeout(scrollSaveTimerRef.current);
+    }
+    scrollSaveTimerRef.current = setTimeout(() => {
+      sessionStorage.setItem(`teledrive_scroll_${mode}_${folderPath}`, String(scrollTop));
+    }, 120);
   }, [mode, folderPath]);
+
+  // Clean up scroll save timer on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollSaveTimerRef.current) {
+        clearTimeout(scrollSaveTimerRef.current);
+      }
+    };
+  }, []);
 
   // Update current folder path in store on mount/change
   useEffect(() => {
@@ -503,6 +520,9 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       regularFiles: nextRegularFiles,
     };
   }, [dedupedActiveFiles, activeSortBy, filterType, indexedFiles, mode, searchQuery]);
+
+  // Keep total display count ref fresh for the bounded scroll handler
+  totalDisplayCountRef.current = displayFiles.length;
 
   // Lazily resolve compact thumbnails for visible Grid cards without writing
   // ephemeral local/blob URLs back into the synced Telegram Schema v3 index.

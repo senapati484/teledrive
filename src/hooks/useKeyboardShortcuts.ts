@@ -30,30 +30,15 @@ export function useKeyboardShortcuts({ onToggleHelp }: KeyboardShortcutsProps) {
   const setSelectedIdsRef = useRef(setSelectedIds);
   const clearSelectionRef = useRef(clearSelection);
 
-  // Mirror latest values into refs on every render. The handler reads from
-  // refs at call time so it always sees the freshest snapshot without
-  // needing to be in the effect's dep array.
-  useEffect(() => {
-    filesRef.current = useFileStore.getState().files;
-  });
-  useEffect(() => {
-    selectedIdsRef.current = selectedIds;
-  }, [selectedIds]);
-  useEffect(() => {
-    currentFolderRef.current = currentFolder;
-  }, [currentFolder]);
-  useEffect(() => {
-    moveToTrashRef.current = moveToTrash;
-  }, [moveToTrash]);
-  useEffect(() => {
-    onToggleHelpRef.current = onToggleHelp;
-  }, [onToggleHelp]);
-  useEffect(() => {
-    setSelectedIdsRef.current = setSelectedIds;
-  }, [setSelectedIds]);
-  useEffect(() => {
-    clearSelectionRef.current = clearSelection;
-  }, [clearSelection]);
+  // Mirror latest values into refs directly during render so the handler
+  // always sees the freshest snapshot without scheduling 7 separate effects.
+  filesRef.current = useFileStore.getState().files;
+  selectedIdsRef.current = selectedIds;
+  currentFolderRef.current = currentFolder;
+  moveToTrashRef.current = moveToTrash;
+  onToggleHelpRef.current = onToggleHelp;
+  setSelectedIdsRef.current = setSelectedIds;
+  clearSelectionRef.current = clearSelection;
 
   const lastKeyRef = useRef<{ key: string; time: number }>({ key: "", time: 0 });
 
@@ -137,7 +122,8 @@ export function useKeyboardShortcuts({ onToggleHelp }: KeyboardShortcutsProps) {
             window.dispatchEvent(event);
           } else {
             // Move to trash (reversible — no confirmation needed)
-            const filesToTrash = files.filter((f) => selected.includes(f.id));
+            const selectedSet = new Set(selected);
+            const filesToTrash = files.filter((f) => selectedSet.has(f.id));
             filesToTrash.forEach((file) => moveToTrashRef.current(file));
             clearSelectionRef.current();
           }

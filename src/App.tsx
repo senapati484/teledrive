@@ -1,6 +1,7 @@
 import { lazy, Suspense, useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./stores/authStore";
+import { useFileStore } from "./stores/fileStore";
 import { Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { restoreSession } from "./lib/telegram/restoreSession";
@@ -98,10 +99,8 @@ function App() {
 
         if (sessionString && active) {
           // Pre-authenticate the user immediately so route guards resolve and layouts mount
-          const { useAuthStore } = await import("./stores/authStore");
           useAuthStore.getState().setSession(sessionString, phoneNumber);
 
-          const { useFileStore } = await import("./stores/fileStore");
           const hasCacheHint = hasCachedFilesHint();
 
           // Hydrate large-drive IndexedDB snapshot before revealing DriveLayout
