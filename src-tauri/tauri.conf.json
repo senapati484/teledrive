@@ -55,14 +55,14 @@
         "background": "icons/dmg-background.png",
         "windowSize": {
           "width": 660,
-          "height": 400
+          "height": 440
         },
         "appPosition": {
           "x": 165,
           "y": 215
         },
         "applicationFolderPosition": {
-          "x": 482,
+          "x": 495,
           "y": 215
         }
       }
