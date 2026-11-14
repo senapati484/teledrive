@@ -4,8 +4,12 @@ function isContentUri(path: string): boolean {
   return path.startsWith("content://");
 }
 
-/** Encodes bytes to RFC 4648 base64 without overflowing the call stack. */
+/** Encodes bytes to RFC 4648 base64 with maximum performance and no call stack overflow. */
 export function uint8ToBase64(bytes: Uint8Array): string {
+  if (bytes.byteLength === 0) return "";
+  if (typeof Buffer !== "undefined") {
+    return Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength).toString("base64");
+  }
   const SLICE = 0x8000;
   let binary = "";
   for (let i = 0; i < bytes.length; i += SLICE) {

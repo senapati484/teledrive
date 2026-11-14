@@ -3,7 +3,7 @@
  * High-performance, theme-aware tabular data viewer for CSV and TSV files.
  * Provides sticky header, sticky row numbers, search/filtering, and cell copy.
  */
-import { memo, useState, useMemo, useCallback } from "react";
+import { memo, useState, useMemo, useCallback, useEffect } from "react";
 import { Search, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
@@ -131,6 +131,17 @@ export const CsvTableViewer = memo(function CsvTableViewer({
       row.some((cell) => cell.toLowerCase().includes(q))
     );
   }, [dataRows, filterQuery]);
+
+  const MAX_INITIAL_ROWS = 500;
+  const [visibleCount, setVisibleCount] = useState(MAX_INITIAL_ROWS);
+
+  useEffect(() => {
+    setVisibleCount(MAX_INITIAL_ROWS);
+  }, [filterQuery, content]);
+
+  const displayedRows = useMemo(() => {
+    return filteredRows.slice(0, visibleCount);
+  }, [filteredRows, visibleCount]);
 
   const handleCopyCell = useCallback((val: string, key: string) => {
     navigator.clipboard.writeText(val);
@@ -267,7 +278,7 @@ export const CsvTableViewer = memo(function CsvTableViewer({
 
             {/* Table Body */}
             <tbody>
-              {filteredRows.map((row, rIdx) => {
+              {displayedRows.map((row, rIdx) => {
                 const isEven = rIdx % 2 === 0;
                 return (
                   <tr
@@ -331,6 +342,37 @@ export const CsvTableViewer = memo(function CsvTableViewer({
               })}
             </tbody>
           </table>
+        )}
+
+        {filteredRows.length > visibleCount && (
+          <div
+            className="p-4 flex flex-wrap items-center justify-center gap-3 border-t text-xs select-none sticky bottom-0"
+            style={{
+              background: isDark ? "rgba(17, 18, 20, 0.95)" : "rgba(240, 244, 249, 0.95)",
+              borderColor: isDark ? "rgba(255, 255, 255, 0.06)" : "#e0e2e7",
+              backdropFilter: "blur(8px)",
+            }}
+          >
+            <span className="opacity-70">
+              {t("csv.partialNotice", {
+                shown: visibleCount,
+                total: filteredRows.length,
+                defaultValue: `Showing ${visibleCount} of ${filteredRows.length} rows`,
+              })}
+            </span>
+            <button
+              onClick={() => setVisibleCount((prev) => prev + 500)}
+              className="px-3 py-1 rounded-lg bg-[#0b57d0] dark:bg-[#a8c7fa] text-white dark:text-[#001d35] hover:opacity-90 transition font-medium cursor-pointer"
+            >
+              {t("csv.loadMore", { count: 500, defaultValue: "+500 more" })}
+            </button>
+            <button
+              onClick={() => setVisibleCount(filteredRows.length)}
+              className="px-3 py-1 rounded-lg border border-slate-300 dark:border-white/10 hover:bg-black/5 dark:hover:bg-white/5 transition font-medium cursor-pointer"
+            >
+              {t("csv.showAll", { defaultValue: "Show all" })}
+            </button>
+          </div>
         )}
       </div>
     </div>

@@ -61,19 +61,21 @@ class ActionQueue {
     this.running = true;
     useFileStore.getState().setIsOperating(true);
 
-    while (this.queue.length > 0) {
-      const task = this.queue.shift();
-      if (task) {
-        try {
-          await task();
-        } catch (err) {
-          console.error("Error executing queued task:", err);
+    try {
+      while (this.queue.length > 0) {
+        const task = this.queue.shift();
+        if (task) {
+          try {
+            await task();
+          } catch (err) {
+            console.error("Error executing queued task:", err);
+          }
         }
       }
+    } finally {
+      this.running = false;
+      useFileStore.getState().setIsOperating(false);
     }
-
-    this.running = false;
-    useFileStore.getState().setIsOperating(false);
   }
 }
 
