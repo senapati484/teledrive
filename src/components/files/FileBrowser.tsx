@@ -242,8 +242,11 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   const [failedThumbSrcs, setFailedThumbSrcs] = useState<Record<string, string>>({});
 
-  // Progressive render limit for memory & DOM performance on large directories
-  const INITIAL_RENDER_LIMIT = 80;
+  // Progressive render limit for memory & DOM performance on large directories.
+  // 48 initial items cleanly fills all responsive grid column variants (2, 3, 4, 6, 8)
+  // without overburdening cold DOM mounts.
+  const INITIAL_RENDER_LIMIT = 48;
+  const SCROLL_BATCH_SIZE = 36;
   const [renderLimit, setRenderLimit] = useState(INITIAL_RENDER_LIMIT);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const scrollSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -262,8 +265,9 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const target = e.currentTarget;
     const scrollTop = target.scrollTop;
-    if (target.scrollTop + target.clientHeight >= target.scrollHeight - 300) {
-      setRenderLimit((prev) => (prev < totalDisplayCountRef.current ? prev + 50 : prev));
+    // 380px lookahead buffer ensures smooth scrolling without ever showing empty space
+    if (target.scrollTop + target.clientHeight >= target.scrollHeight - 380) {
+      setRenderLimit((prev) => (prev < totalDisplayCountRef.current ? prev + SCROLL_BATCH_SIZE : prev));
     }
     if (scrollSaveTimerRef.current) {
       clearTimeout(scrollSaveTimerRef.current);

@@ -62,3 +62,4 @@ describe("fuzzySearch", () => {
     expect(results.length).toBe(50);
   });
 });
+
