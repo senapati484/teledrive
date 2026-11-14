@@ -2175,27 +2175,33 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
         {loading && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3">
             <Loader2 className="h-7 w-7 animate-spin text-blue-500" />
-            <div className="flex flex-col items-center gap-1.5">
+            <div className="flex flex-col items-center gap-2">
               <span
                 className="text-[10px] font-bold font-mono uppercase tracking-widest"
                 style={{ color: colors.muted }}
               >
-                {t("loading")}
+                {progress > 0 ? t("loading") : (t("connecting", "Connecting...") || "Connecting...")}
               </span>
               <div
-                className="w-36 h-1 rounded-full overflow-hidden"
+                className="w-44 h-1.5 rounded-full overflow-hidden relative shadow-xs"
                 style={{ background: colors.progressTrack }}
               >
-                <div
-                  className="h-full rounded-full bg-blue-500 transition-all duration-200"
-                  style={{ width: `${progress}%` }}
-                />
+                {progress > 0 ? (
+                  <div
+                    className="h-full rounded-full bg-blue-500 transition-all duration-300 ease-out"
+                    style={{ width: `${Math.min(100, Math.max(progress, 6))}%` }}
+                  />
+                ) : (
+                  <div
+                    className="h-full w-2/5 rounded-full bg-blue-500 animate-indeterminate"
+                  />
+                )}
               </div>
               <span
-                className="text-[10px] font-mono"
+                className="text-[11px] font-mono font-medium"
                 style={{ color: colors.muted }}
               >
-                {progress}%
+                {progress > 0 ? `${Math.round(progress)}%` : "···"}
               </span>
             </div>
           </div>

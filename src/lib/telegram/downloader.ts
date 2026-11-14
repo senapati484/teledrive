@@ -668,6 +668,8 @@ export async function streamFileToLocalPath(
     throw new DOMException("Download aborted", "AbortError");
   }
 
+  onProgress?.(5);
+
   let decryptionKey: CryptoKey | null = options?.encryptionKey ?? null;
   if (options?.enc && options.enc.v === 1 && !decryptionKey) {
     decryptionKey = await requireEncryptionKey(options.enc.s);
@@ -678,6 +680,7 @@ export async function streamFileToLocalPath(
     messageId,
     options
   );
+  onProgress?.(15);
   const effectiveSize = totalSize > 0 ? totalSize : expectedSize;
 
   const batchLimit = getWriteBatchBytes();
@@ -718,7 +721,8 @@ export async function streamFileToLocalPath(
       }
 
       if (effectiveSize > 0) {
-        const pct = Math.min(99, downloadPercent(received, effectiveSize));
+        const rawPct = downloadPercent(received, effectiveSize);
+        const pct = Math.min(99, 15 + Math.round((rawPct / 100) * 84));
         if (pct !== lastProgressPct) {
           lastProgressPct = pct;
           onProgress?.(pct);
@@ -760,6 +764,8 @@ export async function downloadFilePrefixToBuffer(
     throw new DOMException("Download aborted", "AbortError");
   }
 
+  onProgress?.(10);
+
   let decryptionKey: CryptoKey | null = options?.encryptionKey ?? null;
   if (options?.enc && options.enc.v === 1 && !decryptionKey) {
     decryptionKey = await requireEncryptionKey(options.enc.s);
@@ -770,6 +776,7 @@ export async function downloadFilePrefixToBuffer(
     messageId,
     options
   );
+  onProgress?.(25);
 
   // For E2EE streams, block 0 framing requires >= 512 KiB chunks to yield decrypted output cleanly.
   const requestSize =
@@ -809,7 +816,9 @@ export async function downloadFilePrefixToBuffer(
     }
 
     if (progressDenominator > 0) {
-      onProgress?.(Math.min(99, downloadPercent(received, progressDenominator)));
+      const rawPct = downloadPercent(received, progressDenominator);
+      const pct = Math.min(99, 25 + Math.round((rawPct / 100) * 74));
+      onProgress?.(pct);
     }
     if (received >= maxBytes) {
       break;
@@ -843,6 +852,8 @@ export async function downloadFileToBuffer(
     throw new DOMException("Download aborted", "AbortError");
   }
 
+  onProgress?.(5);
+
   // Fast path: when multi-segment or E2EE is involved, stream sequentially and decrypt.
   if (options?.enc?.v === 1 || (options?.segments && options.segments.length > 1)) {
     let decryptionKey: CryptoKey | null = options?.encryptionKey ?? null;
@@ -854,6 +865,7 @@ export async function downloadFileToBuffer(
       messageId,
       options
     );
+    onProgress?.(15);
     const chunks: Uint8Array[] = [];
     let received = 0;
     for await (const chunk of iterateTelegramPlainChunks({
@@ -867,7 +879,8 @@ export async function downloadFileToBuffer(
       chunks.push(chunk);
       received += chunk.length;
       if (totalSize > 0) {
-        onProgress?.(Math.min(99, downloadPercent(received, totalSize)));
+        const streamPct = Math.min(99, 15 + Math.round((received / totalSize) * 84));
+        onProgress?.(streamPct);
       }
     }
     if (received <= 0) {
@@ -886,6 +899,7 @@ export async function downloadFileToBuffer(
       throw new DOMException("Download aborted", "AbortError");
     }
 
+    onProgress?.(15);
     const peer = await resolvePeer(channelId);
     const messages = await client.getMessages(peer, {
       ids: [messageId],
@@ -896,13 +910,15 @@ export async function downloadFileToBuffer(
       throw new Error(i18n.t("messages:download.errors.mediaNotFound"));
     }
 
+    onProgress?.(25);
     const buffer = (await client.downloadMedia(message.media, {
       progressCallback: (downloadedBytes: any, totalBytes: any) => {
         if (signal?.aborted) return;
         const downloaded = toNumber(downloadedBytes);
         const total = toNumber(totalBytes);
         if (total > 0) {
-          onProgress?.(Math.round((downloaded / total) * 100));
+          const scaledPct = Math.min(99, 25 + Math.round((downloaded / total) * 74));
+          onProgress?.(scaledPct);
         }
       },
     })) as any;
