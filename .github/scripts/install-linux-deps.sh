@@ -25,10 +25,10 @@ fi
 
 APT_OPTS=(
   -o "Acquire::ForceIPv4=true"
-  -o "Acquire::http::Timeout=10"
-  -o "Acquire::https::Timeout=10"
-  -o "Acquire::ftp::Timeout=10"
-  -o "Acquire::Retries=1"
+  -o "Acquire::http::Timeout=30"
+  -o "Acquire::https::Timeout=30"
+  -o "Acquire::ftp::Timeout=30"
+  -o "Acquire::Retries=3"
   -o "Dpkg::Options::=--force-confdef"
   -o "Dpkg::Options::=--force-confold"
 )
@@ -44,6 +44,22 @@ if [ -r /etc/os-release ]; then
   . /etc/os-release
   CODENAME="${VERSION_CODENAME:-${UBUNTU_CODENAME:-jammy}}"
 fi
+
+# Ensure dpkg state is completely clean before starting
+sudo dpkg --configure -a || true
+
+# Attempt 1: Try default runner repositories first (fastest, Azure-internal Gigabit link)
+echo "Attempting to install Linux dependencies via default runner repositories..."
+if timeout 600 sudo apt-get "${APT_UPDATE_OPTS[@]}" update && \
+   timeout 600 sudo apt-get "${APT_OPTS[@]}" install -y --no-install-recommends "${PACKAGES[@]}"; then
+  echo "Linux dependencies installed cleanly via default runner repositories."
+  exit 0
+fi
+
+echo "Default repository install failed or incomplete; repairing dpkg and falling back to alternative mirrors..."
+sudo dpkg --configure -a || true
+sudo apt-get install -f -y || true
+sudo apt-get clean || true
 
 rewrite_apt_mirrors() {
   local target_mirror="$1"
@@ -69,11 +85,11 @@ rewrite_apt_mirrors() {
 }
 
 CANDIDATE_MIRRORS=(
-  "http://mirrors.kernel.org/ubuntu"
-  "http://mirror.math.princeton.edu/pub/ubuntu"
-  "http://mirrors.mit.edu/ubuntu"
+  "http://azure.archive.ubuntu.com/ubuntu"
   "http://us.archive.ubuntu.com/ubuntu"
   "http://archive.ubuntu.com/ubuntu"
+  "http://mirrors.kernel.org/ubuntu"
+  "http://mirror.math.princeton.edu/pub/ubuntu"
 )
 
 WORKING_MIRRORS=()
@@ -95,13 +111,16 @@ attempt=0
 for mirror in "${WORKING_MIRRORS[@]}"; do
   attempt=$((attempt + 1))
   echo "Installing Linux dependencies (attempt ${attempt}/${#WORKING_MIRRORS[@]} via ${mirror})..."
+  sudo dpkg --configure -a || true
   rewrite_apt_mirrors "$mirror" "true"
-  if timeout 240 sudo apt-get "${APT_UPDATE_OPTS[@]}" update && \
-     timeout 240 sudo apt-get "${APT_OPTS[@]}" install -y --no-install-recommends "${PACKAGES[@]}"; then
+  if timeout 600 sudo apt-get "${APT_UPDATE_OPTS[@]}" update && \
+     timeout 600 sudo apt-get "${APT_OPTS[@]}" install -y --no-install-recommends "${PACKAGES[@]}"; then
     echo "Linux dependencies installed cleanly via ${mirror}."
     exit 0
   fi
-  echo "Attempt ${attempt} via ${mirror} failed; cleaning partial apt state..."
+  echo "Attempt ${attempt} via ${mirror} failed; repairing dpkg and cleaning partial apt state..."
+  sudo dpkg --configure -a || true
+  sudo apt-get install -f -y || true
   sudo apt-get clean || true
   sleep 2
 done
