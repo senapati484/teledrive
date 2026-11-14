@@ -63,7 +63,19 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+      - name: Set up Python and dmgbuild for polished DMG packaging
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dmgbuild
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install dmgbuild ds_store mac_alias
+
       - name: Build Tauri macOS app
+        env:
+          TAURI_BUNDLER_DMG_IGNORE_CI: "true"
         run: |
           TARGET_FLAG="--target universal-apple-darwin"
           if [ "${{ github.event.inputs.target_arch }}" = "aarch64" ]; then
@@ -72,7 +84,7 @@ jobs:
             TARGET_FLAG="--target x86_64-apple-darwin"
           fi
           echo "Building with $TARGET_FLAG..."
-          npx tauri build $TARGET_FLAG --bundles dmg
+          npx tauri build $TARGET_FLAG --bundles app,dmg
 
       - name: Organize deliverables into distribution/v<version>/
         run: |
@@ -82,16 +94,25 @@ jobs:
           echo "DIST_DIR=${DIST_DIR}" >> $GITHUB_ENV
           mkdir -p "$DIST_DIR"
 
-          echo "Looking for built DMG..."
-          DMG_FILE=$(find src-tauri/target -name "*.dmg" -not -name "rw.*" 2>/dev/null | head -n 1)
+          echo "Locating built TeleDrive.app..."
+          APP_PATH=$(find src-tauri/target -name "TeleDrive.app" -type d 2>/dev/null | head -n 1)
 
-          if [ -n "$DMG_FILE" ]; then
-            echo "Found DMG: $DMG_FILE"
-            cp "$DMG_FILE" "$DIST_DIR/teledrive.dmg"
-            echo "✓ Staged $DIST_DIR/teledrive.dmg"
+          if [ -d "$APP_PATH" ]; then
+            echo "Packaging custom DMG using dmgbuild ($APP_PATH)..."
+            export TELEDRIVE_APP_PATH="$APP_PATH"
+            export REPO_ROOT="$(pwd)"
+            python3 -m dmgbuild -s scripts/dmg_settings.py "TeleDrive" "$DIST_DIR/teledrive.dmg"
+            echo "✓ Staged custom styled $DIST_DIR/teledrive.dmg"
           else
-            echo "::error::No DMG file found in src-tauri/target"
-            exit 1
+            echo "Looking for built DMG fallback..."
+            DMG_FILE=$(find src-tauri/target -name "*.dmg" -not -name "rw.*" 2>/dev/null | head -n 1)
+            if [ -n "$DMG_FILE" ]; then
+              cp "$DMG_FILE" "$DIST_DIR/teledrive.dmg"
+              echo "✓ Staged fallback $DIST_DIR/teledrive.dmg"
+            else
+              echo "::error::Neither TeleDrive.app nor DMG file found in src-tauri/target"
+              exit 1
+            fi
           fi
 
           # Clean any old duplicate files from distribution root

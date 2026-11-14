@@ -33,7 +33,7 @@ jobs:
         include:
           - platform: 'macos-latest'
             os_name: 'macos'
-            args: '--target universal-apple-darwin --bundles dmg'
+            args: '--target universal-apple-darwin --bundles app,dmg'
           - platform: 'windows-latest'
             os_name: 'windows'
             args: '--bundles nsis,msi'
@@ -75,6 +75,8 @@ jobs:
         run: npm run build
 
       - name: Build Tauri app
+        env:
+          TAURI_BUNDLER_DMG_IGNORE_CI: "true"
         run: npx tauri build ${{ matrix.args }}
 
       - name: Standardize and stage deliverables
@@ -84,13 +86,23 @@ jobs:
           echo "=== Organizing deliverables for ${{ matrix.os_name }} ==="
 
           if [ "${{ matrix.os_name }}" = "macos" ]; then
-            DMG_FILE=$(find src-tauri/target -name "*.dmg" -not -name "rw.*" | head -n 1)
-            if [ -n "$DMG_FILE" ]; then
-              cp "$DMG_FILE" staging/teledrive.dmg
-              echo "✓ Copied $DMG_FILE -> staging/teledrive.dmg"
+            python3 -m pip install dmgbuild ds_store mac_alias
+            APP_PATH=$(find src-tauri/target -name "TeleDrive.app" -type d 2>/dev/null | head -n 1)
+            if [ -d "$APP_PATH" ]; then
+              echo "Packaging custom DMG using dmgbuild ($APP_PATH)..."
+              export TELEDRIVE_APP_PATH="$APP_PATH"
+              export REPO_ROOT="$(pwd)"
+              python3 -m dmgbuild -s scripts/dmg_settings.py "TeleDrive" staging/teledrive.dmg
+              echo "✓ Staged custom styled staging/teledrive.dmg"
             else
-              echo "::error::No DMG found"
-              exit 1
+              DMG_FILE=$(find src-tauri/target -name "*.dmg" -not -name "rw.*" 2>/dev/null | head -n 1)
+              if [ -n "$DMG_FILE" ]; then
+                cp "$DMG_FILE" staging/teledrive.dmg
+                echo "✓ Staged fallback $DMG_FILE -> staging/teledrive.dmg"
+              else
+                echo "::error::Neither TeleDrive.app nor DMG found"
+                exit 1
+              fi
             fi
           fi
 
