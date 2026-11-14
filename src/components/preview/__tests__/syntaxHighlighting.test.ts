@@ -1,9 +1,38 @@
 import { describe, it, expect } from "vitest";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import hljs from "highlight.js";
 import { detectLang } from "@/lib/files/langDetect";
+import { SyntaxHighlighter } from "../SyntaxHighlighter";
 
 describe("Syntax Highlighting & Language Detection", () => {
   const hljsInstance: typeof hljs = (hljs as any)?.default || hljs;
+
+  it("renders SyntaxHighlighter component with hljs class and highlighted spans", () => {
+    const html = renderToStaticMarkup(
+      React.createElement(SyntaxHighlighter, {
+        code: "for i in range(10):\n    print(i)",
+        fileName: "fibonacci.py",
+      })
+    );
+    expect(html).toContain('class="hljs font-mono"');
+    expect(html).toContain("hljs-keyword");
+    expect(html).toContain("hljs-built_in");
+  });
+
+  it("highlights user Python snippets with keywords, built-ins, and strings", () => {
+    const userCode = `n = int(input("Enter number: "))\nif n > 0:\n    print(n)`;
+    const html = renderToStaticMarkup(
+      React.createElement(SyntaxHighlighter, {
+        code: userCode,
+        fileName: "calculator.py",
+      })
+    );
+    expect(html).toContain("hljs-built_in"); // int, input, print
+    expect(html).toContain("hljs-keyword");  // if
+    expect(html).toContain("hljs-string");   // "Enter number: "
+    expect(html).toContain("hljs-number");   // 0
+  });
 
   it("detects Python correctly and highlights python code", () => {
     const langInfo = detectLang("calculator.py");
