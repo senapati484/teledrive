@@ -593,7 +593,7 @@ export default function AuthPage() {
     (err: any) => {
       const info = classifyAuthError(err);
       setLastError(info);
-      setError(authErrorText(info, t));
+      setError(authErrorText(info, (key, opts) => t(key, opts)));
       if (info.floodSeconds) {
         const until = Date.now() + info.floodSeconds * 1000;
         setFloodUntil(until);

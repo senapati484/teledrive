@@ -376,17 +376,17 @@ export function classifyAuthError(err: any): AuthErrorInfo {
   }
 }
 
-export function authErrorText(info: AuthErrorInfo, t: (key: string, opts?: any) => string): string {
+export function authErrorText(info: AuthErrorInfo, t: (key: string, opts?: any) => any): string {
   if (info.messageKey === "errors.floodWait" && info.floodSeconds) {
-    return t(info.messageKey, { count: info.floodSeconds });
+    return String(t(info.messageKey, { count: info.floodSeconds }));
   }
   if (
     info.messageKey === "errors.tooManyCodeRequests" ||
     info.messageKey === "errors.phoneNumberFlood"
   ) {
-    return t(info.messageKey, { count: info.floodSeconds ?? 0 });
+    return String(t(info.messageKey, { count: info.floodSeconds ?? 0 }));
   }
-  return t(info.messageKey);
+  return String(t(info.messageKey));
 }
 
 /** Masks a phone number while keeping the country prefix and last 4 digits. */
