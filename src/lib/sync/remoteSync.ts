@@ -28,7 +28,8 @@ import { logEvent } from "../events";
 import { isIndexReady } from "../telegram/indexReadiness";
 import { filterDeletedMessages } from "../storage/tombstones";
 
-const POLL_INTERVAL_MS = 30_000;
+export const DEFAULT_POLL_INTERVAL_MS = 30_000;
+export const MIN_POLL_INTERVAL_MS = 10_000;
 const SYNC_INDICATOR_MIN_MS = 800;
 
 interface CoordinatorState {
@@ -39,6 +40,8 @@ interface CoordinatorState {
   isRunning: boolean;
   currentChannelId: string | null;
   lastTickAt: number;
+  /** Active poll interval in ms; 0 = manual sync only (no background timer). */
+  pollIntervalMs: number;
 }
 
 const state: CoordinatorState = {
@@ -48,7 +51,13 @@ const state: CoordinatorState = {
   isRunning: false,
   currentChannelId: null,
   lastTickAt: 0,
+  pollIntervalMs: DEFAULT_POLL_INTERVAL_MS,
 };
+
+function sanitizeIntervalMs(intervalMs: number): number {
+  if (!Number.isFinite(intervalMs) || intervalMs <= 0) return 0;
+  return Math.max(MIN_POLL_INTERVAL_MS, Math.round(intervalMs));
+}
 
 function isCurrent(channelId: string, generation: number): boolean {
   return (
@@ -221,24 +230,63 @@ function flashSyncIndicator(
 
 function scheduleNext(channelId: string, generation: number): void {
   if (!isCurrent(channelId, generation)) return;
+  if (state.pollIntervalMs <= 0) return;
+  if (state.timerId) {
+    clearTimeout(state.timerId);
+    state.timerId = null;
+  }
   state.timerId = setTimeout(async () => {
     state.timerId = null;
     if (!isCurrent(channelId, generation)) return;
     await runOneTick(channelId, generation, true);
     scheduleNext(channelId, generation);
-  }, POLL_INTERVAL_MS);
+  }, state.pollIntervalMs);
+}
+
+/**
+ * Updates the background sync poll interval (in ms). Pass `0` for manual-only
+ * mode (pauses automatic polling while keeping manual `runSyncTickOnce` active).
+ * Non-zero intervals are clamped to `MIN_POLL_INTERVAL_MS` (10s) for FLOOD_WAIT safety.
+ */
+export function setRemoteSyncInterval(intervalMs: number): void {
+  const next = sanitizeIntervalMs(intervalMs);
+  if (next === state.pollIntervalMs) return;
+  state.pollIntervalMs = next;
+
+  if (state.timerId) {
+    clearTimeout(state.timerId);
+    state.timerId = null;
+  }
+
+  if (state.isRunning && state.currentChannelId && next > 0) {
+    scheduleNext(state.currentChannelId, state.generation);
+  }
+}
+
+/** Returns the active poll interval in ms (0 = manual only). */
+export function getRemoteSyncInterval(): number {
+  return state.pollIntervalMs;
 }
 
 /**
  * Start the sync loop. Safe to call multiple times — subsequent calls are
- * no-ops unless the channelId changed.
+ * no-ops unless the channelId changed (optional `intervalMs` still applies).
  */
-export function startRemoteSync(channelId: string): void {
+export function startRemoteSync(channelId: string, intervalMs?: number): void {
+  if (intervalMs !== undefined) {
+    state.pollIntervalMs = sanitizeIntervalMs(intervalMs);
+  }
   if (!channelId) {
     logger.warn("[remoteSync] startRemoteSync called without channelId");
     return;
   }
   if (state.isRunning && state.currentChannelId === channelId) {
+    if (state.pollIntervalMs <= 0 && state.timerId) {
+      clearTimeout(state.timerId);
+      state.timerId = null;
+    } else if (state.pollIntervalMs > 0 && !state.timerId) {
+      scheduleNext(channelId, state.generation);
+    }
     return;
   }
   if (state.isRunning) {

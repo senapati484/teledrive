@@ -18,7 +18,12 @@ import { logger } from "@/lib/logger";
 import { useAuthStore } from "@/stores/authStore";
 import { useFileStore } from "@/stores/fileStore";
 import { useLicenseStore } from "@/stores/licenseStore";
-import { startRemoteSync, stopRemoteSync } from "@/lib/sync/remoteSync";
+import { useUIStore } from "@/stores/uiStore";
+import {
+  setRemoteSyncInterval,
+  startRemoteSync,
+  stopRemoteSync,
+} from "@/lib/sync/remoteSync";
 import {
   applyIntervalChange,
   checkDueBackup,
@@ -31,8 +36,14 @@ export default function RemoteSyncOrchestrator(): null {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const indexLoadState = useFileStore((s) => s.indexLoadState);
   const bootstrapComplete = useFileStore((s) => s.bootstrapComplete);
+  const syncIntervalMs = useUIStore((s) => s.syncIntervalMs);
   const intervalMinutes =
     useLicenseStore((s) => s.license?.scheduledBackupIntervalMinutes) ?? null;
+
+  // Keep the remote sync loop's polling cadence synchronized with user settings.
+  useEffect(() => {
+    setRemoteSyncInterval(syncIntervalMs);
+  }, [syncIntervalMs]);
 
   // Effect 1 — bootstrap listener for backup ticks. Runs once on mount,
   // tears down on unmount.
@@ -82,7 +93,7 @@ export default function RemoteSyncOrchestrator(): null {
         const channelId = await getStorageChannelId(phone);
         if (cancelled) return;
         if (channelId) {
-          startRemoteSync(channelId);
+          startRemoteSync(channelId, useUIStore.getState().syncIntervalMs);
         }
       } catch (err) {
         logger.warn(

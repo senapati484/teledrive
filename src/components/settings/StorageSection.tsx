@@ -1,9 +1,11 @@
 import { useState, useCallback } from "react";
 import { logger } from "@/lib/logger";
-import { HardDrive, RefreshCw, Info, Loader2, Files, Folder, Trash2, ShieldCheck, RotateCcw } from "lucide-react";
+import { HardDrive, RefreshCw, Info, Loader2, Files, Folder, Trash2, ShieldCheck, RotateCcw, Radio } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { useFileStore } from "@/stores/fileStore";
+import { useUIStore, type SyncIntervalMs } from "@/stores/uiStore";
 import { loadIndexOutcome } from "@/lib/storage/metadataStore";
+import { runSyncTickOnce } from "@/lib/sync/remoteSync";
 import { retryIndexDiscovery } from "@/lib/telegram/bootstrap";
 import { useRecoveryStore } from "@/stores/recoveryStore";
 import { getSecret, VAULT_KEY_CHANNEL_ID, channelIdKey } from "@/lib/secure/vault";
@@ -35,7 +37,10 @@ export default function StorageSection() {
     (state) => state.indexQueueRetryInSec
   );
   const phoneNumber = useAuthStore((state) => state.phoneNumber);
+  const syncIntervalMs = useUIStore((state) => state.syncIntervalMs);
+  const setSyncIntervalMs = useUIStore((state) => state.setSyncIntervalMs);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSyncingNow, setIsSyncingNow] = useState(false);
   const openRecovery = useRecoveryStore((s) => s.openFor);
 
   const activeFiles = files.filter((f) => !f.trashed && f.mime !== "inode/directory");
@@ -96,6 +101,38 @@ export default function StorageSection() {
     }
     openRecovery(channelId);
   }, [openRecovery, phoneNumber, t]);
+
+  const handleSyncNow = useCallback(async () => {
+    setIsSyncingNow(true);
+    try {
+      let channelId: string | null = null;
+      if (phoneNumber) {
+        channelId = await getSecret(channelIdKey(phoneNumber));
+      }
+      if (!channelId) {
+        channelId = await getSecret(VAULT_KEY_CHANNEL_ID);
+      }
+      if (!channelId) {
+        toast.error(t("storage.toasts.channelNotInitialised"));
+        return;
+      }
+      const changed = await runSyncTickOnce(channelId);
+      toast.success(
+        changed
+          ? t("storage.sync.syncedChanges", "Synced remote changes")
+          : t("storage.sync.upToDate", "Already up to date"),
+      );
+    } catch (err: unknown) {
+      logger.error("[StorageSection] Manual sync failed:", err);
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : t("storage.toasts.refreshFailed"),
+      );
+    } finally {
+      setIsSyncingNow(false);
+    }
+  }, [phoneNumber, t]);
 
   return (
     <div className="space-y-6 select-none">
@@ -239,6 +276,77 @@ export default function StorageSection() {
               : t("storage.indexSave.saving")}
           </p>
         )}
+      </div>
+
+      {/* Multi-Device Sync Interval Card */}
+      <div className="p-5 border border-slate-200/90 dark:border-white/[0.06] rounded-2xl bg-white dark:bg-[#0c0d0f] shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-full bg-blue-500/10 dark:bg-blue-500/20 text-[#0B57D0] dark:text-[#8ab4f8] flex items-center justify-center shrink-0">
+              <Radio className="h-4.5 w-4.5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-[#1F1F1F] dark:text-[#E3E3E3]">
+                {t("storage.sync.title", "Multi-Device Sync Frequency")}
+              </h3>
+              <p className="text-xs text-[#747775] dark:text-[#8E918F]">
+                {t(
+                  "storage.sync.description",
+                  "How often TeleDrive checks your Telegram channel for updates from other devices.",
+                )}
+              </p>
+            </div>
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isSyncingNow}
+            onClick={handleSyncNow}
+            className="rounded-full text-xs font-medium gap-1.5 h-8 px-3.5 border border-slate-300 dark:border-white/[0.08] hover:bg-[#F0F4F9] dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-200 cursor-pointer self-start sm:self-auto shrink-0"
+          >
+            {isSyncingNow ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-[#0B57D0] dark:text-[#8ab4f8]" />
+            ) : (
+              <RefreshCw className="h-3.5 w-3.5" />
+            )}
+            {t("storage.sync.syncNow", "Sync now")}
+          </Button>
+        </div>
+
+        <div
+          role="radiogroup"
+          aria-label={t("storage.sync.title", "Multi-Device Sync Frequency")}
+          className="flex flex-wrap gap-2"
+        >
+          {(
+            [
+              { value: 15000 as SyncIntervalMs, label: t("storage.sync.every15s", "15 sec") },
+              { value: 30000 as SyncIntervalMs, label: t("storage.sync.every30s", "30 sec (Default)") },
+              { value: 60000 as SyncIntervalMs, label: t("storage.sync.every60s", "1 min") },
+              { value: 300000 as SyncIntervalMs, label: t("storage.sync.every5m", "5 min") },
+              { value: 0 as SyncIntervalMs, label: t("storage.sync.manual", "Manual only") },
+            ]
+          ).map((option) => {
+            const selected = syncIntervalMs === option.value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                onClick={() => setSyncIntervalMs(option.value)}
+                className={`px-3.5 py-1.5 rounded-full text-xs font-medium border transition-colors cursor-pointer ${
+                  selected
+                    ? "bg-[#C2E7FF] dark:bg-[#004A77] text-[#001D35] dark:text-[#C2E7FF] border-transparent font-semibold"
+                    : "bg-[#F0F4F9] dark:bg-[#060709] text-[#444746] dark:text-[#C4C7C5] border-slate-200/70 dark:border-white/[0.06] hover:bg-slate-200/70 dark:hover:bg-white/[0.08]"
+                }`}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Storage Guidelines Info Box */}
