@@ -111,7 +111,7 @@ export default function SettingsPage() {
       //   next login where GramJS returns BigInt IDs in a different format,
       //   causing metadataStore to fail to resolve the channel → empty drive.
       const { invoke } = await import("@tauri-apps/api/core");
-      await invoke("clear_session_only").catch((e: any) =>
+      await invoke("clear_session_only").catch((e: unknown) =>
         logger.warn("clear_session_only failed (non-fatal):", e)
       );
 

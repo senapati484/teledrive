@@ -11,6 +11,7 @@ import { useRecoveryStore } from "@/stores/recoveryStore";
 import { getSecret, VAULT_KEY_CHANNEL_ID, channelIdKey } from "@/lib/secure/vault";
 import { useAuthStore } from "@/stores/authStore";
 import { Button } from "@/components/ui/button";
+import { getErrorMessage } from "@/lib/utils";
 import { toast } from "sonner";
 
 function formatBytes(bytes: number): string {
@@ -79,9 +80,9 @@ export default function StorageSection() {
       }
       setFiles(freshFiles);
       toast.success(t("storage.toasts.refreshed"));
-    } catch (err: any) {
+    } catch (err: unknown) {
       logger.error("[StorageSection] Recalculate failed:", err);
-      toast.error(err?.message || t("storage.toasts.refreshFailed"));
+      toast.error(getErrorMessage(err, t("storage.toasts.refreshFailed")));
     } finally {
       setIsRefreshing(false);
     }

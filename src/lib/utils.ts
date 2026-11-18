@@ -8,6 +8,24 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Safely extracts a human-readable error message from an `unknown` caught value.
+ */
+export function getErrorMessage(err: unknown, fallback = "Unknown error"): string {
+  if (err instanceof Error && err.message) return err.message;
+  if (typeof err === "string" && err.trim()) return err;
+  if (
+    typeof err === "object" &&
+    err !== null &&
+    "message" in err &&
+    typeof (err as { message?: unknown }).message === "string" &&
+    (err as { message: string }).message
+  ) {
+    return (err as { message: string }).message;
+  }
+  return fallback;
+}
+
+/**
  * Format a unix-ms timestamp as a short relative-time string
  * (e.g. "3 seconds", "5 minutes", "2 hours", "4 days", "2 months").
  *

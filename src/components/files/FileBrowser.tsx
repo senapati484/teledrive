@@ -602,6 +602,7 @@ const FileListRow = React.memo(function FileListRow({
             type="checkbox"
             checked={isSelected}
             onChange={() => onToggleSelect(file.id)}
+            aria-label={file.name}
             className="h-4 w-4 rounded-sm border-slate-300 dark:border-white/[0.1] text-[#0b57d0] focus:ring-[#0b57d0]/20 dark:bg-[#161719] transition-colors cursor-pointer"
           />
         </td>
@@ -1963,6 +1964,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                 <th className="py-3 px-4 w-12 text-center">
                   <input
                     type="checkbox"
+                    aria-label={t("browser.selectAll", "Select all items")}
                     checked={selectedIds.length === displayFiles.length && displayFiles.length > 0}
                     onChange={(e) => {
                       if (e.target.checked) {

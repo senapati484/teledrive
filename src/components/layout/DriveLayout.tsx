@@ -134,6 +134,8 @@ const IndexQueuePill = React.memo(function IndexQueuePill() {
 
   return (
     <div
+      role="status"
+      aria-live="polite"
       title={
         indexQueueState === "failed"
           ? indexQueueError ?? t("indexQueue.saveFailedTitle")
