@@ -20,6 +20,7 @@ import {
   loadIndexIncremental,
   loadIndexOutcome,
 } from "../storage/metadataStore";
+import { logger } from "@/lib/logger";
 import { withTelegramRetry } from "../telegram/rateLimit";
 import { useFileStore } from "../../stores/fileStore";
 import { useBackupProgressStore } from "../../stores/backupProgressStore";
@@ -178,7 +179,7 @@ async function runOneTick(
     // withTelegramRetry has already classified and logged; just keep the
     // loop alive. Hard errors (AUTH_KEY_UNREGISTERED, etc.) cause the
     // wrapper to throw after retries are exhausted.
-    console.warn("[remoteSync] tick failed (will retry next interval):", err);
+    logger.warn("[remoteSync] tick failed (will retry next interval):", err);
     return false;
   }
 
@@ -234,7 +235,7 @@ function scheduleNext(channelId: string, generation: number): void {
  */
 export function startRemoteSync(channelId: string): void {
   if (!channelId) {
-    console.warn("[remoteSync] startRemoteSync called without channelId");
+    logger.warn("[remoteSync] startRemoteSync called without channelId");
     return;
   }
   if (state.isRunning && state.currentChannelId === channelId) {

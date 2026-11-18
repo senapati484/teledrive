@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "@/lib/logger";
 import { useTranslation } from "react-i18next";
 import { useFileStore } from "@/stores/fileStore";
 import { useTransferStore } from "@/stores/transferStore";
@@ -252,7 +253,7 @@ export function UploadProgressPanel() {
                             item.channelId,
                             item.messageId,
                             item.name
-                          ).catch((err) => console.error(err));
+                          ).catch((err) => logger.error(err));
                         }}
                         className="text-[#0b57d0] dark:text-[#a8c7fa] hover:text-[#0842a0] dark:hover:text-[#d3e3fd] p-1 rounded cursor-pointer min-h-[28px] min-w-[28px] flex items-center justify-center"
                         title={t("transfers.retry")}

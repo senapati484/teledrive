@@ -5,6 +5,7 @@
  */
 
 import { Api } from "telegram";
+import { logger } from "@/lib/logger";
 import { disconnectClient, getClient } from "./client";
 import { saveFutureAuthToken } from "./futureAuth";
 import { clearPendingLogin } from "./loginStorage";
@@ -42,7 +43,7 @@ export async function logoutTelegram(): Promise<void> {
       }
     }
   } catch (err) {
-    console.warn("[logout] auth.logOut failed (non-fatal):", err);
+    logger.warn("[logout] auth.logOut failed (non-fatal):", err);
   } finally {
     resetCachedPremiumStatus();
     clearThumbnailMemoryCache();

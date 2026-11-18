@@ -9,6 +9,7 @@
  */
 
 import type { TeleFile } from "../types";
+import { logger } from "@/lib/logger";
 import { canonicalChannelId, channelKeyVariants } from "../telegram/peerId";
 
 const KEY_PREFIX = "teledrive_pending_index:";
@@ -30,7 +31,7 @@ export function writePendingMarker(marker: PendingIndexMarker): void {
       JSON.stringify({ ...marker, channelId })
     );
   } catch (err) {
-    console.warn("[pendingIndex] Failed to write marker:", err);
+    logger.warn("[pendingIndex] Failed to write marker:", err);
   }
 }
 
@@ -73,7 +74,7 @@ export function clearPendingMarker(channelId: string): void {
       localStorage.removeItem(KEY_PREFIX + key);
     }
   } catch (err) {
-    console.warn("[pendingIndex] Failed to clear marker:", err);
+    logger.warn("[pendingIndex] Failed to clear marker:", err);
   }
 }
 

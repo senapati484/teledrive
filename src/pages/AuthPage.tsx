@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { logger } from "@/lib/logger";
 import { useNavigate, Link } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
 import {
@@ -630,21 +631,21 @@ export default function AuthPage() {
           const me: any = await client.getMe();
           if (me?.phone) authPhone = `+${me.phone}`;
         } catch (meErr) {
-          console.warn("Could not retrieve profile phone:", meErr);
+          logger.warn("Could not retrieve profile phone:", meErr);
         }
       }
 
       try {
         await invoke("save_session", { session: sessionString, phone: authPhone });
       } catch (saveErr) {
-        console.error("save_session (Rust) failed:", saveErr);
+        logger.error("save_session (Rust) failed:", saveErr);
       }
 
       try {
         await saveSecret(VAULT_KEY_SESSION, sessionString);
         await saveSecret(VAULT_KEY_PHONE, authPhone);
       } catch (vaultErr) {
-        console.warn("Stronghold saveSecret failed (non-fatal):", vaultErr);
+        logger.warn("Stronghold saveSecret failed (non-fatal):", vaultErr);
       }
 
       applyPending(null);
@@ -660,7 +661,7 @@ export default function AuthPage() {
         setSession(sessionString, authPhone);
         navigate("/drive/my-drive");
       } catch (err: any) {
-        console.error("Bootstrap failed:", err);
+        logger.error("Bootstrap failed:", err);
         setBootstrapError(err.message || t("errors.bootstrapFailed"));
       }
     },
@@ -694,7 +695,7 @@ export default function AuthPage() {
         try {
           await initClient(configApiId, configApiHash, stored.tempSession);
         } catch (err) {
-          console.warn("Could not restore pending Telegram auth key:", err);
+          logger.warn("Could not restore pending Telegram auth key:", err);
         }
       }
 
@@ -760,7 +761,7 @@ export default function AuthPage() {
           },
           onError: (err) => {
             if (isSubscribed) {
-              console.error("QR Login error:", err);
+              logger.error("QR Login error:", err);
               showError(err);
               setQrLoading(false);
             }
@@ -772,7 +773,7 @@ export default function AuthPage() {
         }
       } catch (err: any) {
         if (isSubscribed) {
-          console.error("QR setup error:", err);
+          logger.error("QR setup error:", err);
           showError(err);
           setQrLoading(false);
         }
@@ -803,7 +804,7 @@ export default function AuthPage() {
             toast.info(toastMessage);
             return;
           } catch (nativeErr) {
-            console.warn(
+            logger.warn(
               "Native open_telegram_app failed, trying openUrl:",
               nativeErr
             );
@@ -815,7 +816,7 @@ export default function AuthPage() {
           toast.info(toastMessage);
           return;
         } catch (openerErr) {
-          console.warn("openUrl failed for Telegram URL:", openerErr);
+          logger.warn("openUrl failed for Telegram URL:", openerErr);
         }
 
         const isAndroid =
@@ -828,7 +829,7 @@ export default function AuthPage() {
         }
         toast.info(toastMessage);
       } catch (err) {
-        console.error("Failed to open Telegram:", err);
+        logger.error("Failed to open Telegram:", err);
         toast.error(t("qr.openAppError"));
       } finally {
         setTimeout(() => setOpeningTelegram(false), 1500);
@@ -1017,7 +1018,7 @@ export default function AuthPage() {
         return;
       }
 
-      console.error("Send code failed:", err);
+      logger.error("Send code failed:", err);
       if (pendingRef.current) {
         applyPending(null);
       }
@@ -1078,7 +1079,7 @@ export default function AuthPage() {
       applySentCode(info, stored.phone, stored.tempSession);
       toast.success(t("otp.resend.successToast"));
     } catch (err: any) {
-      console.error("Resend code failed:", err);
+      logger.error("Resend code failed:", err);
       const info = classifyAuthError(err);
       if (info.code === "SEND_CODE_UNAVAILABLE") {
         const updated = { ...stored, nextDelivery: null, nextTypeName: null };
@@ -1143,7 +1144,7 @@ export default function AuthPage() {
         return;
       }
 
-      console.error("OTP verification failed:", err);
+      logger.error("OTP verification failed:", err);
       const info = showError(err);
 
       if (
@@ -1301,7 +1302,7 @@ export default function AuthPage() {
       );
       await completeAuthentication(client, result);
     } catch (err: any) {
-      console.error("2FA password failed:", err);
+      logger.error("2FA password failed:", err);
       showError(err);
     } finally {
       passwordInFlightRef.current = false;
@@ -1349,7 +1350,7 @@ export default function AuthPage() {
       setEmailStage("code");
       toast.success(t("emailSetup.codeSentToast"));
     } catch (err: any) {
-      console.error("Send verify email code failed:", err);
+      logger.error("Send verify email code failed:", err);
       showError(err);
     } finally {
       emailInFlightRef.current = false;
@@ -1391,7 +1392,7 @@ export default function AuthPage() {
         throw new Error(t("errors.emailVerifyFailed"));
       }
     } catch (err: any) {
-      console.error("Verify email failed:", err);
+      logger.error("Verify email failed:", err);
       showError(err);
     } finally {
       emailInFlightRef.current = false;
@@ -1421,7 +1422,7 @@ export default function AuthPage() {
       if (!info) throw new Error(t("errors.resendFailed"));
       applySentCode(info, stored.phone, stored.tempSession);
     } catch (err: any) {
-      console.error("Reset login email failed:", err);
+      logger.error("Reset login email failed:", err);
       showError(err);
     } finally {
       emailInFlightRef.current = false;

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { logger } from "@/lib/logger";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -1208,12 +1209,12 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       try {
         await openPath(tempFilePath);
       } catch (openerErr) {
-        console.warn("plugin-opener failed, invoking native open_file_in_system_viewer:", openerErr);
+        logger.warn("plugin-opener failed, invoking native open_file_in_system_viewer:", openerErr);
         await invoke("open_file_in_system_viewer", { path: tempFilePath });
       }
       toast.success(t("browser.systemApp.opened", { name: file.name }));
     } catch (err: any) {
-      console.error("Failed to open file in system app:", err);
+      logger.error("Failed to open file in system app:", err);
       toast.error(t("browser.systemApp.failed", { error: err.message || t("browser.systemApp.unknownError") }));
     }
   }, [t, handleDownload]);

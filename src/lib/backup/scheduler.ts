@@ -24,6 +24,7 @@
  * actually walks source folders and uploads real files.
  */
 import { invoke } from "@tauri-apps/api/core";
+import { logger } from "@/lib/logger";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import {
   isBackupRunning,
@@ -64,7 +65,7 @@ export async function applyIntervalChange(intervalMinutes: number | null): Promi
     }
     await invoke("start_backup_scheduler", { intervalMinutes });
   } catch (err) {
-    console.warn("[backup.scheduler] Tauri command failed:", err);
+    logger.warn("[backup.scheduler] Tauri command failed:", err);
     currentIntervalMinutes = null; // back to "unknown" so a retry is possible
     throw err;
   }
@@ -100,7 +101,7 @@ export async function stopBackupSchedule(): Promise<void> {
   try {
     await invoke("stop_backup_scheduler");
   } catch (err) {
-    console.warn("[backup.scheduler] stop_backup_scheduler failed:", err);
+    logger.warn("[backup.scheduler] stop_backup_scheduler failed:", err);
   }
   currentIntervalMinutes = null;
 }
@@ -146,7 +147,7 @@ export async function loadBackupLastRun(): Promise<BackupLastRun | null> {
   try {
     return await loadDueState(channelId);
   } catch (err) {
-    console.warn("[backup.scheduler] last-run state unavailable:", err);
+    logger.warn("[backup.scheduler] last-run state unavailable:", err);
     return null;
   }
 }
@@ -170,7 +171,7 @@ export async function checkDueBackup(): Promise<boolean> {
   try {
     state = await loadDueState(channelId);
   } catch (err) {
-    console.warn("[backup.scheduler] due state unavailable:", err);
+    logger.warn("[backup.scheduler] due state unavailable:", err);
     return false;
   }
 

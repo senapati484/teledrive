@@ -1,4 +1,5 @@
 import { lazy, Suspense, useState, useEffect } from "react";
+import { logger } from "@/lib/logger";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./stores/authStore";
 import { useFileStore } from "./stores/fileStore";
@@ -166,7 +167,7 @@ function App() {
                 await bootstrapTeleDrive(undefined, phoneNumber);
               }
             } catch (err) {
-              console.error("Background session restoration/bootstrap failed:", err);
+              logger.error("Background session restoration/bootstrap failed:", err);
             } finally {
               if (active) {
                 useFileStore.getState().setSyncing(false);
@@ -183,7 +184,7 @@ function App() {
           }
         }
       } catch (err: any) {
-        console.error("Failed to restore session on app launch:", err);
+        logger.error("Failed to restore session on app launch:", err);
         await logVaultState(
           `BOOTSTRAP_ERR: ${err?.message || JSON.stringify(err)}\nStack: ${err?.stack || "no_stack"}`
         );

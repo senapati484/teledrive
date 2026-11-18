@@ -1,4 +1,5 @@
 import { getSecret, VAULT_KEY_CHANNEL_ID, channelIdKey } from "../lib/secure/vault";
+import { logger } from "@/lib/logger";
 import {
   deleteTelegramMessage,
   folderIdForPath,
@@ -68,7 +69,7 @@ class ActionQueue {
           try {
             await task();
           } catch (err) {
-            console.error("Error executing queued task:", err);
+            logger.error("Error executing queued task:", err);
           }
         }
       }
@@ -231,7 +232,7 @@ async function deleteRemoteResourcesForFiles(
   await Promise.allSettled(
     msgIds.map((msgId) =>
       deleteTelegramMessage(channelId, msgId).catch((err) => {
-        console.warn(
+        logger.warn(
           `[${logContext}] Could not delete message ${msgId}:`,
           err?.message || err
         );
@@ -250,7 +251,7 @@ async function forgetDeletedBackupEntries(
   try {
     await removeManifestEntriesByMessageIds(channelId, backupIds);
   } catch (err) {
-    console.warn("[useFileActions] Failed to prune backup manifest:", err);
+    logger.warn("[useFileActions] Failed to prune backup manifest:", err);
   }
 }
 
@@ -302,7 +303,7 @@ if (typeof window !== "undefined") {
   (window as any).__teledriveForceBootstrapComplete = () => {
     useFileStore.getState().setBootstrapComplete(true);
     useFileStore.getState().setIndexLoadState("ready");
-    console.warn(
+    logger.warn(
       "[teledrive] bootstrapComplete and indexLoadState forced to ready via dev hook — gate bypassed"
     );
   };
@@ -371,7 +372,7 @@ export function useFileActions() {
       toast.success(t("actions.folder.created", { name: trimmed }));
       await applyOptimistic(channelId, [...files, newFolder], { eventType: "folder.created", eventPayload: { name: trimmed } });
     } catch (err: any) {
-      console.error("Failed to create folder:", err);
+      logger.error("Failed to create folder:", err);
       toast.error(err.message || t("actions.folder.createFailed"));
     }
   }, [currentFolder, getChannelId, t]);
@@ -428,7 +429,7 @@ export function useFileActions() {
       toast.success(t("actions.rename.success"));
       await applyOptimistic(channelId, updatedFiles, { eventType: "file.renamed", eventPayload: { name: fileToRename.name } });
     } catch (err: any) {
-      console.error("Failed to rename:", err);
+      logger.error("Failed to rename:", err);
       toast.error(err.message || t("actions.rename.failed"));
     }
   }, [getChannelId, t]);
@@ -454,7 +455,7 @@ export function useFileActions() {
         skipRollbackOnHardError: true,
       });
     } catch (err: any) {
-      console.error("Failed to toggle star:", err);
+      logger.error("Failed to toggle star:", err);
       toast.error(err.message || t("actions.star.failed"));
     }
   }, [getChannelId, t]);
@@ -479,7 +480,7 @@ export function useFileActions() {
       toast.success(t("actions.trash.moved", { name: file.name }));
       await applyOptimistic(channelId, updatedFiles, { eventType: "file.trashed", eventPayload: { name: file.name } });
     } catch (err: any) {
-      console.error("Failed to move to trash:", err);
+      logger.error("Failed to move to trash:", err);
       toast.error(err.message || t("actions.trash.moveFailed"));
     }
   }, [getChannelId, t]);
@@ -504,7 +505,7 @@ export function useFileActions() {
       toast.success(t("actions.trash.restored", { name: file.name }));
       await applyOptimistic(channelId, updatedFiles, { eventType: "file.restored", eventPayload: { name: file.name } });
     } catch (err: any) {
-      console.error("Failed to restore from trash:", err);
+      logger.error("Failed to restore from trash:", err);
       toast.error(err.message || t("actions.trash.restoreFailed"));
     }
   }, [getChannelId, t]);
@@ -529,7 +530,7 @@ export function useFileActions() {
       toast.success(t("actions.archive.archived", { name: file.name }));
       await applyOptimistic(channelId, updatedFiles, { eventType: "file.archived", eventPayload: { name: file.name } });
     } catch (err: any) {
-      console.error("Failed to archive:", err);
+      logger.error("Failed to archive:", err);
       toast.error(err.message || t("actions.archive.archiveFailed"));
     }
   }, [getChannelId, t]);
@@ -554,7 +555,7 @@ export function useFileActions() {
       toast.success(t("actions.archive.unarchived", { name: file.name }));
       await applyOptimistic(channelId, updatedFiles, { eventType: "file.unarchived", eventPayload: { name: file.name } });
     } catch (err: any) {
-      console.error("Failed to unarchive:", err);
+      logger.error("Failed to unarchive:", err);
       toast.error(err.message || t("actions.archive.unarchiveFailed"));
     }
   }, [getChannelId, t]);
@@ -598,11 +599,11 @@ export function useFileActions() {
           await deleteRemoteResourcesForFiles(channelId, targets, "deletePermanently");
           logEvent({ type: "file.deleted.acknowledged", payload: { fileId } });
         } catch (err) {
-          console.error("[deletePermanently] Background deletion error:", err);
+          logger.error("[deletePermanently] Background deletion error:", err);
         }
       })();
     } catch (err: any) {
-      console.error("Failed to delete permanently:", err);
+      logger.error("Failed to delete permanently:", err);
       toast.error(err.message || t("actions.delete.failed"));
     }
   }, [getChannelId, t]);
@@ -631,11 +632,11 @@ export function useFileActions() {
         try {
           await deleteRemoteResourcesForFiles(channelId, trashed, "emptyTrash");
         } catch (err) {
-          console.error("[emptyTrash] Background deletion error:", err);
+          logger.error("[emptyTrash] Background deletion error:", err);
         }
       })();
     } catch (err: any) {
-      console.error("Failed to empty trash:", err);
+      logger.error("Failed to empty trash:", err);
       toast.error(err.message || t("actions.emptyTrash.failed"));
     }
   }, [getChannelId, t]);
@@ -666,7 +667,7 @@ export function useFileActions() {
       toast.success(t("actions.bulk.trashed", { count: fileIds.length }));
       await applyOptimistic(channelId, updatedFiles, { eventType: "files.trashed", eventPayload: { count: fileIds.length } });
     } catch (err: any) {
-      console.error("Failed to move multiple to trash:", err);
+      logger.error("Failed to move multiple to trash:", err);
       toast.error(err.message || t("actions.bulk.trashFailed"));
     }
   }, [getChannelId, t]);
@@ -697,7 +698,7 @@ export function useFileActions() {
       toast.success(t("actions.bulk.restored", { count: fileIds.length }));
       await applyOptimistic(channelId, updatedFiles, { eventType: "files.restored", eventPayload: { count: fileIds.length } });
     } catch (err: any) {
-      console.error("Failed to restore multiple from trash:", err);
+      logger.error("Failed to restore multiple from trash:", err);
       toast.error(err.message || t("actions.bulk.restoreFailed"));
     }
   }, [getChannelId, t]);
@@ -735,11 +736,11 @@ export function useFileActions() {
         try {
           await deleteRemoteResourcesForFiles(channelId, targets, "deleteMultiplePermanently");
         } catch (err) {
-          console.error("[deleteMultiplePermanently] Background deletion error:", err);
+          logger.error("[deleteMultiplePermanently] Background deletion error:", err);
         }
       })();
     } catch (err: any) {
-      console.error("Failed to delete multiple permanently:", err);
+      logger.error("Failed to delete multiple permanently:", err);
       toast.error(err.message || t("actions.bulk.deleteFailed"));
     }
   }, [getChannelId, t]);
@@ -770,7 +771,7 @@ export function useFileActions() {
       toast.success(t("actions.bulk.archived", { count: fileIds.length }));
       await applyOptimistic(channelId, updatedFiles, { eventType: "files.archived", eventPayload: { count: fileIds.length } });
     } catch (err: any) {
-      console.error("Failed to archive multiple:", err);
+      logger.error("Failed to archive multiple:", err);
       toast.error(err.message || t("actions.bulk.archiveFailed"));
     }
   }, [getChannelId, t]);
@@ -806,7 +807,7 @@ export function useFileActions() {
         skipRollbackOnHardError: true,
       });
     } catch (err: any) {
-      console.error("Failed to star multiple:", err);
+      logger.error("Failed to star multiple:", err);
       toast.error(err.message || t("actions.bulk.starFailed"));
     }
   }, [getChannelId, t]);
@@ -837,7 +838,7 @@ export function useFileActions() {
       toast.success(t("actions.bulk.unarchived", { count: fileIds.length }));
       await applyOptimistic(channelId, updatedFiles, { eventType: "files.unarchived", eventPayload: { count: fileIds.length } });
     } catch (err: any) {
-      console.error("Failed to unarchive multiple:", err);
+      logger.error("Failed to unarchive multiple:", err);
       toast.error(err.message || t("actions.bulk.unarchiveFailed"));
     }
   }, [getChannelId, t]);
@@ -874,7 +875,7 @@ export function useFileActions() {
           );
         await applyOptimistic(channelId, updatedFiles, { eventType: "file.offlineToggled", eventPayload: { name: file.name, offline: nextOffline } });
       } catch (err: any) {
-        console.error("Failed to toggle offline availability:", err);
+        logger.error("Failed to toggle offline availability:", err);
         toast.error(err.message || t("actions.offline.failed"));
       }
     });
@@ -973,7 +974,7 @@ export function useFileActions() {
       toast.success(t("actions.move.success", { count: fileIds.length }));
       await applyOptimistic(channelId, updatedFiles, { eventType: "files.moved", eventPayload: { count: fileIds.length, target: targetFolderPath } });
     } catch (err: any) {
-      console.error("Failed to move items:", err);
+      logger.error("Failed to move items:", err);
       toast.error(err.message || t("actions.move.failed"));
     }
   }, [getChannelId, t]);

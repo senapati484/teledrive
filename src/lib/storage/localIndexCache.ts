@@ -1,4 +1,5 @@
 import type { TeleFile } from "../types";
+import { logger } from "@/lib/logger";
 import { normalizeFolderPath } from "../utils";
 
 export const LEGACY_CACHE_KEY = "teledrive_cached_files";
@@ -146,7 +147,7 @@ export async function saveCachedFilesSnapshot(files: TeleFile[]): Promise<void> 
   try {
     await withIdbStore("readwrite", (store) => store.put(files, IDB_KEY));
   } catch (err) {
-    console.warn("[localIndexCache] Failed to save snapshot to IndexedDB:", err);
+    logger.warn("[localIndexCache] Failed to save snapshot to IndexedDB:", err);
   }
 }
 
@@ -160,7 +161,7 @@ export async function loadCachedFilesSnapshot(): Promise<TeleFile[]> {
         return normalizeEntries(stored);
       }
     } catch (err) {
-      console.warn(
+      logger.warn(
         "[localIndexCache] Failed to load snapshot from IndexedDB:",
         err
       );
@@ -197,7 +198,7 @@ export async function clearCachedFilesSnapshot(): Promise<void> {
   try {
     await withIdbStore("readwrite", (store) => store.delete(IDB_KEY));
   } catch (err) {
-    console.warn(
+    logger.warn(
       "[localIndexCache] Failed to clear snapshot from IndexedDB:",
       err
     );

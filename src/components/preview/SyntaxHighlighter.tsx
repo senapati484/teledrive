@@ -7,6 +7,7 @@
  * Performance: pre-bundled highlight.js, React.memo, useMemo for line count.
  */
 import { memo, useEffect, useMemo } from "react";
+import { logger } from "@/lib/logger";
 import { useTranslation } from "react-i18next";
 import hljs from "highlight.js";
 import { useDarkMode } from "@/hooks/useDarkMode";
@@ -80,7 +81,7 @@ export const SyntaxHighlighter = memo(function SyntaxHighlighter({
       }
       return escapeHtml(code);
     } catch (err) {
-      console.warn("[SyntaxHighlighter] highlight error:", err);
+      logger.warn("[SyntaxHighlighter] highlight error:", err);
       return escapeHtml(code);
     }
   }, [code, langInfo.hljsLang, isTooLarge]);

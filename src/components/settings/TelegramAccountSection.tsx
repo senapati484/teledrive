@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "@/lib/logger";
 import { Trans, useTranslation } from "react-i18next";
 import {
   Smartphone,
@@ -95,14 +96,14 @@ export default function TelegramAccountSection() {
       const flushResults = await flushAllQueues();
       const flushFailed = flushResults.filter((r) => r.status === "failed");
       if (flushFailed.length > 0) {
-        console.error("Index flush failed on logout:", flushFailed);
+        logger.error("Index flush failed on logout:", flushFailed);
       }
 
       const { logoutTelegram } = await import("@/lib/telegram/logout");
       await logoutTelegram();
 
       await invoke("clear_session_only").catch((e: any) =>
-        console.warn("clear_session_only failed:", e)
+        logger.warn("clear_session_only failed:", e)
       );
 
       await deleteSecret(VAULT_KEY_SESSION).catch(() => {});
@@ -124,7 +125,7 @@ export default function TelegramAccountSection() {
       toast.success(t("account.toasts.disconnected"));
       navigate("/auth");
     } catch (err) {
-      console.error("Failed to disconnect:", err);
+      logger.error("Failed to disconnect:", err);
       toast.error(t("account.toasts.disconnectFailed"));
     }
   };
@@ -319,7 +320,7 @@ export default function TelegramAccountSection() {
                   setChannelId(null);
                   toast.success(t("account.toasts.channelReset"));
                 } catch (err) {
-                  console.error("Failed to reset storage channel:", err);
+                  logger.error("Failed to reset storage channel:", err);
                   toast.error(t("account.toasts.channelResetFailed"));
                 }
               }}

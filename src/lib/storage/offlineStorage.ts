@@ -1,4 +1,5 @@
 import { appLocalDataDir, join } from "@tauri-apps/api/path";
+import { logger } from "@/lib/logger";
 import { readFile, remove, mkdir, exists } from "@tauri-apps/plugin-fs";
 import { isWebRuntime } from "../runtime/bridge";
 import {
@@ -57,7 +58,7 @@ export async function removeOfflineCache(fileId: string): Promise<void> {
       await remove(localPath);
     }
   } catch (err) {
-    console.warn(`[offlineStorage] Failed to delete local offline cache for ${fileId}:`, err);
+    logger.warn(`[offlineStorage] Failed to delete local offline cache for ${fileId}:`, err);
   }
 }
 
@@ -104,9 +105,9 @@ export async function syncOfflineStatusWithDisk(files: TeleFile[]): Promise<Tele
         if (file.offline) {
           // It's marked offline but not cached. If online, trigger background caching.
           if (typeof navigator !== "undefined" && navigator.onLine && file.channelId && file.messageId && file.messageId !== 0) {
-            console.log(`[offlineStorage] Background syncing missing offline file: ${file.name}`);
+            logger.log(`[offlineStorage] Background syncing missing offline file: ${file.name}`);
             cacheFileOffline(file.channelId, file.messageId, file.id).catch((err) => {
-              console.warn(`[offlineStorage] Background sync failed for ${file.name}:`, err);
+              logger.warn(`[offlineStorage] Background sync failed for ${file.name}:`, err);
             });
           }
         }

@@ -9,6 +9,7 @@
  * Performance: single dynamic import on first mount, compartment reconfigure on theme change.
  */
 import { useEffect, useRef, useState } from "react";
+import { logger } from "@/lib/logger";
 import { Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDarkMode } from "@/hooks/useDarkMode";
@@ -208,7 +209,7 @@ export function CodeEditor({ value, onChange, fileName, onCursorChange, classNam
       viewRef.current = view;
       setIsLoading(false);
     } catch (err) {
-      console.error("[CodeEditor] init error:", err);
+      logger.error("[CodeEditor] init error:", err);
       setIsLoading(false);
     }
 

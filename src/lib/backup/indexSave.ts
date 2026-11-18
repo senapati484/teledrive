@@ -17,6 +17,7 @@
  *      flushes the latest snapshot immediately in a single clean write.
  */
 import { enqueueSave, isChannelQueueRateLimited } from "../storage/indexQueue";
+import { logger } from "@/lib/logger";
 import type { TeleFile } from "../types";
 
 export interface BackupIndexSaveResult {
@@ -57,7 +58,7 @@ function scheduleFlush(channelId: string, delayMs = BACKUP_DEBOUNCE_MS): void {
   const timer = setTimeout(() => {
     timers.delete(channelId);
     void flushBackupIndexSave(channelId).catch((err) => {
-      console.warn("[backup.indexSave] Background flush failed (non-fatal):", err);
+      logger.warn("[backup.indexSave] Background flush failed (non-fatal):", err);
     });
   }, delayMs);
   timers.set(channelId, timer);
@@ -136,7 +137,7 @@ export async function flushBackupIndexSave(
           ok: false,
           error: err instanceof Error ? err.message : String(err),
         };
-        console.warn("[backup.indexSave] Save error:", last.error);
+        logger.warn("[backup.indexSave] Save error:", last.error);
         break;
       }
     }

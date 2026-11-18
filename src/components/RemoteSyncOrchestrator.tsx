@@ -14,6 +14,7 @@
  * Plan checks have been removed — TeleDrive is a free application.
  */
 import { useEffect } from "react";
+import { logger } from "@/lib/logger";
 import { useAuthStore } from "@/stores/authStore";
 import { useFileStore } from "@/stores/fileStore";
 import { useLicenseStore } from "@/stores/licenseStore";
@@ -41,7 +42,7 @@ export default function RemoteSyncOrchestrator(): null {
       try {
         await ensureTickListenerStarted();
       } catch (err) {
-        if (!cancelled) console.warn("[RemoteSyncOrchestrator] tick listener failed:", err);
+        if (!cancelled) logger.warn("[RemoteSyncOrchestrator] tick listener failed:", err);
       }
     })();
     return () => {
@@ -84,7 +85,7 @@ export default function RemoteSyncOrchestrator(): null {
           startRemoteSync(channelId);
         }
       } catch (err) {
-        console.warn(
+        logger.warn(
           "[RemoteSyncOrchestrator] channel id not ready, retrying in 2s:",
           err,
         );
@@ -107,7 +108,7 @@ export default function RemoteSyncOrchestrator(): null {
     if (!isAuthenticated || indexLoadState !== "ready" || !bootstrapComplete) return;
     void import("@/lib/upload/uploadManager")
       .then((mod) => mod.processQueue())
-      .catch((err) => console.warn("[RemoteSyncOrchestrator] upload resume failed:", err));
+      .catch((err) => logger.warn("[RemoteSyncOrchestrator] upload resume failed:", err));
   }, [isAuthenticated, indexLoadState, bootstrapComplete]);
 
   // Effect 4 — due checks on launch, focus, and a 5-minute heartbeat.

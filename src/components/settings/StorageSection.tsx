@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { logger } from "@/lib/logger";
 import { HardDrive, RefreshCw, Info, Loader2, Files, Folder, Trash2, ShieldCheck, RotateCcw } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { useFileStore } from "@/stores/fileStore";
@@ -69,12 +70,12 @@ export default function StorageSection() {
         const { syncOfflineStatusWithDisk } = await import("@/lib/storage/offlineStorage");
         freshFiles = await syncOfflineStatusWithDisk(freshFiles);
       } catch (err) {
-        console.warn("[StorageSection] Failed to sync offline status with disk:", err);
+        logger.warn("[StorageSection] Failed to sync offline status with disk:", err);
       }
       setFiles(freshFiles);
       toast.success(t("storage.toasts.refreshed"));
     } catch (err: any) {
-      console.error("[StorageSection] Recalculate failed:", err);
+      logger.error("[StorageSection] Recalculate failed:", err);
       toast.error(err?.message || t("storage.toasts.refreshFailed"));
     } finally {
       setIsRefreshing(false);

@@ -24,6 +24,7 @@ import {
   useMemo,
   memo,
 } from "react";
+import { logger } from "@/lib/logger";
 import { useTranslation } from "react-i18next";
 import {
   ChevronLeft,
@@ -115,7 +116,7 @@ const PageCanvas = memo(function PageCanvas({
       ctx.restore();
     } catch (err: any) {
       if (err?.name !== "RenderingCancelledException") {
-        console.warn(`[PdfViewer] Page ${pageNum} render error:`, err?.message ?? err);
+        logger.warn(`[PdfViewer] Page ${pageNum} render error:`, err?.message ?? err);
       }
     }
   }, [pdfDoc, pageNum, scale, rotation]);
@@ -290,7 +291,7 @@ export function PdfViewer({ data, url, fileName, onOpenSystemApp }: Props) {
             pageEntries.push({ pageNum: i, width: vp.width, height: vp.height });
             page.cleanup();
           } catch (pageErr) {
-            console.warn(`[PdfViewer] Could not get dimensions for page ${i}:`, pageErr);
+            logger.warn(`[PdfViewer] Could not get dimensions for page ${i}:`, pageErr);
             pageEntries.push({ pageNum: i, width: 595, height: 842 }); // A4 fallback
           }
         }
@@ -308,7 +309,7 @@ export function PdfViewer({ data, url, fileName, onOpenSystemApp }: Props) {
         setPageInputValue("1");
       } catch (err: any) {
         if (cancelled) return;
-        console.error("[PdfViewer] Failed to load PDF:", err);
+        logger.error("[PdfViewer] Failed to load PDF:", err);
         const msg =
           err?.message?.includes("Invalid PDF")
             ? "pdf.errors.invalid"
@@ -535,7 +536,7 @@ export function PdfViewer({ data, url, fileName, onOpenSystemApp }: Props) {
         }, 2000);
       };
     } catch (e) {
-      console.warn("[PdfViewer] Print failed:", e);
+      logger.warn("[PdfViewer] Print failed:", e);
     }
   }, [data, url]);
 

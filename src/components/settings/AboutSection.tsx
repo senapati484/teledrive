@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "@/lib/logger";
 import { Bug, ShieldAlert, Globe, FlaskConical, Star, Sparkles } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -61,7 +62,7 @@ export default function AboutSection() {
       if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return;
       await runtimeOpenUrl(url);
     } catch (err) {
-      console.error("Failed to open URL:", err);
+      logger.error("Failed to open URL:", err);
       toast.error(t("about.toasts.openLinkFailed"));
     }
   };

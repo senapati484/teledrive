@@ -1,4 +1,5 @@
 import { Buffer } from "buffer";
+import { logger } from "@/lib/logger";
 
 // Ensure Buffer is globally accessible across all environments & runtimes
 if (typeof window !== "undefined") {
@@ -47,7 +48,7 @@ try {
     configurable: true,
   });
 } catch (e) {
-  console.warn("[TeleDrive] Failed to define Symbol.hasInstance on Buffer:", e);
+  logger.warn("[TeleDrive] Failed to define Symbol.hasInstance on Buffer:", e);
 }
 
 export { Buffer };

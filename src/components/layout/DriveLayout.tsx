@@ -1,4 +1,5 @@
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
+import { logger } from "@/lib/logger";
 import React, { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -374,7 +375,7 @@ export default function DriveLayout() {
 
     if (emptyFolderPaths.length > 0) {
       await ensureDroppedEmptyFolders(emptyFolderPaths).catch((err) => {
-        console.warn("[DnD] Failed to create empty dropped folders:", err);
+        logger.warn("[DnD] Failed to create empty dropped folders:", err);
       });
     }
     if (droppedFiles.length > 0) {
@@ -400,7 +401,7 @@ export default function DriveLayout() {
       if (isDir) {
         const allFiles = useFileStore.getState().files;
         downloadSelectionAsZip(allFiles, [file]).catch((err) => {
-          console.error("Folder ZIP download failed:", err);
+          logger.error("Folder ZIP download failed:", err);
         });
         return;
       }
@@ -409,7 +410,7 @@ export default function DriveLayout() {
         enc: file.enc,
         plainSize: file.enc?.plainSize ?? file.size,
       }).catch((err) => {
-        console.error("Download failed:", err);
+        logger.error("Download failed:", err);
       });
     };
 
@@ -435,7 +436,7 @@ export default function DriveLayout() {
       try {
         await bootstrapTeleDrive(undefined, phoneNumber ?? "");
       } catch (err) {
-        console.error("Refresh failed:", err);
+        logger.error("Refresh failed:", err);
       }
     };
 
@@ -509,7 +510,7 @@ export default function DriveLayout() {
       try {
         await bootstrapTeleDrive(undefined, phoneNumber ?? "");
       } catch (err) {
-        console.error("Failed to refresh:", err);
+        logger.error("Failed to refresh:", err);
       } finally {
         setIsRefreshing(false);
         setPullProgress(0);

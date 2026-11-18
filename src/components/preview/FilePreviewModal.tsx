@@ -8,6 +8,7 @@
  * Binary     → native <img>, <video>, <audio>, <iframe>
  */
 import { useState, useEffect, useCallback, useMemo, useRef, Component, ReactNode } from "react";
+import { logger } from "@/lib/logger";
 import {
   X,
   Download,
@@ -122,7 +123,7 @@ import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 class PdfErrorBoundary extends Component<{ children: ReactNode; onRetry?: () => void }, { hasError: boolean }> {
   state = { hasError: false };
   static getDerivedStateFromError() { return { hasError: true }; }
-  componentDidCatch(err: Error) { console.error("[PdfErrorBoundary] PDF viewer crashed:", err); }
+  componentDidCatch(err: Error) { logger.error("[PdfErrorBoundary] PDF viewer crashed:", err); }
   render() {
     if (this.state.hasError) {
       return (
@@ -351,7 +352,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
       try {
         if (vElem.requestFullscreen) {
           vElem.requestFullscreen().catch((err: any) => {
-            console.error("video.requestFullscreen failed:", err);
+            logger.error("video.requestFullscreen failed:", err);
           });
         } else if (vElem.webkitRequestFullscreen) {
           vElem.webkitRequestFullscreen();
@@ -361,11 +362,11 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
           try {
             vElem.webkitEnterFullscreen();
           } catch (e) {
-            console.error("webkitEnterFullscreen threw:", e);
+            logger.error("webkitEnterFullscreen threw:", e);
           }
         }
       } catch (err) {
-        console.error("All video fullscreen methods failed:", err);
+        logger.error("All video fullscreen methods failed:", err);
       }
     };
 
@@ -373,7 +374,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
       try {
         if (cElem.requestFullscreen) {
           cElem.requestFullscreen().catch((err: any) => {
-            console.warn("Container fullscreen rejected, trying video directly:", err);
+            logger.warn("Container fullscreen rejected, trying video directly:", err);
             requestFSOnVideo();
           });
         } else if (cElem.webkitRequestFullscreen) {
@@ -388,13 +389,13 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
           requestFSOnVideo();
         }
       } catch (err) {
-        console.warn("Container fullscreen threw error, trying video directly:", err);
+        logger.warn("Container fullscreen threw error, trying video directly:", err);
         requestFSOnVideo();
       }
     } else {
       try {
         if (doc.exitFullscreen) {
-          doc.exitFullscreen().catch(console.error);
+          doc.exitFullscreen().catch((err: unknown) => logger.error(err));
         } else if (doc.webkitExitFullscreen) {
           doc.webkitExitFullscreen();
         } else if (doc.webkitCancelFullScreen) {
@@ -405,7 +406,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
           doc.msExitFullscreen();
         }
       } catch (err) {
-        console.error("Failed to exit fullscreen:", err);
+        logger.error("Failed to exit fullscreen:", err);
       }
     }
   }, []);
@@ -441,7 +442,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
     if (isVideoPlaying) {
       videoRef.current.pause();
     } else {
-      videoRef.current.play().catch(console.error);
+      videoRef.current.play().catch((err: unknown) => logger.error(err));
     }
   }, [isVideoPlaying]);
 
@@ -501,7 +502,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
     if (isAudioPlaying) {
       audioRef.current.pause();
     } else {
-      audioRef.current.play().catch(console.error);
+      audioRef.current.play().catch((err: unknown) => logger.error(err));
     }
   }, [isAudioPlaying]);
 
@@ -1016,9 +1017,9 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
           try {
             buffer = await readOfflineCache(file.id);
             setProgress(100);
-            console.log(`[FilePreviewModal] Loaded "${file.name}" from local offline cache.`);
+            logger.log(`[FilePreviewModal] Loaded "${file.name}" from local offline cache.`);
           } catch (offlineErr) {
-            console.warn(`[FilePreviewModal] Failed to read offline cache for "${file.name}", falling back to download:`, offlineErr);
+            logger.warn(`[FilePreviewModal] Failed to read offline cache for "${file.name}", falling back to download:`, offlineErr);
             buffer = await downloadFileToBuffer(
               file.channelId, file.messageId,
               (pct) => { if (current) setProgress(pct); },
@@ -1052,7 +1053,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
             if (current) setRichDocHtml(docPreview.content);
             return;
           } catch (richErr) {
-            console.warn("[FilePreviewModal] Rich document extraction failed:", richErr);
+            logger.warn("[FilePreviewModal] Rich document extraction failed:", richErr);
             return;
           }
         }
@@ -1066,7 +1067,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
             }
             return;
           } catch (sheetErr) {
-            console.warn("[FilePreviewModal] Workbook extraction failed:", sheetErr);
+            logger.warn("[FilePreviewModal] Workbook extraction failed:", sheetErr);
             return;
           }
         }
@@ -1077,7 +1078,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
             if (current) setPresentationSlides(slides);
             return;
           } catch (slideErr) {
-            console.warn("[FilePreviewModal] Presentation extraction failed:", slideErr);
+            logger.warn("[FilePreviewModal] Presentation extraction failed:", slideErr);
             return;
           }
         }
@@ -1088,7 +1089,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
             if (current && entries.length > 0) setArchiveEntries(entries);
             return;
           } catch (archErr) {
-            console.warn("[FilePreviewModal] Archive inspection failed:", archErr);
+            logger.warn("[FilePreviewModal] Archive inspection failed:", archErr);
             return;
           }
         }
@@ -1113,7 +1114,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
               });
             }
           } catch (heicErr) {
-            console.warn("[FilePreviewModal] heic2any conversion failed, falling back to direct blob:", heicErr);
+            logger.warn("[FilePreviewModal] heic2any conversion failed, falling back to direct blob:", heicErr);
             const fallbackBlob = new Blob([buffer as any], { type: "image/heic" });
             if (current) {
               setContentUrl((prev) => {
@@ -1224,7 +1225,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
           plainSize: currentFile.enc?.plainSize ?? currentFile.size,
         }
       ).catch((err) => {
-        console.error("Download failed:", err);
+        logger.error("Download failed:", err);
       });
     }
   }, [currentFile]);
@@ -1300,12 +1301,12 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
       try {
         await openPath(targetPath);
       } catch (openerErr) {
-        console.warn("plugin-opener failed, invoking native open_file_in_system_viewer:", openerErr);
+        logger.warn("plugin-opener failed, invoking native open_file_in_system_viewer:", openerErr);
         await invoke("open_file_in_system_viewer", { path: targetPath });
       }
       toast.success(t("toast.openedInSystemViewer"));
     } catch (err: any) {
-      console.error("Failed to open document in system app:", err);
+      logger.error("Failed to open document in system app:", err);
       toast.error(t("toast.systemViewerFailed"));
       downloadFileFromTelegram(
         currentFile.channelId,
@@ -1364,10 +1365,10 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
           return;
         }
       } catch (fallbackErr) {
-        console.warn("[FilePreviewModal] Blob media fallback failed:", fallbackErr);
+        logger.warn("[FilePreviewModal] Blob media fallback failed:", fallbackErr);
       }
     }
-    console.warn(`[FilePreviewModal] Media element failed to decode: ${currentFile.name}`);
+    logger.warn(`[FilePreviewModal] Media element failed to decode: ${currentFile.name}`);
     setMediaError(true);
   }, [currentFile]);
 
@@ -1465,7 +1466,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
       for (const oldId of getFileMessageIds(currentFile)) {
         if (!newIds.has(oldId)) {
           deleteTelegramMessage(currentFile.channelId, oldId).catch((err) => {
-            console.warn(
+            logger.warn(
               `[FilePreviewModal] Could not delete old message ${oldId} for "${currentFile.name}":`,
               err?.message || err
             );
@@ -1522,7 +1523,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
     try {
       await runtimeOpenUrl(url);
     } catch (err) {
-      console.error("Failed to open URL in browser:", err);
+      logger.error("Failed to open URL in browser:", err);
       window.open(url, "_blank", "noopener,noreferrer");
     }
   }, [file, textContent, editContent, isEditMode]);
@@ -2358,7 +2359,7 @@ export function FilePreviewModal({ file, initialEditMode = false, onClose, onFil
                                 // Fall through to image decode error card
                               }
                             }
-                            console.warn(`[FilePreviewModal] Image failed to render: ${file.name}`);
+                            logger.warn(`[FilePreviewModal] Image failed to render: ${file.name}`);
                             setImageError(true);
                           }}
                           className="max-w-[85vw] max-h-[80vh] object-contain pointer-events-none"

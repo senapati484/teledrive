@@ -1,4 +1,5 @@
 import { Api } from "telegram";
+import { logger } from "@/lib/logger";
 import { getClient } from "./client";
 import { canonicalChannelId } from "./peerId";
 // NOTE: we deliberately do NOT import @tauri-apps/plugin-fs here. Its
@@ -329,7 +330,7 @@ export async function uploadFileToTelegram(
     try {
       hasher = sha256.create();
     } catch (err) {
-      console.warn("[uploader] SHA-256 init failed; uploading without hash:", err);
+      logger.warn("[uploader] SHA-256 init failed; uploading without hash:", err);
     }
   }
 
@@ -536,7 +537,7 @@ export async function uploadFileToTelegram(
               try {
                 hasher.update(rawBlock);
               } catch (err) {
-                console.warn("[uploader] SHA-256 update failed; uploading without hash:", err);
+                logger.warn("[uploader] SHA-256 update failed; uploading without hash:", err);
                 hasher = null;
               }
             }
@@ -579,7 +580,7 @@ export async function uploadFileToTelegram(
             try {
               hasher.update(chunkBytes);
             } catch (err) {
-              console.warn("[uploader] SHA-256 update failed; uploading without hash:", err);
+              logger.warn("[uploader] SHA-256 update failed; uploading without hash:", err);
               hasher = null;
             }
           }
@@ -719,7 +720,7 @@ export async function uploadFileToTelegram(
     try {
       contentHash = bytesToHex(hasher.digest());
     } catch (err) {
-      console.warn("[uploader] SHA-256 digest failed; uploading without hash:", err);
+      logger.warn("[uploader] SHA-256 digest failed; uploading without hash:", err);
     }
   }
 

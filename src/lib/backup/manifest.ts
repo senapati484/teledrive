@@ -8,6 +8,7 @@
  */
 
 import { invoke } from "@tauri-apps/api/core";
+import { logger } from "@/lib/logger";
 import type { TeleFile } from "../types";
 import { rawChannelId } from "../telegram/peerId";
 
@@ -98,14 +99,14 @@ function markCorrupt(channelId: string, quarantineKey: string): void {
 
 async function quarantineBase(channelId: string, reason: string): Promise<void> {
   const suffix = String(Date.now());
-  console.warn(
+  logger.warn(
     `[backup.manifest] manifest corruption for ${channelId} (${reason}); quarantining`,
   );
   try {
     await invoke("quarantine_backup_manifest", { channelId, suffix });
     markCorrupt(channelId, `${channelId}.corrupt-${suffix}`);
   } catch (err) {
-    console.error("[backup.manifest] quarantine failed:", err);
+    logger.error("[backup.manifest] quarantine failed:", err);
     markCorrupt(channelId, "");
   }
 }
@@ -151,7 +152,7 @@ function replayJournal(
     try {
       record = JSON.parse(line) as JournalRecord;
     } catch {
-      console.warn("[backup.manifest] ignoring malformed journal line");
+      logger.warn("[backup.manifest] ignoring malformed journal line");
       continue;
     }
     if (
@@ -174,7 +175,7 @@ async function readManifest(
       channelId,
     });
   } catch (err) {
-    console.warn("[backup.manifest] load failed; starting empty:", err);
+    logger.warn("[backup.manifest] load failed; starting empty:", err);
     return { manifest: emptyManifest(channelId), exists: false };
   }
 
@@ -193,7 +194,7 @@ async function readManifest(
         migratedFrom = legacyChannelId;
       }
     } catch (err) {
-      console.warn("[backup.manifest] legacy manifest load failed:", err);
+      logger.warn("[backup.manifest] legacy manifest load failed:", err);
     }
   }
 
@@ -246,11 +247,11 @@ async function readManifest(
         generation: 0,
       });
       manifest.generation = Number(next) || 1;
-      console.info(
+      logger.info(
         `[backup.manifest] Migrated manifest ${migratedFrom} → ${channelId}`,
       );
     } catch (err) {
-      console.warn(
+      logger.warn(
         "[backup.manifest] manifest migration failed; keeping legacy copy:",
         err,
       );
@@ -349,7 +350,7 @@ export async function ensureManifest(
       key: LEGACY_MANIFEST_KEY,
     });
   } catch (err) {
-    console.warn("[backup.manifest] legacy load failed:", err);
+    logger.warn("[backup.manifest] legacy load failed:", err);
     return existing.manifest;
   }
   if (!raw) {
@@ -364,7 +365,7 @@ export async function ensureManifest(
         backupKey: `${LEGACY_MANIFEST_KEY}.migrated-${Date.now()}`,
       });
     } catch (err) {
-      console.warn("[backup.manifest] legacy quarantine failed:", err);
+      logger.warn("[backup.manifest] legacy quarantine failed:", err);
     }
   };
 
@@ -393,7 +394,7 @@ export async function ensureManifest(
       const live = await verifyMessageIds(ids);
       verified = ids.every((id) => live.has(id));
     } catch (err) {
-      console.warn("[backup.manifest] legacy verification failed:", err);
+      logger.warn("[backup.manifest] legacy verification failed:", err);
     }
   }
 
@@ -418,7 +419,7 @@ export async function ensureManifest(
     manifest.generation = await saveManifest(channelId, manifest);
     ensuredChannels.add(channelId);
   } catch (err) {
-    console.warn("[backup.manifest] legacy migration save failed:", err);
+    logger.warn("[backup.manifest] legacy migration save failed:", err);
     return existing.manifest;
   }
   await quarantineLegacy();

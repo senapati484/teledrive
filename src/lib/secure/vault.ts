@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { logger } from "@/lib/logger";
 
 export const VAULT_KEY_API_ID      = 'telegram_api_id';
 export const VAULT_KEY_API_HASH    = 'telegram_api_hash';
@@ -52,7 +53,7 @@ export function saveSecret(key: string, value: string): Promise<void> {
     try {
       await invoke("save_vault_value", { key, value });
     } catch (error) {
-      console.error(`Failed to save secret for key ${key}:`, error);
+      logger.error(`Failed to save secret for key ${key}:`, error);
       throw error;
     }
   });
@@ -66,7 +67,7 @@ export function getSecret(key: string): Promise<string | null> {
     try {
       return await invoke<string | null>("load_vault_value", { key });
     } catch (error) {
-      console.warn(`Failed to get secret for key ${key}:`, error);
+      logger.warn(`Failed to get secret for key ${key}:`, error);
       return null;
     }
   });
@@ -80,7 +81,7 @@ export function deleteSecret(key: string): Promise<void> {
     try {
       await invoke("delete_vault_value", { key });
     } catch (error) {
-      console.error(`Failed to delete secret for key ${key}:`, error);
+      logger.error(`Failed to delete secret for key ${key}:`, error);
       throw error;
     }
   });

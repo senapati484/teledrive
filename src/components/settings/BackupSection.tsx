@@ -18,6 +18,7 @@
  *   from Settings and still see the backup progress.
  */
 import { useState } from "react";
+import { logger } from "@/lib/logger";
 import { Trans, useTranslation } from "react-i18next";
 import {
   Clock,
@@ -126,7 +127,7 @@ export default function BackupSection() {
     try {
       await setIntervalMinutes(preset.minutes);
     } catch (err) {
-      console.warn("[BackupSection] setIntervalMinutes failed:", err);
+      logger.warn("[BackupSection] setIntervalMinutes failed:", err);
     } finally {
       setPendingInterval(null);
     }
@@ -152,7 +153,7 @@ export default function BackupSection() {
       // Auto-save — folder appears in the list immediately.
       addFolder(selected);
     } catch (err) {
-      console.warn("[BackupSection] folder picker failed:", err);
+      logger.warn("[BackupSection] folder picker failed:", err);
       toast.error(t("backup.toasts.pickerFailed"), {
         description: err instanceof Error ? err.message : String(err),
       });
@@ -176,7 +177,7 @@ export default function BackupSection() {
     try {
       await runRunnerNow();
     } catch (err) {
-      console.warn("[BackupSection] runNow failed:", err);
+      logger.warn("[BackupSection] runNow failed:", err);
     }
   }
 

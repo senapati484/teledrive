@@ -1,4 +1,5 @@
 import { TelegramClient } from "telegram";
+import { logger } from "@/lib/logger";
 import { StringSession } from "telegram/sessions";
 import { getPlatform } from "../platform";
 import { APP_VERSION } from "./config";
@@ -28,7 +29,7 @@ export async function initClient(
         await clientInstance.connect();
         isConnectedStatus = true;
       } catch (err) {
-        console.warn("Reconnection failed, creating fresh client:", err);
+        logger.warn("Reconnection failed, creating fresh client:", err);
       }
     }
     if (isConnectedStatus && clientInstance?.connected) {
@@ -93,7 +94,7 @@ export async function disconnectClient(): Promise<void> {
     try {
       await client.disconnect();
     } catch (err) {
-      console.warn("Error during TelegramClient disconnect:", err);
+      logger.warn("Error during TelegramClient disconnect:", err);
     }
   }
 }
