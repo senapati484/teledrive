@@ -43,6 +43,7 @@ import { FileIcon } from "./FileIcon";
 import { FolderIcon } from "./FolderIcon";
 import { FileContextMenu } from "./FileContextMenu";
 import { FileActionsMenu } from "./FileActionsMenu";
+import { FileInfoDialog } from "./FileInfoDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -225,6 +226,7 @@ interface FolderGridCardProps {
   onDeletePermanently: (file: TeleFile) => void;
   onArchive: (file: TeleFile) => void;
   onUnarchive: (file: TeleFile) => void;
+  onGetInfo: (file: TeleFile) => void;
 }
 
 const FolderGridCard = React.memo(function FolderGridCard({
@@ -249,6 +251,7 @@ const FolderGridCard = React.memo(function FolderGridCard({
   onDeletePermanently,
   onArchive,
   onUnarchive,
+  onGetInfo,
 }: FolderGridCardProps) {
   return (
     <FileContextMenu
@@ -262,6 +265,7 @@ const FolderGridCard = React.memo(function FolderGridCard({
       onDeletePermanently={onDeletePermanently}
       onArchive={onArchive}
       onUnarchive={onUnarchive}
+      onGetInfo={onGetInfo}
     >
       <div
         onClick={(e) => onItemClick(e, folder)}
@@ -320,6 +324,7 @@ const FolderGridCard = React.memo(function FolderGridCard({
             onDeletePermanently={onDeletePermanently}
             onArchive={onArchive}
             onUnarchive={onUnarchive}
+            onGetInfo={onGetInfo}
           />
         </div>
       </div>
@@ -354,6 +359,7 @@ interface FileGridCardProps {
   onArchive: (file: TeleFile) => void;
   onUnarchive: (file: TeleFile) => void;
   onOfflineToggle?: (file: TeleFile) => void;
+  onGetInfo: (file: TeleFile) => void;
 }
 
 const FileGridCard = React.memo(function FileGridCard({
@@ -383,6 +389,7 @@ const FileGridCard = React.memo(function FileGridCard({
   onArchive,
   onUnarchive,
   onOfflineToggle,
+  onGetInfo,
 }: FileGridCardProps) {
   return (
     <FileContextMenu
@@ -398,6 +405,7 @@ const FileGridCard = React.memo(function FileGridCard({
       onArchive={onArchive}
       onUnarchive={onUnarchive}
       onOfflineToggle={onOfflineToggle}
+      onGetInfo={onGetInfo}
     >
       <div
         onClick={(e) => onItemClick(e, file)}
@@ -444,6 +452,7 @@ const FileGridCard = React.memo(function FileGridCard({
               onArchive={onArchive}
               onUnarchive={onUnarchive}
               onOfflineToggle={onOfflineToggle}
+              onGetInfo={onGetInfo}
             />
           </div>
         </div>
@@ -522,6 +531,7 @@ interface FileListRowProps {
   onArchive: (file: TeleFile) => void;
   onUnarchive: (file: TeleFile) => void;
   onOfflineToggle?: (file: TeleFile) => void;
+  onGetInfo: (file: TeleFile) => void;
 }
 
 const FileListRow = React.memo(function FileListRow({
@@ -553,6 +563,7 @@ const FileListRow = React.memo(function FileListRow({
   onArchive,
   onUnarchive,
   onOfflineToggle,
+  onGetInfo,
 }: FileListRowProps) {
   return (
     <FileContextMenu
@@ -568,6 +579,7 @@ const FileListRow = React.memo(function FileListRow({
       onArchive={onArchive}
       onUnarchive={onUnarchive}
       onOfflineToggle={onOfflineToggle}
+      onGetInfo={onGetInfo}
     >
       <tr
         onClick={(e) => onItemClick(e, file)}
@@ -637,6 +649,7 @@ const FileListRow = React.memo(function FileListRow({
               onArchive={onArchive}
               onUnarchive={onUnarchive}
               onOfflineToggle={onOfflineToggle}
+              onGetInfo={onGetInfo}
             />
           </div>
         </td>
@@ -731,6 +744,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
   const [newFileName, setNewFileName] = useState("");
   const [emptyTrashDialogOpen, setEmptyTrashDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<TeleFile | null>(null);
+  const [infoTarget, setInfoTarget] = useState<TeleFile | null>(null);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   const [failedThumbSrcs, setFailedThumbSrcs] = useState<Record<string, string>>({});
@@ -1871,6 +1885,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                       onDeletePermanently={setDeleteTarget}
                       onArchive={archiveFile}
                       onUnarchive={unarchiveFile}
+                      onGetInfo={setInfoTarget}
                     />
                   );
                 })}
@@ -1925,6 +1940,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                       onArchive={archiveFile}
                       onUnarchive={unarchiveFile}
                       onOfflineToggle={toggleOffline}
+                      onGetInfo={setInfoTarget}
                     />
                   );
                 })}
@@ -2002,6 +2018,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                     onArchive={archiveFile}
                     onUnarchive={unarchiveFile}
                     onOfflineToggle={toggleOffline}
+                    onGetInfo={setInfoTarget}
                   />
                 );
               })}
@@ -2474,6 +2491,16 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* File / Folder Get Info Dialog */}
+      <FileInfoDialog
+        file={infoTarget}
+        allFiles={files}
+        open={infoTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setInfoTarget(null);
+        }}
+      />
     </div>
   );
 }
