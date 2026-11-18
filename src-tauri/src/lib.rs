@@ -7,18 +7,23 @@ use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::Mutex as AsyncMutex;
 
 #[tauri::command]
-fn log_vault_state(app: tauri::AppHandle, state: String) {
-    use std::fs::OpenOptions;
-    use std::io::Write;
+async fn log_vault_state(app: tauri::AppHandle, state: String) {
     let log_path = if let Ok(data_dir) = app.path().app_data_dir() {
-        let _ = std::fs::create_dir_all(&data_dir);
         data_dir.join("vault_state.log")
     } else {
         std::path::PathBuf::from("vault_state.log")
     };
-    if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(log_path) {
-        writeln!(file, "{state}").ok();
-    }
+    let _ = tauri::async_runtime::spawn_blocking(move || {
+        use std::fs::OpenOptions;
+        use std::io::Write;
+        if let Some(parent) = log_path.parent() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+        if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(log_path) {
+            writeln!(file, "{state}").ok();
+        }
+    })
+    .await;
 }
 
 /// Returns the last N lines of vault_state.log for the diagnostics page.
@@ -26,82 +31,100 @@ fn log_vault_state(app: tauri::AppHandle, state: String) {
 /// output mirrors the live state of the index pipeline without requiring
 /// any extra instrumentation on the JS side.
 #[tauri::command]
-fn get_vault_state(app: tauri::AppHandle, lines: Option<usize>) -> Result<String, String> {
+async fn get_vault_state(app: tauri::AppHandle, lines: Option<usize>) -> Result<String, String> {
     let limit = lines.unwrap_or(200);
     let log_path = if let Ok(data_dir) = app.path().app_data_dir() {
         data_dir.join("vault_state.log")
     } else {
         std::path::PathBuf::from("vault_state.log")
     };
-    if !log_path.exists() {
-        return Ok(String::new());
-    }
-    let contents = std::fs::read_to_string(log_path)
-        .map_err(|e| format!("Failed to read vault_state.log: {e}"))?;
+    tauri::async_runtime::spawn_blocking(move || {
+        if !log_path.exists() {
+            return Ok(String::new());
+        }
+        let contents = std::fs::read_to_string(&log_path)
+            .map_err(|e| format!("Failed to read vault_state.log: {e}"))?;
 
-    // Take the last `limit` lines without loading more than needed.
-    let collected: Vec<&str> = contents.lines().rev().take(limit).collect();
-    let mut out: Vec<&str> = collected;
-    out.reverse();
-    Ok(out.join("\n"))
+        // Take the last `limit` lines without loading more than needed.
+        let mut out: Vec<&str> = contents.lines().rev().take(limit).collect();
+        out.reverse();
+        Ok(out.join("\n"))
+    })
+    .await
+    .map_err(|e| format!("get_vault_state task join error: {e}"))?
 }
-
-
 
 /// Saves the Telegram session string to a simple JSON file in the app data directory.
 /// This is reliable, fast, and survives dev-server restarts without Stronghold overhead.
 #[tauri::command]
-fn save_session(app: tauri::AppHandle, session: String, phone: String) -> Result<(), String> {
+async fn save_session(app: tauri::AppHandle, session: String, phone: String) -> Result<(), String> {
     let session_path = get_session_path(&app)?;
     let json = serde_json::json!({ "session": session, "phone": phone });
-    atomic_write(&session_path, json.to_string().as_bytes())
-        .map_err(|e| format!("Failed to write session file: {e}"))
+    let payload = json.to_string().into_bytes();
+    tauri::async_runtime::spawn_blocking(move || {
+        atomic_write(&session_path, &payload)
+            .map_err(|e| format!("Failed to write session file: {e}"))
+    })
+    .await
+    .map_err(|e| format!("save_session task join error: {e}"))?
 }
 
 /// Loads the Telegram session string from the app data directory.
 /// Returns null fields if no session file exists.
 #[tauri::command]
-fn load_session(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
+async fn load_session(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
     let session_path = get_session_path(&app)?;
-    if !session_path.exists() {
-        return Ok(serde_json::json!({ "session": null, "phone": null }));
-    }
-    let contents = std::fs::read_to_string(&session_path)
-        .map_err(|e| format!("Failed to read session file: {e}"))?;
-    let parsed: serde_json::Value = serde_json::from_str(&contents)
-        .map_err(|e| format!("Failed to parse session file: {e}"))?;
-    Ok(parsed)
+    tauri::async_runtime::spawn_blocking(move || {
+        if !session_path.exists() {
+            return Ok(serde_json::json!({ "session": null, "phone": null }));
+        }
+        let contents = std::fs::read_to_string(&session_path)
+            .map_err(|e| format!("Failed to read session file: {e}"))?;
+        let parsed: serde_json::Value = serde_json::from_str(&contents)
+            .map_err(|e| format!("Failed to parse session file: {e}"))?;
+        Ok(parsed)
+    })
+    .await
+    .map_err(|e| format!("load_session task join error: {e}"))?
 }
 
 /// Clears the saved session file (used on logout).
 #[tauri::command]
-fn clear_session(app: tauri::AppHandle) -> Result<(), String> {
+async fn clear_session(app: tauri::AppHandle) -> Result<(), String> {
     let session_path = get_session_path(&app)?;
-    if session_path.exists() {
-        std::fs::remove_file(&session_path)
-            .map_err(|e| format!("Failed to delete session file: {e}"))?;
-    }
-    Ok(())
+    tauri::async_runtime::spawn_blocking(move || {
+        if session_path.exists() {
+            std::fs::remove_file(&session_path)
+                .map_err(|e| format!("Failed to delete session file: {e}"))?;
+        }
+        Ok(())
+    })
+    .await
+    .map_err(|e| format!("clear_session task join error: {e}"))?
 }
 
 /// Clears ONLY the session token while preserving the phone number.
 /// Used during logout so the phone-keyed channel ID can still be found on next login.
 #[tauri::command]
-fn clear_session_only(app: tauri::AppHandle) -> Result<(), String> {
+async fn clear_session_only(app: tauri::AppHandle) -> Result<(), String> {
     let session_path = get_session_path(&app)?;
-    if !session_path.exists() {
-        return Ok(());
-    }
-    let contents = std::fs::read_to_string(&session_path)
-        .map_err(|e| format!("Failed to read session file: {e}"))?;
-    let mut parsed: serde_json::Value = serde_json::from_str(&contents)
-        .map_err(|e| format!("Failed to parse session file: {e}"))?;
-    // Null out the session token but keep the phone number
-    if let Some(obj) = parsed.as_object_mut() {
-        obj.insert("session".to_string(), serde_json::Value::Null);
-    }
-    atomic_write(&session_path, parsed.to_string().as_bytes())
-        .map_err(|e| format!("Failed to write session file: {e}"))
+    tauri::async_runtime::spawn_blocking(move || {
+        if !session_path.exists() {
+            return Ok(());
+        }
+        let contents = std::fs::read_to_string(&session_path)
+            .map_err(|e| format!("Failed to read session file: {e}"))?;
+        let mut parsed: serde_json::Value = serde_json::from_str(&contents)
+            .map_err(|e| format!("Failed to parse session file: {e}"))?;
+        // Null out the session token but keep the phone number
+        if let Some(obj) = parsed.as_object_mut() {
+            obj.insert("session".to_string(), serde_json::Value::Null);
+        }
+        atomic_write(&session_path, parsed.to_string().as_bytes())
+            .map_err(|e| format!("Failed to write session file: {e}"))
+    })
+    .await
+    .map_err(|e| format!("clear_session_only task join error: {e}"))?
 }
 
 static VAULT_LOCK: Mutex<()> = Mutex::new(());
@@ -561,7 +584,8 @@ async fn start_backup_scheduler(app: AppHandle, interval_minutes: u64) -> Result
     log_vault_state(
         app.clone(),
         format!("BACKUP_SCHEDULER_START interval_minutes={interval_minutes}"),
-    );
+    )
+    .await;
     Ok(())
 }
 
@@ -569,7 +593,7 @@ async fn start_backup_scheduler(app: AppHandle, interval_minutes: u64) -> Result
 #[tauri::command]
 async fn stop_backup_scheduler(app: AppHandle) -> Result<(), String> {
     stop_backup_scheduler_internal(&app).await;
-    log_vault_state(app, "BACKUP_SCHEDULER_STOP".to_string());
+    log_vault_state(app, "BACKUP_SCHEDULER_STOP".to_string()).await;
     Ok(())
 }
 
