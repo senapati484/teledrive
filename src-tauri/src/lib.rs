@@ -6,12 +6,6 @@ use tauri::async_runtime::JoinHandle;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::Mutex as AsyncMutex;
 
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {name}! You've been greeted from Rust!")
-}
-
 #[tauri::command]
 fn log_vault_state(app: tauri::AppHandle, state: String) {
     use std::fs::OpenOptions;
@@ -1491,7 +1485,6 @@ pub fn run() {
 
     builder
         .invoke_handler(tauri::generate_handler![
-            greet,
             log_vault_state,
             get_vault_state,
             save_session,
