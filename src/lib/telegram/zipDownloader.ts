@@ -1,4 +1,5 @@
 import { Zip, ZipPassThrough } from "fflate";
+import { logger } from "@/lib/logger";
 import { save as tauriSaveDialog } from "@tauri-apps/plugin-dialog";
 import { toast } from "sonner";
 import i18n from "@/i18n";
@@ -437,7 +438,7 @@ export async function downloadSelectionAsZip(
     });
 
     if (!cancelled) {
-      console.error("[zipDownloader] ZIP export failed:", err);
+      logger.error("[zipDownloader] ZIP export failed:", err);
       toast.error(
         i18n.t("messages:download.zipFailed", {
           defaultValue: "Failed to create ZIP archive.",

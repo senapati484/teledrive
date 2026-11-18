@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 /**
  * Telegram rate-limit (FLOOD_WAIT_X) and transient-error helpers.
  *
@@ -196,7 +197,7 @@ export async function withTelegramRetry<T>(
       }
       const delay = computeRetryDelay(attempt, err);
       // eslint-disable-next-line no-console
-      console.warn(
+      logger.warn(
         `[${label}] transient error (attempt ${attempt}/${maxAttempts}); waiting ${Math.round(delay / 100) / 10}s →`,
         err?.message ?? err
       );

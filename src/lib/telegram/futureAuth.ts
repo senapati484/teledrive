@@ -8,6 +8,7 @@
  */
 
 import { Buffer } from "buffer";
+import { logger } from "@/lib/logger";
 import { getSecret, saveSecret } from "../secure/vault";
 
 export const VAULT_KEY_FUTURE_AUTH_TOKENS = "telegram_future_auth_tokens_v1";
@@ -49,7 +50,7 @@ async function readTokens(): Promise<string[]> {
     if (!Array.isArray(parsed)) return [];
     return parsed.filter((t): t is string => typeof t === "string" && t.length > 0);
   } catch (err) {
-    console.warn("[futureAuth] Could not read future auth tokens:", err);
+    logger.warn("[futureAuth] Could not read future auth tokens:", err);
     return [];
   }
 }
@@ -70,7 +71,7 @@ export function saveFutureAuthToken(token: any): Promise<void> {
       );
       await saveSecret(VAULT_KEY_FUTURE_AUTH_TOKENS, JSON.stringify(next));
     } catch (err) {
-      console.warn("[futureAuth] Could not save future auth token:", err);
+      logger.warn("[futureAuth] Could not save future auth token:", err);
     }
   });
 }

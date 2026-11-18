@@ -31,14 +31,21 @@ vi.mock("../storage/metadataStore", async (importOriginal) => {
   };
 });
 
-const { runSyncTickOnce, startRemoteSync, stopRemoteSync } = await import(
-  "../sync/remoteSync"
-);
+const {
+  runSyncTickOnce,
+  startRemoteSync,
+  stopRemoteSync,
+  setRemoteSyncInterval,
+  getRemoteSyncInterval,
+  DEFAULT_POLL_INTERVAL_MS,
+  MIN_POLL_INTERVAL_MS,
+} = await import("../sync/remoteSync");
 
 const CHANNEL = "chan_tick";
 
 beforeEach(() => {
   stopRemoteSync();
+  setRemoteSyncInterval(DEFAULT_POLL_INTERVAL_MS);
   h.revision = false;
   h.outcome = { status: "ready", files: [], savedAt: 0 };
   h.incremental = { files: [], highestMsgId: 0 };
@@ -170,5 +177,41 @@ describe("remote sync tick", () => {
 
     await expect(runSyncTickOnce(CHANNEL)).resolves.toBe(false);
     expect(useFileStore.getState().files.map((f) => f.id)).toEqual(["local"]);
+  });
+
+  it("supports configurable polling intervals and clamps below minimum", async () => {
+    vi.useFakeTimers();
+    try {
+      setRemoteSyncInterval(2_000);
+      expect(getRemoteSyncInterval()).toBe(MIN_POLL_INTERVAL_MS);
+
+      startRemoteSync(CHANNEL, 15_000);
+      expect(getRemoteSyncInterval()).toBe(15_000);
+
+      await vi.advanceTimersByTimeAsync(14_999);
+      expect(h.revisionCalls).toBe(0);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(h.revisionCalls).toBe(1);
+    } finally {
+      stopRemoteSync();
+      vi.useRealTimers();
+    }
+  });
+
+  it("pauses background polling in manual mode (0) while allowing manual ticks", async () => {
+    vi.useFakeTimers();
+    try {
+      startRemoteSync(CHANNEL, 0);
+      expect(getRemoteSyncInterval()).toBe(0);
+
+      await vi.advanceTimersByTimeAsync(120_000);
+      expect(h.revisionCalls).toBe(0);
+
+      await runSyncTickOnce(CHANNEL);
+      expect(h.revisionCalls).toBe(1);
+    } finally {
+      stopRemoteSync();
+      vi.useRealTimers();
+    }
   });
 });

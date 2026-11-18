@@ -1,4 +1,5 @@
 import { Api } from "telegram";
+import { logger } from "@/lib/logger";
 import { sha256 } from "@noble/hashes/sha256";
 import { bytesToHex } from "@noble/hashes/utils";
 import { getClient } from "../telegram/client";
@@ -318,7 +319,7 @@ export async function resolveChannelInputPeer(channelId: string) {
       "client.getInputEntity"
     );
   } catch (err) {
-    console.warn("[metadataStore] getInputEntity failed, falling back to getEntity with timeout:", err);
+    logger.warn("[metadataStore] getInputEntity failed, falling back to getEntity with timeout:", err);
     return withTimeout(client.getEntity(id), 5000, "client.getEntity");
   }
 }
@@ -416,7 +417,7 @@ async function healAndSave(channelId: string, files: TeleFile[]): Promise<TeleFi
   //   full path.
   const cleaned = collapseDuplicateFolders(dedupeByContentKey(dedupeByMessageId(healedFiles)));
   if (changed || cleaned.length !== files.length) {
-    console.log(
+    logger.log(
       `[metadataStore] Healed ${changed ? "folders" : ""}${
         changed && cleaned.length !== files.length ? " + " : ""
       }${
@@ -426,7 +427,7 @@ async function healAndSave(channelId: string, files: TeleFile[]): Promise<TeleFi
       }. Saving updated index to Telegram...`
     );
     enqueueSave(channelId, cleaned, { recordPending: false }).catch((err) => {
-      console.error("[metadataStore] Failed to save healed index to Telegram:", err);
+      logger.error("[metadataStore] Failed to save healed index to Telegram:", err);
     });
   }
   return cleaned;
@@ -695,13 +696,13 @@ const MAX_MANIFEST_ATTEMPTS = 3;
  * the store, so an incomplete result cannot damage the cached index.
  */
 export async function discoverIndex(channelId: string): Promise<DiscoveryResult> {
-  console.log("INDEX_DISCOVERY_START");
+  logger.log("INDEX_DISCOVERY_START");
   const client = getClient();
   let peer: any;
   try {
     peer = await resolveChannelInputPeer(channelId);
   } catch (err) {
-    console.warn("[metadataStore] discoverIndex: resolve failed:", err);
+    logger.warn("[metadataStore] discoverIndex: resolve failed:", err);
     return { status: "incomplete", reason: "network" };
   }
 
@@ -752,7 +753,7 @@ export async function discoverIndex(channelId: string): Promise<DiscoveryResult>
     addMessages(pinned);
   } else if (pinnedRes.status === "rejected") {
     fetchFailed = true;
-    console.warn("[metadataStore] discoverIndex: pinned fetch failed:", pinnedRes.reason);
+    logger.warn("[metadataStore] discoverIndex: pinned fetch failed:", pinnedRes.reason);
   }
   if (recentRes.status === "fulfilled" && Array.isArray(recentRes.value)) {
     recent = recentRes.value;
@@ -760,7 +761,7 @@ export async function discoverIndex(channelId: string): Promise<DiscoveryResult>
     addMessages(recent);
   } else if (recentRes.status === "rejected") {
     fetchFailed = true;
-    console.warn("[metadataStore] discoverIndex: recent fetch failed:", recentRes.reason);
+    logger.warn("[metadataStore] discoverIndex: recent fetch failed:", recentRes.reason);
   }
 
   const fetchedManifestRounds = new Map<number, number>();
@@ -787,7 +788,7 @@ export async function discoverIndex(channelId: string): Promise<DiscoveryResult>
             );
             if (Array.isArray(result)) addMessages(result);
           } catch (err) {
-            console.warn("[metadataStore] discoverIndex: chunk id fetch failed:", err);
+            logger.warn("[metadataStore] discoverIndex: chunk id fetch failed:", err);
           }
         })
       );
@@ -879,7 +880,7 @@ export async function discoverIndex(channelId: string): Promise<DiscoveryResult>
     } catch (err: any) {
       if (String(err?.message ?? err).includes("Timeout")) timedOut = true;
       scanFailed = true;
-      console.warn("[metadataStore] discoverIndex: search failed:", err);
+      logger.warn("[metadataStore] discoverIndex: search failed:", err);
       break;
     }
     if (!Array.isArray(pageMessages) || pageMessages.length === 0) break;
@@ -925,7 +926,7 @@ export async function discoverIndex(channelId: string): Promise<DiscoveryResult>
     } catch (err: any) {
       if (String(err?.message ?? err).includes("Timeout")) timedOut = true;
       scanFailed = true;
-      console.warn("[metadataStore] discoverIndex: history page failed:", err);
+      logger.warn("[metadataStore] discoverIndex: history page failed:", err);
       break;
     }
     if (!Array.isArray(pageMessages) || pageMessages.length === 0) break;
@@ -990,7 +991,7 @@ export async function discoverIndex(channelId: string): Promise<DiscoveryResult>
     // index and unblock uploads. Returning `incomplete` here would surface
     // the "Couldn't safely load your drive index" error banner to every
     // new user, which is misleading and blocks all writes permanently.
-    console.log("[metadataStore] discoverIndex: no index marker found after full scan — treating as new empty drive");
+    logger.log("[metadataStore] discoverIndex: no index marker found after full scan — treating as new empty drive");
     return {
       status: "ready",
       files: [],
@@ -1046,14 +1047,14 @@ export async function loadIndexOutcome(
     if (!preserveReady) {
       store.setIndexLoadState("incomplete", result.reason);
     }
-    console.warn(
+    logger.warn(
       `INDEX_DISCOVERY_INCOMPLETE reason=${result.reason}; keeping cached files and skipping heal/save.`
     );
     return { status: "incomplete", reason: result.reason, files: store.files };
   }
 
   store.setIndexLoadState("ready", null);
-  console.log(
+  logger.log(
     `INDEX_DISCOVERY_OK chunks=${result.ids.length} files=${result.files.length}`
   );
 
@@ -1077,7 +1078,7 @@ export async function loadIndexOutcome(
       getIndexQueue(channelId).setVaultMetadata(vaultSync.vaultMetadata);
     }
   } catch (err) {
-    console.warn("[metadataStore] Failed to sync account vault metadata:", err);
+    logger.warn("[metadataStore] Failed to sync account vault metadata:", err);
   }
 
   const visibleFiles = filterDeletedMessages(channelId, result.files);
@@ -1120,7 +1121,7 @@ export async function hasIndexRevisionChanged(
   try {
     peer = await resolveChannelInputPeer(channelId);
   } catch (err) {
-    console.warn("[metadataStore] index revision: resolve failed:", err);
+    logger.warn("[metadataStore] index revision: resolve failed:", err);
     return false;
   }
 
@@ -1132,7 +1133,7 @@ export async function hasIndexRevisionChanged(
       "client.getMessages(index revision)",
     );
   } catch (err) {
-    console.warn("[metadataStore] index revision: getMessages failed:", err);
+    logger.warn("[metadataStore] index revision: getMessages failed:", err);
     return false;
   }
 
@@ -1202,7 +1203,7 @@ export async function loadIndexIncremental(
   try {
     peer = await resolveChannelInputPeer(channelId);
   } catch (err) {
-    console.warn("[metadataStore] loadIndexIncremental: resolve failed:", err);
+    logger.warn("[metadataStore] loadIndexIncremental: resolve failed:", err);
     return { files: [], highestMsgId: sinceMsgId };
   }
 
@@ -1217,7 +1218,7 @@ export async function loadIndexIncremental(
       "client.getMessages(minId)"
     );
   } catch (err) {
-    console.warn("[metadataStore] loadIndexIncremental: getMessages failed:", err);
+    logger.warn("[metadataStore] loadIndexIncremental: getMessages failed:", err);
     return { files: [], highestMsgId: sinceMsgId };
   }
 
@@ -1295,7 +1296,7 @@ export async function addFile(channelId: string, file: TeleFile): Promise<TeleFi
   try {
     await saveIndex(channelId, updatedFiles);
   } catch (err) {
-    console.warn("[metadataStore.addFile] Index save deferred/retrying:", err);
+    logger.warn("[metadataStore.addFile] Index save deferred/retrying:", err);
   }
   return updatedFiles;
 }
@@ -1310,14 +1311,14 @@ export async function removeFile(channelId: string, fileId: string): Promise<Tel
   try {
     await saveIndex(channelId, updatedFiles);
   } catch (err) {
-    console.warn("[metadataStore.removeFile] Index save deferred/retrying:", err);
+    logger.warn("[metadataStore.removeFile] Index save deferred/retrying:", err);
   }
 
   // Also delete the actual Telegram message if this was a real uploaded file
   // (folders have messageId=0 and live only in the index)
   if (file && file.messageId && file.messageId !== 0) {
     await deleteTelegramMessage(channelId, file.messageId).catch((err) => {
-      console.warn(
+      logger.warn(
         `[metadataStore] Could not delete Telegram message ${file.messageId} (non-fatal):`,
         err?.message || err
       );
@@ -1372,7 +1373,7 @@ export async function updateFile(
   try {
     await saveIndex(channelId, updatedFiles);
   } catch (err) {
-    console.warn("[metadataStore.updateFile] Index save deferred/retrying:", err);
+    logger.warn("[metadataStore.updateFile] Index save deferred/retrying:", err);
   }
   return updatedFiles;
 }
@@ -1406,7 +1407,7 @@ export async function addFilesBatch(channelId: string, newFiles: TeleFile[]): Pr
   try {
     await saveIndex(channelId, updatedFiles);
   } catch (err) {
-    console.warn("[metadataStore.addFilesBatch] Index save deferred/retrying:", err);
+    logger.warn("[metadataStore.addFilesBatch] Index save deferred/retrying:", err);
   }
   return updatedFiles;
 }

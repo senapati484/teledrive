@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { logger } from "@/lib/logger";
 import { toast } from "sonner";
 import i18n from "@/i18n";
 
@@ -128,7 +129,7 @@ export function scheduleUploadIndexSave(channelId: string, immediate = false): v
     const currentFiles = useFileStore.getState().files;
     if (targetChannel && currentFiles.length > 0) {
       void enqueueSave(targetChannel, currentFiles).catch((err) => {
-        console.warn("[uploadManager] Coalesced index save error:", err);
+        logger.warn("[uploadManager] Coalesced index save error:", err);
       });
     }
   };
@@ -162,7 +163,7 @@ async function commitUploadedFileToStore(channelId: string, newFile: TeleFile): 
             try {
               existingFiles = await loadIndex(channelId);
             } catch (err) {
-              console.warn("[uploadManager] Direct loadIndex fallback error:", err);
+              logger.warn("[uploadManager] Direct loadIndex fallback error:", err);
             }
           }
 
@@ -400,7 +401,7 @@ export async function processQueue(): Promise<void> {
                   : undefined;
                 clonedZeroByte = true;
               } catch (cloneErr) {
-                console.warn(
+                logger.warn(
                   `[uploadManager] Clone failed for ${item.name}, falling back to upload:`,
                   cloneErr
                 );
@@ -531,7 +532,7 @@ export async function processQueue(): Promise<void> {
           try {
             optimisticFiles = await commitUploadedFileToStore(activeChannelId, newFile);
           } catch (indexErr: any) {
-            console.error(`Store commit error for ${item.name}:`, indexErr);
+            logger.error(`Store commit error for ${item.name}:`, indexErr);
             await invoke("log_vault_state", {
               state: `UPLOAD_STORE_COMMIT_ERR name=${item.name} err=${indexErr?.message ?? indexErr}`,
             }).catch(() => {});
@@ -547,7 +548,7 @@ export async function processQueue(): Promise<void> {
                 scheduleUploadIndexSave(activeChannelId, true);
                 optimisticFiles = healedFiles;
               } catch (fallbackErr) {
-                console.error(`Store fallback error for ${item.name}:`, fallbackErr);
+                logger.error(`Store fallback error for ${item.name}:`, fallbackErr);
               }
             } else {
               optimisticFiles = current;
@@ -566,7 +567,7 @@ export async function processQueue(): Promise<void> {
             payload: { name: item.name, size: Number(newFile.size) || 0 },
           });
         } catch (err: any) {
-          console.error(`Upload error for ${item.name}:`, err);
+          logger.error(`Upload error for ${item.name}:`, err);
           await invoke("log_vault_state", {
             state: `UPLOAD_ERR: ${item.name} size=${item.size} err=${err?.message || JSON.stringify(err)}\nStack: ${err?.stack || "no_stack"}`
           }).catch(() => {});
@@ -582,7 +583,7 @@ export async function processQueue(): Promise<void> {
       })();
     }
   } catch (error) {
-    console.error("Failed inside processQueue:", error);
+    logger.error("Failed inside processQueue:", error);
     isProcessing = false;
   } finally {
     // Safety net: always release the lock even if we missed a path

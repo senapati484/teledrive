@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { logger } from "@/lib/logger";
 import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -22,6 +23,8 @@ import {
   Shield,
   AlertTriangle,
   RefreshCw,
+  Calendar,
+  HardDrive,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -40,6 +43,7 @@ import { FileIcon } from "./FileIcon";
 import { FolderIcon } from "./FolderIcon";
 import { FileContextMenu } from "./FileContextMenu";
 import { FileActionsMenu } from "./FileActionsMenu";
+import { FileInfoDialog } from "./FileInfoDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -49,7 +53,12 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { fuzzySearch } from "@/lib/search/searchEngine";
+import {
+  applySearchFilters,
+  fuzzySearch,
+  type DateRangeFilter,
+  type SizeRangeFilter,
+} from "@/lib/search/searchEngine";
 import { getFileCategory } from "@/lib/files/fileUtils";
 import { isEditableFile } from "@/lib/files/editableTypes";
 import {
@@ -217,6 +226,7 @@ interface FolderGridCardProps {
   onDeletePermanently: (file: TeleFile) => void;
   onArchive: (file: TeleFile) => void;
   onUnarchive: (file: TeleFile) => void;
+  onGetInfo: (file: TeleFile) => void;
 }
 
 const FolderGridCard = React.memo(function FolderGridCard({
@@ -241,6 +251,7 @@ const FolderGridCard = React.memo(function FolderGridCard({
   onDeletePermanently,
   onArchive,
   onUnarchive,
+  onGetInfo,
 }: FolderGridCardProps) {
   return (
     <FileContextMenu
@@ -254,6 +265,7 @@ const FolderGridCard = React.memo(function FolderGridCard({
       onDeletePermanently={onDeletePermanently}
       onArchive={onArchive}
       onUnarchive={onUnarchive}
+      onGetInfo={onGetInfo}
     >
       <div
         onClick={(e) => onItemClick(e, folder)}
@@ -312,6 +324,7 @@ const FolderGridCard = React.memo(function FolderGridCard({
             onDeletePermanently={onDeletePermanently}
             onArchive={onArchive}
             onUnarchive={onUnarchive}
+            onGetInfo={onGetInfo}
           />
         </div>
       </div>
@@ -346,6 +359,7 @@ interface FileGridCardProps {
   onArchive: (file: TeleFile) => void;
   onUnarchive: (file: TeleFile) => void;
   onOfflineToggle?: (file: TeleFile) => void;
+  onGetInfo: (file: TeleFile) => void;
 }
 
 const FileGridCard = React.memo(function FileGridCard({
@@ -375,6 +389,7 @@ const FileGridCard = React.memo(function FileGridCard({
   onArchive,
   onUnarchive,
   onOfflineToggle,
+  onGetInfo,
 }: FileGridCardProps) {
   return (
     <FileContextMenu
@@ -390,6 +405,7 @@ const FileGridCard = React.memo(function FileGridCard({
       onArchive={onArchive}
       onUnarchive={onUnarchive}
       onOfflineToggle={onOfflineToggle}
+      onGetInfo={onGetInfo}
     >
       <div
         onClick={(e) => onItemClick(e, file)}
@@ -436,6 +452,7 @@ const FileGridCard = React.memo(function FileGridCard({
               onArchive={onArchive}
               onUnarchive={onUnarchive}
               onOfflineToggle={onOfflineToggle}
+              onGetInfo={onGetInfo}
             />
           </div>
         </div>
@@ -514,6 +531,7 @@ interface FileListRowProps {
   onArchive: (file: TeleFile) => void;
   onUnarchive: (file: TeleFile) => void;
   onOfflineToggle?: (file: TeleFile) => void;
+  onGetInfo: (file: TeleFile) => void;
 }
 
 const FileListRow = React.memo(function FileListRow({
@@ -545,6 +563,7 @@ const FileListRow = React.memo(function FileListRow({
   onArchive,
   onUnarchive,
   onOfflineToggle,
+  onGetInfo,
 }: FileListRowProps) {
   return (
     <FileContextMenu
@@ -560,6 +579,7 @@ const FileListRow = React.memo(function FileListRow({
       onArchive={onArchive}
       onUnarchive={onUnarchive}
       onOfflineToggle={onOfflineToggle}
+      onGetInfo={onGetInfo}
     >
       <tr
         onClick={(e) => onItemClick(e, file)}
@@ -582,6 +602,7 @@ const FileListRow = React.memo(function FileListRow({
             type="checkbox"
             checked={isSelected}
             onChange={() => onToggleSelect(file.id)}
+            aria-label={file.name}
             className="h-4 w-4 rounded-sm border-slate-300 dark:border-white/[0.1] text-[#0b57d0] focus:ring-[#0b57d0]/20 dark:bg-[#161719] transition-colors cursor-pointer"
           />
         </td>
@@ -629,6 +650,7 @@ const FileListRow = React.memo(function FileListRow({
               onArchive={onArchive}
               onUnarchive={onUnarchive}
               onOfflineToggle={onOfflineToggle}
+              onGetInfo={onGetInfo}
             />
           </div>
         </td>
@@ -689,8 +711,10 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
   } = useFileActions();
 
   const isMobile = useIsMobile();
-  const touchTimeoutRef = useRef<any>(null);
+  const touchTimeoutRef = useRef<number | null>(null);
   const [mobileContextFile, setMobileContextFile] = useState<TeleFile | null>(null);
+  const [dateRangeFilter, setDateRangeFilter] = useState<DateRangeFilter>("all");
+  const [sizeRangeFilter, setSizeRangeFilter] = useState<SizeRangeFilter>("all");
 
   const {
     dragOverId,
@@ -721,6 +745,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
   const [newFileName, setNewFileName] = useState("");
   const [emptyTrashDialogOpen, setEmptyTrashDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<TeleFile | null>(null);
+  const [infoTarget, setInfoTarget] = useState<TeleFile | null>(null);
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   const [failedThumbSrcs, setFailedThumbSrcs] = useState<Record<string, string>>({});
@@ -976,12 +1001,18 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
     let filtered: TeleFile[];
 
     if (mode === "search") {
-      filtered = fuzzySearch(dedupedActiveFiles, searchQuery);
+      filtered = fuzzySearch(dedupedActiveFiles, searchQuery, {
+        dateRange: dateRangeFilter,
+        sizeRange: sizeRangeFilter,
+      });
     } else {
       // Always copy before sorting so we never mutate the bucket arrays
       // inside folderEntriesIndex (which are themselves memoized; mutating
       // them silently corrupts the cache for the next render).
-      filtered = [...indexedFiles];
+      filtered = applySearchFilters([...indexedFiles], {
+        dateRange: dateRangeFilter,
+        sizeRange: sizeRangeFilter,
+      });
     }
 
     const visibleFiles =
@@ -1020,7 +1051,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       folders: nextFolders,
       regularFiles: nextRegularFiles,
     };
-  }, [dedupedActiveFiles, activeSortBy, filterType, indexedFiles, mode, searchQuery]);
+  }, [dedupedActiveFiles, activeSortBy, filterType, dateRangeFilter, sizeRangeFilter, indexedFiles, mode, searchQuery]);
 
   // Keep total display count ref fresh for the bounded scroll handler
   totalDisplayCountRef.current =
@@ -1208,12 +1239,12 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       try {
         await openPath(tempFilePath);
       } catch (openerErr) {
-        console.warn("plugin-opener failed, invoking native open_file_in_system_viewer:", openerErr);
+        logger.warn("plugin-opener failed, invoking native open_file_in_system_viewer:", openerErr);
         await invoke("open_file_in_system_viewer", { path: tempFilePath });
       }
       toast.success(t("browser.systemApp.opened", { name: file.name }));
     } catch (err: any) {
-      console.error("Failed to open file in system app:", err);
+      logger.error("Failed to open file in system app:", err);
       toast.error(t("browser.systemApp.failed", { error: err.message || t("browser.systemApp.unknownError") }));
     }
   }, [t, handleDownload]);
@@ -1611,6 +1642,113 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
               </button>
             );
           })}
+
+          {/* Date Range Filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label={t("browser.filters.dateLabel", "Filter by date")}
+                className={cn(
+                  "px-2.5 py-1.5 sm:px-3 text-xs font-medium rounded-lg border transition-all duration-150 cursor-pointer whitespace-nowrap active:scale-95 inline-flex items-center gap-1.5 shrink-0",
+                  dateRangeFilter !== "all"
+                    ? "bg-[#c2e7ff] text-[#001d35] border-transparent font-semibold dark:bg-[#004a77] dark:text-[#c2e7ff] shadow-xs"
+                    : "bg-white dark:bg-[#161719] border-slate-300/70 dark:border-white/[0.04] text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] hover:text-[#1f1f1f] dark:hover:text-[#e3e3e3]"
+                )}
+              >
+                <Calendar className="h-3.5 w-3.5" />
+                <span>
+                  {dateRangeFilter === "all"
+                    ? t("browser.filters.dateAny", "Any time")
+                    : dateRangeFilter === "7d"
+                    ? t("browser.filters.date7d", "Last 7 days")
+                    : dateRangeFilter === "30d"
+                    ? t("browser.filters.date30d", "Last 30 days")
+                    : t("browser.filters.date1y", "Last year")}
+                </span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-40 rounded-xl p-1">
+              {(
+                [
+                  { value: "all", label: t("browser.filters.dateAny", "Any time") },
+                  { value: "7d", label: t("browser.filters.date7d", "Last 7 days") },
+                  { value: "30d", label: t("browser.filters.date30d", "Last 30 days") },
+                  { value: "1y", label: t("browser.filters.date1y", "Last year") },
+                ] as const
+              ).map((opt) => (
+                <DropdownMenuItem
+                  key={opt.value}
+                  onClick={() => setDateRangeFilter(opt.value)}
+                  className="text-xs rounded-lg cursor-pointer flex items-center justify-between"
+                >
+                  <span>{opt.label}</span>
+                  {dateRangeFilter === opt.value && <Check className="h-3.5 w-3.5" />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Size Range Filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label={t("browser.filters.sizeLabel", "Filter by size")}
+                className={cn(
+                  "px-2.5 py-1.5 sm:px-3 text-xs font-medium rounded-lg border transition-all duration-150 cursor-pointer whitespace-nowrap active:scale-95 inline-flex items-center gap-1.5 shrink-0",
+                  sizeRangeFilter !== "all"
+                    ? "bg-[#c2e7ff] text-[#001d35] border-transparent font-semibold dark:bg-[#004a77] dark:text-[#c2e7ff] shadow-xs"
+                    : "bg-white dark:bg-[#161719] border-slate-300/70 dark:border-white/[0.04] text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] hover:text-[#1f1f1f] dark:hover:text-[#e3e3e3]"
+                )}
+              >
+                <HardDrive className="h-3.5 w-3.5" />
+                <span>
+                  {sizeRangeFilter === "all"
+                    ? t("browser.filters.sizeAny", "Any size")
+                    : sizeRangeFilter === "small"
+                    ? t("browser.filters.sizeSmall", "< 1 MB")
+                    : sizeRangeFilter === "medium"
+                    ? t("browser.filters.sizeMedium", "1 – 100 MB")
+                    : t("browser.filters.sizeLarge", "> 100 MB")}
+                </span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-40 rounded-xl p-1">
+              {(
+                [
+                  { value: "all", label: t("browser.filters.sizeAny", "Any size") },
+                  { value: "small", label: t("browser.filters.sizeSmall", "< 1 MB") },
+                  { value: "medium", label: t("browser.filters.sizeMedium", "1 – 100 MB") },
+                  { value: "large", label: t("browser.filters.sizeLarge", "> 100 MB") },
+                ] as const
+              ).map((opt) => (
+                <DropdownMenuItem
+                  key={opt.value}
+                  onClick={() => setSizeRangeFilter(opt.value)}
+                  className="text-xs rounded-lg cursor-pointer flex items-center justify-between"
+                >
+                  <span>{opt.label}</span>
+                  {sizeRangeFilter === opt.value && <Check className="h-3.5 w-3.5" />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {(dateRangeFilter !== "all" || sizeRangeFilter !== "all") && (
+            <button
+              type="button"
+              onClick={() => {
+                setDateRangeFilter("all");
+                setSizeRangeFilter("all");
+              }}
+              aria-label={t("browser.filters.clear", "Clear filters")}
+              className="px-2 py-1.5 text-xs font-medium rounded-lg text-[#0b57d0] dark:text-[#a8c7fa] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] cursor-pointer whitespace-nowrap inline-flex items-center gap-1 shrink-0"
+            >
+              <X className="h-3.5 w-3.5" />
+              <span>{t("browser.filters.clear", "Clear")}</span>
+            </button>
+          )}
         </div>
 
         {/* Sort Dropdown & Mobile Controls */}
@@ -1748,6 +1886,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                       onDeletePermanently={setDeleteTarget}
                       onArchive={archiveFile}
                       onUnarchive={unarchiveFile}
+                      onGetInfo={setInfoTarget}
                     />
                   );
                 })}
@@ -1802,6 +1941,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                       onArchive={archiveFile}
                       onUnarchive={unarchiveFile}
                       onOfflineToggle={toggleOffline}
+                      onGetInfo={setInfoTarget}
                     />
                   );
                 })}
@@ -1824,6 +1964,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                 <th className="py-3 px-4 w-12 text-center">
                   <input
                     type="checkbox"
+                    aria-label={t("browser.selectAll", "Select all items")}
                     checked={selectedIds.length === displayFiles.length && displayFiles.length > 0}
                     onChange={(e) => {
                       if (e.target.checked) {
@@ -1879,6 +2020,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                     onArchive={archiveFile}
                     onUnarchive={unarchiveFile}
                     onOfflineToggle={toggleOffline}
+                    onGetInfo={setInfoTarget}
                   />
                 );
               })}
@@ -2351,6 +2493,16 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* File / Folder Get Info Dialog */}
+      <FileInfoDialog
+        file={infoTarget}
+        allFiles={files}
+        open={infoTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setInfoTarget(null);
+        }}
+      />
     </div>
   );
 }

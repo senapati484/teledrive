@@ -1,4 +1,5 @@
 import { TelegramClient, Api } from "telegram";
+import { logger } from "@/lib/logger";
 import { Buffer } from "buffer";
 import { classNameOf } from "./loginFlow";
 
@@ -76,7 +77,7 @@ export function startQrLogin(
           return true;
         }
       } catch (migrateErr) {
-        console.error("DC migration error during QR login:", migrateErr);
+        logger.error("DC migration error during QR login:", migrateErr);
         throw migrateErr;
       }
     }
@@ -156,7 +157,7 @@ export function startQrLogin(
         return true;
       }
       if (!isCancelled) {
-        console.warn("QR check non-fatal error:", err);
+        logger.warn("QR check non-fatal error:", err);
       }
       return false;
     } finally {

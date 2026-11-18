@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { logger } from "@/lib/logger";
 import { TeleFile, UploadItem } from "../lib/types";
 import { normalizeFolderPath } from "../lib/utils";
 import { filterDeletedMessages } from "../lib/storage/tombstones";
@@ -132,7 +133,7 @@ const getInitialFiles = (): TeleFile[] => {
       folderPath: normalizeFolderPath(f.folderPath),
     }));
   } catch (err) {
-    console.warn("[fileStore] Failed to load cached files from localStorage:", err);
+    logger.warn("[fileStore] Failed to load cached files from localStorage:", err);
     return [];
   }
 };

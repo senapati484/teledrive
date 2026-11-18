@@ -14,10 +14,16 @@
  * Plan checks have been removed — TeleDrive is a free application.
  */
 import { useEffect } from "react";
+import { logger } from "@/lib/logger";
 import { useAuthStore } from "@/stores/authStore";
 import { useFileStore } from "@/stores/fileStore";
 import { useLicenseStore } from "@/stores/licenseStore";
-import { startRemoteSync, stopRemoteSync } from "@/lib/sync/remoteSync";
+import { useUIStore } from "@/stores/uiStore";
+import {
+  setRemoteSyncInterval,
+  startRemoteSync,
+  stopRemoteSync,
+} from "@/lib/sync/remoteSync";
 import {
   applyIntervalChange,
   checkDueBackup,
@@ -30,8 +36,14 @@ export default function RemoteSyncOrchestrator(): null {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const indexLoadState = useFileStore((s) => s.indexLoadState);
   const bootstrapComplete = useFileStore((s) => s.bootstrapComplete);
+  const syncIntervalMs = useUIStore((s) => s.syncIntervalMs);
   const intervalMinutes =
     useLicenseStore((s) => s.license?.scheduledBackupIntervalMinutes) ?? null;
+
+  // Keep the remote sync loop's polling cadence synchronized with user settings.
+  useEffect(() => {
+    setRemoteSyncInterval(syncIntervalMs);
+  }, [syncIntervalMs]);
 
   // Effect 1 — bootstrap listener for backup ticks. Runs once on mount,
   // tears down on unmount.
@@ -41,7 +53,7 @@ export default function RemoteSyncOrchestrator(): null {
       try {
         await ensureTickListenerStarted();
       } catch (err) {
-        if (!cancelled) console.warn("[RemoteSyncOrchestrator] tick listener failed:", err);
+        if (!cancelled) logger.warn("[RemoteSyncOrchestrator] tick listener failed:", err);
       }
     })();
     return () => {
@@ -81,10 +93,10 @@ export default function RemoteSyncOrchestrator(): null {
         const channelId = await getStorageChannelId(phone);
         if (cancelled) return;
         if (channelId) {
-          startRemoteSync(channelId);
+          startRemoteSync(channelId, useUIStore.getState().syncIntervalMs);
         }
       } catch (err) {
-        console.warn(
+        logger.warn(
           "[RemoteSyncOrchestrator] channel id not ready, retrying in 2s:",
           err,
         );
@@ -107,7 +119,7 @@ export default function RemoteSyncOrchestrator(): null {
     if (!isAuthenticated || indexLoadState !== "ready" || !bootstrapComplete) return;
     void import("@/lib/upload/uploadManager")
       .then((mod) => mod.processQueue())
-      .catch((err) => console.warn("[RemoteSyncOrchestrator] upload resume failed:", err));
+      .catch((err) => logger.warn("[RemoteSyncOrchestrator] upload resume failed:", err));
   }, [isAuthenticated, indexLoadState, bootstrapComplete]);
 
   // Effect 4 — due checks on launch, focus, and a 5-minute heartbeat.

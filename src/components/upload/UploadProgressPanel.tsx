@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { logger } from "@/lib/logger";
 import { useTranslation } from "react-i18next";
 import { useFileStore } from "@/stores/fileStore";
 import { useTransferStore } from "@/stores/transferStore";
@@ -141,6 +142,9 @@ export function UploadProgressPanel() {
 
   return (
     <div
+      role="region"
+      aria-label={t("transfers.panelLabel", "File transfers")}
+      aria-live="polite"
       className={cn(
         "fixed bottom-[calc(var(--mobile-nav-height)+var(--safe-area-bottom,0px)+12px)] md:bottom-6 z-50 flex flex-col bg-white dark:bg-[#111214] border border-slate-200/90 dark:border-white/[0.06] shadow-2xl rounded-2xl overflow-hidden transition-all duration-300 transform select-none",
         isMinimized
@@ -182,6 +186,8 @@ export function UploadProgressPanel() {
             onClick={() => setIsMinimized(!isMinimized)}
             className="h-8 w-8 sm:h-7 sm:w-7 flex items-center justify-center text-[#444746] hover:text-[#1f1f1f] dark:text-[#c4c7c5] dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-[#1f2124] rounded-full transition-colors cursor-pointer border-0 bg-transparent outline-none"
             title={isMinimized ? t("upload.expand") : t("upload.collapse")}
+            aria-label={isMinimized ? t("upload.expand") : t("upload.collapse")}
+            aria-expanded={!isMinimized}
           >
             {isMinimized ? (
               <ChevronUp className="h-4 w-4" />
@@ -194,6 +200,7 @@ export function UploadProgressPanel() {
             onClick={handleClose}
             className="h-8 w-8 sm:h-7 sm:w-7 flex items-center justify-center text-[#444746] hover:text-[#1f1f1f] dark:text-[#c4c7c5] dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-[#1f2124] rounded-full transition-colors cursor-pointer border-0 bg-transparent outline-none"
             title={t("upload.close")}
+            aria-label={t("upload.close")}
           >
             <X className="h-4 w-4" />
           </button>
@@ -252,7 +259,7 @@ export function UploadProgressPanel() {
                             item.channelId,
                             item.messageId,
                             item.name
-                          ).catch((err) => console.error(err));
+                          ).catch((err) => logger.error(err));
                         }}
                         className="text-[#0b57d0] dark:text-[#a8c7fa] hover:text-[#0842a0] dark:hover:text-[#d3e3fd] p-1 rounded cursor-pointer min-h-[28px] min-w-[28px] flex items-center justify-center"
                         title={t("transfers.retry")}

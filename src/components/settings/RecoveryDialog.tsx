@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { logger } from "@/lib/logger";
 import { useTranslation } from "react-i18next";
 import { Loader2, RotateCcw, TriangleAlert } from "lucide-react";
 import {
@@ -53,7 +54,7 @@ export default function RecoveryDialog() {
       })
       .catch((err) => {
         if (controller.signal.aborted) return;
-        console.error("[RecoveryDialog] Scan failed:", err);
+        logger.error("[RecoveryDialog] Scan failed:", err);
         toast.error(t("storage.recovery.failed"));
       })
       .finally(() => {
@@ -144,7 +145,7 @@ export default function RecoveryDialog() {
       }
       close();
     } catch (err: any) {
-      console.error("[RecoveryDialog] Restore failed:", err);
+      logger.error("[RecoveryDialog] Restore failed:", err);
       toast.error(err?.message || t("storage.recovery.failed"));
     } finally {
       setRestoring(false);

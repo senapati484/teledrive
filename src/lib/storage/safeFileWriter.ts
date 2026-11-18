@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { logger } from "@/lib/logger";
 import i18n from "@/i18n";
 import {
   discardDownloadFile,
@@ -60,7 +61,7 @@ export async function saveBinaryFile(
       return;
     } catch (uriErr: any) {
       await discardDownloadFile(filePath);
-      console.error("[safeFileWriter] Failed to write content URI:", uriErr);
+      logger.error("[safeFileWriter] Failed to write content URI:", uriErr);
       throw new Error(
         i18n.t("messages:storage.saveFailed", { path: filePath })
       );
@@ -96,14 +97,14 @@ export async function saveBinaryFile(
       offset = end;
     }
   } catch (nativeErr: any) {
-    console.warn("[safeFileWriter] Native writer error, attempting fallback:", nativeErr);
+    logger.warn("[safeFileWriter] Native writer error, attempting fallback:", nativeErr);
 
     // Fallback: try plugin-fs if available in this environment
     try {
       const { writeFile } = await import("@tauri-apps/plugin-fs");
       await writeFile(filePath, bytes);
     } catch (fallbackErr: any) {
-      console.error("[safeFileWriter] Both native writer and fallback failed:", fallbackErr);
+      logger.error("[safeFileWriter] Both native writer and fallback failed:", fallbackErr);
       throw new Error(
         i18n.t("messages:storage.saveFailed", { path: filePath })
       );

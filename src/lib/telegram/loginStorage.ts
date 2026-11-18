@@ -8,6 +8,7 @@
  */
 
 import { deleteSecret, getSecret, saveSecret } from "../secure/vault";
+import { logger } from "@/lib/logger";
 import {
   CODE_REQUEST_WINDOW_MS,
   PendingLogin,
@@ -47,7 +48,7 @@ export async function loadPendingLogin(): Promise<PendingLogin | null> {
     }
     return parsed;
   } catch (err) {
-    console.warn("[loginStorage] Could not load pending login:", err);
+    logger.warn("[loginStorage] Could not load pending login:", err);
     return null;
   }
 }
@@ -56,7 +57,7 @@ export async function savePendingLogin(pending: PendingLogin): Promise<void> {
   try {
     await saveSecret(VAULT_KEY_PENDING_LOGIN, JSON.stringify(pending));
   } catch (err) {
-    console.warn("[loginStorage] Could not persist pending login:", err);
+    logger.warn("[loginStorage] Could not persist pending login:", err);
   }
 }
 
@@ -64,7 +65,7 @@ export async function clearPendingLogin(): Promise<void> {
   try {
     await deleteSecret(VAULT_KEY_PENDING_LOGIN);
   } catch (err) {
-    console.warn("[loginStorage] Could not clear pending login:", err);
+    logger.warn("[loginStorage] Could not clear pending login:", err);
   }
 }
 

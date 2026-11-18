@@ -8,6 +8,7 @@
  */
 
 import { Api } from "telegram";
+import { logger } from "@/lib/logger";
 import { getClient } from "../telegram/client";
 import {
   reconstructMissingFolders,
@@ -580,7 +581,7 @@ export async function mergeIndexFromRecovery(
       return true;
     })
     .catch((err) => {
-      console.warn("[recovery] Background index save failed:", err);
+      logger.warn("[recovery] Background index save failed:", err);
       void invoke("log_vault_state", {
         state: `INDEX_RECOVERY_SAVE_FAIL reason=${String(err?.message ?? err).slice(0, 200)}`,
       }).catch(() => {});
@@ -665,6 +666,6 @@ export async function maybeOfferRecovery(
     }
     if (report.recoverable.length > 0) onFound(report);
   } catch (err) {
-    console.warn("[recovery] Background scan failed:", err);
+    logger.warn("[recovery] Background scan failed:", err);
   }
 }

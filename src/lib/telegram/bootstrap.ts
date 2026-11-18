@@ -1,4 +1,5 @@
 import { getClient } from "./client";
+import { logger } from "@/lib/logger";
 import { ensureStorageChannel } from "./channelManager";
 import {
   loadIndexOutcome,
@@ -50,7 +51,7 @@ async function flushDeletionTombstones(channelId: string): Promise<void> {
       await deleteTelegramMessage(channelId, id);
       deleted++;
     } catch (err) {
-      console.warn(`[bootstrap] tombstone delete failed for ${id}:`, err);
+      logger.warn(`[bootstrap] tombstone delete failed for ${id}:`, err);
       break;
     }
   }
@@ -128,7 +129,7 @@ async function bootstrapTeleDriveInner(
         getIndexQueue(channelId).setVaultMetadata(vaultSync.vaultMetadata);
       }
     } catch (vaultErr) {
-      console.warn("[bootstrap] Failed to initialize account vault on empty channel:", vaultErr);
+      logger.warn("[bootstrap] Failed to initialize account vault on empty channel:", vaultErr);
     }
     await invoke("log_vault_state", {
       state: `BOOTSTRAP_NO_INDEX_REBUILD files=${outcome.files.length}`,
@@ -162,11 +163,11 @@ async function bootstrapTeleDriveInner(
     clearPendingMarker(channelId);
   }
   if (resolution.kind === "keep-cache") {
-    console.log(
+    logger.log(
       `[bootstrap] Keeping ${cachedFiles.length} cached files over index savedAt=${outcome.savedAt}`
     );
   } else if (resolution.kind === "merge") {
-    console.log(
+    logger.log(
       `[bootstrap] Additive pending merge: ${outcome.files.length} loaded + local-only entries`
     );
   }
@@ -176,7 +177,7 @@ async function bootstrapTeleDriveInner(
     const { syncOfflineStatusWithDisk } = await import("../storage/offlineStorage");
     files = await syncOfflineStatusWithDisk(files);
   } catch (err) {
-    console.warn("[bootstrap] Failed to sync offline status with disk:", err);
+    logger.warn("[bootstrap] Failed to sync offline status with disk:", err);
   }
   // Initialize the local view immediately and RELEASE THE GATE. We do NOT
   // wait for the orphan scan or manifest-merge before allowing user
@@ -210,7 +211,7 @@ async function bootstrapTeleDriveInner(
     // The marker stays until this commits; a failure is retried by the queue
     // and, if the app dies, by the next bootstrap.
     saveIndex(channelId, files).catch((err) => {
-      console.warn("[bootstrap] Pending local snapshot replay failed:", err);
+      logger.warn("[bootstrap] Pending local snapshot replay failed:", err);
     });
   }
 
@@ -227,7 +228,7 @@ async function bootstrapTeleDriveInner(
             .offer(channelId, report.recoverable.length);
         });
       }).catch((err) => {
-        console.warn("[bootstrap] Recovery scan failed:", err);
+        logger.warn("[bootstrap] Recovery scan failed:", err);
       });
     });
   }
@@ -275,7 +276,7 @@ async function bootstrapTeleDriveInner(
       fireAndForgetSaveIndex(channelId, merged.files);
     }
   } catch (manifestErr) {
-    console.warn("[bootstrap] manifest merge failed (continuing):", manifestErr);
+    logger.warn("[bootstrap] manifest merge failed (continuing):", manifestErr);
   }
 
   // ── Orphan recovery (SYNCHRONOUS — must finish before bootstrap completes) ──
@@ -318,7 +319,7 @@ async function bootstrapTeleDriveInner(
         "client.getMessages(orphan scan)"
       );
     } catch (fetchErr: any) {
-      console.warn("[bootstrap] Standard orphan scan timed out, attempting fast fallback:", fetchErr);
+      logger.warn("[bootstrap] Standard orphan scan timed out, attempting fast fallback:", fetchErr);
       try {
         recentMessages = await withTimeout(
           client.getMessages(channelId, { limit: 150 }),
@@ -426,7 +427,7 @@ async function bootstrapTeleDriveInner(
       );
 
       if (newOrphans.length > 0) {
-        console.log(`[bootstrap] Orphan scan: Recovering ${newOrphans.length} orphaned file(s)…`);
+        logger.log(`[bootstrap] Orphan scan: Recovering ${newOrphans.length} orphaned file(s)…`);
         const mergedFiles = [...latestFiles, ...newOrphans];
         const { healedFiles } = reconstructMissingFolders(mergedFiles, channelId);
 
@@ -450,7 +451,7 @@ async function bootstrapTeleDriveInner(
           await invoke("log_vault_state", {
             state: `BOOTSTRAP_DEDUP_REMOVED count=${removedCount} before=${beforeCount} after=${cleaned.length}`,
           }).catch(() => {});
-          console.log(`[bootstrap] One-shot dedup removed ${removedCount} duplicate entries`);
+          logger.log(`[bootstrap] One-shot dedup removed ${removedCount} duplicate entries`);
         }
 
         // Read latest state AGAIN right before setFiles. Between the
@@ -522,7 +523,7 @@ async function bootstrapTeleDriveInner(
         fireAndForgetSaveIndex(channelId, reconciled.files);
       }
     } catch (reconcileErr) {
-      console.warn("[bootstrap] backup reconciliation failed:", reconcileErr);
+      logger.warn("[bootstrap] backup reconciliation failed:", reconcileErr);
     }
 
     await invoke("log_vault_state", {
@@ -551,13 +552,13 @@ async function bootstrapTeleDriveInner(
       }
     } catch (cursorErr) {
       // Non-fatal — sync will just start from 0 (cold reload equivalent).
-      console.warn("[bootstrap] Failed to record lastIndexMsgId:", cursorErr);
+      logger.warn("[bootstrap] Failed to record lastIndexMsgId:", cursorErr);
     }
   } catch (scanErr: any) {
     await invoke("log_vault_state", {
       state: `BOOTSTRAP_ORPHAN_SCAN_ERR: ${scanErr?.message || JSON.stringify(scanErr)}`,
     }).catch(() => {});
-    console.warn("[bootstrap] Orphan scan failed (continuing):", scanErr);
+    logger.warn("[bootstrap] Orphan scan failed (continuing):", scanErr);
     // Don't block the user indefinitely on a flaky network — proceed to
     // bootstrap-complete so they can at least see whatever loadIndex found.
   }
@@ -577,7 +578,7 @@ async function bootstrapTeleDriveInner(
         void invoke("log_vault_state", {
           state: "BOOTSTRAP_ORPHAN_SCAN_HARD_TIMEOUT: 14s safety net triggered",
         }).catch(() => {});
-        console.warn(
+        logger.warn(
           "[bootstrap] Orphan-scan block exceeded 14s hard timeout — releasing bootstrap gate",
         );
         resolve();
@@ -659,11 +660,11 @@ async function mergeBackupManifestSync(
       return live;
     });
   } catch (err) {
-    console.warn("[bootstrap] manifest load threw; skipping merge:", err);
+    logger.warn("[bootstrap] manifest load threw; skipping merge:", err);
     return { files: existingFiles, changed: false };
   }
   if (isManifestCorrupt(channelId)) {
-    console.warn("[bootstrap] manifest corrupt; skipping merge (runner will refuse to upload too)");
+    logger.warn("[bootstrap] manifest corrupt; skipping merge (runner will refuse to upload too)");
     return { files: existingFiles, changed: false };
   }
   const manifestEntries = Object.entries(manifest.entries ?? {});
@@ -681,7 +682,7 @@ async function mergeBackupManifestSync(
     else conversionFailures++;
   }
   if (conversionFailures > 0) {
-    console.warn(
+    logger.warn(
       `[bootstrap] manifest merge: ${conversionFailures}/${manifestEntries.length} entries failed conversion`,
     );
   }
@@ -727,7 +728,7 @@ async function mergeBackupManifestSync(
   // 5. Apply to the store. setFiles writes localStorage too, so the
   // change survives a refresh even if the Telegram saveIndex below fails.
   setFiles(healedFiles);
-  console.log(
+  logger.log(
     `[bootstrap] manifest merge added ${added} backup entries (total ${healedFiles.length})`,
   );
   await invoke("log_vault_state", {
@@ -751,7 +752,7 @@ async function mergeBackupManifestSync(
  */
 function fireAndForgetSaveIndex(channelId: string, state: TeleFile[]): void {
   saveIndex(channelId, state).catch((err) => {
-    console.warn("[bootstrap] manifest-merge saveIndex failed (non-fatal):", err);
+    logger.warn("[bootstrap] manifest-merge saveIndex failed (non-fatal):", err);
   });
 }
 
@@ -822,7 +823,7 @@ function mergeWithUserPreference(
   }
 
   if (userOverrides > 0) {
-    console.log(
+    logger.log(
       `[bootstrap] orphan-recovery merge: ${userOverrides} user action(s) preserved (would have been clobbered)`,
     );
   }
@@ -939,7 +940,7 @@ async function runIndexRetry(): Promise<void> {
           fireAndForgetSaveIndex(channelId, merged.files);
         }
       } catch (manifestErr) {
-        console.warn("[bootstrap] manifest merge after retry failed:", manifestErr);
+        logger.warn("[bootstrap] manifest merge after retry failed:", manifestErr);
         if (localOnlyFolders.length > 0) {
           fireAndForgetSaveIndex(channelId, mergedWithLocal);
         }
@@ -951,14 +952,14 @@ async function runIndexRetry(): Promise<void> {
       // Resume uploads that were queued while writes were blocked.
       void import("../upload/uploadManager")
         .then((mod) => mod.processQueue())
-        .catch((err) => console.warn("[bootstrap] processQueue after retry failed:", err));
+        .catch((err) => logger.warn("[bootstrap] processQueue after retry failed:", err));
       return;
     }
 
     indexRetryAttempt++;
     queueIndexRetry();
   } catch (err) {
-    console.warn("[bootstrap] index retry failed:", err);
+    logger.warn("[bootstrap] index retry failed:", err);
     indexRetryAttempt++;
     queueIndexRetry();
   } finally {

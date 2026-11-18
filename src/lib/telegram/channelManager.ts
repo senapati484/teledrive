@@ -1,4 +1,5 @@
 import { Api, utils } from "telegram";
+import { logger } from "@/lib/logger";
 import { getClient } from "./client";
 import { getSecret, saveSecret, VAULT_KEY_CHANNEL_ID, channelIdKey } from "../secure/vault";
 import { canonicalChannelId } from "./peerId";
@@ -53,7 +54,7 @@ async function searchStorageChannelInDialogs(): Promise<DialogSearchResult> {
       }
     } catch (err) {
       complete = false;
-      console.warn(`[channelManager] Dialog search (folder ${folder}) failed:`, err);
+      logger.warn(`[channelManager] Dialog search (folder ${folder}) failed:`, err);
     }
   }
 
@@ -74,14 +75,14 @@ export async function ensureStorageChannel(phone: string): Promise<string> {
       if (peer) {
         if (canonical !== channelId) {
           await saveSecret(phoneKey, canonical);
-          console.info(
+          logger.info(
             `[channelManager] Migrated channel id ${channelId} → ${canonical}`
           );
         }
         return canonical;
       }
     } catch (err) {
-      console.warn(`[channelManager] Phone-keyed channel ${channelId} not accessible, continuing…`, err);
+      logger.warn(`[channelManager] Phone-keyed channel ${channelId} not accessible, continuing…`, err);
       channelId = null;
     }
   }
@@ -99,11 +100,11 @@ export async function ensureStorageChannel(phone: string): Promise<string> {
           if (canonical !== legacyId) {
             await saveSecret(VAULT_KEY_CHANNEL_ID, canonical);
           }
-          console.info(`[channelManager] Migrated legacy channel ID ${legacyId} → ${phoneKey}`);
+          logger.info(`[channelManager] Migrated legacy channel ID ${legacyId} → ${phoneKey}`);
           return canonical;
         }
       } catch (err) {
-        console.warn(`[channelManager] Legacy channel ${legacyId} not accessible, searching dialogs…`, err);
+        logger.warn(`[channelManager] Legacy channel ${legacyId} not accessible, searching dialogs…`, err);
       }
     }
   }
@@ -113,7 +114,7 @@ export async function ensureStorageChannel(phone: string): Promise<string> {
   if (dialogSearch.id) {
     // dialog.id from GramJS is already the marked peer id (-100…).
     await saveSecret(phoneKey, dialogSearch.id);
-    console.info(`[channelManager] Found channel via dialog search: ${dialogSearch.id}`);
+    logger.info(`[channelManager] Found channel via dialog search: ${dialogSearch.id}`);
     return dialogSearch.id;
   }
 
@@ -148,10 +149,10 @@ export async function ensureStorageChannel(phone: string): Promise<string> {
     // Telegram and `dialog.id` use.
     const idStr = canonicalChannelId(utils.getPeerId(channel));
     await saveSecret(phoneKey, idStr);
-    console.info(`[channelManager] Created new channel: ${idStr} for ${phoneKey}`);
+    logger.info(`[channelManager] Created new channel: ${idStr} for ${phoneKey}`);
     return idStr;
   } catch (err) {
-    console.error("[channelManager] Failed to create storage channel:", err);
+    logger.error("[channelManager] Failed to create storage channel:", err);
     throw err;
   }
 }

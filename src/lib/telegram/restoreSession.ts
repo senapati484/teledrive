@@ -1,4 +1,5 @@
 import { initClient, getClient } from "./client";
+import { logger } from "@/lib/logger";
 import { useAuthStore } from "../../stores/authStore";
 import {
   getSecret,
@@ -20,7 +21,7 @@ import { logVaultState } from "../runtime/bridge";
  * users who configure custom credentials retain that preference.
  */
 export async function restoreSession(): Promise<boolean> {
-  console.log("restoreSession: Starting session restoration...");
+  logger.log("restoreSession: Starting session restoration...");
   try {
     // ── 1. Load the session token from the file-backed store ──────────────────
     let sessionString: string | null = null;
@@ -106,11 +107,11 @@ export async function restoreSession(): Promise<boolean> {
       errorMsg.includes("handshake");
 
     if (!isNetworkError) {
-      console.warn("restoreSession: Authentication failure or invalid credentials, clearing session...", error);
+      logger.warn("restoreSession: Authentication failure or invalid credentials, clearing session...", error);
       await invoke("clear_session").catch(() => {});
       useAuthStore.getState().logout();
     } else {
-      console.warn("restoreSession: Network connection failure during restoration (offline launch?), keeping session active:", error);
+      logger.warn("restoreSession: Network connection failure during restoration (offline launch?), keeping session active:", error);
     }
     return false;
   }

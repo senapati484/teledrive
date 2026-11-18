@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { logger } from "@/lib/logger";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, ChevronRight, Smartphone, Eye, HardDrive, Info, Shield, Languages } from "lucide-react";
@@ -84,7 +85,7 @@ export default function SettingsPage() {
       const flushResults = await flushAllQueues();
       const flushFailed = flushResults.filter((r) => r.status === "failed");
       if (flushFailed.length > 0) {
-        console.error("Index flush failed on logout:", flushFailed);
+        logger.error("Index flush failed on logout:", flushFailed);
       }
 
       // Step 1: Log out on the server first so Telegram returns a future auth
@@ -110,8 +111,8 @@ export default function SettingsPage() {
       //   next login where GramJS returns BigInt IDs in a different format,
       //   causing metadataStore to fail to resolve the channel → empty drive.
       const { invoke } = await import("@tauri-apps/api/core");
-      await invoke("clear_session_only").catch((e: any) =>
-        console.warn("clear_session_only failed (non-fatal):", e)
+      await invoke("clear_session_only").catch((e: unknown) =>
+        logger.warn("clear_session_only failed (non-fatal):", e)
       );
 
       // Step 3: Also wipe the vault's secondary session backup.
@@ -138,7 +139,7 @@ export default function SettingsPage() {
 
       // (Backend license session removed — nothing to wipe)
     } catch (err) {
-      console.error("Logout error:", err);
+      logger.error("Logout error:", err);
     } finally {
       setIsLoggingOut(false);
       navigate("/auth", { replace: true });

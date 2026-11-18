@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { logger } from "@/lib/logger";
 
 function isContentUri(path: string): boolean {
   return path.startsWith("content://");
@@ -70,7 +71,7 @@ export async function discardDownloadFile(targetPath: string): Promise<void> {
       discard: true,
     });
   } catch (err) {
-    console.warn(
+    logger.warn(
       "[downloadStreamWriter] Failed to discard partial download:",
       err
     );

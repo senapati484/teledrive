@@ -1,4 +1,5 @@
 import { Component, ErrorInfo, ReactNode } from "react";
+import { logger } from "@/lib/logger";
 import { AlertCircle, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import i18n from "@/i18n";
@@ -23,7 +24,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("Uncaught error caught by ErrorBoundary:", error, errorInfo);
+    logger.error("Uncaught error caught by ErrorBoundary:", error, errorInfo);
   }
 
   public render() {

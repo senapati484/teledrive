@@ -17,6 +17,7 @@
  * discover the feature exists.
  */
 import { useEffect } from "react";
+import { logger } from "@/lib/logger";
 import { FileBrowser } from "@/components/files/FileBrowser";
 import { BACKUP_ROOT } from "@/lib/backup/visibility";
 import { useFileStore } from "@/stores/fileStore";
@@ -36,7 +37,7 @@ export default function BackupsPage() {
       folderPath: f.folderPath,
       mime: f.mime,
     }));
-    console.log(
+    logger.log(
       `[BackupsPage] total files: ${files.length}, backup items: ${backupFiles.length}. Sample:`,
       sample,
     );

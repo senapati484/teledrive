@@ -12,6 +12,7 @@
  * cross-device source of truth.
  */
 import type { TeleFile } from "../types";
+import { logger } from "@/lib/logger";
 import { canonicalChannelId, channelKeyVariants } from "../telegram/peerId";
 
 export { canonicalChannelId };
@@ -29,7 +30,7 @@ function readAll(): TombstoneMap {
     const parsed = JSON.parse(raw);
     return parsed && typeof parsed === "object" ? (parsed as TombstoneMap) : {};
   } catch (err) {
-    console.warn("[tombstones] Failed to read deletion tombstones:", err);
+    logger.warn("[tombstones] Failed to read deletion tombstones:", err);
     return {};
   }
 }
@@ -39,7 +40,7 @@ function writeAll(map: TombstoneMap): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(map));
   } catch (err) {
-    console.warn("[tombstones] Failed to write deletion tombstones:", err);
+    logger.warn("[tombstones] Failed to write deletion tombstones:", err);
   }
 }
 

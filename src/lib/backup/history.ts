@@ -19,6 +19,7 @@
  * Telegram text message).
  */
 import { Api } from "telegram";
+import { logger } from "@/lib/logger";
 import { getClient } from "../telegram/client";
 import { resolveChannelInputPeer, withTimeout } from "../storage/metadataStore";
 import { withTelegramRetry } from "../telegram/rateLimit";
@@ -115,7 +116,7 @@ export async function loadSnapshotHistory(
         );
         allMsgs = allMsgs.concat(pinned);
       } catch (err) {
-        console.warn(
+        logger.warn(
           "[history] Failed to load pinned messages, falling back to scan:",
           err,
         );
@@ -129,7 +130,7 @@ export async function loadSnapshotHistory(
         );
         allMsgs = allMsgs.concat(recent);
       } catch (err) {
-        console.warn(
+        logger.warn(
           "[history] Failed to scan recent channel messages:",
           err,
         );
@@ -142,7 +143,7 @@ export async function loadSnapshotHistory(
   ).catch((err) => {
     // Hard failure (auth lost, channel missing). Return empty so the
     // Activity UI can still render the audit-log rows.
-    console.warn("[history] loadSnapshotHistory failed:", err);
+    logger.warn("[history] loadSnapshotHistory failed:", err);
     return [] as SnapshotHistoryEntry[];
   });
 }

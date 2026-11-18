@@ -20,6 +20,7 @@ import {
   CheckCircle,
   Check,
   ExternalLink,
+  Info,
 } from "lucide-react";
 import { TeleFile } from "@/lib/types";
 import { isEditableFile } from "@/lib/files/editableTypes";
@@ -40,6 +41,7 @@ interface FileContextMenuProps {
   onArchive?: (file: TeleFile) => void;
   onUnarchive?: (file: TeleFile) => void;
   onOfflineToggle?: (file: TeleFile) => void;
+  onGetInfo?: (file: TeleFile) => void;
 }
 
 export const FileContextMenu = React.memo(function FileContextMenu({
@@ -57,6 +59,7 @@ export const FileContextMenu = React.memo(function FileContextMenu({
   onArchive,
   onUnarchive,
   onOfflineToggle,
+  onGetInfo,
 }: FileContextMenuProps) {
   const { t } = useTranslation("files");
   const isDirectory = file.mime === "inode/directory" || file.mime === "application/x-directory";
@@ -141,6 +144,16 @@ export const FileContextMenu = React.memo(function FileContextMenu({
           >
             <Star className={`h-4 w-4 shrink-0 ${file.starred ? "fill-amber-400 text-amber-400" : "text-[#444746] dark:text-[#c4c7c5]"}`} strokeWidth={1.75} />
             <span>{file.starred ? t("menu.removeStar") : t("menu.addStar")}</span>
+          </ContextMenuItem>
+        )}
+
+        {onGetInfo && (
+          <ContextMenuItem
+            onClick={() => onGetInfo(file)}
+            className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
+          >
+            <Info className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
+            <span>{t("menu.getInfo", "Get Info")}</span>
           </ContextMenuItem>
         )}
 

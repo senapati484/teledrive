@@ -17,6 +17,7 @@
  * devices both running the same tick don't create duplicate audit rows.
  */
 import { Api } from "telegram";
+import { logger } from "@/lib/logger";
 import { getClient } from "../telegram/client";
 import { resolveChannelInputPeer } from "../storage/metadataStore";
 import { withTelegramRetry } from "../telegram/rateLimit";
@@ -107,7 +108,7 @@ export async function takeSnapshot(
             }),
           );
         } catch (pinErr) {
-          console.warn("[backup] snapshot pin failed (non-fatal):", pinErr);
+          logger.warn("[backup] snapshot pin failed (non-fatal):", pinErr);
         }
 
         return id;
@@ -117,7 +118,7 @@ export async function takeSnapshot(
     );
   } catch (err) {
     errorMsg = err instanceof Error ? err.message : String(err);
-    console.error("[backup] snapshot send failed:", err);
+    logger.error("[backup] snapshot send failed:", err);
     await logVaultState(`BACKUP_SNAPSHOT_FAILED error=${errorMsg}`);
   }
 

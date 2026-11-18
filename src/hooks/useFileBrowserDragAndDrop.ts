@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { logger } from "@/lib/logger";
 import { TeleFile } from "@/lib/types";
 import { useFileStore } from "@/stores/fileStore";
 
@@ -166,7 +167,7 @@ export function useFileBrowserDragAndDrop({
       await moveMultipleFilesOrFolders(fileIds, targetFolderPath);
       clearSelection();
     } catch (err) {
-      console.error("[DnD] moveDraggedItems failed:", err);
+      logger.error("[DnD] moveDraggedItems failed:", err);
     }
   }, [clearSelection, moveMultipleFilesOrFolders, resolveTargetFolderPath]);
 
@@ -340,7 +341,7 @@ export function useFileBrowserDragAndDrop({
       await moveMultipleFilesOrFolders(fileIds, targetFolderPath);
       clearSelection();
     } catch (err) {
-      console.error("[DnD] handleDrop failed:", err);
+      logger.error("[DnD] handleDrop failed:", err);
     }
   }, [clearSelection, moveMultipleFilesOrFolders, resetDragState, resolveDraggedIds, resolveTargetFolderPath]);
 
@@ -389,7 +390,7 @@ export function useFileBrowserDragAndDrop({
       await moveMultipleFilesOrFolders(fileIds, targetFolderPath);
       clearSelection();
     } catch (err) {
-      console.error("[DnD] handleGlobalDrop failed:", err);
+      logger.error("[DnD] handleGlobalDrop failed:", err);
     }
   }, [clearSelection, folderPath, moveMultipleFilesOrFolders, resetDragState, resolveDraggedIds, resolveDropTargetFromEvent, resolveTargetFolderPath]);
 

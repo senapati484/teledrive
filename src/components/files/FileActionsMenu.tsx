@@ -21,6 +21,7 @@ import {
   ArchiveRestore,
   CheckCircle,
   Check,
+  Info,
 } from "lucide-react";
 import { TeleFile } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -41,6 +42,7 @@ interface FileActionsMenuProps {
   onArchive?: (file: TeleFile) => void;
   onUnarchive?: (file: TeleFile) => void;
   onOfflineToggle?: (file: TeleFile) => void;
+  onGetInfo?: (file: TeleFile) => void;
   triggerClassName?: string;
 }
 
@@ -57,6 +59,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
   onArchive,
   onUnarchive,
   onOfflineToggle,
+  onGetInfo,
   triggerClassName,
 }: FileActionsMenuProps) {
   const { t } = useTranslation("files");
@@ -68,6 +71,7 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
         <Button
           variant="ghost"
           size="icon"
+          aria-label={t("menu.moreActions", "More actions")}
           className={cn(
             "h-7.5 w-7.5 sm:h-8 sm:w-8 rounded-full shrink-0 hover:bg-[#e9eef6] dark:hover:bg-[#1f2124] data-[state=open]:bg-[#c2e7ff]/60 dark:data-[state=open]:bg-[#004a77]/60 cursor-pointer transition-colors",
             triggerClassName
@@ -165,6 +169,15 @@ export const FileActionsMenu = React.memo(function FileActionsMenu({
               />
               <span>{file.starred ? t("menu.removeStar") : t("menu.addStar")}</span>
             </DropdownMenuItem>
+            {onGetInfo && (
+              <DropdownMenuItem
+                onClick={() => onGetInfo(file)}
+                className="flex items-center gap-2.5 px-3 py-2.5 sm:py-2 min-h-[40px] sm:min-h-0 text-xs font-medium cursor-pointer rounded-xl text-[#1f1f1f] dark:text-[#e3e3e3] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124]"
+              >
+                <Info className="h-4 w-4 text-[#444746] dark:text-[#c4c7c5] shrink-0" strokeWidth={1.75} />
+                <span>{t("menu.getInfo", "Get Info")}</span>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator className="-mx-1.5 my-1 bg-slate-200/70 dark:bg-white/[0.06]" />
           </>
         )}

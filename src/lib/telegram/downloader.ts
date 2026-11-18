@@ -1,4 +1,5 @@
 import { getClient } from "./client";
+import { logger } from "@/lib/logger";
 import { canonicalChannelId } from "./peerId";
 import { getPlatform } from "../platform";
 import { save as tauriSaveDialog } from "@tauri-apps/plugin-dialog";
@@ -249,7 +250,7 @@ async function runDownload(job: DownloadJob): Promise<void> {
       eta: undefined,
     });
     if (!cancelled) {
-      console.error("[downloader] Download failed:", error);
+      logger.error("[downloader] Download failed:", error);
       toast.error(error?.message || i18n.t("messages:download.failed"));
     }
   } finally {
@@ -342,7 +343,7 @@ async function resolvePeer(channelId: string): Promise<any> {
   try {
     return await client.getInputEntity(id);
   } catch (err) {
-    console.warn(`[downloader] getInputEntity failed for ${id}, trying getEntity:`, err);
+    logger.warn(`[downloader] getInputEntity failed for ${id}, trying getEntity:`, err);
     return await client.getEntity(id);
   }
 }
@@ -642,7 +643,7 @@ export async function downloadFileFromTelegram(
     activeDownloads.set(id, job);
     void runDownload(job);
   } catch (error: any) {
-    console.error("Failed to download file:", error);
+    logger.error("Failed to download file:", error);
     if (error instanceof EncryptionError && error.code === "locked") {
       return;
     }
@@ -941,7 +942,7 @@ export async function downloadFileToBuffer(
     return new Uint8Array(buffer);
   } catch (error: any) {
     if (error?.name !== "AbortError") {
-      console.error("Failed to download file to buffer:", error);
+      logger.error("Failed to download file to buffer:", error);
     }
     throw error;
   }

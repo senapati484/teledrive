@@ -1,4 +1,5 @@
 import "./lib/telegram/buffer-shim";
+import { logger } from "@/lib/logger";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import "./i18n";
@@ -9,7 +10,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 
 import { initPlatform } from "./lib/platform";
 
-console.log("main.tsx: Loaded entrypoint script");
+logger.log("main.tsx: Loaded entrypoint script");
 initPlatform();
 
 // Mount React immediately to prevent blank white screens
@@ -23,19 +24,19 @@ if (rootElement) {
     </React.StrictMode>,
   );
   (window as unknown as { __TELEDRIVE_MOUNTED__?: boolean }).__TELEDRIVE_MOUNTED__ = true;
-  console.log("main.tsx: React root mounted immediately.");
+  logger.log("main.tsx: React root mounted immediately.");
 } else {
-  console.error("main.tsx: Root element not found in DOM!");
+  logger.error("main.tsx: Root element not found in DOM!");
 }
 
 // Initialize vault in the background
-console.log("main.tsx: Initializing vault in background...");
+logger.log("main.tsx: Initializing vault in background...");
 initVault()
   .then(() => {
-    console.log("main.tsx: Vault initialized successfully in background.");
+    logger.log("main.tsx: Vault initialized successfully in background.");
   })
   .catch((err) => {
-    console.error("main.tsx: Vault initialization failed in background:", err);
+    logger.error("main.tsx: Vault initialization failed in background:", err);
   });
 
 // In production, prevent the default browser context menu on empty window spaces

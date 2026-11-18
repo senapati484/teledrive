@@ -36,6 +36,7 @@
  */
 
 import { invoke } from "@tauri-apps/api/core";
+import { logger } from "@/lib/logger";
 import {
   isHashedUploadResult,
   uploadFileToTelegram,
@@ -440,7 +441,7 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
           continue;
         }
       } catch (err) {
-        console.warn(
+        logger.warn(
           `[backup.runner] hash comparison failed for ${target.fileName}; uploading:`,
           err,
         );
@@ -592,7 +593,7 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
       filesFailed++;
       const msg = err instanceof Error ? err.message : String(err);
       firstError ??= msg;
-      console.warn(
+      logger.warn(
         `[backup.runner] failed to upload ${target.fileName}:`,
         msg,
       );
@@ -647,7 +648,7 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
   try {
     manifest.generation = await saveManifest(channelId, manifest);
   } catch (err) {
-    console.warn("[backup.runner] manifest save failed:", err);
+    logger.warn("[backup.runner] manifest save failed:", err);
   }
 
   const flush = await flushBackupIndexSave(channelId);
@@ -772,7 +773,7 @@ async function sweepGarbage(
     try {
       await deleteMessages(channelId, deletable);
     } catch (err) {
-      console.warn(
+      logger.warn(
         `[backup.runner] old-message cleanup failed (${deletable.length} ids):`,
         err,
       );
@@ -787,7 +788,7 @@ async function sweepGarbage(
   try {
     manifest.generation = await saveManifest(channelId, manifest);
   } catch (err) {
-    console.warn("[backup.runner] manifest save after cleanup failed:", err);
+    logger.warn("[backup.runner] manifest save after cleanup failed:", err);
   }
 }
 
