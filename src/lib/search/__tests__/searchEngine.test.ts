@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { fuzzySearch } from "../searchEngine";
+import { applySearchFilters, fuzzySearch } from "../searchEngine";
 import type { TeleFile } from "../../types";
 
-function mockFile(id: string, name: string, folderPath = "/", mime = "text/plain"): TeleFile {
+function mockFile(
+  id: string,
+  name: string,
+  folderPath = "/",
+  mime = "text/plain",
+  overrides: Partial<TeleFile> = {},
+): TeleFile {
   return {
     id,
     name,
@@ -15,6 +21,7 @@ function mockFile(id: string, name: string, folderPath = "/", mime = "text/plain
     starred: false,
     trashed: false,
     archived: false,
+    ...overrides,
   };
 }
 
@@ -52,6 +59,27 @@ describe("fuzzySearch", () => {
     expect(fuzzySearch(files, "image").map((f) => f.id)).toEqual(["2"]);
   });
 
+  it("matches typo queries via trigram similarity while ranking exact/substring higher", () => {
+    const files = [
+      mockFile("1", "document_2026.pdf"),
+      mockFile("2", "vacation_video.mp4"),
+      mockFile("3", "unrelated.bin"),
+    ];
+
+    const results = fuzzySearch(files, "documnt");
+    expect(results.map((f) => f.id)).toEqual(["1"]);
+  });
+
+  it("supports multi-word queries across name, path, and mime", () => {
+    const files = [
+      mockFile("1", "invoice_q4.pdf", "/Work/Finance", "application/pdf"),
+      mockFile("2", "invoice_q4.png", "/Work/Finance", "image/png"),
+    ];
+
+    const results = fuzzySearch(files, "finance pdf");
+    expect(results.map((f) => f.id)).toEqual(["1"]);
+  });
+
   it("caps results at 50 items", () => {
     const files: TeleFile[] = [];
     for (let i = 0; i < 100; i++) {
@@ -63,3 +91,65 @@ describe("fuzzySearch", () => {
   });
 });
 
+describe("applySearchFilters", () => {
+  const NOW = 1_800_000_000_000;
+  const DAY = 24 * 60 * 60 * 1000;
+  const MB = 1024 * 1024;
+
+  const catalog: TeleFile[] = [
+    mockFile("recent-small", "a.txt", "/", "text/plain", {
+      uploadedAt: NOW - 2 * DAY,
+      size: 500 * 1024,
+    }),
+    mockFile("month-medium", "b.mp4", "/", "video/mp4", {
+      uploadedAt: NOW - 15 * DAY,
+      size: 25 * MB,
+    }),
+    mockFile("old-large", "c.iso", "/", "application/octet-stream", {
+      uploadedAt: NOW - 400 * DAY,
+      size: 250 * MB,
+    }),
+    mockFile("folder", "Docs", "/", "inode/directory", {
+      uploadedAt: NOW - 1 * DAY,
+      size: 0,
+    }),
+  ];
+
+  it("filters by date range", () => {
+    expect(
+      applySearchFilters(catalog, { dateRange: "7d" }, NOW).map((f) => f.id),
+    ).toEqual(["recent-small", "folder"]);
+
+    expect(
+      applySearchFilters(catalog, { dateRange: "30d" }, NOW).map((f) => f.id),
+    ).toEqual(["recent-small", "month-medium", "folder"]);
+
+    expect(
+      applySearchFilters(catalog, { dateRange: "1y" }, NOW).map((f) => f.id),
+    ).toEqual(["recent-small", "month-medium", "folder"]);
+  });
+
+  it("filters by size range and excludes directories", () => {
+    expect(
+      applySearchFilters(catalog, { sizeRange: "small" }, NOW).map((f) => f.id),
+    ).toEqual(["recent-small"]);
+
+    expect(
+      applySearchFilters(catalog, { sizeRange: "medium" }, NOW).map((f) => f.id),
+    ).toEqual(["month-medium"]);
+
+    expect(
+      applySearchFilters(catalog, { sizeRange: "large" }, NOW).map((f) => f.id),
+    ).toEqual(["old-large"]);
+  });
+
+  it("combines fuzzySearch with date and size filters", () => {
+    const results = fuzzySearch(
+      catalog,
+      "mp4",
+      { dateRange: "30d", sizeRange: "medium" },
+      NOW,
+    );
+    expect(results.map((f) => f.id)).toEqual(["month-medium"]);
+  });
+});

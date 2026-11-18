@@ -23,6 +23,8 @@ import {
   Shield,
   AlertTriangle,
   RefreshCw,
+  Calendar,
+  HardDrive,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -50,7 +52,12 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { fuzzySearch } from "@/lib/search/searchEngine";
+import {
+  applySearchFilters,
+  fuzzySearch,
+  type DateRangeFilter,
+  type SizeRangeFilter,
+} from "@/lib/search/searchEngine";
 import { getFileCategory } from "@/lib/files/fileUtils";
 import { isEditableFile } from "@/lib/files/editableTypes";
 import {
@@ -690,8 +697,10 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
   } = useFileActions();
 
   const isMobile = useIsMobile();
-  const touchTimeoutRef = useRef<any>(null);
+  const touchTimeoutRef = useRef<number | null>(null);
   const [mobileContextFile, setMobileContextFile] = useState<TeleFile | null>(null);
+  const [dateRangeFilter, setDateRangeFilter] = useState<DateRangeFilter>("all");
+  const [sizeRangeFilter, setSizeRangeFilter] = useState<SizeRangeFilter>("all");
 
   const {
     dragOverId,
@@ -977,12 +986,18 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
     let filtered: TeleFile[];
 
     if (mode === "search") {
-      filtered = fuzzySearch(dedupedActiveFiles, searchQuery);
+      filtered = fuzzySearch(dedupedActiveFiles, searchQuery, {
+        dateRange: dateRangeFilter,
+        sizeRange: sizeRangeFilter,
+      });
     } else {
       // Always copy before sorting so we never mutate the bucket arrays
       // inside folderEntriesIndex (which are themselves memoized; mutating
       // them silently corrupts the cache for the next render).
-      filtered = [...indexedFiles];
+      filtered = applySearchFilters([...indexedFiles], {
+        dateRange: dateRangeFilter,
+        sizeRange: sizeRangeFilter,
+      });
     }
 
     const visibleFiles =
@@ -1021,7 +1036,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
       folders: nextFolders,
       regularFiles: nextRegularFiles,
     };
-  }, [dedupedActiveFiles, activeSortBy, filterType, indexedFiles, mode, searchQuery]);
+  }, [dedupedActiveFiles, activeSortBy, filterType, dateRangeFilter, sizeRangeFilter, indexedFiles, mode, searchQuery]);
 
   // Keep total display count ref fresh for the bounded scroll handler
   totalDisplayCountRef.current =
@@ -1612,6 +1627,113 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
               </button>
             );
           })}
+
+          {/* Date Range Filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label={t("browser.filters.dateLabel", "Filter by date")}
+                className={cn(
+                  "px-2.5 py-1.5 sm:px-3 text-xs font-medium rounded-lg border transition-all duration-150 cursor-pointer whitespace-nowrap active:scale-95 inline-flex items-center gap-1.5 shrink-0",
+                  dateRangeFilter !== "all"
+                    ? "bg-[#c2e7ff] text-[#001d35] border-transparent font-semibold dark:bg-[#004a77] dark:text-[#c2e7ff] shadow-xs"
+                    : "bg-white dark:bg-[#161719] border-slate-300/70 dark:border-white/[0.04] text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] hover:text-[#1f1f1f] dark:hover:text-[#e3e3e3]"
+                )}
+              >
+                <Calendar className="h-3.5 w-3.5" />
+                <span>
+                  {dateRangeFilter === "all"
+                    ? t("browser.filters.dateAny", "Any time")
+                    : dateRangeFilter === "7d"
+                    ? t("browser.filters.date7d", "Last 7 days")
+                    : dateRangeFilter === "30d"
+                    ? t("browser.filters.date30d", "Last 30 days")
+                    : t("browser.filters.date1y", "Last year")}
+                </span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-40 rounded-xl p-1">
+              {(
+                [
+                  { value: "all", label: t("browser.filters.dateAny", "Any time") },
+                  { value: "7d", label: t("browser.filters.date7d", "Last 7 days") },
+                  { value: "30d", label: t("browser.filters.date30d", "Last 30 days") },
+                  { value: "1y", label: t("browser.filters.date1y", "Last year") },
+                ] as const
+              ).map((opt) => (
+                <DropdownMenuItem
+                  key={opt.value}
+                  onClick={() => setDateRangeFilter(opt.value)}
+                  className="text-xs rounded-lg cursor-pointer flex items-center justify-between"
+                >
+                  <span>{opt.label}</span>
+                  {dateRangeFilter === opt.value && <Check className="h-3.5 w-3.5" />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {/* Size Range Filter */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label={t("browser.filters.sizeLabel", "Filter by size")}
+                className={cn(
+                  "px-2.5 py-1.5 sm:px-3 text-xs font-medium rounded-lg border transition-all duration-150 cursor-pointer whitespace-nowrap active:scale-95 inline-flex items-center gap-1.5 shrink-0",
+                  sizeRangeFilter !== "all"
+                    ? "bg-[#c2e7ff] text-[#001d35] border-transparent font-semibold dark:bg-[#004a77] dark:text-[#c2e7ff] shadow-xs"
+                    : "bg-white dark:bg-[#161719] border-slate-300/70 dark:border-white/[0.04] text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] hover:text-[#1f1f1f] dark:hover:text-[#e3e3e3]"
+                )}
+              >
+                <HardDrive className="h-3.5 w-3.5" />
+                <span>
+                  {sizeRangeFilter === "all"
+                    ? t("browser.filters.sizeAny", "Any size")
+                    : sizeRangeFilter === "small"
+                    ? t("browser.filters.sizeSmall", "< 1 MB")
+                    : sizeRangeFilter === "medium"
+                    ? t("browser.filters.sizeMedium", "1 – 100 MB")
+                    : t("browser.filters.sizeLarge", "> 100 MB")}
+                </span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-40 rounded-xl p-1">
+              {(
+                [
+                  { value: "all", label: t("browser.filters.sizeAny", "Any size") },
+                  { value: "small", label: t("browser.filters.sizeSmall", "< 1 MB") },
+                  { value: "medium", label: t("browser.filters.sizeMedium", "1 – 100 MB") },
+                  { value: "large", label: t("browser.filters.sizeLarge", "> 100 MB") },
+                ] as const
+              ).map((opt) => (
+                <DropdownMenuItem
+                  key={opt.value}
+                  onClick={() => setSizeRangeFilter(opt.value)}
+                  className="text-xs rounded-lg cursor-pointer flex items-center justify-between"
+                >
+                  <span>{opt.label}</span>
+                  {sizeRangeFilter === opt.value && <Check className="h-3.5 w-3.5" />}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {(dateRangeFilter !== "all" || sizeRangeFilter !== "all") && (
+            <button
+              type="button"
+              onClick={() => {
+                setDateRangeFilter("all");
+                setSizeRangeFilter("all");
+              }}
+              aria-label={t("browser.filters.clear", "Clear filters")}
+              className="px-2 py-1.5 text-xs font-medium rounded-lg text-[#0b57d0] dark:text-[#a8c7fa] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] cursor-pointer whitespace-nowrap inline-flex items-center gap-1 shrink-0"
+            >
+              <X className="h-3.5 w-3.5" />
+              <span>{t("browser.filters.clear", "Clear")}</span>
+            </button>
+          )}
         </div>
 
         {/* Sort Dropdown & Mobile Controls */}
