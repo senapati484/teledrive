@@ -22,6 +22,18 @@ import { canonicalChannelId } from "./peerId";
  */
 const STORAGE_CHANNEL_TITLE = "TeleDrive Storage";
 
+/** Checks if a channel title matches TeleDrive Storage conventions flexibly. */
+export function matchesStorageChannelTitle(title: string | undefined): boolean {
+  if (!title) return false;
+  const normalized = title.trim().toLowerCase();
+  return (
+    normalized === "teledrive storage" ||
+    normalized === "teledrive-storage" ||
+    normalized === "teledrive_storage" ||
+    normalized === "teledrive"
+  );
+}
+
 interface DialogSearchResult {
   /** Marked channel id (`-100…`) when found. */
   id: string | null;
@@ -45,8 +57,8 @@ async function searchStorageChannelInDialogs(): Promise<DialogSearchResult> {
       const dialogs = await client.getDialogs({ folder });
       for (const dialog of dialogs) {
         if (
-          dialog.title === STORAGE_CHANNEL_TITLE &&
-          (dialog.isChannel || dialog.entity?.className === "Channel") &&
+          matchesStorageChannelTitle(dialog.title) &&
+          (dialog.isChannel || dialog.isGroup || dialog.entity?.className === "Channel" || dialog.entity?.className === "Chat") &&
           dialog.id
         ) {
           return { id: canonicalChannelId(String(dialog.id)), complete: true };
@@ -151,10 +163,132 @@ export async function ensureStorageChannel(phone: string): Promise<string> {
     await saveSecret(phoneKey, idStr);
     logger.info(`[channelManager] Created new channel: ${idStr} for ${phoneKey}`);
     return idStr;
-  } catch (err) {
+  } catch (err: unknown) {
     logger.error("[channelManager] Failed to create storage channel:", err);
+    const raw = String((err as any)?.errorMessage || (err as any)?.message || "");
+    if (raw.includes("USER_RESTRICTED")) {
+      throw new ChannelCreationRestrictedError(
+        "USER_RESTRICTED",
+        "403: USER_RESTRICTED (caused by channels.CreateChannel)",
+        err
+      );
+    }
+    if (raw.includes("CHANNELS_TOO_MUCH") || raw.includes("CHANNELS_ADMIN_LOCATED_TOO_MUCH")) {
+      throw new ChannelCreationRestrictedError(
+        "CHANNELS_TOO_MUCH",
+        "CHANNELS_TOO_MUCH (caused by channels.CreateChannel)",
+        err
+      );
+    }
     throw err;
   }
+}
+
+export class ChannelCreationRestrictedError extends Error {
+  code: string;
+  originalError: unknown;
+  constructor(code: string, message: string, originalError?: unknown) {
+    super(message);
+    this.name = "ChannelCreationRestrictedError";
+    this.code = code;
+    this.originalError = originalError;
+  }
+}
+
+/** Parses user input into a canonical Telegram channel ID, username, or identifier. */
+export function parseChannelInput(input: string): string {
+  let cleaned = input.trim();
+  // Handle t.me/c/1234567890/123 -> -1001234567890
+  const cMatch = cleaned.match(/t\.me\/c\/(\d+)/i);
+  if (cMatch) {
+    return `-100${cMatch[1]}`;
+  }
+  // Handle https://t.me/username -> username
+  const linkMatch = cleaned.match(/(?:https?:\/\/)?t\.me\/([a-zA-Z0-9_]+)/i);
+  if (linkMatch && linkMatch[1] && linkMatch[1].toLowerCase() !== "c") {
+    return linkMatch[1];
+  }
+  // Strip leading @
+  if (cleaned.startsWith("@")) {
+    cleaned = cleaned.slice(1);
+  }
+  return canonicalChannelId(cleaned);
+}
+
+export interface EligibleChannel {
+  id: string;
+  title: string;
+  isCreator: boolean;
+  canPost: boolean;
+}
+
+/**
+ * Lists existing channels/groups in the user's account where they have permission to post.
+ */
+export async function listEligibleStorageChannels(): Promise<EligibleChannel[]> {
+  const client = getClient();
+  const eligible: EligibleChannel[] = [];
+  const seenIds = new Set<string>();
+
+  for (const folder of [0, 1]) {
+    try {
+      const dialogs = await client.getDialogs({ folder });
+      for (const dialog of dialogs) {
+        if (!dialog.isChannel && !dialog.isGroup && dialog.entity?.className !== "Channel" && dialog.entity?.className !== "Chat") {
+          continue;
+        }
+        const idStr = canonicalChannelId(String(dialog.id));
+        if (seenIds.has(idStr)) continue;
+        seenIds.add(idStr);
+
+        const entity = dialog.entity as any;
+        const isCreator = Boolean(entity?.creator);
+        const canPost = isCreator || Boolean(entity?.adminRights?.postMessages) || Boolean(dialog.isGroup);
+
+        if (canPost) {
+          eligible.push({
+            id: idStr,
+            title: dialog.title || "Untitled Chat",
+            isCreator,
+            canPost,
+          });
+        }
+      }
+    } catch (err) {
+      logger.warn(`[channelManager] Dialog search (folder ${folder}) error:`, err);
+    }
+  }
+
+  return eligible;
+}
+
+/**
+ * Explicitly binds a user-chosen channel as their storage channel.
+ */
+export async function setCustomStorageChannel(
+  phone: string,
+  channelInput: string
+): Promise<string> {
+  const client = getClient();
+  const target = parseChannelInput(channelInput);
+
+  const peer = await client.getEntity(target);
+  if (!peer) {
+    throw new Error("Channel not found. Make sure the channel exists and you have access.");
+  }
+
+  const phoneKey = channelIdKey(phone);
+  let peerId: string;
+  try {
+    peerId = String(utils.getPeerId(peer));
+  } catch {
+    peerId = String((peer as any)?.id || target);
+  }
+  const resolvedId = canonicalChannelId(peerId);
+  await saveSecret(phoneKey, resolvedId);
+  await saveSecret(VAULT_KEY_CHANNEL_ID, resolvedId);
+  logger.info(`[channelManager] Bound custom storage channel: ${resolvedId} for ${phoneKey}`);
+  return resolvedId;
 }
 
 /**

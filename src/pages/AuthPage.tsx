@@ -78,7 +78,12 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { SUPPORTED_LANGUAGES } from "@/i18n";
-import { cn } from "@/lib/utils";
+import { cn, getErrorMessage } from "@/lib/utils";
+import {
+  listEligibleStorageChannels,
+  setCustomStorageChannel,
+  type EligibleChannel,
+} from "@/lib/telegram/channelManager";
 import { toast } from "sonner";
 import { invoke } from "@tauri-apps/api/core";
 import {
@@ -485,6 +490,11 @@ export default function AuthPage() {
     t("bootstrap.connecting")
   );
   const [bootstrapError, setBootstrapError] = useState<string | null>(null);
+  const [showChannelPicker, setShowChannelPicker] = useState(false);
+  const [customChannelInput, setCustomChannelInput] = useState("");
+  const [eligibleChannels, setEligibleChannels] = useState<EligibleChannel[]>([]);
+  const [loadingChannels, setLoadingChannels] = useState(false);
+  const [linkingChannel, setLinkingChannel] = useState(false);
 
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [qrTgUrl, setQrTgUrl] = useState<string | null>(null);
@@ -660,12 +670,59 @@ export default function AuthPage() {
         toast.success(t("toasts.ready"));
         setSession(sessionString, authPhone);
         navigate("/drive/my-drive");
-      } catch (err: any) {
+      } catch (err: unknown) {
         logger.error("Bootstrap failed:", err);
-        setBootstrapError(err.message || t("errors.bootstrapFailed"));
+        setBootstrapError(getErrorMessage(err, t("errors.bootstrapFailed")));
       }
     },
     [applyPending, navigate, phone, setSession, t]
+  );
+
+  const handleLoadChannels = useCallback(async () => {
+    setLoadingChannels(true);
+    try {
+      const list = await listEligibleStorageChannels();
+      setEligibleChannels(list);
+    } catch (err: unknown) {
+      logger.warn("Failed to load eligible channels:", err);
+    } finally {
+      setLoadingChannels(false);
+    }
+  }, []);
+
+  const handleLinkCustomChannel = useCallback(
+    async (channelIdOrInput: string) => {
+      if (!channelIdOrInput.trim()) return;
+      setLinkingChannel(true);
+      setBootstrapError(null);
+      setBootstrapStatus(t("bootstrap.restriction.linking"));
+      try {
+        const client = getClient();
+        let authPhone =
+          pendingRef.current?.phone || (phone.trim() ? sanitizePhone(phone) : "");
+        if (!authPhone) {
+          try {
+            const me: any = await client.getMe();
+            if (me?.phone) authPhone = `+${me.phone}`;
+          } catch {}
+        }
+        await setCustomStorageChannel(authPhone, channelIdOrInput);
+        await bootstrapTeleDrive(
+          (status) => setBootstrapStatus(status),
+          authPhone
+        );
+        toast.success(t("toasts.ready"));
+        const sessionString = client.session.save() as unknown as string;
+        setSession(sessionString, authPhone);
+        navigate("/drive/my-drive");
+      } catch (err: unknown) {
+        logger.error("Failed to link custom channel:", err);
+        setBootstrapError(getErrorMessage(err, t("errors.bootstrapFailed")));
+      } finally {
+        setLinkingChannel(false);
+      }
+    },
+    [navigate, phone, setSession, t]
   );
 
   useEffect(() => {
@@ -2130,28 +2187,165 @@ export default function AuthPage() {
               </div>
 
               {bootstrapError ? (
-                <div className="space-y-2.5">
-                  <ErrorBanner message={bootstrapError} />
-                  <PrimaryButton
-                    type="button"
-                    loading={false}
-                    loadingLabel=""
-                    label={t("bootstrap.retry")}
-                    onClick={() => {
-                      setBootstrapError(null);
-                      setBootstrapStatus(t("bootstrap.reconnecting"));
-                      try {
-                        void completeAuthentication(getClient()).catch((err: any) => {
-                          setBootstrapError(
-                            err?.message || t("errors.bootstrapFailed")
-                          );
-                        });
-                      } catch {
-                        setStep("phone");
-                      }
-                    }}
-                  />
-                </div>
+                (() => {
+                  const isRestricted =
+                    bootstrapError.includes("USER_RESTRICTED") ||
+                    bootstrapError.includes("CHANNELS_TOO_MUCH") ||
+                    bootstrapError.includes("CHANNELS_ADMIN_LOCATED_TOO_MUCH");
+
+                  if (isRestricted) {
+                    return (
+                      <div className="text-left bg-amber-500/10 border border-amber-500/30 rounded-xl p-3.5 space-y-3 animate-in fade-in duration-200">
+                        <div className="flex items-start gap-2.5">
+                          <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                          <div>
+                            <h3 className="text-xs font-semibold text-foreground">
+                              {t("bootstrap.restriction.title")}
+                            </h3>
+                            <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                              {bootstrapError.includes("CHANNELS_TOO_MUCH") ||
+                              bootstrapError.includes("CHANNELS_ADMIN_LOCATED_TOO_MUCH")
+                                ? t("bootstrap.restriction.channelsLimitDescription")
+                                : t("bootstrap.restriction.description")}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="bg-background/80 rounded-lg p-2.5 border border-border/50 text-[11px] space-y-1.5">
+                          <span className="font-semibold text-foreground block">
+                            {t("bootstrap.restriction.quickFixTitle")}
+                          </span>
+                          <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                            <li>{t("bootstrap.restriction.step1")}</li>
+                            <li>
+                              {t("bootstrap.restriction.step2")}
+                            </li>
+                            <li>{t("bootstrap.restriction.step3")}</li>
+                          </ol>
+                        </div>
+
+                        <div className="flex flex-col gap-2 pt-1">
+                          <PrimaryButton
+                            type="button"
+                            loading={false}
+                            loadingLabel=""
+                            label={t("bootstrap.retry")}
+                            onClick={() => {
+                              setBootstrapError(null);
+                              setBootstrapStatus(t("bootstrap.reconnecting"));
+                              try {
+                                void completeAuthentication(getClient()).catch((err: unknown) => {
+                                  setBootstrapError(
+                                    getErrorMessage(err, t("errors.bootstrapFailed"))
+                                  );
+                                });
+                              } catch {
+                                setStep("phone");
+                              }
+                            }}
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = !showChannelPicker;
+                              setShowChannelPicker(next);
+                              if (next && eligibleChannels.length === 0) {
+                                void handleLoadChannels();
+                              }
+                            }}
+                            className="text-[11px] font-medium text-primary hover:underline text-center py-1 cursor-pointer"
+                          >
+                            {t("bootstrap.restriction.orChooseExisting")}
+                          </button>
+
+                          {showChannelPicker && (
+                            <div className="space-y-2 pt-1 border-t border-border/40 animate-in fade-in duration-150">
+                              <div className="flex gap-1.5">
+                                <input
+                                  type="text"
+                                  value={customChannelInput}
+                                  onChange={(e) => setCustomChannelInput(e.target.value)}
+                                  placeholder={t("bootstrap.restriction.enterChannelPlaceholder")}
+                                  className="flex-1 text-[11px] px-2.5 py-1.5 rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                                />
+                                <button
+                                  type="button"
+                                  disabled={linkingChannel || !customChannelInput.trim()}
+                                  onClick={() => void handleLinkCustomChannel(customChannelInput)}
+                                  className="text-[11px] font-medium px-3 py-1.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors cursor-pointer"
+                                >
+                                  {linkingChannel
+                                    ? t("bootstrap.restriction.linking")
+                                    : t("bootstrap.restriction.linkChannel")}
+                                </button>
+                              </div>
+
+                              {loadingChannels ? (
+                                <p className="text-[10px] text-muted-foreground text-center py-1">
+                                  {t("bootstrap.connecting")}
+                                </p>
+                              ) : eligibleChannels.length > 0 ? (
+                                <div className="max-h-32 overflow-y-auto space-y-1 pr-1">
+                                  <span className="text-[10px] text-muted-foreground font-medium block">
+                                    {t("bootstrap.restriction.selectChannel")}
+                                  </span>
+                                  {eligibleChannels.map((c) => (
+                                    <button
+                                      key={c.id}
+                                      type="button"
+                                      onClick={() => void handleLinkCustomChannel(c.id)}
+                                      className="w-full text-left text-[11px] px-2.5 py-1.5 rounded-md hover:bg-muted/80 border border-transparent hover:border-border/60 transition-colors flex items-center justify-between cursor-pointer"
+                                    >
+                                      <span className="truncate font-medium text-foreground">{c.title}</span>
+                                      <span className="text-[10px] text-muted-foreground shrink-0 ml-2">
+                                        {c.isCreator ? "Owner" : "Admin"}
+                                      </span>
+                                    </button>
+                                  ))}
+                                </div>
+                              ) : null}
+                            </div>
+                          )}
+
+                          <button
+                            type="button"
+                            onClick={() => void handleOpenTelegram("https://t.me/spambot")}
+                            className="text-[10px] text-muted-foreground hover:text-foreground text-center py-0.5 transition-colors flex items-center justify-center gap-1 cursor-pointer"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            {t("bootstrap.restriction.checkSpamBot")}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div className="space-y-2.5">
+                      <ErrorBanner message={bootstrapError} />
+                      <PrimaryButton
+                        type="button"
+                        loading={false}
+                        loadingLabel=""
+                        label={t("bootstrap.retry")}
+                        onClick={() => {
+                          setBootstrapError(null);
+                          setBootstrapStatus(t("bootstrap.reconnecting"));
+                          try {
+                            void completeAuthentication(getClient()).catch((err: unknown) => {
+                              setBootstrapError(
+                                getErrorMessage(err, t("errors.bootstrapFailed"))
+                              );
+                            });
+                          } catch {
+                            setStep("phone");
+                          }
+                        }}
+                      />
+                    </div>
+                  );
+                })()
               ) : (
                 <div className="flex flex-col items-center justify-center gap-3 py-2">
                   <div className="relative w-12 h-12">
