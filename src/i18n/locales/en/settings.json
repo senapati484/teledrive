@@ -77,7 +77,26 @@
       "description": "Folders are mirrored under your device backup root and kept in sync. Saves automatically.",
       "empty": "No folders added yet. Click “Add folder” below.",
       "add": "Add folder",
-      "pickerTitle": "Pick a folder to back up"
+      "enterManually": "Enter path manually",
+      "pickerTitle": "Pick a folder to back up",
+      "dialog": {
+        "title": "Select Source Folder",
+        "description": "Choose a preset folder on your device or enter an absolute folder path manually.",
+        "presets": "Common Device Folders",
+        "camera": "Camera (DCIM)",
+        "downloads": "Downloads",
+        "pictures": "Pictures",
+        "documents": "Documents",
+        "music": "Music",
+        "movies": "Movies",
+        "whatsapp": "WhatsApp Media",
+        "telegram": "Telegram Downloads",
+        "customPath": "Folder Path",
+        "pathPlaceholder": "/storage/emulated/0/Download",
+        "add": "Add Folder",
+        "cancel": "Cancel",
+        "invalidPath": "Please provide a valid folder path"
+      }
     },
     "excludes": {
       "title": "Exclude patterns",

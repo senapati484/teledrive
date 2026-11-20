@@ -63,6 +63,7 @@ import {
 } from "./manifest";
 import { sanitizeFolderSegment, walkSourceFolders } from "./walker";
 import { detectOS, getDeviceName } from "../secure/deviceInfo";
+import { acquireWakeLock, releaseWakeLock } from "@/lib/runtime/wakeLock";
 import { isHardError } from "../telegram/rateLimit";
 import { isIndexReady, waitForIndexReady } from "../telegram/indexReadiness";
 import { reconstructMissingFolders } from "../storage/metadataStore";
@@ -250,9 +251,11 @@ export function buildDeviceFolder(): string {
  */
 export async function runBackup(opts: RunBackupOptions): Promise<BackupRunResult> {
   const release = await backupMutex.acquire();
+  await acquireWakeLock();
   try {
     return await runBackupInner(opts);
   } finally {
+    await releaseWakeLock();
     release();
   }
 }

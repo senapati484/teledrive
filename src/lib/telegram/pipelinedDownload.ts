@@ -186,6 +186,7 @@ export async function* iteratePipelinedDownloadParts(
     const offset = partIdx * requestSize;
     let timedOutOnce = false;
     let refreshedRef = false;
+    let disconnectRetries = 0;
 
     for (;;) {
       if (signal?.aborted) {
@@ -237,6 +238,22 @@ export async function* iteratePipelinedDownloadParts(
         if (err?.errorMessage === "TIMEOUT" && !timedOutOnce) {
           timedOutOnce = true;
           await sleep(500);
+          continue;
+        }
+        if (
+          disconnectRetries < 3 &&
+          /disconnect|socket|network|fetch|timeout|reset|handshake/i.test(
+            err?.message || err?.errorMessage || String(err)
+          )
+        ) {
+          disconnectRetries++;
+          try {
+            const { ensureConnected } = await import("./client");
+            await ensureConnected();
+          } catch {
+            // ignore reconnection failure during retry
+          }
+          await sleep(1000 * disconnectRetries);
           continue;
         }
         throw err;

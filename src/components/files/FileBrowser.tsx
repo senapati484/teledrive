@@ -606,12 +606,17 @@ const FileListRow = React.memo(function FileListRow({
             className="h-4 w-4 rounded-sm border-slate-300 dark:border-white/[0.1] text-[#0b57d0] focus:ring-[#0b57d0]/20 dark:bg-[#161719] transition-colors cursor-pointer"
           />
         </td>
-        <td className="py-2 sm:py-3 px-2.5 sm:px-4 font-medium text-[#1f1f1f] dark:text-[#e3e3e3] text-xs md:text-sm">
+        <td className="py-2 sm:py-3 px-2.5 sm:px-4 font-medium text-[#1f1f1f] dark:text-[#e3e3e3] text-xs md:text-sm w-full sm:w-auto">
           <div className="flex items-center gap-2.5 sm:gap-3 pointer-events-none">
             <FileIcon name={file.name} mime={file.mime} size="sm" className="shrink-0" />
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1.5">
-                <span className="truncate max-w-[170px] sm:max-w-xs">{file.name}</span>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span
+                  className="font-medium text-left line-clamp-2 sm:line-clamp-1 break-words sm:truncate min-w-0 flex-1"
+                  title={file.name}
+                >
+                  {file.name}
+                </span>
                 {file.starred && (
                   <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400 shrink-0 ml-0.5" />
                 )}
@@ -1976,7 +1981,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                     className="h-4 w-4 rounded-sm border-slate-300 dark:border-white/[0.1] text-[#0b57d0] focus:ring-[#0b57d0]/20 dark:bg-[#161719] transition-colors cursor-pointer"
                   />
                 </th>
-                <th className="py-3 px-4 font-semibold">{t("browser.columns.name")}</th>
+                <th className="py-3 px-4 font-semibold w-full sm:w-auto">{t("browser.columns.name")}</th>
                 <th className="py-3 px-4 hidden sm:table-cell font-semibold">{t("browser.columns.type")}</th>
                 <th className="py-3 px-4 hidden md:table-cell font-semibold">{t("browser.columns.fileSize")}</th>
                 <th className="py-3 px-4 hidden lg:table-cell font-semibold">{t("browser.columns.lastModified")}</th>

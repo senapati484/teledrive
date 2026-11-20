@@ -83,6 +83,23 @@ export function getClient(): TelegramClient {
   return clientInstance;
 }
 
+/**
+ * Ensures the client instance is connected. If the connection was dropped
+ * (e.g. app was backgrounded or network socket dropped), attempts to reconnect.
+ */
+export async function ensureConnected(): Promise<TelegramClient> {
+  const client = getClient();
+  if (!client.connected) {
+    try {
+      await client.connect();
+      isConnectedStatus = true;
+    } catch (err) {
+      logger.warn("[TelegramClient] Reconnection attempt failed:", err);
+    }
+  }
+  return client;
+}
+
 export async function disconnectClient(): Promise<void> {
   const client = clientInstance;
   clientInstance = null;
