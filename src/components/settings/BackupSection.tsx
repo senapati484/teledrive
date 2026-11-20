@@ -34,6 +34,14 @@ import {
   ArrowRight,
   Shield,
   AlertTriangle,
+  Camera,
+  Download,
+  Image,
+  FileText,
+  Music,
+  Film,
+  MessageSquare,
+  Send,
 } from "lucide-react";
 import { open as tauriOpenDialog } from "@tauri-apps/plugin-dialog";
 import { Button } from "@/components/ui/button";
@@ -44,6 +52,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { isMobilePlatform } from "@/lib/platform";
+import { cn } from "@/lib/utils";
 import { useBackupSchedule } from "@/hooks/useBackupSchedule";
 import { useBackupFolders } from "@/hooks/useBackupFolders";
 import { useBackupRunner } from "@/hooks/useBackupRunner";
@@ -114,6 +132,19 @@ export default function BackupSection() {
 
   const [excludeDraft, setExcludeDraft] = useState("");
   const [pendingInterval, setPendingInterval] = useState<string | null>(null);
+  const [folderDialogOpen, setFolderDialogOpen] = useState(false);
+  const [manualFolderInput, setManualFolderInput] = useState("");
+
+  const MOBILE_FOLDER_PRESETS = [
+    { label: t("backup.folders.dialog.camera"), path: "/storage/emulated/0/DCIM/Camera", icon: Camera },
+    { label: t("backup.folders.dialog.downloads"), path: "/storage/emulated/0/Download", icon: Download },
+    { label: t("backup.folders.dialog.pictures"), path: "/storage/emulated/0/Pictures", icon: Image },
+    { label: t("backup.folders.dialog.documents"), path: "/storage/emulated/0/Documents", icon: FileText },
+    { label: t("backup.folders.dialog.music"), path: "/storage/emulated/0/Music", icon: Music },
+    { label: t("backup.folders.dialog.movies"), path: "/storage/emulated/0/Movies", icon: Film },
+    { label: t("backup.folders.dialog.whatsapp"), path: "/storage/emulated/0/Android/media/com.whatsapp/WhatsApp/Media", icon: MessageSquare },
+    { label: t("backup.folders.dialog.telegram"), path: "/storage/emulated/0/Download/Telegram", icon: Send },
+  ];
 
   const isRunning = scheduleIsRunning || runnerIsRunning;
 
@@ -143,6 +174,12 @@ export default function BackupSection() {
       toast.warning(t("backup.toasts.maxFolders", { count: MAX_FOLDERS }));
       return;
     }
+
+    if (isMobilePlatform()) {
+      setFolderDialogOpen(true);
+      return;
+    }
+
     try {
       const selected = await tauriOpenDialog({
         directory: true,
@@ -153,11 +190,20 @@ export default function BackupSection() {
       // Auto-save — folder appears in the list immediately.
       addFolder(selected);
     } catch (err) {
-      logger.warn("[BackupSection] folder picker failed:", err);
-      toast.error(t("backup.toasts.pickerFailed"), {
-        description: err instanceof Error ? err.message : String(err),
-      });
+      logger.warn("[BackupSection] native folder picker failed, falling back to manual dialog:", err);
+      setFolderDialogOpen(true);
     }
+  }
+
+  function handleConfirmManualFolder(folderPathToUse?: string) {
+    const target = (folderPathToUse ?? manualFolderInput).trim();
+    if (!target) {
+      toast.error(t("backup.folders.dialog.invalidPath"));
+      return;
+    }
+    addFolder(target);
+    setManualFolderInput("");
+    setFolderDialogOpen(false);
   }
 
   function handleAddExclude() {
@@ -257,16 +303,119 @@ export default function BackupSection() {
                 ))}
               </ul>
             )}
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleAddFolder}
-              disabled={paths.length >= MAX_FOLDERS}
-              className="rounded-full text-xs font-medium border-slate-300 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-200 cursor-pointer h-9 px-4"
-            >
-              <FolderPlus className="h-3.5 w-3.5 mr-1.5 text-[#0B57D0] dark:text-[#8ab4f8]" />
-              {t("backup.folders.add")}
-            </Button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleAddFolder}
+                disabled={paths.length >= MAX_FOLDERS}
+                className="rounded-full text-xs font-medium border-slate-300 dark:border-white/[0.08] hover:bg-slate-100 dark:hover:bg-white/[0.06] text-slate-700 dark:text-slate-200 cursor-pointer h-9 px-4"
+              >
+                <FolderPlus className="h-3.5 w-3.5 mr-1.5 text-[#0B57D0] dark:text-[#8ab4f8]" />
+                {t("backup.folders.add")}
+              </Button>
+              {!isMobilePlatform() && (
+                <button
+                  type="button"
+                  onClick={() => setFolderDialogOpen(true)}
+                  disabled={paths.length >= MAX_FOLDERS}
+                  className="text-xs text-[#0B57D0] dark:text-[#8ab4f8] hover:underline px-2 py-1"
+                >
+                  {t("backup.folders.enterManually")}
+                </button>
+              )}
+            </div>
+
+            <Dialog open={folderDialogOpen} onOpenChange={setFolderDialogOpen}>
+              <DialogContent className="max-w-md p-6 bg-white dark:bg-[#161719] border border-slate-200/80 dark:border-white/[0.08] rounded-2xl">
+                <DialogHeader>
+                  <DialogTitle className="text-base font-semibold text-[#1F1F1F] dark:text-[#E3E3E3]">
+                    {t("backup.folders.dialog.title")}
+                  </DialogTitle>
+                  <DialogDescription className="text-xs text-[#444746] dark:text-[#C4C7C5]">
+                    {t("backup.folders.dialog.description")}
+                  </DialogDescription>
+                </DialogHeader>
+
+                {isMobilePlatform() && (
+                  <div className="space-y-2 mt-2">
+                    <span className="text-xs font-medium text-[#444746] dark:text-[#C4C7C5]">
+                      {t("backup.folders.dialog.presets")}
+                    </span>
+                    <div className="grid grid-cols-2 gap-2">
+                      {MOBILE_FOLDER_PRESETS.map((preset) => {
+                        const Icon = preset.icon;
+                        const isAdded = paths.includes(preset.path);
+                        return (
+                          <button
+                            key={preset.path}
+                            type="button"
+                            disabled={isAdded}
+                            onClick={() => handleConfirmManualFolder(preset.path)}
+                            className={cn(
+                              "flex items-center gap-2 p-2 rounded-xl border text-xs text-left transition-all",
+                              isAdded
+                                ? "opacity-50 cursor-not-allowed bg-slate-50 dark:bg-white/[0.02] border-slate-200/40 dark:border-white/[0.04]"
+                                : "hover:bg-slate-50 dark:hover:bg-white/[0.04] border-slate-200/80 dark:border-white/[0.08] active:scale-[0.98]"
+                            )}
+                          >
+                            <Icon className="h-4 w-4 text-[#0B57D0] dark:text-[#8ab4f8] shrink-0" />
+                            <div className="min-w-0 flex-1 truncate">
+                              <div className="font-medium text-[#1F1F1F] dark:text-[#E3E3E3] truncate">
+                                {preset.label}
+                              </div>
+                              <div className="text-[10px] text-[#747775] truncate font-mono">
+                                {preset.path.split("/").slice(-2).join("/")}
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-2 mt-3">
+                  <label className="text-xs font-medium text-[#444746] dark:text-[#C4C7C5]">
+                    {t("backup.folders.dialog.customPath")}
+                  </label>
+                  <Input
+                    value={manualFolderInput}
+                    onChange={(e) => setManualFolderInput(e.target.value)}
+                    placeholder={t("backup.folders.dialog.pathPlaceholder")}
+                    className="text-xs font-mono h-9 bg-slate-50 dark:bg-[#060709] border-slate-300 dark:border-white/[0.08]"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleConfirmManualFolder();
+                      }
+                    }}
+                  />
+                </div>
+
+                <DialogFooter className="mt-4 flex gap-2 justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setFolderDialogOpen(false);
+                      setManualFolderInput("");
+                    }}
+                    className="rounded-full text-xs"
+                  >
+                    {t("backup.folders.dialog.cancel")}
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => handleConfirmManualFolder()}
+                    disabled={!manualFolderInput.trim()}
+                    className="rounded-full text-xs bg-[#0B57D0] hover:bg-[#0B57D0]/90 text-white"
+                  >
+                    {t("backup.folders.dialog.add")}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
       </div>

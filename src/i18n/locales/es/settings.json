@@ -77,7 +77,26 @@
       "description": "Las carpetas se reflejan en la raíz de copia de seguridad del dispositivo y se mantienen sincronizadas. Se guarda automáticamente.",
       "empty": "Aún no se han añadido carpetas. Haz clic en “Añadir carpeta” a continuación.",
       "add": "Añadir carpeta",
-      "pickerTitle": "Elige una carpeta para respaldar"
+      "enterManually": "Introducir ruta manualmente",
+      "pickerTitle": "Elige una carpeta para respaldar",
+      "dialog": {
+        "title": "Seleccionar carpeta de origen",
+        "description": "Elige una carpeta predeterminada en tu dispositivo o introduce una ruta manualmente.",
+        "presets": "Carpetas comunes del dispositivo",
+        "camera": "Cámara (DCIM)",
+        "downloads": "Descargas",
+        "pictures": "Imágenes",
+        "documents": "Documentos",
+        "music": "Música",
+        "movies": "Películas",
+        "whatsapp": "Multimedia de WhatsApp",
+        "telegram": "Descargas de Telegram",
+        "customPath": "Ruta de la carpeta",
+        "pathPlaceholder": "/storage/emulated/0/Download",
+        "add": "Añadir carpeta",
+        "cancel": "Cancelar",
+        "invalidPath": "Introduce una ruta de carpeta válida"
+      }
     },
     "excludes": {
       "title": "Patrones de exclusión",

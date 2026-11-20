@@ -208,6 +208,14 @@ export async function withTelegramRetry<T>(
         floodSeconds: parseFloodWaitSeconds(err),
         error: err,
       });
+      if (/disconnect|socket|network|fetch|timeout|reset/i.test(err?.message || String(err))) {
+        try {
+          const { ensureConnected } = await import("./client");
+          await ensureConnected();
+        } catch {
+          // ignore reconnection error during retry
+        }
+      }
       await new Promise((r) => setTimeout(r, delay));
     }
   }

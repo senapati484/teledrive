@@ -29,6 +29,7 @@ import {
   saveUploadCheckpoint,
   type UploadCheckpoint,
 } from "../upload/uploadCheckpoints";
+import { acquireWakeLock, releaseWakeLock } from "@/lib/runtime/wakeLock";
 import type { TeleFileEncryption, TeleFileSegment } from "../types";
 
 export const UPLOAD_CHUNK_SIZE = 512 * 1024; // 512 KiB recommended chunk size for Telegram
@@ -278,7 +279,9 @@ export async function uploadFileToTelegram(
     throw new Error(`Cannot upload 0-byte file "${fileName}": Telegram MTProto requires at least 1 byte.`);
   }
 
-  const allowMultiSegment = advanced?.allowMultiSegment ?? true;
+  await acquireWakeLock();
+  try {
+    const allowMultiSegment = advanced?.allowMultiSegment ?? true;
   const isEncrypted = Boolean(advanced?.encryptionKey);
   const effectiveWireTotalEstimate = isEncrypted
     ? E2EE_HEADER_BYTES +
@@ -724,10 +727,13 @@ export async function uploadFileToTelegram(
     }
   }
 
-  return {
-    message: primaryMessage,
-    hash: contentHash,
-    ...(finalSegments ? { segments: finalSegments } : {}),
-    ...(encMeta ? { enc: encMeta } : {}),
-  } satisfies HashedUploadResult;
+    return {
+      message: primaryMessage,
+      hash: contentHash,
+      ...(finalSegments ? { segments: finalSegments } : {}),
+      ...(encMeta ? { enc: encMeta } : {}),
+    } satisfies HashedUploadResult;
+  } finally {
+    await releaseWakeLock();
+  }
 }

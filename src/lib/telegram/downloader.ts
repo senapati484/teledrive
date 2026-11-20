@@ -29,6 +29,7 @@ import {
   iteratePipelinedDownloadParts,
 } from "./pipelinedDownload";
 import { isWebRuntime, triggerBrowserBlobDownload } from "../runtime/bridge";
+import { acquireWakeLock, releaseWakeLock } from "@/lib/runtime/wakeLock";
 
 export interface DownloadFileOptions {
   segments?: TeleFileSegment[];
@@ -151,6 +152,7 @@ async function runDownload(job: DownloadJob): Promise<void> {
   job.lastTickAt = Date.now();
   job.lastTickBytes = job.received;
 
+  await acquireWakeLock();
   try {
     const client = getClient();
     if (!client.connected) {
@@ -255,6 +257,7 @@ async function runDownload(job: DownloadJob): Promise<void> {
     }
   } finally {
     job.running = false;
+    await releaseWakeLock();
   }
 }
 
@@ -479,6 +482,7 @@ export async function downloadFileFromTelegram(
   onProgress?: (progress: number) => void,
   options?: DownloadFileOptions
 ): Promise<void> {
+  await acquireWakeLock();
   try {
     let decryptionKey: CryptoKey | null = options?.encryptionKey ?? null;
     if (options?.enc && options.enc.v === 1 && !decryptionKey) {
@@ -649,6 +653,8 @@ export async function downloadFileFromTelegram(
     }
     toast.error(error?.message || i18n.t("messages:download.failed"));
     throw error;
+  } finally {
+    await releaseWakeLock();
   }
 }
 
@@ -700,6 +706,7 @@ export async function streamFileToLocalPath(
     written += merged.length;
   };
 
+  await acquireWakeLock();
   try {
     for await (const chunk of iterateTelegramPlainChunks({
       peer,
@@ -747,6 +754,8 @@ export async function streamFileToLocalPath(
   } catch (err) {
     await discardDownloadFile(targetPath);
     throw err;
+  } finally {
+    await releaseWakeLock();
   }
 }
 
