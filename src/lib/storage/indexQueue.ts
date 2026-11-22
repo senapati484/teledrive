@@ -48,6 +48,7 @@ import {
 import i18n from "@/i18n";
 import { IndexNotReadyError, isIndexReady } from "../telegram/indexReadiness";
 import { logVaultState } from "../runtime/bridge";
+import { compactBackupCatalog } from "../backup/catalog";
 
 export { IndexNotReadyError } from "../telegram/indexReadiness";
 
@@ -646,6 +647,9 @@ class ChannelQueue {
    * the same RPC instead of deleting/resending the whole index.
    */
   private async commitOnce(state: TeleFile[]): Promise<void> {
+    // Startup replay can contain an old optimistic snapshot. Compact at
+    // the writer, so both replay and ordinary saves respect the same rule.
+    state = compactBackupCatalog(state);
     try {
       await this.commitAttempt(state);
     } catch (err: any) {
