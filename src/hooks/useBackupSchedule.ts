@@ -18,7 +18,7 @@ import {
 export type BackupIntervalMinutes = number | null;
 
 export interface UseBackupSchedule {
-  /** Current schedule. null = disabled. 1440 = daily, 10080 = weekly. */
+  /** Current schedule. null = disabled, 0 = on change. */
   intervalMinutes: BackupIntervalMinutes;
   /** Always true — backup scheduling is available to all users. */
   isPro: boolean;
@@ -46,7 +46,7 @@ export function useBackupSchedule(): UseBackupSchedule {
 
   const intervalMinutes = useMemo<BackupIntervalMinutes>(() => {
     const v = license?.scheduledBackupIntervalMinutes;
-    return typeof v === "number" && v > 0 ? v : null;
+    return typeof v === "number" && v >= 0 ? v : null;
   }, [license?.scheduledBackupIntervalMinutes]);
 
   useEffect(() => {

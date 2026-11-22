@@ -98,6 +98,7 @@
     "cancelled": "Backup cancelado",
     "failed": "Falha no backup",
     "retryRateLimit": "Tentativa {{attempt}}/{{maxAttempts}} — limite de requisições do Telegram, aguardando {{seconds}}s",
+    "waitingTelegram": "Aguardando o Telegram até {{time}} (faltam {{remaining}}). O backup continua sozinho.",
     "retryNetwork": "Tentativa {{attempt}}/{{maxAttempts}} — instabilidade na rede, aguardando {{seconds}}s",
     "readingFolders": "Lendo o conteúdo das pastas no disco",
     "summaryUploaded_one": "{{count}} enviado",

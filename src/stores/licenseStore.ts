@@ -90,7 +90,7 @@ function loadBackupSchedule(): number | null {
 function saveBackupSchedule(intervalMinutes: number | null): void {
   try {
     localStorage.setItem(BACKUP_SCHEDULE_KEY, JSON.stringify(intervalMinutes));
-    if (intervalMinutes != null && intervalMinutes > 0) {
+    if (intervalMinutes != null && intervalMinutes >= 0) {
       localStorage.setItem(BACKUP_SCHEDULE_ENABLED_AT_KEY, String(Date.now()));
     } else {
       localStorage.removeItem(BACKUP_SCHEDULE_ENABLED_AT_KEY);

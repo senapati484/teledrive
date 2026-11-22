@@ -77,3 +77,36 @@ describe("isBackupDue", () => {
     expect(isBackupDue(base({ intervalMinutes: 0 }))).toBe(false);
   });
 });
+
+describe("isBackupDue after a partial run", () => {
+  const partial = (failed: number) => ({
+    status: "partial" as const,
+    uploaded: 3,
+    skipped: 0,
+    failed,
+    missingRoots: [],
+  });
+
+  it("retries failed files after an hour instead of a whole day", () => {
+    const daily = { intervalMinutes: 1440, lastSuccessAt: NOW - 2 * HOUR };
+    expect(
+      isBackupDue(base({ ...daily, lastAttemptAt: NOW - 2 * HOUR, lastResult: partial(2) })),
+    ).toBe(true);
+    expect(
+      isBackupDue(base({ ...daily, lastAttemptAt: NOW - 30 * 60_000, lastResult: partial(2) })),
+    ).toBe(false);
+  });
+
+  it("does not retry early when only source folders were missing", () => {
+    expect(
+      isBackupDue(
+        base({
+          intervalMinutes: 1440,
+          lastSuccessAt: NOW - 2 * HOUR,
+          lastAttemptAt: NOW - 2 * HOUR,
+          lastResult: partial(0),
+        }),
+      ),
+    ).toBe(false);
+  });
+});

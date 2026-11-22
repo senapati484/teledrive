@@ -55,18 +55,20 @@ import {
   ensureManifest,
   guessMimeFromName,
   isManifestCorrupt,
+  KEEP_VERSIONS,
   saveManifest,
   updateEntryStats,
   type BackupManifestV2,
   type ManifestEntryV2,
+  type ManifestVersion,
   type BackupRunSummary,
 } from "./manifest";
 import { sanitizeFolderSegment, walkSourceFolders } from "./walker";
 import { detectOS, getDeviceName } from "../secure/deviceInfo";
 import { acquireWakeLock, releaseWakeLock } from "@/lib/runtime/wakeLock";
-import { isHardError } from "../telegram/rateLimit";
+import { isHardError, parseFloodWaitSeconds } from "../telegram/rateLimit";
 import { isIndexReady, waitForIndexReady } from "../telegram/indexReadiness";
-import { reconstructMissingFolders } from "../storage/metadataStore";
+import { folderIdForPath, reconstructMissingFolders } from "../storage/metadataStore";
 import { isChannelQueueRateLimited } from "../storage/indexQueue";
 import { flushBackupIndexSave, queueBackupIndexSave } from "./indexSave";
 import { deleteMessages } from "./telegramOps";
@@ -83,6 +85,13 @@ import i18n from "@/i18n";
  * for SaveFilePart + SaveBigFilePart + sendFile RPC triplets.
  */
 const BACKUP_BATCH_SIZE = 3;
+/**
+ * A FLOOD_WAIT that outlasts the uploader's own retries pauses the whole run
+ * until Telegram's deadline, then retries the same file. Moving on would only
+ * hit the same limit on every remaining file. After this many pauses in a row
+ * without a successful upload, the run stops.
+ */
+const MAX_FLOOD_PAUSES = 3;
 const BACKUP_BREATHER_MS = 2_000;
 
 /**
@@ -199,6 +208,7 @@ export interface RunBackupOptions {
   onProgress?: (info: { uploaded: number; total: number; currentFile: string }) => void;
   /** Skip local hashing above this size. Defaults to 2 GiB. */
   hashSizeCapBytes?: number;
+  changedPaths?: ReadonlySet<string>;
 }
 
 /**
@@ -378,15 +388,36 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
       deviceOs: detectOS(),
     };
   }
+  // Keep uploading under the folder this manifest already uses, so renaming
+  // the computer does not split the backup into two device folders.
+  const deviceRoot = resolveDeviceRoot(manifest);
+  if (manifest.deviceRoot !== deviceRoot) manifest = { ...manifest, deviceRoot };
 
   const hashSizeCap = opts.hashSizeCapBytes ?? DEFAULT_HASH_SIZE_CAP_BYTES;
-  const diff = diffAgainstManifest(manifest, walk.files);
+  const diff = diffAgainstManifest(manifest, walk.files, opts.changedPaths);
+  const moveCandidates = new Map<number, typeof diff.missing>();
+  if (walkHealthy) {
+    for (const item of diff.missing) {
+      if (!item.entry.hash || !pickSourceRoot(item.absPath, folders.paths)) continue;
+      const matches = moveCandidates.get(item.entry.size) ?? [];
+      matches.push(item);
+      moveCandidates.set(item.entry.size, matches);
+    }
+  }
+  const moves: { from: string; to: string; entry: ManifestEntryV2; file: TeleFile }[] = [];
+  const movedPaths = new Set<string>();
+  const remoteByMessage = new Map(
+    useFileStore.getState().files
+      .filter((file) => file.channelId === channelId && !file.trashed && !file.archived)
+      .map((file) => [file.messageId, file]),
+  );
   const totalToUpload = diff.toUpload.length;
   let filesUploaded = 0;
   let filesSkipped = diff.unchanged.length;
   let filesFailed = 0;
   let firstError: string | null = null;
   let indexPaused = false;
+  let floodPauses = 0;
 
   const indexReady = await waitForIndexReady(8000);
   if (!indexReady) {
@@ -412,7 +443,7 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
         file,
         folders.paths,
         rootDisplayBasename,
-        baseResult.deviceRoot,
+        deviceRoot,
       );
     } catch (err) {
       filesFailed++;
@@ -452,12 +483,36 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
     }
 
     if (!prior) {
+      const candidates = moveCandidates.get(file.size);
+      if (candidates?.length && file.size <= hashSizeCap) {
+        try {
+          const hash = await hashLocalFile(file.absPath);
+          const matches = candidates.filter((item) =>
+            item.entry.hash === hash && !movedPaths.has(item.absPath) &&
+            remoteByMessage.has(item.entry.messageId));
+          if (matches.length === 1) {
+            const { absPath, entry } = matches[0];
+            const remote = remoteByMessage.get(entry.messageId)!;
+            movedPaths.add(absPath);
+            moves.push({
+              from: absPath,
+              to: file.absPath,
+              entry: { ...updateEntryStats(entry, file), folderPath: target.folderPath },
+              file: { ...remote, name: target.fileName, folderPath: target.folderPath },
+            });
+            filesSkipped++;
+            continue;
+          }
+        } catch (err) {
+          logger.warn("[backup.runner] Could not verify a moved file:", err);
+        }
+      }
       const adopted = await adoptExistingUpload(
         channelId,
         target.folderPath,
         target.fileName,
-        file.size,
-        manifest,
+        file,
+        hashSizeCap,
       );
       if (adopted) {
         try {
@@ -517,12 +572,7 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
         );
       }
 
-      const previousMessageIds = prior
-        ? [
-            prior.messageId,
-            ...(prior.previousMessageIds ?? []),
-          ].filter((id, index, list) => list.indexOf(id) === index && id !== messageId)
-        : undefined;
+      const { versions, previousMessageIds } = retireVersions(prior, messageId);
       const entry: ManifestEntryV2 = {
         mtimeMs: file.mtimeMs,
         size: file.size,
@@ -530,9 +580,8 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
         folderPath: target.folderPath,
         uploadedAt: new Date().toISOString(),
         ...(contentHash ? { hash: contentHash } : {}),
-        ...(previousMessageIds && previousMessageIds.length > 0
-          ? { previousMessageIds }
-          : {}),
+        ...(previousMessageIds.length > 0 ? { previousMessageIds } : {}),
+        ...(versions.length > 0 ? { versions } : {}),
       };
       await appendManifestEntry(
         channelId,
@@ -559,7 +608,10 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
         starred: false,
         trashed: false,
       };
-      const replacedIds = new Set(previousMessageIds ?? []);
+      const replacedIds = new Set([
+        ...previousMessageIds,
+        ...versions.map((v) => v.messageId),
+      ]);
       const existingFiles = useFileStore.getState().files;
       const kept = existingFiles.filter(
         (f) =>
@@ -575,6 +627,7 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
       queueBackupIndexSave(channelId, healedFiles);
 
       filesUploaded++;
+      floodPauses = 0;
       opts.onProgress?.({
         uploaded: filesUploaded + filesFailed,
         total: totalToUpload,
@@ -593,6 +646,21 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
         await interruptibleSleep(BACKUP_BREATHER_MS, opts.signal);
       }
     } catch (err) {
+      const floodSeconds = parseFloodWaitSeconds(err);
+      if (floodSeconds !== null && !opts.signal?.aborted && floodPauses < MAX_FLOOD_PAUSES) {
+        floodPauses++;
+        const until = Date.now() + (floodSeconds + 2) * 1000;
+        logger.warn(
+          `[backup.runner] Telegram asked to wait ${floodSeconds}s; pausing the backup until ${new Date(until).toISOString()}`,
+        );
+        useBackupProgressStore.getState().setWaitingUntil(until);
+        await interruptibleSleep(until - Date.now(), opts.signal);
+        useBackupProgressStore.getState().setWaitingUntil(null);
+        if (!opts.signal?.aborted) {
+          i--; // retry the same file
+          continue;
+        }
+      }
       filesFailed++;
       const msg = err instanceof Error ? err.message : String(err);
       firstError ??= msg;
@@ -610,10 +678,54 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
         firstError ??= i18n.t("messages:backup.errors.sessionExpired");
         break;
       }
+      if (floodSeconds !== null && !opts.signal?.aborted) {
+        filesFailed += diff.toUpload.length - i - 1;
+        firstError = i18n.t("messages:backup.errors.rateLimited", {
+          minutes: Math.max(1, Math.ceil(floodSeconds / 60)),
+        });
+        break;
+      }
     }
   }
 
   const cancelled = Boolean(opts.signal?.aborted);
+  if (moves.length && !cancelled && !isIndexReady()) {
+    filesSkipped -= moves.length;
+    indexPaused = true;
+    firstError ??= i18n.t("messages:indexLoad.changesPaused");
+  } else if (moves.length && !cancelled) {
+    const existing = useFileStore.getState().files;
+    const replacements = new Map(moves.map(({ file }) => [file.id, file]));
+    const formerAncestors = new Set<string>();
+    for (const { from } of moves) {
+      let path = manifest.entries[from].folderPath;
+      while (path.startsWith(deviceRoot + "/")) {
+        formerAncestors.add(path);
+        path = path.slice(0, path.lastIndexOf("/"));
+      }
+    }
+    const updated = existing.map((file) => replacements.get(file.id) ?? file);
+    const pruned = updated.filter((file) => {
+      const path = `${file.folderPath}/${file.name}`;
+      return file.channelId !== channelId || !formerAncestors.has(path) ||
+        file.mime !== "inode/directory" || file.messageId !== 0 ||
+        file.id !== folderIdForPath(path);
+    });
+    const { healedFiles } = reconstructMissingFolders(pruned, channelId);
+    useFileStore.getState().setFiles(healedFiles);
+    queueBackupIndexSave(channelId, healedFiles);
+    const saved = await flushBackupIndexSave(channelId);
+    if (saved.ok) {
+      for (const move of moves) {
+        delete manifest.entries[move.from];
+        manifest.entries[move.to] = move.entry;
+      }
+    } else {
+      filesSkipped -= moves.length;
+      filesFailed += moves.length;
+      firstError ??= saved.error ?? i18n.t("messages:indexLoad.changesPaused");
+    }
+  }
   let status: BackupRunResult["status"];
   if (cancelled) status = "cancelled";
   else if (filesUploaded > 0 && filesFailed > 0) status = "partial";
@@ -679,7 +791,7 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
 
   return {
     triggeredBy: opts.triggeredBy,
-    deviceRoot: baseResult.deviceRoot,
+    deviceRoot,
     totalFound: walk.files.length,
     filesUploaded,
     filesSkipped,
@@ -726,32 +838,104 @@ function computeUploadTarget(
   return { fileName, folderPath };
 }
 
+/**
+ * Link a local file to a copy that is already in the channel instead of
+ * uploading it again. This keeps a lost or rebuilt manifest (new install,
+ * corrupt file) from duplicating the whole backup.
+ *
+ * A candidate must sit at the same location with the same name and size.
+ * When it carries a content hash, the local file must hash the same; without
+ * one, it must have been uploaded after the local file was last modified.
+ */
 async function adoptExistingUpload(
   channelId: string,
   folderPath: string,
   fileName: string,
-  size: number,
-  manifest: BackupManifestV2,
+  file: { absPath: string; size: number; mtimeMs: number },
+  hashSizeCap: number,
 ): Promise<ManifestEntryV2 | null> {
-  const since = manifest.lastAttemptAt ?? Date.now() - 60 * 60 * 1000;
-  const candidate = useFileStore.getState().files.find(
-    (f) =>
-      f.channelId === channelId &&
-      f.folderPath === folderPath &&
-      f.name === fileName &&
-      f.size === size &&
-      f.uploadedAt >= since &&
-      typeof f.messageId === "number" &&
-      f.messageId > 0,
+  const candidates = useFileStore
+    .getState()
+    .files.filter(
+      (f) =>
+        f.channelId === channelId &&
+        f.folderPath === folderPath &&
+        f.name === fileName &&
+        f.size === file.size &&
+        !f.trashed &&
+        typeof f.messageId === "number" &&
+        f.messageId > 0,
+    )
+    .sort((a, b) => b.uploadedAt - a.uploadedAt);
+  if (candidates.length === 0) return null;
+
+  let localHash: string | null = null;
+  if (candidates.some((c) => c.hash) && file.size <= hashSizeCap) {
+    try {
+      localHash = await hashLocalFile(file.absPath);
+    } catch (err) {
+      logger.warn(`[backup.runner] could not hash ${fileName} for re-linking:`, err);
+    }
+  }
+  const match = candidates.find((c) =>
+    c.hash && localHash ? c.hash === localHash : c.uploadedAt >= file.mtimeMs,
   );
-  if (!candidate) return null;
+  if (!match) return null;
   return {
-    mtimeMs: manifest.lastAttemptAt ?? Date.now(),
-    size,
-    messageId: candidate.messageId,
+    mtimeMs: file.mtimeMs,
+    size: file.size,
+    messageId: match.messageId,
     folderPath,
-    uploadedAt: new Date(candidate.uploadedAt).toISOString(),
+    uploadedAt: new Date(match.uploadedAt).toISOString(),
+    ...(match.hash ? { hash: match.hash } : {}),
   };
+}
+
+/**
+ * Turn the previous upload into a kept version. Versions beyond
+ * KEEP_VERSIONS move to `previousMessageIds`, which the sweep deletes.
+ */
+export function retireVersions(
+  prior: ManifestEntryV2 | undefined,
+  newMessageId: number,
+): { versions: ManifestVersion[]; previousMessageIds: number[] } {
+  if (!prior) return { versions: [], previousMessageIds: [] };
+  const all: ManifestVersion[] = [
+    {
+      messageId: prior.messageId,
+      size: prior.size,
+      uploadedAt: prior.uploadedAt,
+      ...(prior.hash ? { hash: prior.hash } : {}),
+    },
+    ...(prior.versions ?? []),
+  ].filter(
+    (v, index, list) =>
+      v.messageId !== newMessageId &&
+      list.findIndex((other) => other.messageId === v.messageId) === index,
+  );
+  const versions = all.slice(0, KEEP_VERSIONS);
+  const kept = new Set(versions.map((v) => v.messageId));
+  const previousMessageIds = [
+    ...all.slice(KEEP_VERSIONS).map((v) => v.messageId),
+    ...(prior.previousMessageIds ?? []),
+  ].filter(
+    (id, index, list) =>
+      id !== newMessageId && !kept.has(id) && list.indexOf(id) === index,
+  );
+  return { versions, previousMessageIds };
+}
+
+/**
+ * The device folder this manifest uploads into. Older manifests did not
+ * record it; their entries already show which folder they used.
+ */
+export function resolveDeviceRoot(manifest: BackupManifestV2): string {
+  if (manifest.deviceRoot) return manifest.deviceRoot;
+  for (const entry of Object.values(manifest.entries)) {
+    const match = /^(\/TeleDrive Backups\/[^/]+)/.exec(entry.folderPath ?? "");
+    if (match) return match[1];
+  }
+  return buildDeviceFolder();
 }
 
 async function sweepGarbage(

@@ -32,12 +32,14 @@ import {
 import { useBackupProgressStore } from "@/stores/backupProgressStore";
 import { cancelBackup } from "@/lib/backup/controller";
 import { cn } from "@/lib/utils";
+import { formatClock, formatRemaining, useNow } from "@/lib/backup/waitFormat";
 
 const AUTO_DISMISS_MS = 6000;
 
 export function BackupProgressOverlay() {
   const state = useBackupProgressStore();
   const { t } = useTranslation("drive");
+  const now = useNow(state.waitingUntil !== null || state.retry !== null);
 
   // Track the last "done/failed/cancelled" timestamp so we can auto-
   // dismiss the panel after AUTO_DISMISS_MS. The store doesn't own
@@ -98,9 +100,15 @@ export function BackupProgressOverlay() {
       // chunk is in a FLOOD_WAIT backoff the user wants to know WHY the
       // counter is frozen ("Retrying 3/5 — waiting 30s for rate limit"),
       // not the long path of the file they're stuck on.
+      if (state.waitingUntil !== null) {
+        return t("backup.waitingTelegram", {
+          time: formatClock(state.waitingUntil),
+          remaining: formatRemaining(state.waitingUntil - now),
+        });
+      }
       if (state.retry) {
         const r = state.retry;
-        const waitSec = Math.max(1, Math.round(r.waitMs / 1000));
+        const waitSec = Math.max(1, Math.ceil((r.until - now) / 1000));
         if (r.floodSeconds != null) {
           return t("backup.retryRateLimit", { attempt: r.attempt, maxAttempts: r.maxAttempts, seconds: waitSec });
         }

@@ -26,14 +26,18 @@ import {
 } from "@/lib/sync/remoteSync";
 import {
   applyIntervalChange,
+  BACKUP_ON_CHANGE,
   checkDueBackup,
   ensureTickListenerStarted,
   stopBackupSchedule,
 } from "@/lib/backup/scheduler";
+import { watchBackupFolders } from "@/lib/backup/watch";
 import { getStorageChannelId } from "@/lib/telegram/channelManager";
 
 export default function RemoteSyncOrchestrator(): null {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const phoneNumber = useAuthStore((s) => s.phoneNumber);
+  const backupPaths = useLicenseStore((s) => s.backupFolders.paths);
   const indexLoadState = useFileStore((s) => s.indexLoadState);
   const bootstrapComplete = useFileStore((s) => s.bootstrapComplete);
   const syncIntervalMs = useUIStore((s) => s.syncIntervalMs);
@@ -66,12 +70,18 @@ export default function RemoteSyncOrchestrator(): null {
   // interval, push it to the Rust timer. On logout or disabled interval,
   // stop the timer so the daemon doesn't fire ticks unauthenticated.
   useEffect(() => {
-    if (!isAuthenticated || intervalMinutes === null || intervalMinutes <= 0) {
+    if (!isAuthenticated || intervalMinutes === null) {
       void applyIntervalChange(null);
       return;
     }
     void applyIntervalChange(intervalMinutes);
   }, [isAuthenticated, intervalMinutes]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !phoneNumber || !backupPaths.length ||
+        intervalMinutes !== BACKUP_ON_CHANGE) return;
+    return watchBackupFolders(backupPaths);
+  }, [isAuthenticated, phoneNumber, backupPaths, intervalMinutes]);
 
   // Effect 3 — react to auth + discovery changes. Start the remote sync loop
   // only when the index is complete/writable; stop while it is loading or

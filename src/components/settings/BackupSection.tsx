@@ -17,7 +17,7 @@
  *   app root), NOT inline in this section. The user can navigate away
  *   from Settings and still see the backup progress.
  */
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { logger } from "@/lib/logger";
 import { Trans, useTranslation } from "react-i18next";
 import {
@@ -70,12 +70,19 @@ import { formatDistanceToNow } from "@/lib/utils";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
+import { BACKUP_ON_CHANGE } from "@/lib/backup/scheduler";
+import { onManifestCorruptChange, rebuildManifest } from "@/lib/backup/manifest";
+import { useBackupWatchStatus } from "@/lib/backup/watch";
+import { formatClock, formatRemaining, useNow } from "@/lib/backup/waitFormat";
+import { isWebRuntime } from "@/lib/runtime/bridge";
+
 const INTERVAL_PRESETS: Array<{
   value: string;
   labelKey: string;
   minutes: number | null;
 }> = [
   { value: "off", labelKey: "backup.cadence.off", minutes: null },
+  { value: "on-change", labelKey: "backup.cadence.onChange", minutes: BACKUP_ON_CHANGE },
   { value: "6h", labelKey: "backup.cadence.every6h", minutes: 360 },
   { value: "12h", labelKey: "backup.cadence.every12h", minutes: 720 },
   { value: "24h", labelKey: "backup.cadence.every24h", minutes: 1440 },
@@ -113,6 +120,37 @@ export default function BackupSection() {
   // Read the latest result from the global progress store so we can
   // show it inline below the Run-now button.
   const liveResult = useBackupProgressStore((s) => s.lastResult);
+  const backupError = useBackupProgressStore((s) => s.error);
+  const waitingUntil = useBackupProgressStore((s) => s.waitingUntil);
+  const now = useNow(waitingUntil !== null);
+  const watchStatus = useBackupWatchStatus();
+  const [corruptChannel, setCorruptChannel] = useState<string | null>(null);
+  const [rebuilding, setRebuilding] = useState(false);
+
+  useEffect(
+    () =>
+      onManifestCorruptChange((channelId, quarantineKey) => {
+        setCorruptChannel((current) =>
+          quarantineKey !== null ? channelId : current === channelId ? null : current,
+        );
+      }),
+    [],
+  );
+
+  async function handleRebuildManifest() {
+    if (!corruptChannel) return;
+    setRebuilding(true);
+    try {
+      await rebuildManifest(corruptChannel);
+      toast.success(t("backup.rebuildManifestDone"));
+      void runRunnerNow();
+    } catch (err) {
+      logger.warn("[BackupSection] manifest rebuild failed:", err);
+      toast.error(t("backup.rebuildManifestFailed"));
+    } finally {
+      setRebuilding(false);
+    }
+  }
   const runCounts = liveResult
     ? {
         uploaded: liveResult.filesUploaded,
@@ -165,7 +203,6 @@ export default function BackupSection() {
   }
 
   async function handleAddFolder() {
-    const { isWebRuntime } = await import("@/lib/runtime/bridge");
     if (isWebRuntime()) {
       toast.info("Local folder backups require the desktop or mobile app.");
       return;
@@ -547,7 +584,8 @@ export default function BackupSection() {
                   align="start"
                   className="w-56 rounded-2xl bg-white dark:bg-[#0d0e11] border-slate-200 dark:border-white/[0.08] p-1.5 shadow-lg"
                 >
-                  {INTERVAL_PRESETS.map((p) => {
+                  {INTERVAL_PRESETS.filter((p) => p.minutes !== BACKUP_ON_CHANGE ||
+                    (!isWebRuntime() && !isMobilePlatform())).map((p) => {
                     const isCurrent = p.value === currentPreset;
                     return (
                       <DropdownMenuItem
@@ -611,6 +649,11 @@ export default function BackupSection() {
                 )}
               </div>
             )}
+            {!isRunning && backupError && (
+              <div role="alert" className="pl-5 text-[11px] text-rose-600 dark:text-rose-400">
+                {backupError}
+              </div>
+            )}
             {missingRoots.length > 0 && (
               <div
                 role="alert"
@@ -631,7 +674,51 @@ export default function BackupSection() {
                 </button>
               </div>
             )}
-            {isRunning && (
+            {corruptChannel && (
+              <div
+                role="alert"
+                className="mt-1 ml-5 flex flex-wrap items-center gap-2 rounded-xl border border-rose-300/60 bg-rose-50/80 dark:border-rose-700/40 dark:bg-rose-950/30 px-2.5 py-1.5 text-[11px] text-rose-800 dark:text-rose-200"
+              >
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                <span>{t("backup.manifestCorrupt")}</span>
+                <button
+                  type="button"
+                  disabled={rebuilding || isRunning}
+                  onClick={() => void handleRebuildManifest()}
+                  className="font-semibold underline underline-offset-2 hover:no-underline disabled:opacity-50"
+                >
+                  {t("backup.rebuildManifest")}
+                </button>
+              </div>
+            )}
+            {watchStatus.state !== "off" && watchStatus.state !== "active" &&
+              watchStatus.state !== "starting" && (
+              <div
+                role="alert"
+                className="mt-1 ml-5 flex flex-wrap items-center gap-2 rounded-xl border border-amber-300/60 bg-amber-50/80 dark:border-amber-700/40 dark:bg-amber-950/30 px-2.5 py-1.5 text-[11px] text-amber-800 dark:text-amber-200"
+              >
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                <span>
+                  {watchStatus.state === "error"
+                    ? t("backup.watch.error")
+                    : t("backup.watch.degraded", { count: watchStatus.unwatched.length })}
+                </span>
+              </div>
+            )}
+            {!isRunning && watchStatus.nextRetryAt !== null && (
+              <div className="pl-5 text-[11px] text-amber-700 dark:text-amber-300">
+                {t("backup.watch.nextRetry", { time: formatClock(watchStatus.nextRetryAt) })}
+              </div>
+            )}
+            {isRunning && waitingUntil !== null && (
+              <div role="status" className="pl-5 text-[11px] text-amber-700 dark:text-amber-300 font-medium">
+                {t("backup.waitingTelegram", {
+                  time: formatClock(waitingUntil),
+                  remaining: formatRemaining(waitingUntil - now),
+                })}
+              </div>
+            )}
+            {isRunning && waitingUntil === null && (
               <div className="pl-5 text-[11px] text-[#0B57D0] dark:text-[#8ab4f8] font-medium">
                 {t("backup.progressHint")}
               </div>

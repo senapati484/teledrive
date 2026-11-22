@@ -92,6 +92,7 @@
       "active": "Ativo",
       "description": "Com que frequência o TeleDrive deve verificar novamente suas pastas de origem. Só os arquivos alterados são enviados de novo.",
       "off": "Desativado",
+      "onChange": "Ao detectar alterações",
       "every6h": "A cada 6 horas",
       "every12h": "A cada 12 horas",
       "every24h": "A cada 24 horas"
@@ -111,6 +112,17 @@
       "failed_zero": "{{count}} com falha"
     },
     "progressHint": "Acompanhe o progresso no painel do canto inferior direito.",
+    "waitingTelegram": "Aguardando o Telegram até {{time}} (faltam {{remaining}}). O backup continua sozinho.",
+    "manifestCorrupt": "O registro de backup deste dispositivo está danificado, por isso o backup está pausado.",
+    "rebuildManifest": "Reconstruir a partir do Telegram",
+    "rebuildManifestDone": "Registro reconstruído. Os arquivos que já estão no Telegram serão religados, sem novo envio.",
+    "rebuildManifestFailed": "Não foi possível reconstruir o registro de backup.",
+    "watch": {
+      "error": "A monitoração de pastas não está funcionando. As alterações serão vistas na verificação periódica.",
+      "degraded_one": "{{count}} pasta não está sendo monitorada (ausente ou inacessível). Nova tentativa a cada 5 minutos.",
+      "degraded_other": "{{count}} pastas não estão sendo monitoradas (ausentes ou inacessíveis). Nova tentativa a cada 5 minutos.",
+      "nextRetry": "Alguns arquivos falharam. Próxima tentativa automática às {{time}}."
+    },
     "cancel": "Cancelar",
     "running": "Fazendo backup…",
     "runNow": "Fazer backup agora",

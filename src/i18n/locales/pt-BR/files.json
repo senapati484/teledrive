@@ -1,4 +1,11 @@
 {
+  "info": {
+    "versions": {
+      "title": "Versões anteriores",
+      "none": "Nenhuma versão anterior guardada para este arquivo.",
+      "download": "Baixar"
+    }
+  },
   "menu": {
     "preview": "Visualizar",
     "openInSystemApp": "Abrir no app do sistema",

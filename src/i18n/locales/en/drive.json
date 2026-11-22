@@ -96,6 +96,7 @@
     "cancelled": "Backup cancelled",
     "failed": "Backup failed",
     "retryRateLimit": "Retrying {{attempt}}/{{maxAttempts}} — Telegram rate limit, waiting {{seconds}}s",
+    "waitingTelegram": "Waiting for Telegram until {{time}} ({{remaining}} left). The backup resumes on its own.",
     "retryNetwork": "Retrying {{attempt}}/{{maxAttempts}} — network blip, waiting {{seconds}}s",
     "readingFolders": "Reading folder contents from disk",
     "summaryUploaded_one": "{{count}} uploaded",

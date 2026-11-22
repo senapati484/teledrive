@@ -45,6 +45,7 @@ tokio = { version = "1", features = ["sync", "time"] }
 # underlying platform crates are never pulled into Android/iOS.
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri = { version = "2", features = ["protocol-asset", "tray-icon"] }
+notify = "8.2"
 
 [profile.release]
 opt-level = 3

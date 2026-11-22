@@ -19,6 +19,7 @@
       "clientUnreachable": "Não foi possível acessar o cliente do Telegram: {{message}}",
       "walkerFailed": "Falha ao percorrer as pastas: {{message}}",
       "manifestCorrupt": "O manifesto do backup está corrompido. O envio foi bloqueado até que ele seja revisado.",
+      "rateLimited": "O Telegram pediu uma pausa nos envios de cerca de {{minutes}} min. Os arquivos restantes serão tentados depois.",
       "cancelled": "Cancelado pelo usuário.",
       "sessionExpired": "A sessão do Telegram expirou. Reconecte sua conta em Configurações → Conta do Telegram e execute o backup novamente."
     }

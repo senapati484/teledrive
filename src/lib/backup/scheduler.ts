@@ -38,6 +38,13 @@ import { useAuthStore } from "@/stores/authStore";
 import { channelIdKey, getSecret } from "../secure/vault";
 import { isWebRuntime } from "../runtime/bridge";
 
+export const BACKUP_ON_CHANGE = 0;
+const ON_CHANGE_RESCAN_MINUTES = 360;
+
+function effectiveInterval(minutes: number | null): number | null {
+  return minutes === BACKUP_ON_CHANGE ? ON_CHANGE_RESCAN_MINUTES : minutes;
+}
+
 let tickUnlisten: UnlistenFn | null = null;
 let currentIntervalMinutes: number | null = null;
 
@@ -50,6 +57,7 @@ let currentIntervalMinutes: number | null = null;
  * so any interval change is honored).
  */
 export async function applyIntervalChange(intervalMinutes: number | null): Promise<void> {
+  intervalMinutes = effectiveInterval(intervalMinutes);
   if (isWebRuntime()) {
     currentIntervalMinutes = intervalMinutes;
     return;
@@ -159,7 +167,7 @@ export async function loadBackupLastRun(): Promise<BackupLastRun | null> {
 export async function checkDueBackup(): Promise<boolean> {
   if (isBackupRunning()) return false;
   const interval =
-    useLicenseStore.getState().license?.scheduledBackupIntervalMinutes ?? null;
+    effectiveInterval(useLicenseStore.getState().license?.scheduledBackupIntervalMinutes ?? null);
   const folders = useLicenseStore.getState().backupFolders;
   if (!interval || interval <= 0 || !folders.paths?.length) return false;
   if (!isIndexReady()) return false;

@@ -542,6 +542,28 @@ fn get_session_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
 // changing the interval safe and idempotent.
 // ============================================================================
 
+#[cfg(desktop)]
+mod backup_watch;
+
+#[tauri::command]
+fn start_backup_watch(app: AppHandle, id: String, paths: Vec<String>) -> Result<Vec<String>, String> {
+    #[cfg(desktop)]
+    return backup_watch::start(app, id, paths);
+    #[cfg(not(desktop))]
+    {
+        let _ = (app, id, paths);
+        Err("Folder monitoring is only available on desktop".into())
+    }
+}
+
+#[tauri::command]
+fn stop_backup_watch(id: String) {
+    #[cfg(desktop)]
+    backup_watch::stop(&id);
+    #[cfg(not(desktop))]
+    let _ = id;
+}
+
 static SCHEDULED_BACKUP_HANDLE: OnceLock<AsyncMutex<Option<JoinHandle<()>>>> = OnceLock::new();
 
 fn handle_slot() -> &'static AsyncMutex<Option<JoinHandle<()>>> {
@@ -1523,6 +1545,8 @@ pub fn run() {
             save_backup_manifest,
             append_backup_manifest_journal,
             quarantine_backup_manifest,
+            start_backup_watch,
+            stop_backup_watch,
             start_backup_scheduler,
             stop_backup_scheduler,
             read_dir_recursive,

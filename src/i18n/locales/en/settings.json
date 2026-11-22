@@ -111,6 +111,7 @@
       "active": "Active",
       "description": "How often TeleDrive should re-scan your source folders. Only changed files are re-uploaded.",
       "off": "Off",
+      "onChange": "When files change",
       "every6h": "Every 6 hours",
       "every12h": "Every 12 hours",
       "every24h": "Every 24 hours"
@@ -138,6 +139,17 @@
       "failed_other": "{{count}} failed"
     },
     "progressHint": "See the progress panel in the bottom-right corner.",
+    "waitingTelegram": "Waiting for Telegram until {{time}} ({{remaining}} left). The backup resumes on its own.",
+    "manifestCorrupt": "This device's backup record is damaged, so backups are paused.",
+    "rebuildManifest": "Rebuild from Telegram",
+    "rebuildManifestDone": "Backup record rebuilt. Files already in Telegram will be re-linked, not uploaded again.",
+    "rebuildManifestFailed": "Could not rebuild the backup record.",
+    "watch": {
+      "error": "Folder monitoring is not working. Changes will be picked up by the periodic scan.",
+      "degraded_one": "{{count}} folder is not being monitored (missing or inaccessible). Trying again every 5 minutes.",
+      "degraded_other": "{{count}} folders are not being monitored (missing or inaccessible). Trying again every 5 minutes.",
+      "nextRetry": "Some files failed. Next automatic retry at {{time}}."
+    },
     "cancel": "Cancel",
     "running": "Backing up…",
     "runNow": "Run backup now",

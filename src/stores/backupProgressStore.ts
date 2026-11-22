@@ -65,7 +65,14 @@ export interface BackupProgressState {
     waitMs: number;
     /** Telegram's FLOOD_WAIT, if this retry was triggered by one. */
     floodSeconds: number | null;
+    /** Unix-ms when the next attempt starts (drives the countdown). */
+    until: number;
   } | null;
+  /**
+   * Unix-ms until which the whole run is paused because Telegram asked for
+   * a long FLOOD_WAIT. Null when not paused.
+   */
+  waitingUntil: number | null;
 
   // Actions
   start: (triggeredBy: "manual" | "auto") => void;
@@ -78,6 +85,7 @@ export interface BackupProgressState {
     floodSeconds: number | null;
   }) => void;
   clearRetry: () => void;
+  setWaitingUntil: (until: number | null) => void;
   finish: (result: {
     filesUploaded: number;
     filesSkipped: number;
@@ -104,6 +112,7 @@ export const useBackupProgressStore = create<BackupProgressState>((set) => ({
   lastResult: null,
   error: null,
   retry: null,
+  waitingUntil: null,
 
   start: (triggeredBy) =>
     set({
@@ -117,6 +126,7 @@ export const useBackupProgressStore = create<BackupProgressState>((set) => ({
       currentFile: "",
       error: null,
       retry: null,
+      waitingUntil: null,
     }),
 
   setWalking: () => set({ status: "walking", uploaded: 0, total: 0, retry: null }),
@@ -124,9 +134,11 @@ export const useBackupProgressStore = create<BackupProgressState>((set) => ({
   setProgress: ({ uploaded, total, currentFile }) =>
     set({ status: "uploading", uploaded, total, currentFile, retry: null }),
 
-  setRetry: (info) => set({ retry: info }),
+  setRetry: (info) => set({ retry: { ...info, until: Date.now() + info.waitMs } }),
 
   clearRetry: () => set({ retry: null }),
+
+  setWaitingUntil: (until) => set({ waitingUntil: until, retry: null }),
 
   finish: (result) =>
     set({
@@ -138,6 +150,8 @@ export const useBackupProgressStore = create<BackupProgressState>((set) => ({
             ? "failed"
             : "done",
       finishedAt: Date.now(),
+      retry: null,
+      waitingUntil: null,
       lastResult: {
         filesUploaded: result.filesUploaded,
         filesSkipped: result.filesSkipped,
@@ -156,6 +170,8 @@ export const useBackupProgressStore = create<BackupProgressState>((set) => ({
       status: "failed",
       finishedAt: Date.now(),
       error,
+      retry: null,
+      waitingUntil: null,
     }),
 
   cancel: () =>
@@ -163,6 +179,8 @@ export const useBackupProgressStore = create<BackupProgressState>((set) => ({
       active: false,
       status: "cancelled",
       finishedAt: Date.now(),
+      retry: null,
+      waitingUntil: null,
     }),
 
   clear: () =>
@@ -175,5 +193,6 @@ export const useBackupProgressStore = create<BackupProgressState>((set) => ({
       lastResult: null,
       error: null,
       retry: null,
+      waitingUntil: null,
     }),
 }));

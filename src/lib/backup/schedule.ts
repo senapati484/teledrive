@@ -10,10 +10,23 @@ export interface BackupDueInput {
 }
 
 const FAILURE_GUARD_MS = 30 * 60 * 1000;
+export const PARTIAL_RETRY_MS = 60 * 60 * 1000;
 
 export function isBackupDue(input: BackupDueInput): boolean {
   const { intervalMinutes } = input;
   if (!intervalMinutes || intervalMinutes <= 0) return false;
+  // A run that left failed files is retried after an hour instead of waiting
+  // a whole interval (which could be a day). Missing source folders alone
+  // are not retried early: nothing changes until the folder returns.
+  if (
+    input.lastResult?.status === "partial" &&
+    input.lastResult.failed > 0 &&
+    input.lastAttemptAt &&
+    input.now - input.lastAttemptAt >= PARTIAL_RETRY_MS &&
+    PARTIAL_RETRY_MS < intervalMinutes * 60_000
+  ) {
+    return true;
+  }
   const anchor = Math.max(
     input.lastSuccessAt ?? 0,
     input.scheduleEnabledAt ?? input.now,
