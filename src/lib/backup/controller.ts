@@ -17,6 +17,7 @@ export interface StartBackupOptions {
   triggeredBy: "manual" | "auto";
   reason?: "manual" | "scheduled" | "catch-up";
   signal?: AbortSignal;
+  changedPaths?: ReadonlySet<string>;
 }
 
 export function isBackupRunning(): boolean {
@@ -41,6 +42,7 @@ export function startBackup(
       const result = await runBackup({
         triggeredBy: opts.triggeredBy,
         signal: controller.signal,
+        changedPaths: opts.changedPaths,
         onProgress: (info) => {
           useBackupProgressStore.getState().setProgress(info);
         },
@@ -49,6 +51,7 @@ export function startBackup(
         filesUploaded: result.filesUploaded,
         filesSkipped: result.filesSkipped,
         filesFailed: result.filesFailed,
+        filesDeleted: result.filesDeleted,
         status: result.status,
         error: result.error,
         missingRoots: result.missingFolders,
@@ -64,6 +67,7 @@ export function startBackup(
         filesUploaded: 0,
         filesSkipped: 0,
         filesFailed: 0,
+        filesDeleted: 0,
         missingFolders: [],
         auditJobId: null,
         status: "failed",

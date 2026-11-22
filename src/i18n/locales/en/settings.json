@@ -111,6 +111,7 @@
       "active": "Active",
       "description": "How often TeleDrive should re-scan your source folders. Only changed files are re-uploaded.",
       "off": "Off",
+      "onChange": "When files change",
       "every6h": "Every 6 hours",
       "every12h": "Every 12 hours",
       "every24h": "Every 24 hours"
@@ -135,9 +136,31 @@
       "unchanged_one": "{{count}} unchanged, ",
       "unchanged_other": "{{count}} unchanged, ",
       "failed_one": "{{count}} failed",
-      "failed_other": "{{count}} failed"
+      "failed_other": "{{count}} failed",
+      "deleted_one": "{{count}} removed from disk",
+      "deleted_other": "{{count}} removed from disk"
     },
     "progressHint": "See the progress panel in the bottom-right corner.",
+    "autoDelete": {
+      "title": "Delete from disk after backup",
+      "description": "After each backup, files from your backup folders that are safely in Telegram are deleted from this computer. Only files inside the folders listed above are affected, and a file edited after its upload is kept until it is backed up again.",
+      "activeWarning": "On: backed-up files are being removed from this computer. Restore them from TeleDrive when needed.",
+      "confirmTitle": "Delete backed-up files from this computer?",
+      "confirmBody": "From the next backup on, every file in these folders that is already in Telegram will be deleted from your disk. This cannot be undone from TeleDrive's side: the only copy left will be the one in Telegram.",
+      "confirm": "Turn on and delete",
+      "cancel": "Cancel"
+    },
+    "waitingTelegram": "Waiting for Telegram until {{time}} ({{remaining}} left). The backup resumes on its own.",
+    "manifestCorrupt": "This device's backup record is damaged, so backups are paused.",
+    "rebuildManifest": "Rebuild from Telegram",
+    "rebuildManifestDone": "Backup record rebuilt. Files already in Telegram will be re-linked, not uploaded again.",
+    "rebuildManifestFailed": "Could not rebuild the backup record.",
+    "watch": {
+      "error": "Folder monitoring is not working. Changes will be picked up by the periodic scan.",
+      "degraded_one": "{{count}} folder is not being monitored (missing or inaccessible). Trying again every 5 minutes.",
+      "degraded_other": "{{count}} folders are not being monitored (missing or inaccessible). Trying again every 5 minutes.",
+      "nextRetry": "Some files failed. Next automatic retry at {{time}}."
+    },
     "cancel": "Cancel",
     "running": "Backing up…",
     "runNow": "Run backup now",

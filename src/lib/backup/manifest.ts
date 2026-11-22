@@ -9,7 +9,7 @@
 
 import { invoke } from "@tauri-apps/api/core";
 import { logger } from "@/lib/logger";
-import type { TeleFile } from "../types";
+import type { TeleFile, TeleFileSegment } from "../types";
 import { rawChannelId } from "../telegram/peerId";
 
 const LEGACY_MANIFEST_KEY = "teledrive_backup_manifest_v1";
@@ -30,9 +30,24 @@ export interface ManifestEntryV2 {
   folderPath: string;
   uploadedAt: string;
   hash?: string;
+  segments?: TeleFileSegment[];
   sourceMissing?: boolean;
+  /** Superseded uploads waiting to be deleted from the channel. */
   previousMessageIds?: number[];
+  /** Earlier uploads kept for restore, newest first (at most KEEP_VERSIONS). */
+  versions?: ManifestVersion[];
 }
+
+export interface ManifestVersion {
+  messageId: number;
+  size: number;
+  uploadedAt: string;
+  hash?: string;
+  segments?: TeleFileSegment[];
+}
+
+/** How many earlier versions of each backed-up file stay restorable. */
+export const KEEP_VERSIONS = 5;
 
 export interface BackupManifestV2 {
   version: typeof CURRENT_MANIFEST_VERSION;
@@ -40,6 +55,8 @@ export interface BackupManifestV2 {
   channelId: string;
   deviceName: string;
   deviceOs: string;
+  /** Channel folder this device uploads into, e.g. "/TeleDrive Backups/PC (Windows)". */
+  deviceRoot?: string;
   lastAttemptAt: number | null;
   lastSuccessAt: number | null;
   lastResult: BackupRunSummary | null;
@@ -266,6 +283,32 @@ export async function loadManifest(channelId: string): Promise<BackupManifestV2>
   return (await readManifest(channelId)).manifest;
 }
 
+/**
+ * Replace a corrupt manifest with an empty one and unblock backups. The next
+ * run re-links files that are already in the channel (matched by location,
+ * size and content hash) instead of uploading them again.
+ */
+export async function rebuildManifest(channelId: string): Promise<void> {
+  let generation = 0;
+  try {
+    const loaded = await invoke<BackupManifestLoad>("load_backup_manifest", { channelId });
+    generation = Number(loaded.generation) || 0;
+  } catch (err) {
+    logger.warn("[backup.manifest] rebuild could not read the current generation:", err);
+  }
+  await saveManifest(channelId, { ...emptyManifest(channelId), generation });
+}
+
+/** Earlier versions kept for the backed-up file whose current upload is `messageId`. */
+export async function findBackupVersions(
+  channelId: string,
+  messageId: number,
+): Promise<ManifestVersion[]> {
+  const manifest = await loadManifest(channelId);
+  const entry = Object.values(manifest.entries).find((e) => e.messageId === messageId);
+  return entry?.versions ?? [];
+}
+
 export async function saveManifest(
   channelId: string,
   manifest: BackupManifestV2,
@@ -311,6 +354,7 @@ export async function removeManifestEntriesByMessageIds(
 
   const manifest = await loadManifest(channelId);
   const entries: Record<string, ManifestEntryV2> = {};
+  const garbage = [...manifest.garbage];
   let removed = 0;
   for (const [absPath, entry] of Object.entries(manifest.entries ?? {})) {
     const superseded = (entry.previousMessageIds ?? []).some((id) =>
@@ -318,13 +362,19 @@ export async function removeManifestEntriesByMessageIds(
     );
     if (removeIds.has(Number(entry.messageId)) || superseded) {
       removed++;
+      // Deleting a backed-up file also retires the versions kept for it.
+      for (const version of entry.versions ?? []) {
+        if (!removeIds.has(version.messageId)) {
+          garbage.push({ messageId: version.messageId, folderPath: entry.folderPath, since: Date.now() });
+        }
+      }
       continue;
     }
     entries[absPath] = entry;
   }
   if (removed === 0) return 0;
 
-  await saveManifest(channelId, { ...manifest, entries });
+  await saveManifest(channelId, { ...manifest, entries, garbage });
   return removed;
 }
 
@@ -455,13 +505,29 @@ export interface ManifestDiff {
 }
 
 /**
- * Fast path only. A same-mtime/same-size content change is intentionally
- * undetected here; content hashes are consulted by the runner only when the
- * stat pair changed. This keeps normal runs from reading every file.
+ * Use metadata for ordinary scans. Watcher events also select affected files
+ * for content verification, even if their metadata is unchanged.
  */
+export function backupPathKey(path: string): string {
+  const normalized = path.replace(/\\/g, "/").replace(/\/$/, "");
+  return typeof navigator !== "undefined" && /Windows/i.test(navigator.userAgent)
+    ? normalized.toLowerCase()
+    : normalized;
+}
+
+function matchesChangedPath(path: string, changedPaths: ReadonlySet<string>): boolean {
+  let key = backupPathKey(path);
+  while (key) {
+    if (changedPaths.has(key)) return true;
+    key = key.slice(0, Math.max(0, key.lastIndexOf("/")));
+  }
+  return false;
+}
+
 export function diffAgainstManifest(
   manifest: BackupManifestV2,
   walk: { absPath: string; relPath: string; mtimeMs: number; size: number }[],
+  changedPaths?: ReadonlySet<string>,
 ): ManifestDiff {
   const toUpload: ManifestDiff["toUpload"] = [];
   const unchanged: ManifestDiff["unchanged"] = [];
@@ -474,7 +540,11 @@ export function diffAgainstManifest(
       toUpload.push(f);
       continue;
     }
-    if (prior.mtimeMs !== f.mtimeMs || prior.size !== f.size) {
+    if (
+      prior.mtimeMs !== f.mtimeMs ||
+      prior.size !== f.size ||
+      (changedPaths?.size && matchesChangedPath(f.absPath, changedPaths))
+    ) {
       toUpload.push(f);
     } else {
       unchanged.push({ absPath: f.absPath, entry: prior });
@@ -540,6 +610,9 @@ export function filterSupersededBackupFiles(
     for (const id of entry.previousMessageIds ?? []) superseded.add(Number(id));
   }
   for (const item of manifest.garbage) superseded.add(Number(item.messageId));
+  for (const entry of Object.values(manifest.entries)) {
+    for (const version of entry.versions ?? []) superseded.add(Number(version.messageId));
+  }
 
   const filtered = files.filter((file) => {
     const id = Number(file.messageId);

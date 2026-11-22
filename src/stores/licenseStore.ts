@@ -41,6 +41,11 @@ export type LicenseResponse = License;
 interface LicenseState {
   plan: Plan;
   backupFolders: BackupFoldersPayload;
+  /**
+   * Delete local files from the backup folders once they are safely in
+   * Telegram. Desktop only; off by default.
+   */
+  autoDeleteAfterBackup: boolean;
   backendReachable: boolean;
   /** Kept for source compatibility — always null. */
   jwt: null;
@@ -59,16 +64,41 @@ interface LicenseState {
   revokeDeviceById: (_deviceId: string) => Promise<void>;
   setProSchedule: (intervalMinutes: number | null) => Promise<void>;
   setProBackupFolders: (folders: BackupFoldersPayload) => Promise<void>;
+  setAutoDeleteAfterBackup: (enabled: boolean) => void;
 }
 
 const BACKUP_FOLDERS_KEY = 'teledrive_backup_folders';
 const BACKUP_SCHEDULE_KEY = 'teledrive_backup_schedule';
 const BACKUP_SCHEDULE_ENABLED_AT_KEY = 'teledrive_backup_schedule_enabled_at';
+const BACKUP_AUTO_DELETE_KEY = 'teledrive_backup_auto_delete';
+
+function loadAutoDelete(): boolean {
+  try {
+    return localStorage.getItem(BACKUP_AUTO_DELETE_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function saveAutoDelete(enabled: boolean): void {
+  try {
+    if (enabled) localStorage.setItem(BACKUP_AUTO_DELETE_KEY, 'true');
+    else localStorage.removeItem(BACKUP_AUTO_DELETE_KEY);
+  } catch { /* ignore */ }
+}
 
 function loadBackupFolders(): BackupFoldersPayload {
   try {
     const raw = localStorage.getItem(BACKUP_FOLDERS_KEY);
     if (raw) return JSON.parse(raw) as BackupFoldersPayload;
+    if (import.meta.env.DEV) {
+      const path = import.meta.env.VITE_TELEDRIVE_DEV_BACKUP_FOLDER?.trim();
+      if (path) {
+        const folders = { paths: [path], excludes: [] };
+        saveBackupFolders(folders);
+        return folders;
+      }
+    }
   } catch { /* ignore */ }
   return { paths: [], excludes: [] };
 }
@@ -90,7 +120,7 @@ function loadBackupSchedule(): number | null {
 function saveBackupSchedule(intervalMinutes: number | null): void {
   try {
     localStorage.setItem(BACKUP_SCHEDULE_KEY, JSON.stringify(intervalMinutes));
-    if (intervalMinutes != null && intervalMinutes > 0) {
+    if (intervalMinutes != null && intervalMinutes >= 0) {
       localStorage.setItem(BACKUP_SCHEDULE_ENABLED_AT_KEY, String(Date.now()));
     } else {
       localStorage.removeItem(BACKUP_SCHEDULE_ENABLED_AT_KEY);
@@ -112,6 +142,7 @@ export function getBackupScheduleEnabledAt(): number | null {
 export const useLicenseStore = create<LicenseState>((set, _get) => ({
   plan: 'PRO',
   backupFolders: loadBackupFolders(),
+  autoDeleteAfterBackup: loadAutoDelete(),
   backendReachable: false,
   jwt: null,
   license: {
@@ -152,6 +183,11 @@ export const useLicenseStore = create<LicenseState>((set, _get) => ({
     saveBackupFolders(next);
     set({ backupFolders: next });
   },
+
+  setAutoDeleteAfterBackup: (enabled) => {
+    saveAutoDelete(enabled);
+    set({ autoDeleteAfterBackup: enabled });
+  },
 }));
 
 /** Test-only escape hatch */
@@ -159,6 +195,7 @@ export function __resetLicenseStoreForTests(): void {
   useLicenseStore.setState({
     plan: 'FREE',
     backupFolders: { paths: [], excludes: [] },
+    autoDeleteAfterBackup: false,
     backendReachable: false,
     jwt: null,
     license: null,

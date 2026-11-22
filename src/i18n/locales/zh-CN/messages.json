@@ -20,7 +20,8 @@
       "walkerFailed": "沃克失败：{{message}}",
       "manifestCorrupt": "备份清单已损坏 - 在经过审核之前拒绝上传。",
       "cancelled": "已被用户取消。",
-      "sessionExpired": "电报会话已过期。在“设置”→“电报帐户”中重新连接您的帐户，然后再次运行备份。"
+      "sessionExpired": "电报会话已过期。在“设置”→“电报帐户”中重新连接您的帐户，然后再次运行备份。",
+      "rateLimited": "Telegram 要求暂停上传约 {{minutes}} 分钟。剩余文件稍后将重试。"
     }
   },
   "upload": {

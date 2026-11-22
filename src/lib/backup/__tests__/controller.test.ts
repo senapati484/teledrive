@@ -16,6 +16,7 @@ function result(overrides: Partial<BackupRunResult> = {}): BackupRunResult {
     filesUploaded: 0,
     filesSkipped: 0,
     filesFailed: 0,
+    filesDeleted: 0,
     missingFolders: [],
     auditJobId: null,
     status: "success",

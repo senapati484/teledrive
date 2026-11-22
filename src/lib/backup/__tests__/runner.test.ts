@@ -11,12 +11,16 @@ import { uploadFileToTelegram } from "../../telegram/uploader";
 import { enqueueSave } from "../../storage/indexQueue";
 import { isIndexReady, waitForIndexReady } from "../../telegram/indexReadiness";
 import { deleteMessages } from "../telegramOps";
-import { emptyManifest, saveManifest, type ManifestEntryV2 } from "../manifest";
+import { emptyManifest, KEEP_VERSIONS, saveManifest, type ManifestEntryV2 } from "../manifest";
 import { useFileStore } from "@/stores/fileStore";
 import { useLicenseStore } from "@/stores/licenseStore";
 import { useAuthStore } from "@/stores/authStore";
 
-const h = vi.hoisted(() => ({ backend: null as MemoryBackend | null }));
+const h = vi.hoisted(() => ({
+  backend: null as MemoryBackend | null,
+  /** Message ids Telegram reports as existing; null = none. */
+  liveIds: null as Set<number> | null,
+}));
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: (...args: any[]) => h.backend!.invoke(...args),
@@ -34,7 +38,9 @@ vi.mock("../../telegram/client", () => ({
   getClient: () => ({
     connected: true,
     connect: vi.fn(async () => {}),
-    getMessages: vi.fn(async () => []),
+    getMessages: vi.fn(async (_peer: unknown, opts?: { ids?: number[] }) =>
+      (opts?.ids ?? []).filter((id) => h.liveIds?.has(id)).map((id) => ({ id })),
+    ),
     deleteMessages: vi.fn(async () => {}),
   }),
 }));
@@ -44,6 +50,14 @@ vi.mock("../../secure/vault", () => ({
   ),
   channelIdKey: (phone: string) => `telegram_channel_id_${phone}`,
   VAULT_KEY_CHANNEL_ID: "telegram_channel_id",
+}));
+vi.mock("../../runtime/bridge", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  isWebRuntime: () => false,
+}));
+vi.mock("@/lib/platform", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  isMobilePlatform: () => false,
 }));
 vi.mock("../../secure/deviceInfo", () => ({
   detectOS: () => "macos",
@@ -105,6 +119,7 @@ async function seed(entries: Record<string, ManifestEntryV2>, extra: Record<stri
 
 beforeEach(() => {
   resetBackupTestState();
+  h.liveIds = null;
   h.backend = createMemoryBackend();
   walkMock.mockReset();
   uploadMock.mockReset();
@@ -119,6 +134,7 @@ beforeEach(() => {
   useAuthStore.setState({ phoneNumber: "+111", isAuthenticated: true });
   useLicenseStore.setState({
     backupFolders: { paths: [ROOT], excludes: [] },
+    autoDeleteAfterBackup: false,
     license: {
       id: "local",
       plan: "PRO",
@@ -183,10 +199,51 @@ describe("backup runner", () => {
       .getState()
       .files.filter((f) => f.messageId === 10 || f.messageId === 20);
     expect(backupFiles.map((f) => f.messageId)).toEqual([20]);
-    expect(deleteMock).toHaveBeenCalledWith(CHANNEL, [10]);
+    // The previous upload is kept as a restorable version, not deleted.
+    expect(deleteMock).not.toHaveBeenCalled();
+    const loaded = await h.backend!.invoke("load_backup_manifest", { channelId: CHANNEL });
+    const entry = JSON.parse(loaded.base).entries[`${ROOT}/a.txt`];
+    expect(entry.messageId).toBe(20);
+    expect(entry.versions.map((v: { messageId: number }) => v.messageId)).toEqual([10]);
   });
 
-  it("does not delete old messages when the final index save fails", async () => {
+  it(`keeps the newest ${KEEP_VERSIONS} versions and deletes older ones`, async () => {
+    const versions = Array.from({ length: KEEP_VERSIONS }, (_, i) => ({
+      messageId: 9 - i,
+      size: 10,
+      uploadedAt: new Date(9 - i).toISOString(),
+    }));
+    await seed({
+      [`${ROOT}/a.txt`]: {
+        mtimeMs: 1,
+        size: 10,
+        messageId: 10,
+        folderPath: "/TeleDrive Backups/Test Mac/root",
+        uploadedAt: new Date(10).toISOString(),
+        versions,
+      },
+    });
+    walkMock.mockResolvedValue(walk([{ relPath: "a.txt", size: 20, mtimeMs: 2 }]));
+    uploadMock.mockResolvedValue({ id: 20 } as any);
+
+    await runBackup({ triggeredBy: "manual" });
+
+    const expired = versions[KEEP_VERSIONS - 1].messageId;
+    expect(deleteMock).toHaveBeenCalledWith(CHANNEL, [expired]);
+    const loaded = await h.backend!.invoke("load_backup_manifest", { channelId: CHANNEL });
+    const entry = JSON.parse(loaded.base).entries[`${ROOT}/a.txt`];
+    expect(entry.versions.map((v: { messageId: number }) => v.messageId)).toEqual(
+      [10, ...versions.slice(0, KEEP_VERSIONS - 1).map((v) => v.messageId)],
+    );
+    expect(entry.previousMessageIds).toBeUndefined();
+  });
+
+  it("does not delete expired versions when the final index save fails", async () => {
+    const versions = Array.from({ length: KEEP_VERSIONS }, (_, i) => ({
+      messageId: 9 - i,
+      size: 10,
+      uploadedAt: new Date(9 - i).toISOString(),
+    }));
     await seed({
       [`${ROOT}/a.txt`]: {
         mtimeMs: 1,
@@ -194,6 +251,7 @@ describe("backup runner", () => {
         messageId: 10,
         folderPath: "/TeleDrive Backups/Test Mac/root",
         uploadedAt: new Date(1).toISOString(),
+        versions,
       },
     });
     walkMock.mockResolvedValue(walk([{ relPath: "a.txt", size: 20, mtimeMs: 2 }]));
@@ -207,8 +265,94 @@ describe("backup runner", () => {
     const loaded = await h.backend!.invoke("load_backup_manifest", {
       channelId: CHANNEL,
     });
-    expect(JSON.parse(loaded.base).entries[`${ROOT}/a.txt`].previousMessageIds).toEqual([10]);
+    expect(JSON.parse(loaded.base).entries[`${ROOT}/a.txt`].previousMessageIds).toEqual([
+      versions[KEEP_VERSIONS - 1].messageId,
+    ]);
   });
+
+  it("re-links a file already in the channel instead of uploading it again", async () => {
+    // Empty manifest: a reinstall or a rebuilt record.
+    h.backend!.hashFile = vi.fn(async () => "same-hash");
+    useFileStore.setState({
+      files: [
+        makeTeleFile("backup_10", {
+          name: "a.txt",
+          size: 10,
+          messageId: 10,
+          folderPath: "/TeleDrive Backups/Test Mac (macos)/root",
+          channelId: CHANNEL,
+          uploadedAt: 1,
+          hash: "same-hash",
+        }),
+      ],
+    });
+    walkMock.mockResolvedValue(walk([{ relPath: "a.txt", size: 10, mtimeMs: 5000 }]));
+
+    const result = await runBackup({ triggeredBy: "manual" });
+
+    expect(uploadMock).not.toHaveBeenCalled();
+    expect(result.filesSkipped).toBe(1);
+    const loaded = await h.backend!.invoke("load_backup_manifest", { channelId: CHANNEL });
+    const entry = JSON.parse(loaded.base).entries[`${ROOT}/a.txt`];
+    expect(entry).toMatchObject({ messageId: 10, mtimeMs: 5000, hash: "same-hash" });
+  });
+
+  it("uploads when the copy in the channel has different content", async () => {
+    h.backend!.hashFile = vi.fn(async () => "local-hash");
+    useFileStore.setState({
+      files: [
+        makeTeleFile("backup_10", {
+          name: "a.txt",
+          size: 10,
+          messageId: 10,
+          folderPath: "/TeleDrive Backups/Test Mac (macos)/root",
+          channelId: CHANNEL,
+          uploadedAt: Date.now(),
+          hash: "remote-hash",
+        }),
+      ],
+    });
+    walkMock.mockResolvedValue(walk([{ relPath: "a.txt", size: 10 }]));
+
+    await runBackup({ triggeredBy: "manual" });
+
+    expect(uploadMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps uploading into the device folder the manifest already uses", async () => {
+    await seed({
+      [`${ROOT}/old.txt`]: {
+        mtimeMs: 1000,
+        size: 10,
+        messageId: 10,
+        folderPath: "/TeleDrive Backups/Old Name (macos)/root",
+        uploadedAt: new Date(1).toISOString(),
+      },
+    });
+    walkMock.mockResolvedValue(walk([{ relPath: "old.txt" }, { relPath: "new.txt" }]));
+
+    const result = await runBackup({ triggeredBy: "manual" });
+
+    expect(result.deviceRoot).toBe("/TeleDrive Backups/Old Name (macos)");
+    expect(uploadMock.mock.calls[0][4]).toBe("/TeleDrive Backups/Old Name (macos)/root");
+  });
+
+  it("pauses on a long FLOOD_WAIT and retries the same file", async () => {
+    walkMock.mockResolvedValue(walk([{ relPath: "a.txt" }, { relPath: "b.txt" }]));
+    let calls = 0;
+    uploadMock.mockImplementation(async () => {
+      calls++;
+      if (calls === 1) throw new Error("[upload] Failed after 5 attempts: A wait of 1 seconds is required");
+      return { id: 100 + calls } as any;
+    });
+
+    const result = await runBackup({ triggeredBy: "manual" });
+
+    expect(result.status).toBe("success");
+    expect(result.filesUploaded).toBe(2);
+    expect(result.filesFailed).toBe(0);
+    expect(uploadMock.mock.calls.map((c) => c[1])).toEqual(["a.txt", "a.txt", "b.txt"]);
+  }, 15_000);
 
   it("cancels between files and leaves old messages alone", async () => {
     const controller = new AbortController();
@@ -324,5 +468,82 @@ describe("backup runner", () => {
 
     const deleted = deleteMock.mock.calls.flatMap((call) => call[1] as number[]);
     expect(deleted.sort((a, b) => a - b)).toEqual([10, 12]);
+  });
+
+  describe("delete from disk after backup", () => {
+    const FOLDER = "/TeleDrive Backups/Test Mac/root";
+    const deleteCalls = () =>
+      vi
+        .mocked(h.backend!.invoke)
+        .mock.calls.filter(([command]) => command === "delete_backed_up_files");
+
+    async function seedBackedUp() {
+      await seed({
+        [`${ROOT}/same.txt`]: { mtimeMs: 1000, size: 10, messageId: 10, folderPath: FOLDER, uploadedAt: new Date(1).toISOString() },
+        [`${ROOT}/edited.txt`]: { mtimeMs: 1, size: 10, messageId: 11, folderPath: FOLDER, uploadedAt: new Date(1).toISOString() },
+        [`${ROOT}/gone.txt`]: { mtimeMs: 1000, size: 10, messageId: 12, folderPath: FOLDER, uploadedAt: new Date(1).toISOString() },
+      });
+      useFileStore.setState({
+        files: [10, 11, 12].map((id) =>
+          makeTeleFile(`backup_${id}`, { messageId: id, channelId: CHANNEL, folderPath: FOLDER }),
+        ),
+      });
+      walkMock.mockResolvedValue(
+        walk([
+          { relPath: "same.txt" },
+          { relPath: "edited.txt", mtimeMs: 2000 }, // changed: uploaded this run as id 1
+          { relPath: "gone.txt" },
+          { relPath: "new.txt" }, // new: uploaded this run as id 2
+        ]),
+      );
+    }
+
+    it("is off by default", async () => {
+      await seedBackedUp();
+      h.liveIds = new Set([1, 2, 10, 11, 12]);
+
+      const result = await runBackup({ triggeredBy: "manual" });
+
+      expect(result.filesDeleted).toBe(0);
+      expect(deleteCalls()).toHaveLength(0);
+    });
+
+    it("deletes only files whose current content is confirmed in Telegram", async () => {
+      useLicenseStore.setState({ autoDeleteAfterBackup: true });
+      await seedBackedUp();
+      // Message 12 no longer exists in the channel.
+      h.liveIds = new Set([1, 2, 10, 11]);
+
+      const result = await runBackup({ triggeredBy: "manual" });
+
+      const [[, args]] = deleteCalls() as unknown as [[string, { roots: string[]; files: { path: string }[] }]];
+      expect(args.roots).toEqual([ROOT]);
+      expect(args.files.map((f) => f.path).sort()).toEqual(
+        [`${ROOT}/edited.txt`, `${ROOT}/new.txt`, `${ROOT}/same.txt`],
+      );
+      expect(result.filesDeleted).toBe(3);
+    });
+
+    it("deletes nothing when the index could not be saved to Telegram", async () => {
+      useLicenseStore.setState({ autoDeleteAfterBackup: true });
+      await seedBackedUp();
+      h.liveIds = new Set([1, 2, 10, 11, 12]);
+      saveMock.mockRejectedValue(new Error("network down"));
+
+      const result = await runBackup({ triggeredBy: "manual" });
+
+      expect(deleteCalls()).toHaveLength(0);
+      expect(result.filesDeleted).toBe(0);
+    });
+
+    it("deletes nothing when Telegram cannot confirm the copies", async () => {
+      useLicenseStore.setState({ autoDeleteAfterBackup: true });
+      await seedBackedUp();
+      h.liveIds = null;
+
+      await runBackup({ triggeredBy: "manual" });
+
+      expect(deleteCalls()).toHaveLength(0);
+    });
   });
 });

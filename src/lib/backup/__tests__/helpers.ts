@@ -15,6 +15,8 @@ export interface MemoryBackend {
   invoke: (...args: any[]) => Promise<any>;
   vault: Map<string, string>;
   manifests: Map<string, MemoryManifestState>;
+  /** Backs the `hash_file` command; unset means hashing fails. */
+  hashFile?: (path: string) => Promise<string>;
 }
 
 export function createMemoryBackend(): MemoryBackend {
@@ -30,8 +32,12 @@ export function createMemoryBackend(): MemoryBackend {
     return state;
   };
 
+  const backend = {} as MemoryBackend;
   const invoke = vi.fn(async (command: string, args: any = {}) => {
     switch (command) {
+      case "hash_file":
+        if (!backend.hashFile) throw new Error("hash_file not mocked");
+        return backend.hashFile(args.path);
       case "load_backup_manifest": {
         const state = stateFor(args.channelId);
         return {
@@ -92,12 +98,17 @@ export function createMemoryBackend(): MemoryBackend {
         return "/tmp/teledrive-test";
       case "cancel_backup_walk":
         return null;
+      case "delete_backed_up_files":
+        return {
+          deleted: (args.files ?? []).map((f: { path: string }) => f.path),
+          skipped: [],
+        };
       default:
         return null;
     }
   });
 
-  return { invoke, vault, manifests };
+  return Object.assign(backend, { invoke, vault, manifests });
 }
 
 export function makeTeleFile(

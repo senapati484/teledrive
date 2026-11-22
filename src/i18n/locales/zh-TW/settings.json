@@ -94,7 +94,8 @@
       "off": "離開",
       "every6h": "每 6 小時",
       "every12h": "每12小時一次",
-      "every24h": "每24小時一次"
+      "every24h": "每24小時一次",
+      "onChange": "檔案變更時"
     },
     "lastBackup": "最後備份：",
     "lastBackupAgo": "{{時間}}前",
@@ -105,7 +106,9 @@
       "unchanged_one": "{{count}} 不變，",
       "unchanged_other": "{{count}} 不變，",
       "failed_one": "{{count}} 失敗",
-      "failed_other": "{{count}} 失敗"
+      "failed_other": "{{count}} 失敗",
+      "deleted_one": "已從磁碟刪除 {{count}} 個",
+      "deleted_other": "已從磁碟刪除 {{count}} 個"
     },
     "progressHint": "檢視右下角的進度面板。",
     "cancel": "取消",
@@ -131,7 +134,27 @@
     },
     "missingRoots_one": "{{count}} 個來源資料夾無法使用。其他資料夾已完成備份。",
     "missingRoots_other": "{{count}} 個來源資料夾無法使用。其他資料夾已完成備份。",
-    "editFolders": "編輯資料夾"
+    "editFolders": "編輯資料夾",
+    "autoDelete": {
+      "title": "備份後從磁碟刪除",
+      "description": "每次備份後，備份資料夾中已安全存放在 Telegram 的檔案會從這台電腦刪除。只影響上方列出的資料夾中的檔案；上傳後又被編輯的檔案會保留，直到再次備份。",
+      "activeWarning": "已開啟：已備份的檔案正從這台電腦刪除。需要時可透過 TeleDrive 還原。",
+      "confirmTitle": "要從這台電腦刪除已備份的檔案嗎？",
+      "confirmBody": "從下次備份開始，這些資料夾中已在 Telegram 的每個檔案都會從磁碟刪除。TeleDrive 無法復原：唯一剩下的副本將是 Telegram 中的那份。",
+      "confirm": "開啟並刪除",
+      "cancel": "取消"
+    },
+    "waitingTelegram": "等待 Telegram 至 {{time}}（剩餘 {{remaining}}）。備份將自動繼續。",
+    "manifestCorrupt": "此裝置的備份記錄已損毀，備份已暫停。",
+    "rebuildManifest": "從 Telegram 重建",
+    "rebuildManifestDone": "備份記錄已重建。已在 Telegram 中的檔案將重新連結，不會再次上傳。",
+    "rebuildManifestFailed": "無法重建備份記錄。",
+    "watch": {
+      "error": "資料夾監控無法運作。變更將在定期掃描時被發現。",
+      "degraded_one": "{{count}} 個資料夾未受監控（不存在或無法存取）。每 5 分鐘重試一次。",
+      "degraded_other": "{{count}} 個資料夾未受監控（不存在或無法存取）。每 5 分鐘重試一次。",
+      "nextRetry": "部分檔案失敗。下次自動重試時間：{{time}}。"
+    }
   },
   "appearance": {
     "title": "外貌",

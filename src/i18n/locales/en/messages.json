@@ -33,6 +33,7 @@
       "clientUnreachable": "Telegram client unreachable: {{message}}",
       "walkerFailed": "Walker failed: {{message}}",
       "manifestCorrupt": "Backup manifest is corrupt — refusing to upload until reviewed.",
+      "rateLimited": "Telegram asked to pause uploads for about {{minutes}} min. The remaining files will be retried later.",
       "cancelled": "Cancelled by user.",
       "sessionExpired": "Telegram session expired. Reconnect your account in Settings → Telegram Account, then run the backup again."
     }

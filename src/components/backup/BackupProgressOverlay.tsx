@@ -30,14 +30,19 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useBackupProgressStore } from "@/stores/backupProgressStore";
+import { useFileStore } from "@/stores/fileStore";
 import { cancelBackup } from "@/lib/backup/controller";
 import { cn } from "@/lib/utils";
+import { formatClock, formatRemaining, useNow } from "@/lib/backup/waitFormat";
 
 const AUTO_DISMISS_MS = 6000;
 
 export function BackupProgressOverlay() {
   const state = useBackupProgressStore();
+  const catalogRetrySec = useFileStore((s) => s.indexQueueRetryInSec);
+  const catalogRetrying = useFileStore((s) => s.indexQueueState === "retrying");
   const { t } = useTranslation("drive");
+  const now = useNow(state.waitingUntil !== null || state.retry !== null);
 
   // Track the last "done/failed/cancelled" timestamp so we can auto-
   // dismiss the panel after AUTO_DISMISS_MS. The store doesn't own
@@ -68,7 +73,10 @@ export function BackupProgressOverlay() {
   // Idle: render nothing.
   if (state.status === "idle") return null;
 
-  const percent =
+  const transfer = state.status === "uploading" ? state.transfer : null;
+  const percent = transfer && transfer.total > 0
+    ? Math.min(100, Math.floor(100 * transfer.sent / transfer.total))
+    :
     state.total > 0
       ? Math.min(100, Math.round((state.uploaded / state.total) * 100))
       : 0;
@@ -80,7 +88,7 @@ export function BackupProgressOverlay() {
 
   const title = isActive
     ? state.status === "walking"
-      ? t("backup.scanning")
+      ? t(`backup.phase.${state.phase ?? "scanning"}`)
       : t("backup.backingUp", { uploaded: state.uploaded, total: state.total })
     : state.status === "done"
       ? isPartial
@@ -94,23 +102,35 @@ export function BackupProgressOverlay() {
 
   const sublabel = (() => {
     if (isActive) {
+      if (state.phase === "saving" && catalogRetrying) {
+        return t("backup.catalogRetry", { remaining: formatRemaining(catalogRetrySec * 1000) });
+      }
       // Retry state takes priority over the current-file label — when a
       // chunk is in a FLOOD_WAIT backoff the user wants to know WHY the
       // counter is frozen ("Retrying 3/5 — waiting 30s for rate limit"),
       // not the long path of the file they're stuck on.
+      if (state.waitingUntil !== null) {
+        return t("backup.waitingTelegram", {
+          time: formatClock(state.waitingUntil),
+          remaining: formatRemaining(state.waitingUntil - now),
+        });
+      }
       if (state.retry) {
         const r = state.retry;
-        const waitSec = Math.max(1, Math.round(r.waitMs / 1000));
+        const waitSec = Math.max(1, Math.ceil((r.until - now) / 1000));
         if (r.floodSeconds != null) {
           return t("backup.retryRateLimit", { attempt: r.attempt, maxAttempts: r.maxAttempts, seconds: waitSec });
         }
         return t("backup.retryNetwork", { attempt: r.attempt, maxAttempts: r.maxAttempts, seconds: waitSec });
       }
-      if (state.status === "uploading" && state.currentFile) {
-        return truncateMid(state.currentFile, 56);
+      if (transfer) {
+        return t("backup.fileTransfer", { percent });
       }
       if (state.status === "walking") {
-        return t("backup.readingFolders");
+        if (state.phase === "comparing" && state.total > 0) {
+          return t("backup.comparingProgress", { processed: state.uploaded, total: state.total });
+        }
+        return state.phase === "scanning" ? t("backup.readingFolders") : "";
       }
       return "";
     }
@@ -119,6 +139,7 @@ export function BackupProgressOverlay() {
       if (state.lastResult.filesUploaded > 0) parts.push(t("backup.summaryUploaded", { count: state.lastResult.filesUploaded }));
       if (state.lastResult.filesSkipped > 0) parts.push(t("backup.summaryUnchanged", { count: state.lastResult.filesSkipped }));
       if (state.lastResult.filesFailed > 0) parts.push(t("backup.summaryFailed", { count: state.lastResult.filesFailed }));
+      if (state.lastResult.filesDeleted > 0) parts.push(t("backup.summaryDeleted", { count: state.lastResult.filesDeleted }));
       if (state.lastResult.missingRoots.length > 0) {
         parts.push(t("backup.summaryMissing", { count: state.lastResult.missingRoots.length }));
       }
@@ -187,6 +208,11 @@ export function BackupProgressOverlay() {
             <p className="text-sm font-semibold text-[#1F1F1F] dark:text-[#E3E3E3] truncate">
               {title}
             </p>
+            {isActive && state.currentFile && (
+              <p className="text-xs mt-0.5 truncate" title={state.currentFile}>
+                {truncateMid(state.currentFile, 56)}
+              </p>
+            )}
             {sublabel && (
               <p
                 className={cn(

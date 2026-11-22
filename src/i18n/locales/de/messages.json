@@ -20,7 +20,8 @@
       "walkerFailed": "Walker ist fehlgeschlagen: {{message}}",
       "manifestCorrupt": "Das Backup-Manifest ist beschädigt – der Upload wird bis zur Überprüfung verweigert.",
       "cancelled": "Vom Benutzer abgebrochen.",
-      "sessionExpired": "Telegrammsitzung abgelaufen. Verbinden Sie Ihr Konto erneut unter Einstellungen → Telegram-Konto und führen Sie dann die Sicherung erneut durch."
+      "sessionExpired": "Telegrammsitzung abgelaufen. Verbinden Sie Ihr Konto erneut unter Einstellungen → Telegram-Konto und führen Sie dann die Sicherung erneut durch.",
+      "rateLimited": "Telegram hat eine Upload-Pause von etwa {{minutes}} Min. verlangt. Die restlichen Dateien werden später erneut versucht."
     }
   },
   "upload": {

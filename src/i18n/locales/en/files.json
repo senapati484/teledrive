@@ -255,5 +255,12 @@
       "success_other": "Successfully moved {{count}} items",
       "failed": "Failed to move items"
     }
+  },
+  "info": {
+    "versions": {
+      "title": "Previous versions",
+      "none": "No earlier versions kept for this file.",
+      "download": "Download"
+    }
   }
 }

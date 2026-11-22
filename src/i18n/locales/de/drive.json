@@ -108,7 +108,19 @@
     "partial": "Sicherung mit Warnungen abgeschlossen",
     "summaryMissing_one": "{{count}} Ordner nicht verfügbar",
     "summaryMissing_other": "{{count}} Ordner nicht verfügbar",
-    "cancel": "Sicherung abbrechen"
+    "cancel": "Sicherung abbrechen",
+    "phase": {
+      "connecting": "Verbindung zu Telegram wird hergestellt…",
+      "scanning": "Ordner werden durchsucht…",
+      "comparing": "Änderungen werden geprüft…",
+      "saving": "Backup-Katalog wird gespeichert…"
+    },
+    "comparingProgress": "{{processed}} von {{total}} Dateien geprüft",
+    "catalogRetry": "Telegram verlangt eine Pause – {{remaining}} bis zum nächsten Katalogversuch",
+    "fileTransfer": "Aktuelle Datei: {{percent}} % gesendet",
+    "waitingTelegram": "Warten auf Telegram bis {{time}} (noch {{remaining}}). Das Backup wird automatisch fortgesetzt.",
+    "summaryDeleted_one": "{{count}} von der Festplatte entfernt",
+    "summaryDeleted_other": "{{count}} von der Festplatte entfernt"
   },
   "errorBoundary": {
     "title": "Etwas ist schief gelaufen",

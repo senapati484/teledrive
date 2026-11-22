@@ -10,6 +10,8 @@ import { TeleFile } from "@/lib/types";
 import { computeItemStats } from "@/lib/files/fileStats";
 import { FileIcon } from "./FileIcon";
 import { FolderIcon } from "./FolderIcon";
+import { BackupVersionList } from "./BackupVersionList";
+import { isBackupItem } from "@/lib/backup/visibility";
 import { Lock, CheckCircle, Star, HardDrive, Folder, FileText, Clock, MapPin } from "lucide-react";
 
 interface FileInfoDialogProps {
@@ -199,6 +201,14 @@ export function FileInfoDialog({
                 ))}
               </div>
             </div>
+          )}
+
+          {!stats.isDirectory && isBackupItem(file) && !file.segments?.length && (
+            <BackupVersionList
+              file={file}
+              formatBytes={formatBytes}
+              formatDateTime={formatDateTime}
+            />
           )}
         </div>
       </DialogContent>

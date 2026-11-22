@@ -20,7 +20,8 @@
       "walkerFailed": "Andador falló: {{message}}",
       "manifestCorrupt": "El manifiesto de respaldo está corrupto y se niega a cargar hasta que se revise.",
       "cancelled": "Cancelado por el usuario.",
-      "sessionExpired": "La sesión de Telegram expiró. Vuelva a conectar su cuenta en Configuración → Cuenta de Telegram, luego ejecute la copia de seguridad nuevamente."
+      "sessionExpired": "La sesión de Telegram expiró. Vuelva a conectar su cuenta en Configuración → Cuenta de Telegram, luego ejecute la copia de seguridad nuevamente.",
+      "rateLimited": "Telegram pidió pausar las subidas unos {{minutes}} min. Los archivos restantes se reintentarán más tarde."
     }
   },
   "upload": {

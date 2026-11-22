@@ -328,5 +328,12 @@
       "failed": "Gagal memindahkan item"
     },
     "indexStuck": "Belum dapat menyimpan perubahan. Perubahan Anda disimpan secara lokal dan akan dicoba lagi otomatis — atau gunakan Coba lagi di banner."
+  },
+  "info": {
+    "versions": {
+      "title": "Versi sebelumnya",
+      "none": "Tidak ada versi sebelumnya yang disimpan untuk file ini.",
+      "download": "Unduh"
+    }
   }
 }

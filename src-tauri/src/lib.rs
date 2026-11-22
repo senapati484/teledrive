@@ -542,6 +542,59 @@ fn get_session_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
 // changing the interval safe and idempotent.
 // ============================================================================
 
+#[cfg(desktop)]
+mod backup_watch;
+
+#[tauri::command]
+fn start_backup_watch(app: AppHandle, id: String, paths: Vec<String>) -> Result<Vec<String>, String> {
+    #[cfg(desktop)]
+    return backup_watch::start(app, id, paths);
+    #[cfg(not(desktop))]
+    {
+        let _ = (app, id, paths);
+        Err("Folder monitoring is only available on desktop".into())
+    }
+}
+
+#[cfg(desktop)]
+mod backup_cleanup;
+
+/// Deletes backed-up files from disk. Each file is re-validated in
+/// `backup_cleanup` (inside a backup folder, unchanged since the backup).
+#[tauri::command]
+async fn delete_backed_up_files(
+    roots: Vec<String>,
+    files: Vec<serde_json::Value>,
+) -> Result<serde_json::Value, String> {
+    #[cfg(desktop)]
+    {
+        let files: Vec<backup_cleanup::CleanupFile> = files
+            .into_iter()
+            .map(serde_json::from_value)
+            .collect::<Result<_, _>>()
+            .map_err(|e| format!("invalid file list: {e}"))?;
+        let result = tauri::async_runtime::spawn_blocking(move || {
+            backup_cleanup::delete_files(roots, files)
+        })
+        .await
+        .map_err(|e| format!("cleanup join failed: {e}"))?;
+        serde_json::to_value(result).map_err(|e| e.to_string())
+    }
+    #[cfg(not(desktop))]
+    {
+        let _ = (roots, files);
+        Err("Deleting backed-up files is only available on desktop".into())
+    }
+}
+
+#[tauri::command]
+fn stop_backup_watch(id: String) {
+    #[cfg(desktop)]
+    backup_watch::stop(&id);
+    #[cfg(not(desktop))]
+    let _ = id;
+}
+
 static SCHEDULED_BACKUP_HANDLE: OnceLock<AsyncMutex<Option<JoinHandle<()>>>> = OnceLock::new();
 
 fn handle_slot() -> &'static AsyncMutex<Option<JoinHandle<()>>> {
@@ -738,7 +791,16 @@ fn walk_recursive(root: &Path, current: &Path, run_id: &str, state: &mut WalkSta
             Ok(s) => s,
             Err(_) => continue,
         };
-        let meta = match std::fs::symlink_metadata(&path) {
+        // The backup excludes these directories on every platform. Prune
+        // them before recursing instead of sending their contents to the UI.
+        let entry_type = match entry.file_type() {
+            Ok(file_type) => file_type,
+            Err(_) => continue,
+        };
+        if entry_type.is_dir() && matches!(file_name.as_str(), ".git" | "node_modules") {
+            continue;
+        }
+        let meta = match entry.metadata() {
             Ok(m) => m,
             Err(_) => continue,
         };
@@ -1523,6 +1585,9 @@ pub fn run() {
             save_backup_manifest,
             append_backup_manifest_journal,
             quarantine_backup_manifest,
+            start_backup_watch,
+            stop_backup_watch,
+            delete_backed_up_files,
             start_backup_scheduler,
             stop_backup_scheduler,
             read_dir_recursive,

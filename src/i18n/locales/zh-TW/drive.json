@@ -108,7 +108,19 @@
     "partial": "備份完成（有警告）",
     "summaryMissing_one": "{{count}} 個資料夾無法使用",
     "summaryMissing_other": "{{count}} 個資料夾無法使用",
-    "cancel": "取消備份"
+    "cancel": "取消備份",
+    "phase": {
+      "connecting": "正在連線 Telegram…",
+      "scanning": "正在掃描資料夾…",
+      "comparing": "正在檢查變更…",
+      "saving": "正在儲存備份目錄…"
+    },
+    "comparingProgress": "已檢查 {{processed}} / {{total}} 個檔案",
+    "catalogRetry": "Telegram 要求等待 — 距離下次儲存目錄還有 {{remaining}}",
+    "fileTransfer": "目前檔案：已傳送 {{percent}}%",
+    "waitingTelegram": "等待 Telegram 至 {{time}}（剩餘 {{remaining}}）。備份將自動繼續。",
+    "summaryDeleted_one": "已從磁碟刪除 {{count}} 個",
+    "summaryDeleted_other": "已從磁碟刪除 {{count}} 個"
   },
   "errorBoundary": {
     "title": "出了點問題",

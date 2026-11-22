@@ -108,7 +108,19 @@
     "partial": "बैकअप चेतावनियों के साथ पूरा हुआ",
     "summaryMissing_one": "{{count}} फ़ोल्डर अनुपलब्ध है",
     "summaryMissing_other": "{{count}} फ़ोल्डर अनुपलब्ध हैं",
-    "cancel": "बैकअप रद्द करें"
+    "cancel": "बैकअप रद्द करें",
+    "phase": {
+      "connecting": "Telegram से कनेक्ट हो रहा है…",
+      "scanning": "फ़ोल्डर स्कैन हो रहे हैं…",
+      "comparing": "बदलाव जाँचे जा रहे हैं…",
+      "saving": "बैकअप कैटलॉग सहेजा जा रहा है…"
+    },
+    "comparingProgress": "{{total}} में से {{processed}} फ़ाइलें जाँची गईं",
+    "catalogRetry": "Telegram ने प्रतीक्षा करने को कहा — अगले कैटलॉग प्रयास तक {{remaining}}",
+    "fileTransfer": "वर्तमान फ़ाइल: {{percent}}% भेजी गई",
+    "waitingTelegram": "{{time}} तक Telegram की प्रतीक्षा ({{remaining}} शेष)। बैकअप अपने आप फिर शुरू होगा।",
+    "summaryDeleted_one": "{{count}} डिस्क से हटाई गई",
+    "summaryDeleted_other": "{{count}} डिस्क से हटाई गईं"
   },
   "errorBoundary": {
     "title": "कुछ गलत हो गया",

@@ -328,5 +328,12 @@
       "failed": "Échec du déplacement des éléments"
     },
     "indexStuck": "Impossible d'enregistrer les modifications pour l'instant. Vos modifications sont conservées localement et seront réessayées automatiquement — ou utilisez Réessayer dans la bannière."
+  },
+  "info": {
+    "versions": {
+      "title": "Versions précédentes",
+      "none": "Aucune version précédente conservée pour ce fichier.",
+      "download": "Télécharger"
+    }
   }
 }

@@ -94,7 +94,8 @@
       "off": "离开",
       "every6h": "每 6 小时",
       "every12h": "每12小时一次",
-      "every24h": "每24小时一次"
+      "every24h": "每24小时一次",
+      "onChange": "文件更改时"
     },
     "lastBackup": "最后备份：",
     "lastBackupAgo": "{{时间}}前",
@@ -105,7 +106,9 @@
       "unchanged_one": "{{count}} 不变，",
       "unchanged_other": "{{count}} 不变，",
       "failed_one": "{{count}} 失败",
-      "failed_other": "{{count}} 失败"
+      "failed_other": "{{count}} 失败",
+      "deleted_one": "已从磁盘删除 {{count}} 个",
+      "deleted_other": "已从磁盘删除 {{count}} 个"
     },
     "progressHint": "查看右下角的进度面板。",
     "cancel": "取消",
@@ -131,7 +134,27 @@
     },
     "missingRoots_one": "{{count}} 个源文件夹不可用。其他文件夹已备份。",
     "missingRoots_other": "{{count}} 个源文件夹不可用。其他文件夹已备份。",
-    "editFolders": "编辑文件夹"
+    "editFolders": "编辑文件夹",
+    "autoDelete": {
+      "title": "备份后从磁盘删除",
+      "description": "每次备份后，备份文件夹中已安全保存在 Telegram 的文件会从这台电脑上删除。只影响上面列出的文件夹中的文件；上传后又被编辑的文件会保留，直到再次备份。",
+      "activeWarning": "已开启：已备份的文件正在从这台电脑上删除。需要时可通过 TeleDrive 恢复。",
+      "confirmTitle": "要从这台电脑上删除已备份的文件吗？",
+      "confirmBody": "从下次备份开始，这些文件夹中已在 Telegram 的每个文件都会从磁盘删除。TeleDrive 无法撤销：唯一剩下的副本将是 Telegram 中的那份。",
+      "confirm": "开启并删除",
+      "cancel": "取消"
+    },
+    "waitingTelegram": "等待 Telegram 至 {{time}}（剩余 {{remaining}}）。备份将自动继续。",
+    "manifestCorrupt": "此设备的备份记录已损坏，备份已暂停。",
+    "rebuildManifest": "从 Telegram 重建",
+    "rebuildManifestDone": "备份记录已重建。已在 Telegram 中的文件将重新关联，不会再次上传。",
+    "rebuildManifestFailed": "无法重建备份记录。",
+    "watch": {
+      "error": "文件夹监控不可用。更改将在定期扫描时被发现。",
+      "degraded_one": "{{count}} 个文件夹未被监控（不存在或无法访问）。每 5 分钟重试一次。",
+      "degraded_other": "{{count}} 个文件夹未被监控（不存在或无法访问）。每 5 分钟重试一次。",
+      "nextRetry": "部分文件失败。下次自动重试时间：{{time}}。"
+    }
   },
   "appearance": {
     "title": "外貌",

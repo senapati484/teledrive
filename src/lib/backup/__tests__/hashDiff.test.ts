@@ -13,6 +13,7 @@ import { deleteMessages } from "../telegramOps";
 import { emptyManifest, loadManifest, saveManifest, type ManifestEntryV2 } from "../manifest";
 import { useLicenseStore } from "@/stores/licenseStore";
 import { useAuthStore } from "@/stores/authStore";
+import { useFileStore } from "@/stores/fileStore";
 import { sha256 } from "@noble/hashes/sha256";
 import { bytesToHex } from "@noble/hashes/utils";
 
@@ -64,6 +65,7 @@ vi.mock("../../telegram/indexReadiness", () => ({
   waitForIndexReady: vi.fn(async () => true),
 }));
 vi.mock("../../storage/metadataStore", () => ({
+  folderIdForPath: (path: string) => path,
   reconstructMissingFolders: (files: any[]) => ({ healedFiles: files }),
   resolveChannelInputPeer: async () => ({ id: 1 }),
 }));
@@ -151,6 +153,60 @@ beforeEach(() => {
 });
 
 describe("content-hash diff", () => {
+  it("indexes all parts of a large ISO even when upload hashing is disabled", async () => {
+    const segments = [{ messageId: 20, size: 6 }, { messageId: 21, size: 4 }];
+    walkMock.mockResolvedValue(walk([{ relPath: "iso/linux.iso", size: 10 }]));
+    uploadMock.mockResolvedValueOnce({ message: { id: 20 }, hash: null, segments });
+
+    const result = await runBackup({ triggeredBy: "auto", hashSizeCapBytes: 5 });
+
+    expect(result.filesUploaded).toBe(1);
+    expect(uploadMock.mock.calls[0][7]).toBe(false);
+    expect(uploadMock.mock.calls[0][9]).toMatchObject({ checkpointKey: expect.any(String) });
+    expect(saveMock.mock.calls[saveMock.mock.calls.length - 1]?.[1]).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: "linux.iso", messageId: 20, segments }),
+    ]));
+    expect((await loadManifest(CHANNEL)).entries[`${ROOT}/iso/linux.iso`]).toMatchObject({
+      messageId: 20, segments,
+    });
+  });
+
+  it("publishes the moved backup before sending a new file", async () => {
+    const before = `${FOLDER}/portfolio`;
+    const after = `${FOLDER}/random/portfolio`;
+    await seed({ [`${ROOT}/portfolio/a.txt`]: priorEntry({ hash: "hash", folderPath: before }) });
+    const sample = walk([
+      { relPath: "iso/new.iso", size: 100 },
+      { relPath: "random/portfolio/a.txt" },
+    ]);
+    sample.directories = ["iso", "random", "random/portfolio"].map((relPath) => ({
+      absPath: `${ROOT}/${relPath}`,
+      relPath,
+    }));
+    walkMock.mockResolvedValue(sample);
+    useFileStore.getState().setFiles([{
+      id: "backup_10", channelId: CHANNEL, messageId: 10, name: "a.txt",
+      mime: "text/plain", size: 10, folderPath: before, uploadedAt: 1,
+    }]);
+
+    const result = await runBackup({ triggeredBy: "auto" });
+
+    expect(result.status).toBe("success");
+    expect(uploadMock).toHaveBeenCalledTimes(1);
+    expect(uploadMock.mock.calls[0][1]).toBe("new.iso");
+    expect(saveMock.mock.invocationCallOrder[0]).toBeLessThan(uploadMock.mock.invocationCallOrder[0]);
+    expect(saveMock.mock.calls[0]).toEqual([CHANNEL, expect.arrayContaining([
+      expect.objectContaining({ messageId: 10, folderPath: after }),
+      expect.objectContaining({ name: "iso", folderPath: FOLDER, mime: "inode/directory" }),
+      expect.objectContaining({ name: "random", folderPath: FOLDER, mime: "inode/directory" }),
+    ])]);
+    const { entries } = await loadManifest(CHANNEL);
+    expect(entries[`${ROOT}/portfolio/a.txt`]).toBeUndefined();
+    expect(entries[`${ROOT}/random/portfolio/a.txt`]).toMatchObject({
+      messageId: 10, folderPath: after,
+    });
+  });
+
   it("skips a touched file with identical content and updates its stat fields", async () => {
     h.hashFile = vi.fn(async () => "same-hash");
     await seed({ [`${ROOT}/a.txt`]: priorEntry({ hash: "same-hash" }) });
@@ -206,6 +262,27 @@ describe("content-hash diff", () => {
     const loaded = await loadManifest(CHANNEL);
     expect(loaded.entries[`${ROOT}/a.txt`].messageId).toBe(21);
     expect(loaded.entries[`${ROOT}/a.txt`].hash).toBeUndefined();
+  });
+
+  it("checks only notified files when size and modification time did not change", async () => {
+    h.hashFile = vi.fn(async () => "new-hash");
+    await seed({
+      [`${ROOT}/a.txt`]: priorEntry({ hash: "old-hash" }),
+      [`${ROOT}/b.txt`]: priorEntry({ hash: "untouched" }),
+    });
+    walkMock.mockResolvedValue(walk([
+      { relPath: "a.txt", size: 10, mtimeMs: 1 },
+      { relPath: "b.txt", size: 10, mtimeMs: 1 },
+    ]));
+
+    const result = await runBackup({
+      triggeredBy: "auto",
+      changedPaths: new Set([`${ROOT}/a.txt`]),
+    });
+
+    expect(result.filesUploaded).toBe(1);
+    expect(result.filesSkipped).toBe(1);
+    expect(h.hashFile).toHaveBeenCalledExactlyOnceWith(`${ROOT}/a.txt`);
   });
 
   it("skips comparison above the size cap and uploads without a hash", async () => {

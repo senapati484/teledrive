@@ -108,7 +108,19 @@
     "partial": "Резервное копирование завершено с предупреждениями",
     "summaryMissing_one": "{{count}} папка недоступна",
     "summaryMissing_other": "{{count}} папок недоступно",
-    "cancel": "Отменить резервное копирование"
+    "cancel": "Отменить резервное копирование",
+    "phase": {
+      "connecting": "Подключение к Telegram…",
+      "scanning": "Сканирование папок…",
+      "comparing": "Проверка изменений…",
+      "saving": "Сохранение каталога резервной копии…"
+    },
+    "comparingProgress": "Проверено файлов: {{processed}} из {{total}}",
+    "catalogRetry": "Telegram просит подождать — {{remaining}} до следующей попытки сохранить каталог",
+    "fileTransfer": "Текущий файл: отправлено {{percent}}%",
+    "waitingTelegram": "Ожидание Telegram до {{time}} (осталось {{remaining}}). Резервное копирование продолжится само.",
+    "summaryDeleted_one": "{{count}} удалён с диска",
+    "summaryDeleted_other": "Удалено с диска: {{count}}"
   },
   "errorBoundary": {
     "title": "Что-то пошло не так",
