@@ -207,6 +207,7 @@ class ChannelQueue {
   private successCount = 0;
   private commitOverride: ((state: TeleFile[]) => Promise<void>) | null = null;
   private readonly channelId: string;
+  private serverRetryAt = 0;
 
   /**
    * Cached ids/texts of the live index on Telegram. Lets saves diff chunks and
@@ -220,6 +221,16 @@ class ChannelQueue {
 
   constructor(channelId: string) {
     this.channelId = channelId;
+    try {
+      const deadline = Number(localStorage.getItem(this.retryStorageKey()));
+      if (Number.isFinite(deadline) && deadline > Date.now()) this.serverRetryAt = deadline;
+    } catch {
+      // The in-memory queue still respects Telegram's cooldown.
+    }
+  }
+
+  private retryStorageKey(): string {
+    return `teledrive_index_flood_until:${this.channelId}`;
   }
 
   setVaultMetadata(meta: RemoteVaultMetadata | undefined): void {
@@ -352,6 +363,10 @@ class ChannelQueue {
       // Respect an active FLOOD_WAIT/backoff window: the timer will drain the
       // latest pending state when it fires instead of hammering Telegram now.
       if (this.retryTimer || this.inflight) return;
+      if (this.serverRetryAt > Date.now()) {
+        this.waitBeforeRetry(this.serverRetryAt - Date.now());
+        return;
+      }
       void this.drain();
     });
   }
@@ -362,6 +377,9 @@ class ChannelQueue {
    * Telegram ids/texts) so a later manual retry can still commit it.
    */
   async flush(): Promise<{ status: "committed" | "empty" | "failed"; error?: any }> {
+    if (this.serverRetryAt > Date.now()) {
+      return { status: "failed", error: new Error("Telegram catalog cooldown is still active") };
+    }
     this.clearTimers();
     const before = this.successCount;
     if (this.inflight) {
@@ -575,6 +593,18 @@ class ChannelQueue {
     }
 
     const delayMs = computeRetryDelay(this.retryAttempt, err);
+    if (floodSeconds !== null) {
+      this.serverRetryAt = Date.now() + delayMs;
+      try {
+        localStorage.setItem(this.retryStorageKey(), String(this.serverRetryAt));
+      } catch {
+        // Keeping the deadline in memory is sufficient until the app is closed.
+      }
+    }
+    this.waitBeforeRetry(delayMs);
+  }
+
+  private waitBeforeRetry(delayMs: number): void {
     const deadline = Date.now() + delayMs;
 
     useFileStore.getState().setIndexQueueRetryInSec(Math.ceil(delayMs / 1000));
