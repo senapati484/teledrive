@@ -77,6 +77,7 @@ import { deleteMessages } from "./telegramOps";
 import { isWebRuntime } from "../runtime/bridge";
 import { isMobilePlatform } from "@/lib/platform";
 import type { TeleFile } from "../types";
+import { buildUploadCheckpointKey } from "../upload/uploadCheckpoints";
 import i18n from "@/i18n";
 
 /**
@@ -485,7 +486,16 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
 
   let catalogChanged = false;
   if (walkHealthy && !opts.signal?.aborted && isIndexReady() && walk.directories?.length) {
-    const existing = useFileStore.getState().files;
+    const stored = useFileStore.getState().files;
+    // Drop provisional nested folders left by older scans. The catalog
+    // rebuilds folders that contain backed-up files from those file paths.
+    const existing = stored.filter((file) => {
+      if (file.channelId !== channelId || file.mime !== "inode/directory" || file.messageId !== 0) return true;
+      const path = `${file.folderPath}/${file.name}`;
+      return !path.startsWith(deviceRoot + "/") ||
+        path.slice(deviceRoot.length + 1).split("/").length <= 2 ||
+        file.id !== folderIdForPath(path);
+    });
     const folderPaths = new Set(existing.filter((file) => file.channelId === channelId &&
       !file.trashed && (file.mime === "inode/directory" || file.mime === "application/x-directory"))
       .map((file) => `${file.folderPath}/${file.name}`));
@@ -513,11 +523,14 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
         logger.warn("[backup.runner] Could not represent a local folder:", error);
       }
     }
-    if (added.length) {
+    if (added.length || existing.length !== stored.length) {
       const { healedFiles } = reconstructMissingFolders([...existing, ...added], channelId);
-      useFileStore.getState().setFiles(healedFiles);
-      queueBackupIndexSave(channelId, healedFiles);
-      catalogChanged = true;
+      const previousIds = new Set(stored.map((file) => file.id));
+      if (healedFiles.length !== stored.length || healedFiles.some((file) => !previousIds.has(file.id))) {
+        useFileStore.getState().setFiles(healedFiles);
+        queueBackupIndexSave(channelId, healedFiles);
+        catalogChanged = true;
+      }
     }
   }
   if (moves.length && !opts.signal?.aborted && !isIndexReady()) {
@@ -676,7 +689,7 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
         file.size,
         file.absPath,
         target.folderPath,
-        undefined,
+        (sent, total) => useBackupProgressStore.getState().setTransfer(sent, total),
         (e) => {
           useBackupProgressStore.getState().setRetry({
             attempt: e.attempt,
@@ -686,10 +699,19 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
           });
         },
         hashUpload,
+        undefined,
+        { checkpointKey: buildUploadCheckpointKey({
+          channelId,
+          folderPath: target.folderPath,
+          name: target.fileName,
+          size: file.size,
+          sourceKey: `backup:${file.absPath}:${file.mtimeMs}`,
+        }) },
       );
-      const hashed = hashUpload && isHashedUploadResult(upload) ? upload : null;
-      const message = hashed ? hashed.message : upload;
-      const contentHash = hashed?.hash ?? null;
+      const wrapped = isHashedUploadResult(upload) ? upload : null;
+      const message = wrapped ? wrapped.message : upload;
+      const contentHash = wrapped?.hash ?? null;
+      const segments = wrapped?.segments;
       const messageId = Number((message as { id?: unknown })?.id);
       if (!Number.isFinite(messageId) || messageId <= 0) {
         throw new Error(
@@ -705,6 +727,7 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
         folderPath: target.folderPath,
         uploadedAt: new Date().toISOString(),
         ...(contentHash ? { hash: contentHash } : {}),
+        ...(segments ? { segments } : {}),
         ...(previousMessageIds.length > 0 ? { previousMessageIds } : {}),
         ...(versions.length > 0 ? { versions } : {}),
       };
@@ -730,6 +753,7 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
         channelId,
         uploadedAt: Date.now(),
         ...(contentHash ? { hash: contentHash } : {}),
+        ...(segments ? { segments } : {}),
         starred: false,
         trashed: false,
       };
@@ -833,8 +857,13 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
   }
 
   const finishedAt = Date.now();
+  const flush = await flushBackupIndexSave(channelId);
+  if (!flush.ok && status !== "cancelled") {
+    status = filesUploaded > 0 ? "partial" : "failed";
+    firstError ??= flush.error ?? i18n.t("messages:indexLoad.changesPaused");
+  }
   const lastSuccessAt =
-    status === "success" || status === "partial"
+    flush.ok && !indexPaused && (status === "success" || status === "partial")
       ? finishedAt
       : manifest.lastSuccessAt;
   manifest = {
@@ -855,7 +884,6 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
     logger.warn("[backup.runner] manifest save failed:", err);
   }
 
-  const flush = await flushBackupIndexSave(channelId);
   if (flush.ok && status !== "cancelled") {
     await sweepGarbage(channelId, manifest);
   }
@@ -1020,6 +1048,7 @@ async function adoptExistingUpload(
     folderPath,
     uploadedAt: new Date(match.uploadedAt).toISOString(),
     ...(match.hash ? { hash: match.hash } : {}),
+    ...(match.segments ? { segments: match.segments } : {}),
   };
 }
 
@@ -1040,11 +1069,11 @@ async function deleteBackedUpFiles(
   manifest: BackupManifestV2,
   verifyMessageIds: (ids: number[]) => Promise<Set<number>>,
 ): Promise<number> {
-  const indexed = new Set(
+  const indexed = new Map(
     useFileStore
       .getState()
       .files.filter((f) => f.channelId === channelId && !f.trashed)
-      .map((f) => Number(f.messageId)),
+      .map((f) => [Number(f.messageId), f]),
   );
   const candidates = files.filter((f) => {
     const entry = manifest.entries[f.absPath];
@@ -1059,9 +1088,13 @@ async function deleteBackedUpFiles(
   });
   if (candidates.length === 0) return 0;
 
+  const messageIdsFor = (entry: ManifestEntryV2) => [
+    entry.messageId,
+    ...(entry.segments ?? indexed.get(entry.messageId)?.segments ?? []).map((part) => part.messageId),
+  ];
   const live = new Set<number>();
   try {
-    const ids = [...new Set(candidates.map((f) => manifest.entries[f.absPath].messageId))];
+    const ids = [...new Set(candidates.flatMap((f) => messageIdsFor(manifest.entries[f.absPath])))];
     for (let i = 0; i < ids.length; i += 100) {
       for (const id of await verifyMessageIds(ids.slice(i, i + 100))) live.add(id);
     }
@@ -1069,7 +1102,7 @@ async function deleteBackedUpFiles(
     logger.warn("[backup.runner] could not confirm copies in Telegram; nothing deleted:", err);
     return 0;
   }
-  const confirmed = candidates.filter((f) => live.has(manifest.entries[f.absPath].messageId));
+  const confirmed = candidates.filter((f) => messageIdsFor(manifest.entries[f.absPath]).every((id) => live.has(id)));
   if (confirmed.length === 0) return 0;
 
   try {
@@ -1109,6 +1142,7 @@ export function retireVersions(
       size: prior.size,
       uploadedAt: prior.uploadedAt,
       ...(prior.hash ? { hash: prior.hash } : {}),
+      ...(prior.segments ? { segments: prior.segments } : {}),
     },
     ...(prior.versions ?? []),
   ].filter(
@@ -1119,7 +1153,7 @@ export function retireVersions(
   const versions = all.slice(0, KEEP_VERSIONS);
   const kept = new Set(versions.map((v) => v.messageId));
   const previousMessageIds = [
-    ...all.slice(KEEP_VERSIONS).map((v) => v.messageId),
+    ...all.slice(KEEP_VERSIONS).flatMap((v) => [v.messageId, ...(v.segments ?? []).map((part) => part.messageId)]),
     ...(prior.previousMessageIds ?? []),
   ].filter(
     (id, index, list) =>

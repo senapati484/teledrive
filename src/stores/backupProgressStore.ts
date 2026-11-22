@@ -41,6 +41,7 @@ export interface BackupProgressState {
   total: number;
   /** Absolute path of the file currently being processed (best-effort). */
   currentFile: string;
+  transfer: { sent: number; total: number } | null;
   /** Summary from the most-recent completed run. Survives until the next run. */
   lastResult: {
     filesUploaded: number;
@@ -82,6 +83,7 @@ export interface BackupProgressState {
   setWalking: () => void;
   setPhase: (phase: BackupProgressState["phase"], processed?: number, total?: number) => void;
   setProgress: (info: { uploaded: number; total: number; currentFile: string }) => void;
+  setTransfer: (sent: number, total: number) => void;
   setRetry: (info: {
     attempt: number;
     maxAttempts: number;
@@ -115,6 +117,7 @@ export const useBackupProgressStore = create<BackupProgressState>((set) => ({
   uploaded: 0,
   total: 0,
   currentFile: "",
+  transfer: null,
   lastResult: null,
   error: null,
   retry: null,
@@ -131,6 +134,7 @@ export const useBackupProgressStore = create<BackupProgressState>((set) => ({
       uploaded: 0,
       total: 0,
       currentFile: "",
+      transfer: null,
       error: null,
       retry: null,
       waitingUntil: null,
@@ -139,10 +143,12 @@ export const useBackupProgressStore = create<BackupProgressState>((set) => ({
   setWalking: () => set({ status: "walking", phase: "scanning", uploaded: 0, total: 0, retry: null }),
 
   setPhase: (phase, processed = 0, total = 0) =>
-    set({ status: "walking", phase, uploaded: processed, total, currentFile: "" }),
+    set({ status: "walking", phase, uploaded: processed, total, currentFile: "", transfer: null }),
 
   setProgress: ({ uploaded, total, currentFile }) =>
-    set({ status: "uploading", phase: null, uploaded, total, currentFile, retry: null }),
+    set({ status: "uploading", phase: null, uploaded, total, currentFile, transfer: null, retry: null }),
+
+  setTransfer: (sent, total) => set({ transfer: { sent, total }, retry: null }),
 
   setRetry: (info) => set({ retry: { ...info, until: Date.now() + info.waitMs } }),
 

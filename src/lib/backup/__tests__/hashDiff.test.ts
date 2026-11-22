@@ -153,6 +153,24 @@ beforeEach(() => {
 });
 
 describe("content-hash diff", () => {
+  it("indexes all parts of a large ISO even when upload hashing is disabled", async () => {
+    const segments = [{ messageId: 20, size: 6 }, { messageId: 21, size: 4 }];
+    walkMock.mockResolvedValue(walk([{ relPath: "iso/linux.iso", size: 10 }]));
+    uploadMock.mockResolvedValueOnce({ message: { id: 20 }, hash: null, segments });
+
+    const result = await runBackup({ triggeredBy: "auto", hashSizeCapBytes: 5 });
+
+    expect(result.filesUploaded).toBe(1);
+    expect(uploadMock.mock.calls[0][7]).toBe(false);
+    expect(uploadMock.mock.calls[0][9]).toMatchObject({ checkpointKey: expect.any(String) });
+    expect(saveMock.mock.calls[saveMock.mock.calls.length - 1]?.[1]).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: "linux.iso", messageId: 20, segments }),
+    ]));
+    expect((await loadManifest(CHANNEL)).entries[`${ROOT}/iso/linux.iso`]).toMatchObject({
+      messageId: 20, segments,
+    });
+  });
+
   it("publishes the moved backup before sending a new file", async () => {
     const before = `${FOLDER}/portfolio`;
     const after = `${FOLDER}/random/portfolio`;

@@ -30,6 +30,7 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useBackupProgressStore } from "@/stores/backupProgressStore";
+import { useFileStore } from "@/stores/fileStore";
 import { cancelBackup } from "@/lib/backup/controller";
 import { cn } from "@/lib/utils";
 import { formatClock, formatRemaining, useNow } from "@/lib/backup/waitFormat";
@@ -38,6 +39,8 @@ const AUTO_DISMISS_MS = 6000;
 
 export function BackupProgressOverlay() {
   const state = useBackupProgressStore();
+  const catalogRetrySec = useFileStore((s) => s.indexQueueRetryInSec);
+  const catalogRetrying = useFileStore((s) => s.indexQueueState === "retrying");
   const { t } = useTranslation("drive");
   const now = useNow(state.waitingUntil !== null || state.retry !== null);
 
@@ -70,7 +73,10 @@ export function BackupProgressOverlay() {
   // Idle: render nothing.
   if (state.status === "idle") return null;
 
-  const percent =
+  const transfer = state.status === "uploading" ? state.transfer : null;
+  const percent = transfer && transfer.total > 0
+    ? Math.min(100, Math.floor(100 * transfer.sent / transfer.total))
+    :
     state.total > 0
       ? Math.min(100, Math.round((state.uploaded / state.total) * 100))
       : 0;
@@ -96,6 +102,9 @@ export function BackupProgressOverlay() {
 
   const sublabel = (() => {
     if (isActive) {
+      if (state.phase === "saving" && catalogRetrying) {
+        return t("backup.catalogRetry", { remaining: formatRemaining(catalogRetrySec * 1000) });
+      }
       // Retry state takes priority over the current-file label — when a
       // chunk is in a FLOOD_WAIT backoff the user wants to know WHY the
       // counter is frozen ("Retrying 3/5 — waiting 30s for rate limit"),
@@ -114,8 +123,8 @@ export function BackupProgressOverlay() {
         }
         return t("backup.retryNetwork", { attempt: r.attempt, maxAttempts: r.maxAttempts, seconds: waitSec });
       }
-      if (state.status === "uploading" && state.currentFile) {
-        return truncateMid(state.currentFile, 56);
+      if (transfer) {
+        return t("backup.fileTransfer", { percent });
       }
       if (state.status === "walking") {
         if (state.phase === "comparing" && state.total > 0) {
@@ -199,6 +208,11 @@ export function BackupProgressOverlay() {
             <p className="text-sm font-semibold text-[#1F1F1F] dark:text-[#E3E3E3] truncate">
               {title}
             </p>
+            {isActive && state.currentFile && (
+              <p className="text-xs mt-0.5 truncate" title={state.currentFile}>
+                {truncateMid(state.currentFile, 56)}
+              </p>
+            )}
             {sublabel && (
               <p
                 className={cn(

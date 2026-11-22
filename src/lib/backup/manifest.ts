@@ -9,7 +9,7 @@
 
 import { invoke } from "@tauri-apps/api/core";
 import { logger } from "@/lib/logger";
-import type { TeleFile } from "../types";
+import type { TeleFile, TeleFileSegment } from "../types";
 import { rawChannelId } from "../telegram/peerId";
 
 const LEGACY_MANIFEST_KEY = "teledrive_backup_manifest_v1";
@@ -30,6 +30,7 @@ export interface ManifestEntryV2 {
   folderPath: string;
   uploadedAt: string;
   hash?: string;
+  segments?: TeleFileSegment[];
   sourceMissing?: boolean;
   /** Superseded uploads waiting to be deleted from the channel. */
   previousMessageIds?: number[];
@@ -42,6 +43,7 @@ export interface ManifestVersion {
   size: number;
   uploadedAt: string;
   hash?: string;
+  segments?: TeleFileSegment[];
 }
 
 /** How many earlier versions of each backed-up file stay restorable. */

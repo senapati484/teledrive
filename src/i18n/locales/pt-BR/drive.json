@@ -93,6 +93,8 @@
     "scanning": "Verificando pastas…",
     "phase": { "connecting": "Conectando ao Telegram…", "scanning": "Verificando pastas…", "comparing": "Comparando arquivos…", "saving": "Salvando o catálogo do backup…" },
     "comparingProgress": "{{processed}} de {{total}} arquivos verificados",
+    "catalogRetry": "Telegram pediu uma pausa · próxima tentativa em {{remaining}}",
+    "fileTransfer": "{{percent}}% do arquivo atual enviado",
     "backingUp": "Fazendo backup — {{uploaded}} / {{total}}",
     "completeUploaded_one": "Backup concluído — {{count}} arquivo enviado",
     "completeUploaded_other": "Backup concluído — {{count}} arquivos enviados",

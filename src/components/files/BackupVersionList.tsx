@@ -65,6 +65,7 @@ export function BackupVersionList({ file, formatBytes, formatDateTime }: BackupV
       channelId: file.channelId,
       uploadedAt: Date.parse(version.uploadedAt) || file.uploadedAt,
       ...(version.hash ? { hash: version.hash } : {}),
+      ...(version.segments ? { segments: version.segments } : {}),
       starred: false,
       trashed: false,
     };

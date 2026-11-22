@@ -90,6 +90,8 @@
     "scanning": "Scanning folders…",
     "phase": { "connecting": "Connecting to Telegram…", "scanning": "Scanning folders…", "comparing": "Checking for changes…", "saving": "Saving the backup catalog…" },
     "comparingProgress": "{{processed}} of {{total}} files checked",
+    "catalogRetry": "Telegram asked to wait · {{remaining}} until the next catalog attempt",
+    "fileTransfer": "Current file: {{percent}}% sent",
     "backingUp": "Backing up — {{uploaded}} / {{total}}",
     "completeUploaded_one": "Backup complete — {{count}} file uploaded",
     "completeUploaded_other": "Backup complete — {{count}} files uploaded",
