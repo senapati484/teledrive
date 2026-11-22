@@ -42,6 +42,7 @@ export interface WalkError {
 
 export interface WalkResult {
   files: WalkedFile[];
+  directories?: Pick<WalkedFile, "absPath" | "relPath">[];
   roots: WalkRootStatus[];
   cancelled: boolean;
   complete: boolean;
@@ -108,6 +109,7 @@ export async function walkSourceFolders(
   opts.signal?.addEventListener("abort", abortListener, { once: true });
 
   const files: WalkedFile[] = [];
+  const directories: NonNullable<WalkResult["directories"]> = [];
   const roots: WalkRootStatus[] = [];
   const errors: WalkError[] = [];
   let cancelled = Boolean(opts.signal?.aborted);
@@ -161,6 +163,8 @@ export async function walkSourceFolders(
         if (entry.is_dir) {
           if (directoryShouldBeExcluded(rel, folders.excludes ?? [])) {
             if (rel) pruned.push(rel);
+          } else if (rel) {
+            directories.push({ absPath: entry.abs_path, relPath: rel });
           }
           continue;
         }
@@ -199,6 +203,7 @@ export async function walkSourceFolders(
 
   return {
     files: deduped,
+    directories,
     roots,
     cancelled,
     complete,

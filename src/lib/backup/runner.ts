@@ -689,6 +689,34 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
   }
 
   const cancelled = Boolean(opts.signal?.aborted);
+  if (walkHealthy && !cancelled && isIndexReady() && walk.directories?.length) {
+    const existing = useFileStore.getState().files;
+    const folderPaths = new Set(existing.filter((file) => file.channelId === channelId &&
+      !file.trashed && (file.mime === "inode/directory" || file.mime === "application/x-directory"))
+      .map((file) => `${file.folderPath}/${file.name}`));
+    const added: TeleFile[] = [];
+    for (const dir of walk.directories) {
+      try {
+        const target = computeUploadTarget(
+          { ...dir, size: 0, mtimeMs: 0 }, folders.paths, rootDisplayBasename, deviceRoot,
+        );
+        const path = `${target.folderPath}/${target.fileName}`;
+        if (folderPaths.has(path)) continue;
+        folderPaths.add(path);
+        added.push({
+          id: folderIdForPath(path), name: target.fileName, size: 0, mime: "inode/directory",
+          folderPath: target.folderPath, channelId, messageId: 0, uploadedAt: Date.now(),
+        });
+      } catch (error) {
+        logger.warn("[backup.runner] Could not represent a local folder:", error);
+      }
+    }
+    if (added.length) {
+      const { healedFiles } = reconstructMissingFolders([...existing, ...added], channelId);
+      useFileStore.getState().setFiles(healedFiles);
+      queueBackupIndexSave(channelId, healedFiles);
+    }
+  }
   if (moves.length && !cancelled && !isIndexReady()) {
     filesSkipped -= moves.length;
     indexPaused = true;

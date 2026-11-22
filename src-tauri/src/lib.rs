@@ -556,6 +556,37 @@ fn start_backup_watch(app: AppHandle, id: String, paths: Vec<String>) -> Result<
     }
 }
 
+#[cfg(desktop)]
+mod backup_cleanup;
+
+/// Deletes backed-up files from disk. Each file is re-validated in
+/// `backup_cleanup` (inside a backup folder, unchanged since the backup).
+#[tauri::command]
+async fn delete_backed_up_files(
+    roots: Vec<String>,
+    files: Vec<serde_json::Value>,
+) -> Result<serde_json::Value, String> {
+    #[cfg(desktop)]
+    {
+        let files: Vec<backup_cleanup::CleanupFile> = files
+            .into_iter()
+            .map(serde_json::from_value)
+            .collect::<Result<_, _>>()
+            .map_err(|e| format!("invalid file list: {e}"))?;
+        let result = tauri::async_runtime::spawn_blocking(move || {
+            backup_cleanup::delete_files(roots, files)
+        })
+        .await
+        .map_err(|e| format!("cleanup join failed: {e}"))?;
+        return serde_json::to_value(result).map_err(|e| e.to_string());
+    }
+    #[cfg(not(desktop))]
+    {
+        let _ = (roots, files);
+        Err("Deleting backed-up files is only available on desktop".into())
+    }
+}
+
 #[tauri::command]
 fn stop_backup_watch(id: String) {
     #[cfg(desktop)]
@@ -1547,6 +1578,7 @@ pub fn run() {
             quarantine_backup_manifest,
             start_backup_watch,
             stop_backup_watch,
+            delete_backed_up_files,
             start_backup_scheduler,
             stop_backup_scheduler,
             read_dir_recursive,

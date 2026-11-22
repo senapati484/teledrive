@@ -69,6 +69,14 @@ function loadBackupFolders(): BackupFoldersPayload {
   try {
     const raw = localStorage.getItem(BACKUP_FOLDERS_KEY);
     if (raw) return JSON.parse(raw) as BackupFoldersPayload;
+    if (import.meta.env.DEV) {
+      const path = import.meta.env.VITE_TELEDRIVE_DEV_BACKUP_FOLDER?.trim();
+      if (path) {
+        const folders = { paths: [path], excludes: [] };
+        saveBackupFolders(folders);
+        return folders;
+      }
+    }
   } catch { /* ignore */ }
   return { paths: [], excludes: [] };
 }

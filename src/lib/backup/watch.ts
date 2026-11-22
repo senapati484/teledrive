@@ -100,6 +100,9 @@ export function watchBackupFolders(paths: string[]): (() => void) | undefined {
       const next = new Map(walk.files.map((file) => [
         backupPathKey(file.absPath), `${file.size}:${file.mtimeMs}`,
       ]));
+      for (const dir of walk.directories ?? []) {
+        next.set(backupPathKey(dir.absPath), "directory");
+      }
       if (snapshot) {
         for (const [path, stat] of next) {
           if (snapshot.get(path) !== stat) pending.add(path);
