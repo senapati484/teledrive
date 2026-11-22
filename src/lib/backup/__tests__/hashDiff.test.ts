@@ -153,11 +153,19 @@ beforeEach(() => {
 });
 
 describe("content-hash diff", () => {
-  it("moves a verified backup to its new subfolder without uploading it again", async () => {
+  it("publishes the moved backup before sending a new file", async () => {
     const before = `${FOLDER}/portfolio`;
     const after = `${FOLDER}/random/portfolio`;
     await seed({ [`${ROOT}/portfolio/a.txt`]: priorEntry({ hash: "hash", folderPath: before }) });
-    walkMock.mockResolvedValue(walk([{ relPath: "random/portfolio/a.txt" }]));
+    const sample = walk([
+      { relPath: "iso/new.iso", size: 100 },
+      { relPath: "random/portfolio/a.txt" },
+    ]);
+    sample.directories = ["iso", "random", "random/portfolio"].map((relPath) => ({
+      absPath: `${ROOT}/${relPath}`,
+      relPath,
+    }));
+    walkMock.mockResolvedValue(sample);
     useFileStore.getState().setFiles([{
       id: "backup_10", channelId: CHANNEL, messageId: 10, name: "a.txt",
       mime: "text/plain", size: 10, folderPath: before, uploadedAt: 1,
@@ -166,10 +174,14 @@ describe("content-hash diff", () => {
     const result = await runBackup({ triggeredBy: "auto" });
 
     expect(result.status).toBe("success");
-    expect(uploadMock).not.toHaveBeenCalled();
-    expect(saveMock).toHaveBeenCalledWith(CHANNEL, [
+    expect(uploadMock).toHaveBeenCalledTimes(1);
+    expect(uploadMock.mock.calls[0][1]).toBe("new.iso");
+    expect(saveMock.mock.invocationCallOrder[0]).toBeLessThan(uploadMock.mock.invocationCallOrder[0]);
+    expect(saveMock.mock.calls[0]).toEqual([CHANNEL, expect.arrayContaining([
       expect.objectContaining({ messageId: 10, folderPath: after }),
-    ]);
+      expect.objectContaining({ name: "iso", folderPath: FOLDER, mime: "inode/directory" }),
+      expect.objectContaining({ name: "random", folderPath: FOLDER, mime: "inode/directory" }),
+    ])]);
     const { entries } = await loadManifest(CHANNEL);
     expect(entries[`${ROOT}/portfolio/a.txt`]).toBeUndefined();
     expect(entries[`${ROOT}/random/portfolio/a.txt`]).toMatchObject({

@@ -107,11 +107,22 @@
       "unchanged_other": "{{count}} sem alteração, ",
       "failed_one": "{{count}} com falha",
       "failed_other": "{{count}} com falha",
+      "deleted_one": "{{count}} removido do disco",
+      "deleted_other": "{{count}} removidos do disco",
       "uploaded_zero": "{{count}} enviados, ",
       "unchanged_zero": "{{count}} sem alteração, ",
       "failed_zero": "{{count}} com falha"
     },
     "progressHint": "Acompanhe o progresso no painel do canto inferior direito.",
+    "autoDelete": {
+      "title": "Excluir do disco após o backup",
+      "description": "Depois de cada backup, os arquivos das pastas de backup que já estão seguros no Telegram são excluídos deste computador. Só os arquivos dentro das pastas listadas acima são afetados, e um arquivo editado depois do envio fica no disco até ser enviado de novo.",
+      "activeWarning": "Ativado: os arquivos com backup estão sendo removidos deste computador. Restaure-os pelo TeleDrive quando precisar.",
+      "confirmTitle": "Excluir deste computador os arquivos com backup?",
+      "confirmBody": "A partir do próximo backup, todo arquivo destas pastas que já estiver no Telegram será excluído do seu disco. Isso não pode ser desfeito pelo TeleDrive: a única cópia restante será a do Telegram.",
+      "confirm": "Ativar e excluir",
+      "cancel": "Cancelar"
+    },
     "waitingTelegram": "Aguardando o Telegram até {{time}} (faltam {{remaining}}). O backup continua sozinho.",
     "manifestCorrupt": "O registro de backup deste dispositivo está danificado, por isso o backup está pausado.",
     "rebuildManifest": "Reconstruir a partir do Telegram",

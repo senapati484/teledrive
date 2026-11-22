@@ -28,6 +28,7 @@ export interface BackupProgressState {
   active: boolean;
   /** Coarse-grained phase for the overlay label. */
   status: BackupRunStatus;
+  phase: "connecting" | "scanning" | "comparing" | "saving" | null;
   /** "manual" or "auto" — used to label the overlay. */
   triggeredBy: "manual" | "auto" | null;
   /** Unix-ms when the current run started. */
@@ -45,6 +46,8 @@ export interface BackupProgressState {
     filesUploaded: number;
     filesSkipped: number;
     filesFailed: number;
+    /** Local files deleted from disk after backup (auto-delete option). */
+    filesDeleted: number;
     status: "success" | "partial" | "failed" | "cancelled";
     missingRoots: string[];
   } | null;
@@ -77,6 +80,7 @@ export interface BackupProgressState {
   // Actions
   start: (triggeredBy: "manual" | "auto") => void;
   setWalking: () => void;
+  setPhase: (phase: BackupProgressState["phase"], processed?: number, total?: number) => void;
   setProgress: (info: { uploaded: number; total: number; currentFile: string }) => void;
   setRetry: (info: {
     attempt: number;
@@ -90,6 +94,7 @@ export interface BackupProgressState {
     filesUploaded: number;
     filesSkipped: number;
     filesFailed: number;
+    filesDeleted?: number;
     status: "success" | "partial" | "failed" | "cancelled";
     error: string | null;
     missingRoots?: string[];
@@ -103,6 +108,7 @@ export interface BackupProgressState {
 export const useBackupProgressStore = create<BackupProgressState>((set) => ({
   active: false,
   status: "idle",
+  phase: null,
   triggeredBy: null,
   startedAt: null,
   finishedAt: null,
@@ -118,6 +124,7 @@ export const useBackupProgressStore = create<BackupProgressState>((set) => ({
     set({
       active: true,
       status: "walking",
+      phase: "connecting",
       triggeredBy,
       startedAt: Date.now(),
       finishedAt: null,
@@ -129,10 +136,13 @@ export const useBackupProgressStore = create<BackupProgressState>((set) => ({
       waitingUntil: null,
     }),
 
-  setWalking: () => set({ status: "walking", uploaded: 0, total: 0, retry: null }),
+  setWalking: () => set({ status: "walking", phase: "scanning", uploaded: 0, total: 0, retry: null }),
+
+  setPhase: (phase, processed = 0, total = 0) =>
+    set({ status: "walking", phase, uploaded: processed, total, currentFile: "" }),
 
   setProgress: ({ uploaded, total, currentFile }) =>
-    set({ status: "uploading", uploaded, total, currentFile, retry: null }),
+    set({ status: "uploading", phase: null, uploaded, total, currentFile, retry: null }),
 
   setRetry: (info) => set({ retry: { ...info, until: Date.now() + info.waitMs } }),
 
@@ -156,6 +166,7 @@ export const useBackupProgressStore = create<BackupProgressState>((set) => ({
         filesUploaded: result.filesUploaded,
         filesSkipped: result.filesSkipped,
         filesFailed: result.filesFailed,
+        filesDeleted: result.filesDeleted ?? 0,
         status: result.status,
         missingRoots: result.missingRoots ?? [],
       },

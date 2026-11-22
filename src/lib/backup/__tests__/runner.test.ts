@@ -16,7 +16,11 @@ import { useFileStore } from "@/stores/fileStore";
 import { useLicenseStore } from "@/stores/licenseStore";
 import { useAuthStore } from "@/stores/authStore";
 
-const h = vi.hoisted(() => ({ backend: null as MemoryBackend | null }));
+const h = vi.hoisted(() => ({
+  backend: null as MemoryBackend | null,
+  /** Message ids Telegram reports as existing; null = none. */
+  liveIds: null as Set<number> | null,
+}));
 
 vi.mock("@tauri-apps/api/core", () => ({
   invoke: (...args: any[]) => h.backend!.invoke(...args),
@@ -34,7 +38,9 @@ vi.mock("../../telegram/client", () => ({
   getClient: () => ({
     connected: true,
     connect: vi.fn(async () => {}),
-    getMessages: vi.fn(async () => []),
+    getMessages: vi.fn(async (_peer: unknown, opts?: { ids?: number[] }) =>
+      (opts?.ids ?? []).filter((id) => h.liveIds?.has(id)).map((id) => ({ id })),
+    ),
     deleteMessages: vi.fn(async () => {}),
   }),
 }));
@@ -44,6 +50,14 @@ vi.mock("../../secure/vault", () => ({
   ),
   channelIdKey: (phone: string) => `telegram_channel_id_${phone}`,
   VAULT_KEY_CHANNEL_ID: "telegram_channel_id",
+}));
+vi.mock("../../runtime/bridge", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  isWebRuntime: () => false,
+}));
+vi.mock("@/lib/platform", async (importOriginal) => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  isMobilePlatform: () => false,
 }));
 vi.mock("../../secure/deviceInfo", () => ({
   detectOS: () => "macos",
@@ -105,6 +119,7 @@ async function seed(entries: Record<string, ManifestEntryV2>, extra: Record<stri
 
 beforeEach(() => {
   resetBackupTestState();
+  h.liveIds = null;
   h.backend = createMemoryBackend();
   walkMock.mockReset();
   uploadMock.mockReset();
@@ -119,6 +134,7 @@ beforeEach(() => {
   useAuthStore.setState({ phoneNumber: "+111", isAuthenticated: true });
   useLicenseStore.setState({
     backupFolders: { paths: [ROOT], excludes: [] },
+    autoDeleteAfterBackup: false,
     license: {
       id: "local",
       plan: "PRO",
@@ -452,5 +468,82 @@ describe("backup runner", () => {
 
     const deleted = deleteMock.mock.calls.flatMap((call) => call[1] as number[]);
     expect(deleted.sort((a, b) => a - b)).toEqual([10, 12]);
+  });
+
+  describe("delete from disk after backup", () => {
+    const FOLDER = "/TeleDrive Backups/Test Mac/root";
+    const deleteCalls = () =>
+      vi
+        .mocked(h.backend!.invoke)
+        .mock.calls.filter(([command]) => command === "delete_backed_up_files");
+
+    async function seedBackedUp() {
+      await seed({
+        [`${ROOT}/same.txt`]: { mtimeMs: 1000, size: 10, messageId: 10, folderPath: FOLDER, uploadedAt: new Date(1).toISOString() },
+        [`${ROOT}/edited.txt`]: { mtimeMs: 1, size: 10, messageId: 11, folderPath: FOLDER, uploadedAt: new Date(1).toISOString() },
+        [`${ROOT}/gone.txt`]: { mtimeMs: 1000, size: 10, messageId: 12, folderPath: FOLDER, uploadedAt: new Date(1).toISOString() },
+      });
+      useFileStore.setState({
+        files: [10, 11, 12].map((id) =>
+          makeTeleFile(`backup_${id}`, { messageId: id, channelId: CHANNEL, folderPath: FOLDER }),
+        ),
+      });
+      walkMock.mockResolvedValue(
+        walk([
+          { relPath: "same.txt" },
+          { relPath: "edited.txt", mtimeMs: 2000 }, // changed: uploaded this run as id 1
+          { relPath: "gone.txt" },
+          { relPath: "new.txt" }, // new: uploaded this run as id 2
+        ]),
+      );
+    }
+
+    it("is off by default", async () => {
+      await seedBackedUp();
+      h.liveIds = new Set([1, 2, 10, 11, 12]);
+
+      const result = await runBackup({ triggeredBy: "manual" });
+
+      expect(result.filesDeleted).toBe(0);
+      expect(deleteCalls()).toHaveLength(0);
+    });
+
+    it("deletes only files whose current content is confirmed in Telegram", async () => {
+      useLicenseStore.setState({ autoDeleteAfterBackup: true });
+      await seedBackedUp();
+      // Message 12 no longer exists in the channel.
+      h.liveIds = new Set([1, 2, 10, 11]);
+
+      const result = await runBackup({ triggeredBy: "manual" });
+
+      const [[, args]] = deleteCalls() as unknown as [[string, { roots: string[]; files: { path: string }[] }]];
+      expect(args.roots).toEqual([ROOT]);
+      expect(args.files.map((f) => f.path).sort()).toEqual(
+        [`${ROOT}/edited.txt`, `${ROOT}/new.txt`, `${ROOT}/same.txt`],
+      );
+      expect(result.filesDeleted).toBe(3);
+    });
+
+    it("deletes nothing when the index could not be saved to Telegram", async () => {
+      useLicenseStore.setState({ autoDeleteAfterBackup: true });
+      await seedBackedUp();
+      h.liveIds = new Set([1, 2, 10, 11, 12]);
+      saveMock.mockRejectedValue(new Error("network down"));
+
+      const result = await runBackup({ triggeredBy: "manual" });
+
+      expect(deleteCalls()).toHaveLength(0);
+      expect(result.filesDeleted).toBe(0);
+    });
+
+    it("deletes nothing when Telegram cannot confirm the copies", async () => {
+      useLicenseStore.setState({ autoDeleteAfterBackup: true });
+      await seedBackedUp();
+      h.liveIds = null;
+
+      await runBackup({ triggeredBy: "manual" });
+
+      expect(deleteCalls()).toHaveLength(0);
+    });
   });
 });

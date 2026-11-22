@@ -82,7 +82,7 @@ export function BackupProgressOverlay() {
 
   const title = isActive
     ? state.status === "walking"
-      ? t("backup.scanning")
+      ? t(`backup.phase.${state.phase ?? "scanning"}`)
       : t("backup.backingUp", { uploaded: state.uploaded, total: state.total })
     : state.status === "done"
       ? isPartial
@@ -118,7 +118,10 @@ export function BackupProgressOverlay() {
         return truncateMid(state.currentFile, 56);
       }
       if (state.status === "walking") {
-        return t("backup.readingFolders");
+        if (state.phase === "comparing" && state.total > 0) {
+          return t("backup.comparingProgress", { processed: state.uploaded, total: state.total });
+        }
+        return state.phase === "scanning" ? t("backup.readingFolders") : "";
       }
       return "";
     }
@@ -127,6 +130,7 @@ export function BackupProgressOverlay() {
       if (state.lastResult.filesUploaded > 0) parts.push(t("backup.summaryUploaded", { count: state.lastResult.filesUploaded }));
       if (state.lastResult.filesSkipped > 0) parts.push(t("backup.summaryUnchanged", { count: state.lastResult.filesSkipped }));
       if (state.lastResult.filesFailed > 0) parts.push(t("backup.summaryFailed", { count: state.lastResult.filesFailed }));
+      if (state.lastResult.filesDeleted > 0) parts.push(t("backup.summaryDeleted", { count: state.lastResult.filesDeleted }));
       if (state.lastResult.missingRoots.length > 0) {
         parts.push(t("backup.summaryMissing", { count: state.lastResult.missingRoots.length }));
       }

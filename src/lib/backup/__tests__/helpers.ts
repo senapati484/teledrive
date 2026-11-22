@@ -98,6 +98,11 @@ export function createMemoryBackend(): MemoryBackend {
         return "/tmp/teledrive-test";
       case "cancel_backup_walk":
         return null;
+      case "delete_backed_up_files":
+        return {
+          deleted: (args.files ?? []).map((f: { path: string }) => f.path),
+          skipped: [],
+        };
       default:
         return null;
     }

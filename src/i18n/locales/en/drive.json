@@ -88,6 +88,8 @@
   },
   "backup": {
     "scanning": "Scanning folders…",
+    "phase": { "connecting": "Connecting to Telegram…", "scanning": "Scanning folders…", "comparing": "Checking for changes…", "saving": "Saving the backup catalog…" },
+    "comparingProgress": "{{processed}} of {{total}} files checked",
     "backingUp": "Backing up — {{uploaded}} / {{total}}",
     "completeUploaded_one": "Backup complete — {{count}} file uploaded",
     "completeUploaded_other": "Backup complete — {{count}} files uploaded",
@@ -105,6 +107,8 @@
     "summaryUnchanged_other": "{{count}} unchanged",
     "summaryFailed_one": "{{count}} failed",
     "summaryFailed_other": "{{count}} failed",
+    "summaryDeleted_one": "{{count}} removed from disk",
+    "summaryDeleted_other": "{{count}} removed from disk",
     "summaryMissing_one": "{{count}} folder unavailable",
     "summaryMissing_other": "{{count}} folders unavailable",
     "resumeAnytime": "You can resume anytime.",

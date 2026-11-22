@@ -791,7 +791,16 @@ fn walk_recursive(root: &Path, current: &Path, run_id: &str, state: &mut WalkSta
             Ok(s) => s,
             Err(_) => continue,
         };
-        let meta = match std::fs::symlink_metadata(&path) {
+        // The backup excludes these directories on every platform. Prune
+        // them before recursing instead of sending their contents to the UI.
+        let entry_type = match entry.file_type() {
+            Ok(file_type) => file_type,
+            Err(_) => continue,
+        };
+        if entry_type.is_dir() && matches!(file_name.as_str(), ".git" | "node_modules") {
+            continue;
+        }
+        let meta = match entry.metadata() {
             Ok(m) => m,
             Err(_) => continue,
         };

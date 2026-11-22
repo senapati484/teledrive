@@ -126,7 +126,11 @@ export function watchBackupFolders(paths: string[]): (() => void) | undefined {
 
   async function flush() {
     if (stopped || running || (!scanPending && !pending.size)) return;
-    if (!isIndexReady() || isBackupRunning()) {
+    if (!isIndexReady() || isBackupRunning() || scanning) {
+      if (scanning) {
+        schedule();
+        return;
+      }
       const wait = isIndexReady() ? "backup_running" : useFileStore.getState().indexLoadState;
       if (wait !== lastWait) {
         lastWait = wait;
@@ -226,7 +230,7 @@ export function watchBackupFolders(paths: string[]): (() => void) | undefined {
     logger.warn("[backup.watch] Listener failed:", error);
     void logVaultState("BACKUP_WATCH_LISTENER_FAILED");
   })
-    .finally(() => { if (!stopped) { void reconcile(); schedule(); } });
+    .finally(() => { if (!stopped) schedule(); });
 
   return () => {
     stopped = true;

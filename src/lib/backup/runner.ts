@@ -50,6 +50,7 @@ import { getSecret, VAULT_KEY_CHANNEL_ID, channelIdKey } from "../secure/vault";
 import { logEvent } from "../events";
 import {
   appendManifestEntry,
+  backupPathKey,
   diffAgainstManifest,
   emptyManifest,
   ensureManifest,
@@ -66,12 +67,15 @@ import {
 import { sanitizeFolderSegment, walkSourceFolders } from "./walker";
 import { detectOS, getDeviceName } from "../secure/deviceInfo";
 import { acquireWakeLock, releaseWakeLock } from "@/lib/runtime/wakeLock";
+import { logVaultState } from "@/lib/runtime/bridge";
 import { isHardError, parseFloodWaitSeconds } from "../telegram/rateLimit";
 import { isIndexReady, waitForIndexReady } from "../telegram/indexReadiness";
 import { folderIdForPath, reconstructMissingFolders } from "../storage/metadataStore";
 import { isChannelQueueRateLimited } from "../storage/indexQueue";
 import { flushBackupIndexSave, queueBackupIndexSave } from "./indexSave";
 import { deleteMessages } from "./telegramOps";
+import { isWebRuntime } from "../runtime/bridge";
+import { isMobilePlatform } from "@/lib/platform";
 import type { TeleFile } from "../types";
 import i18n from "@/i18n";
 
@@ -185,6 +189,8 @@ export interface BackupRunResult {
   filesSkipped: number;
   /** Files that failed to upload. */
   filesFailed: number;
+  /** Local files deleted from disk after backup (auto-delete option). */
+  filesDeleted: number;
   /** Source folders that didn't exist on disk anymore. */
   missingFolders: string[];
   /** Audit-row id, if backend POST succeeded. */
@@ -281,6 +287,7 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
     filesUploaded: 0,
     filesSkipped: 0,
     filesFailed: 0,
+    filesDeleted: 0,
     missingFolders: [],
     auditJobId: null,
     status: "failed",
@@ -313,7 +320,19 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
 
   try {
     const client = getClient();
-    if (!client.connected) await client.connect();
+    if (!client.connected) {
+      let timeout: ReturnType<typeof setTimeout> | undefined;
+      try {
+        await Promise.race([
+          client.connect(),
+          new Promise<never>((_, reject) => {
+            timeout = setTimeout(() => reject(new Error("Telegram connection timed out")), 15_000);
+          }),
+        ]);
+      } finally {
+        clearTimeout(timeout);
+      }
+    }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return {
@@ -325,7 +344,9 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
     };
   }
 
+  useBackupProgressStore.getState().setWalking();
   const walk = await walkSourceFolders(folders, { signal: opts.signal });
+  void logVaultState(`BACKUP_WALK_DONE files=${walk.files.length} complete=${walk.complete}`);
   if (opts.signal?.aborted || walk.cancelled) {
     return {
       ...baseResult,
@@ -337,6 +358,7 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
     };
   }
 
+  useBackupProgressStore.getState().setPhase("comparing");
   const missingFolders = [
     ...new Set(
       walk.roots
@@ -395,13 +417,14 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
 
   const hashSizeCap = opts.hashSizeCapBytes ?? DEFAULT_HASH_SIZE_CAP_BYTES;
   const diff = diffAgainstManifest(manifest, walk.files, opts.changedPaths);
-  const moveCandidates = new Map<number, typeof diff.missing>();
+  const moveCandidates = new Map<string, typeof diff.missing>();
   if (walkHealthy) {
     for (const item of diff.missing) {
       if (!item.entry.hash || !pickSourceRoot(item.absPath, folders.paths)) continue;
-      const matches = moveCandidates.get(item.entry.size) ?? [];
+      const key = moveCandidateKey(item.absPath, item.entry.size);
+      const matches = moveCandidates.get(key) ?? [];
       matches.push(item);
-      moveCandidates.set(item.entry.size, matches);
+      moveCandidates.set(key, matches);
     }
   }
   const moves: { from: string; to: string; entry: ManifestEntryV2; file: TeleFile }[] = [];
@@ -411,7 +434,6 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
       .filter((file) => file.channelId === channelId && !file.trashed && !file.archived)
       .map((file) => [file.messageId, file]),
   );
-  const totalToUpload = diff.toUpload.length;
   let filesUploaded = 0;
   let filesSkipped = diff.unchanged.length;
   let filesFailed = 0;
@@ -425,7 +447,128 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
     firstError = i18n.t("messages:indexLoad.changesPaused");
   }
 
-  for (let i = 0; indexReady && i < diff.toUpload.length; i++) {
+  // Publish verified moves and new directories before starting transfers.
+  // A large new file must not hold up a catalog-only operation.
+  const movedDestinations = new Set<string>();
+  if (indexReady && moveCandidates.size) {
+    const possibleMoves = diff.toUpload.filter((file) =>
+      !manifest.entries[file.absPath] && file.size <= hashSizeCap &&
+      moveCandidates.has(moveCandidateKey(file.absPath, file.size)));
+    for (const [i, file] of possibleMoves.entries()) {
+      if (opts.signal?.aborted || !isIndexReady()) break;
+      const candidates = moveCandidates.get(moveCandidateKey(file.absPath, file.size))!;
+      const available = candidates.filter(({ absPath, entry }) =>
+        !movedPaths.has(absPath) && remoteByMessage.has(entry.messageId));
+      if (!available.length) continue;
+      useBackupProgressStore.getState().setPhase("comparing", i, possibleMoves.length);
+      try {
+        const hash = await hashLocalFile(file.absPath);
+        const matches = available.filter(({ entry }) => entry.hash === hash);
+        const match = bestMoveMatch(file.absPath, matches);
+        if (!match) continue;
+        const target = computeUploadTarget(file, folders.paths, rootDisplayBasename, deviceRoot);
+        const remote = remoteByMessage.get(match.entry.messageId)!;
+        movedPaths.add(match.absPath);
+        movedDestinations.add(file.absPath);
+        moves.push({
+          from: match.absPath,
+          to: file.absPath,
+          entry: { ...updateEntryStats(match.entry, file), folderPath: target.folderPath },
+          file: { ...remote, name: target.fileName, folderPath: target.folderPath },
+        });
+        filesSkipped++;
+      } catch (err) {
+        logger.warn("[backup.runner] Could not verify a moved file:", err);
+      }
+    }
+  }
+
+  let catalogChanged = false;
+  if (walkHealthy && !opts.signal?.aborted && isIndexReady() && walk.directories?.length) {
+    const existing = useFileStore.getState().files;
+    const folderPaths = new Set(existing.filter((file) => file.channelId === channelId &&
+      !file.trashed && (file.mime === "inode/directory" || file.mime === "application/x-directory"))
+      .map((file) => `${file.folderPath}/${file.name}`));
+    const added: TeleFile[] = [];
+    for (const dir of walk.directories) {
+      try {
+        // Publish the root's immediate children promptly. Deeper paths are
+        // reconstructed from their moved or uploaded files. Eagerly writing
+        // the entire disk tree can flood Telegram before any file is sent.
+        const source = pickSourceRoot(dir.absPath, folders.paths);
+        if (!source || stripPrefix(dir.absPath, source).replace(/^\/+/g, "").includes("/")) {
+          continue;
+        }
+        const target = computeUploadTarget(
+          { ...dir, size: 0, mtimeMs: 0 }, folders.paths, rootDisplayBasename, deviceRoot,
+        );
+        const path = `${target.folderPath}/${target.fileName}`;
+        if (folderPaths.has(path)) continue;
+        folderPaths.add(path);
+        added.push({
+          id: folderIdForPath(path), name: target.fileName, size: 0, mime: "inode/directory",
+          folderPath: target.folderPath, channelId, messageId: 0, uploadedAt: Date.now(),
+        });
+      } catch (error) {
+        logger.warn("[backup.runner] Could not represent a local folder:", error);
+      }
+    }
+    if (added.length) {
+      const { healedFiles } = reconstructMissingFolders([...existing, ...added], channelId);
+      useFileStore.getState().setFiles(healedFiles);
+      queueBackupIndexSave(channelId, healedFiles);
+      catalogChanged = true;
+    }
+  }
+  if (moves.length && !opts.signal?.aborted && !isIndexReady()) {
+    filesSkipped -= moves.length;
+    indexPaused = true;
+    firstError ??= i18n.t("messages:indexLoad.changesPaused");
+  } else if (moves.length && !opts.signal?.aborted) {
+    const existing = useFileStore.getState().files;
+    const replacements = new Map(moves.map(({ file }) => [file.id, file]));
+    const formerAncestors = new Set<string>();
+    for (const { from } of moves) {
+      let path = manifest.entries[from].folderPath;
+      while (path.startsWith(deviceRoot + "/")) {
+        formerAncestors.add(path);
+        path = path.slice(0, path.lastIndexOf("/"));
+      }
+    }
+    const updated = existing.map((file) => replacements.get(file.id) ?? file);
+    const pruned = updated.filter((file) => {
+      const path = `${file.folderPath}/${file.name}`;
+      return file.channelId !== channelId || !formerAncestors.has(path) ||
+        file.mime !== "inode/directory" || file.messageId !== 0 ||
+        file.id !== folderIdForPath(path);
+    });
+    const { healedFiles } = reconstructMissingFolders(pruned, channelId);
+    useFileStore.getState().setFiles(healedFiles);
+    queueBackupIndexSave(channelId, healedFiles);
+    catalogChanged = true;
+  }
+  if (catalogChanged) {
+    useBackupProgressStore.getState().setPhase("saving");
+    const saved = await flushBackupIndexSave(channelId);
+    if (saved.ok) {
+      for (const move of moves) {
+        delete manifest.entries[move.from];
+        manifest.entries[move.to] = move.entry;
+      }
+      if (moves.length) {
+        manifest.generation = await saveManifest(channelId, manifest);
+      }
+    } else {
+      indexPaused = true;
+      filesSkipped -= moves.length;
+      filesFailed += moves.length;
+      firstError ??= saved.error ?? i18n.t("messages:indexLoad.changesPaused");
+    }
+  }
+
+  const uploadFiles = diff.toUpload.filter((file) => !movedDestinations.has(file.absPath));
+  const totalToUpload = uploadFiles.length;
+  for (let i = 0; indexReady && !indexPaused && i < totalToUpload; i++) {
     if (opts.signal?.aborted) {
       firstError ??= i18n.t("messages:backup.errors.cancelled");
       break;
@@ -436,7 +579,8 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
       break;
     }
 
-    const file = diff.toUpload[i];
+    const file = uploadFiles[i];
+    useBackupProgressStore.getState().setPhase("comparing", i, totalToUpload);
     let target: { fileName: string; folderPath: string };
     try {
       target = computeUploadTarget(
@@ -483,30 +627,6 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
     }
 
     if (!prior) {
-      const candidates = moveCandidates.get(file.size);
-      if (candidates?.length && file.size <= hashSizeCap) {
-        try {
-          const hash = await hashLocalFile(file.absPath);
-          const matches = candidates.filter((item) =>
-            item.entry.hash === hash && !movedPaths.has(item.absPath) &&
-            remoteByMessage.has(item.entry.messageId));
-          if (matches.length === 1) {
-            const { absPath, entry } = matches[0];
-            const remote = remoteByMessage.get(entry.messageId)!;
-            movedPaths.add(absPath);
-            moves.push({
-              from: absPath,
-              to: file.absPath,
-              entry: { ...updateEntryStats(entry, file), folderPath: target.folderPath },
-              file: { ...remote, name: target.fileName, folderPath: target.folderPath },
-            });
-            filesSkipped++;
-            continue;
-          }
-        } catch (err) {
-          logger.warn("[backup.runner] Could not verify a moved file:", err);
-        }
-      }
       const adopted = await adoptExistingUpload(
         channelId,
         target.folderPath,
@@ -545,6 +665,11 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
 
     const hashUpload = file.size <= hashSizeCap;
     try {
+      opts.onProgress?.({
+        uploaded: i,
+        total: totalToUpload,
+        currentFile: target.fileName,
+      });
       const upload = await uploadFileToTelegram(
         channelId,
         target.fileName,
@@ -629,19 +754,19 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
       filesUploaded++;
       floodPauses = 0;
       opts.onProgress?.({
-        uploaded: filesUploaded + filesFailed,
+        uploaded: i + 1,
         total: totalToUpload,
         currentFile: target.fileName,
       });
 
       const queueRateLimited = Boolean(isChannelQueueRateLimited?.(channelId));
-      if (queueRateLimited && i < diff.toUpload.length - 1) {
+      if (queueRateLimited && i < totalToUpload - 1) {
         // Telegram rate limit active on the index queue; give it a breather to cool down
         await interruptibleSleep(Math.min(BACKUP_BREATHER_MS * 2, 5_000), opts.signal);
       } else if (
         filesUploaded > 0 &&
         filesUploaded % BACKUP_BATCH_SIZE === 0 &&
-        i < diff.toUpload.length - 1
+        i < totalToUpload - 1
       ) {
         await interruptibleSleep(BACKUP_BREATHER_MS, opts.signal);
       }
@@ -669,17 +794,17 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
         msg,
       );
       opts.onProgress?.({
-        uploaded: filesUploaded + filesFailed,
+        uploaded: i + 1,
         total: totalToUpload,
         currentFile: target.fileName,
       });
       if (isHardError(err)) {
-        filesFailed += diff.toUpload.length - i - 1;
+        filesFailed += totalToUpload - i - 1;
         firstError ??= i18n.t("messages:backup.errors.sessionExpired");
         break;
       }
       if (floodSeconds !== null && !opts.signal?.aborted) {
-        filesFailed += diff.toUpload.length - i - 1;
+        filesFailed += totalToUpload - i - 1;
         firstError = i18n.t("messages:backup.errors.rateLimited", {
           minutes: Math.max(1, Math.ceil(floodSeconds / 60)),
         });
@@ -689,71 +814,7 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
   }
 
   const cancelled = Boolean(opts.signal?.aborted);
-  if (walkHealthy && !cancelled && isIndexReady() && walk.directories?.length) {
-    const existing = useFileStore.getState().files;
-    const folderPaths = new Set(existing.filter((file) => file.channelId === channelId &&
-      !file.trashed && (file.mime === "inode/directory" || file.mime === "application/x-directory"))
-      .map((file) => `${file.folderPath}/${file.name}`));
-    const added: TeleFile[] = [];
-    for (const dir of walk.directories) {
-      try {
-        const target = computeUploadTarget(
-          { ...dir, size: 0, mtimeMs: 0 }, folders.paths, rootDisplayBasename, deviceRoot,
-        );
-        const path = `${target.folderPath}/${target.fileName}`;
-        if (folderPaths.has(path)) continue;
-        folderPaths.add(path);
-        added.push({
-          id: folderIdForPath(path), name: target.fileName, size: 0, mime: "inode/directory",
-          folderPath: target.folderPath, channelId, messageId: 0, uploadedAt: Date.now(),
-        });
-      } catch (error) {
-        logger.warn("[backup.runner] Could not represent a local folder:", error);
-      }
-    }
-    if (added.length) {
-      const { healedFiles } = reconstructMissingFolders([...existing, ...added], channelId);
-      useFileStore.getState().setFiles(healedFiles);
-      queueBackupIndexSave(channelId, healedFiles);
-    }
-  }
-  if (moves.length && !cancelled && !isIndexReady()) {
-    filesSkipped -= moves.length;
-    indexPaused = true;
-    firstError ??= i18n.t("messages:indexLoad.changesPaused");
-  } else if (moves.length && !cancelled) {
-    const existing = useFileStore.getState().files;
-    const replacements = new Map(moves.map(({ file }) => [file.id, file]));
-    const formerAncestors = new Set<string>();
-    for (const { from } of moves) {
-      let path = manifest.entries[from].folderPath;
-      while (path.startsWith(deviceRoot + "/")) {
-        formerAncestors.add(path);
-        path = path.slice(0, path.lastIndexOf("/"));
-      }
-    }
-    const updated = existing.map((file) => replacements.get(file.id) ?? file);
-    const pruned = updated.filter((file) => {
-      const path = `${file.folderPath}/${file.name}`;
-      return file.channelId !== channelId || !formerAncestors.has(path) ||
-        file.mime !== "inode/directory" || file.messageId !== 0 ||
-        file.id !== folderIdForPath(path);
-    });
-    const { healedFiles } = reconstructMissingFolders(pruned, channelId);
-    useFileStore.getState().setFiles(healedFiles);
-    queueBackupIndexSave(channelId, healedFiles);
-    const saved = await flushBackupIndexSave(channelId);
-    if (saved.ok) {
-      for (const move of moves) {
-        delete manifest.entries[move.from];
-        manifest.entries[move.to] = move.entry;
-      }
-    } else {
-      filesSkipped -= moves.length;
-      filesFailed += moves.length;
-      firstError ??= saved.error ?? i18n.t("messages:indexLoad.changesPaused");
-    }
-  }
+  if (!cancelled) useBackupProgressStore.getState().setPhase("saving");
   let status: BackupRunResult["status"];
   if (cancelled) status = "cancelled";
   else if (filesUploaded > 0 && filesFailed > 0) status = "partial";
@@ -799,6 +860,25 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
     await sweepGarbage(channelId, manifest);
   }
 
+  // Only once the index (the drive's file list) is safely saved to Telegram.
+  let filesDeleted = 0;
+  if (
+    flush.ok &&
+    !cancelled &&
+    !indexPaused &&
+    useLicenseStore.getState().autoDeleteAfterBackup &&
+    !isWebRuntime() &&
+    !isMobilePlatform()
+  ) {
+    filesDeleted = await deleteBackedUpFiles(
+      channelId,
+      folders.paths,
+      walk.files,
+      manifest,
+      verifyMessageIds,
+    );
+  }
+
   if (lastSuccessAt) {
     useFileStore.getState().setLastBackupAt(lastSuccessAt);
   }
@@ -824,6 +904,7 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
     filesUploaded,
     filesSkipped,
     filesFailed,
+    filesDeleted,
     missingFolders,
     auditJobId: null,
     status,
@@ -831,6 +912,29 @@ async function runBackupInner(opts: RunBackupOptions): Promise<BackupRunResult> 
     durationMs: Date.now() - startedAt,
     finishedAt: Date.now(),
   };
+}
+
+function moveCandidateKey(path: string, size: number): string {
+  const name = backupPathKey(path).split("/").pop();
+  return `${size}:${name}`;
+}
+
+function bestMoveMatch<T extends { absPath: string }>(path: string, candidates: T[]): T | undefined {
+  const segments = backupPathKey(path).split("/").reverse();
+  let best: T | undefined;
+  let bestScore = 0;
+  for (const candidate of candidates) {
+    const source = backupPathKey(candidate.absPath).split("/").reverse();
+    let score = 0;
+    while (score < source.length && source[score] === segments[score]) score++;
+    if (score > bestScore) {
+      bestScore = score;
+      best = candidate;
+    } else if (score === bestScore) {
+      best = undefined;
+    }
+  }
+  return best;
 }
 
 function computeUploadTarget(
@@ -917,6 +1021,77 @@ async function adoptExistingUpload(
     uploadedAt: new Date(match.uploadedAt).toISOString(),
     ...(match.hash ? { hash: match.hash } : {}),
   };
+}
+
+/**
+ * "Delete from disk after backup": remove local files whose current content
+ * is safely in Telegram. A file qualifies only when
+ *   - its manifest entry matches its size and modification time (the copy in
+ *     Telegram is this exact content, not an older version),
+ *   - that copy is in the drive's file list, and
+ *   - Telegram confirms the message still exists, checked right now.
+ * The native side re-checks each path is inside a backup folder and still
+ * unchanged before deleting it. Any verification error deletes nothing.
+ */
+async function deleteBackedUpFiles(
+  channelId: string,
+  roots: string[],
+  files: { absPath: string; size: number; mtimeMs: number }[],
+  manifest: BackupManifestV2,
+  verifyMessageIds: (ids: number[]) => Promise<Set<number>>,
+): Promise<number> {
+  const indexed = new Set(
+    useFileStore
+      .getState()
+      .files.filter((f) => f.channelId === channelId && !f.trashed)
+      .map((f) => Number(f.messageId)),
+  );
+  const candidates = files.filter((f) => {
+    const entry = manifest.entries[f.absPath];
+    return (
+      entry &&
+      f.size > 0 &&
+      entry.messageId > 0 &&
+      entry.size === f.size &&
+      entry.mtimeMs === f.mtimeMs &&
+      indexed.has(entry.messageId)
+    );
+  });
+  if (candidates.length === 0) return 0;
+
+  const live = new Set<number>();
+  try {
+    const ids = [...new Set(candidates.map((f) => manifest.entries[f.absPath].messageId))];
+    for (let i = 0; i < ids.length; i += 100) {
+      for (const id of await verifyMessageIds(ids.slice(i, i + 100))) live.add(id);
+    }
+  } catch (err) {
+    logger.warn("[backup.runner] could not confirm copies in Telegram; nothing deleted:", err);
+    return 0;
+  }
+  const confirmed = candidates.filter((f) => live.has(manifest.entries[f.absPath].messageId));
+  if (confirmed.length === 0) return 0;
+
+  try {
+    const result = await invoke<{
+      deleted: string[];
+      skipped: { path: string; reason: string }[];
+    }>("delete_backed_up_files", {
+      roots,
+      files: confirmed.map((f) => ({ path: f.absPath, size: f.size, mtimeMs: f.mtimeMs })),
+    });
+    if (result.skipped.length > 0) {
+      logger.warn(
+        `[backup.runner] kept ${result.skipped.length} local file(s):`,
+        result.skipped.slice(0, 5),
+      );
+    }
+    logger.info(`[backup.runner] deleted ${result.deleted.length} backed-up file(s) from disk`);
+    return result.deleted.length;
+  } catch (err) {
+    logger.warn("[backup.runner] deleting backed-up files failed:", err);
+    return 0;
+  }
 }
 
 /**

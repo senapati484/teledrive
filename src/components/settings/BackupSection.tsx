@@ -43,7 +43,9 @@ import {
   MessageSquare,
   Send,
 } from "lucide-react";
+import { Trash2 as AutoDeleteIcon } from "lucide-react";
 import { open as tauriOpenDialog } from "@tauri-apps/plugin-dialog";
+import { useLicenseStore } from "@/stores/licenseStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -124,6 +126,9 @@ export default function BackupSection() {
   const waitingUntil = useBackupProgressStore((s) => s.waitingUntil);
   const now = useNow(waitingUntil !== null);
   const watchStatus = useBackupWatchStatus();
+  const autoDelete = useLicenseStore((s) => s.autoDeleteAfterBackup);
+  const setAutoDelete = useLicenseStore((s) => s.setAutoDeleteAfterBackup);
+  const [autoDeleteConfirmOpen, setAutoDeleteConfirmOpen] = useState(false);
   const [corruptChannel, setCorruptChannel] = useState<string | null>(null);
   const [rebuilding, setRebuilding] = useState(false);
 
@@ -545,6 +550,101 @@ export default function BackupSection() {
         </div>
       </div>
 
+      {/* Delete-after-backup Card (desktop only) */}
+      {!isWebRuntime() && !isMobilePlatform() && (
+        <div className="p-6 bg-white dark:bg-[#0c0d0f] border border-slate-200/90 dark:border-white/[0.06] rounded-2xl space-y-4 shadow-xs">
+          <div className="flex items-start gap-3.5">
+            <div
+              className={cn(
+                "h-10 w-10 rounded-full border flex items-center justify-center shrink-0 mt-0.5",
+                autoDelete
+                  ? "bg-rose-100 dark:bg-rose-950/40 border-rose-300/60 dark:border-rose-700/40 text-rose-600 dark:text-rose-400"
+                  : "bg-[#C2E7FF]/60 dark:bg-[#004A77]/40 border-[#0B57D0]/20 dark:border-[#1a73e8]/20 text-[#0B57D0] dark:text-[#8ab4f8]",
+              )}
+            >
+              <AutoDeleteIcon className="h-5 w-5" />
+            </div>
+            <div className="flex-1 min-w-0 space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <h4
+                  id="backup-auto-delete-label"
+                  className="text-sm font-semibold text-[#1F1F1F] dark:text-[#E3E3E3]"
+                >
+                  {t("backup.autoDelete.title")}
+                </h4>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={autoDelete}
+                  aria-labelledby="backup-auto-delete-label"
+                  onClick={() => (autoDelete ? setAutoDelete(false) : setAutoDeleteConfirmOpen(true))}
+                  className={cn(
+                    "relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0B57D0]",
+                    autoDelete ? "bg-rose-600" : "bg-slate-300 dark:bg-white/[0.15]",
+                  )}
+                >
+                  <span
+                    className={cn(
+                      "inline-block h-5 w-5 rounded-full bg-white shadow transition-transform",
+                      autoDelete ? "translate-x-5" : "translate-x-0.5",
+                    )}
+                  />
+                </button>
+              </div>
+              <p className="text-xs text-[#444746] dark:text-[#C4C7C5] leading-relaxed">
+                {t("backup.autoDelete.description")}
+              </p>
+              {autoDelete && (
+                <p role="status" className="text-[11px] font-medium text-rose-600 dark:text-rose-400">
+                  {t("backup.autoDelete.activeWarning")}
+                </p>
+              )}
+            </div>
+          </div>
+          <Dialog open={autoDeleteConfirmOpen} onOpenChange={setAutoDeleteConfirmOpen}>
+            <DialogContent className="max-w-md p-6 bg-white dark:bg-[#161719] border border-slate-200/80 dark:border-white/[0.08] rounded-2xl">
+              <DialogHeader>
+                <DialogTitle className="text-base font-semibold text-[#1F1F1F] dark:text-[#E3E3E3]">
+                  {t("backup.autoDelete.confirmTitle")}
+                </DialogTitle>
+                <DialogDescription className="text-xs leading-relaxed text-[#444746] dark:text-[#C4C7C5]">
+                  {t("backup.autoDelete.confirmBody")}
+                </DialogDescription>
+              </DialogHeader>
+              {paths.length > 0 && (
+                <ul className="space-y-1 text-[11px] font-mono text-[#1F1F1F] dark:text-[#E3E3E3]">
+                  {paths.map((p) => (
+                    <li key={p} className="truncate rounded-lg bg-slate-50 dark:bg-[#060709] px-2.5 py-1" title={p}>
+                      {p}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <DialogFooter className="mt-4 flex gap-2 justify-end">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setAutoDeleteConfirmOpen(false)}
+                  className="rounded-full text-xs"
+                >
+                  {t("backup.autoDelete.cancel")}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setAutoDelete(true);
+                    setAutoDeleteConfirmOpen(false);
+                  }}
+                  className="rounded-full text-xs bg-rose-600 hover:bg-rose-700 text-white"
+                >
+                  {t("backup.autoDelete.confirm")}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      )}
+
       {/* Cadence Card */}
       <div className="p-6 bg-white dark:bg-[#0c0d0f] border border-slate-200/90 dark:border-white/[0.06] rounded-2xl space-y-5 shadow-xs">
         <div className="flex items-start gap-3.5">
@@ -645,6 +745,12 @@ export default function BackupSection() {
                 {runCounts.failed > 0 && (
                   <span className="text-amber-600 dark:text-amber-400">
                     {t("backup.lastResult.failed", { count: runCounts.failed })}
+                  </span>
+                )}
+                {(liveResult?.filesDeleted ?? 0) > 0 && (
+                  <span className="text-rose-600 dark:text-rose-400">
+                    {" · "}
+                    {t("backup.lastResult.deleted", { count: liveResult!.filesDeleted })}
                   </span>
                 )}
               </div>

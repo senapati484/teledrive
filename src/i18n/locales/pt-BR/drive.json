@@ -91,6 +91,8 @@
   },
   "backup": {
     "scanning": "Verificando pastas…",
+    "phase": { "connecting": "Conectando ao Telegram…", "scanning": "Verificando pastas…", "comparing": "Comparando arquivos…", "saving": "Salvando o catálogo do backup…" },
+    "comparingProgress": "{{processed}} de {{total}} arquivos verificados",
     "backingUp": "Fazendo backup — {{uploaded}} / {{total}}",
     "completeUploaded_one": "Backup concluído — {{count}} arquivo enviado",
     "completeUploaded_other": "Backup concluído — {{count}} arquivos enviados",
@@ -107,6 +109,8 @@
     "summaryUnchanged_other": "{{count}} sem alteração",
     "summaryFailed_one": "{{count}} com falha",
     "summaryFailed_other": "{{count}} com falha",
+    "summaryDeleted_one": "{{count}} removido do disco",
+    "summaryDeleted_other": "{{count}} removidos do disco",
     "resumeAnytime": "Você pode retomar quando quiser.",
     "dismiss": "Dispensar",
     "completeUploaded_zero": "Backup concluído — {{count}} arquivos enviados",
