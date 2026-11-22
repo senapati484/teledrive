@@ -94,7 +94,8 @@
       "off": "オフ",
       "every6h": "6時間ごと",
       "every12h": "12時間ごと",
-      "every24h": "24時間ごと"
+      "every24h": "24時間ごと",
+      "onChange": "ファイルが変更されたとき"
     },
     "lastBackup": "最後のバックアップ:",
     "lastBackupAgo": "{{時間}}前",
@@ -105,7 +106,9 @@
       "unchanged_one": "{{count}} は変更なし、",
       "unchanged_other": "{{count}} は変更なし、",
       "failed_one": "{{count}} 回失敗しました",
-      "failed_other": "{{count}} 回失敗しました"
+      "failed_other": "{{count}} 回失敗しました",
+      "deleted_one": "{{count}} 件をディスクから削除",
+      "deleted_other": "{{count}} 件をディスクから削除"
     },
     "progressHint": "右下隅にある進行状況パネルを確認してください。",
     "cancel": "キャンセル",
@@ -131,7 +134,27 @@
     },
     "missingRoots_one": "{{count}} 個のソースフォルダーが利用できません。他のフォルダーはバックアップされました。",
     "missingRoots_other": "{{count}} 個のソースフォルダーが利用できません。他のフォルダーはバックアップされました。",
-    "editFolders": "フォルダーを編集"
+    "editFolders": "フォルダーを編集",
+    "autoDelete": {
+      "title": "バックアップ後にディスクから削除",
+      "description": "バックアップのたびに、Telegram に安全に保存されたバックアップフォルダー内のファイルをこのコンピューターから削除します。対象は上に表示されたフォルダー内のファイルのみで、アップロード後に編集されたファイルは再びバックアップされるまで残ります。",
+      "activeWarning": "オン: バックアップ済みのファイルをこのコンピューターから削除しています。必要なときは TeleDrive から復元してください。",
+      "confirmTitle": "バックアップ済みのファイルをこのコンピューターから削除しますか？",
+      "confirmBody": "次回のバックアップから、これらのフォルダー内で Telegram に保存済みのファイルはすべてディスクから削除されます。TeleDrive では元に戻せません。残るコピーは Telegram 上のものだけになります。",
+      "confirm": "オンにして削除",
+      "cancel": "キャンセル"
+    },
+    "waitingTelegram": "{{time}} まで Telegram を待機中（残り {{remaining}}）。バックアップは自動で再開されます。",
+    "manifestCorrupt": "このデバイスのバックアップ記録が破損しているため、バックアップを一時停止しています。",
+    "rebuildManifest": "Telegram から再構築",
+    "rebuildManifestDone": "バックアップ記録を再構築しました。Telegram にあるファイルは再アップロードせずに再リンクされます。",
+    "rebuildManifestFailed": "バックアップ記録を再構築できませんでした。",
+    "watch": {
+      "error": "フォルダーの監視が機能していません。変更は定期スキャンで検出されます。",
+      "degraded_one": "{{count}} 個のフォルダーを監視できていません（存在しないかアクセスできません）。5 分ごとに再試行します。",
+      "degraded_other": "{{count}} 個のフォルダーを監視できていません（存在しないかアクセスできません）。5 分ごとに再試行します。",
+      "nextRetry": "一部のファイルが失敗しました。次の自動再試行は {{time}} です。"
+    }
   },
   "appearance": {
     "title": "外観",

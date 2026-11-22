@@ -94,7 +94,8 @@
       "off": "Off",
       "every6h": "Alle 6 Stunden",
       "every12h": "Alle 12 Stunden",
-      "every24h": "Alle 24 Stunden"
+      "every24h": "Alle 24 Stunden",
+      "onChange": "Bei Dateiänderungen"
     },
     "lastBackup": "Letzte Sicherung:",
     "lastBackupAgo": "vor {{time}}",
@@ -105,7 +106,9 @@
       "unchanged_one": "{{count}} unverändert, ",
       "unchanged_other": "{{count}} unverändert, ",
       "failed_one": "{{count}} fehlgeschlagen",
-      "failed_other": "{{count}} fehlgeschlagen"
+      "failed_other": "{{count}} fehlgeschlagen",
+      "deleted_one": "{{count}} von der Festplatte entfernt",
+      "deleted_other": "{{count}} von der Festplatte entfernt"
     },
     "progressHint": "Siehe Fortschrittsanzeige in der rechten unteren Ecke.",
     "cancel": "Abbrechen",
@@ -131,7 +134,27 @@
     },
     "missingRoots_one": "{{count}} Quellordner ist nicht verfügbar. Andere Ordner wurden gesichert.",
     "missingRoots_other": "{{count}} Quellordner sind nicht verfügbar. Andere Ordner wurden gesichert.",
-    "editFolders": "Ordner bearbeiten"
+    "editFolders": "Ordner bearbeiten",
+    "autoDelete": {
+      "title": "Nach dem Backup von der Festplatte löschen",
+      "description": "Nach jedem Backup werden Dateien aus deinen Backup-Ordnern, die sicher in Telegram liegen, von diesem Computer gelöscht. Betroffen sind nur Dateien in den oben aufgeführten Ordnern; eine nach dem Upload bearbeitete Datei bleibt erhalten, bis sie erneut gesichert wurde.",
+      "activeWarning": "Aktiv: Gesicherte Dateien werden von diesem Computer entfernt. Stelle sie bei Bedarf über TeleDrive wieder her.",
+      "confirmTitle": "Gesicherte Dateien von diesem Computer löschen?",
+      "confirmBody": "Ab dem nächsten Backup wird jede Datei in diesen Ordnern, die bereits in Telegram liegt, von deiner Festplatte gelöscht. TeleDrive kann das nicht rückgängig machen: Die einzige verbleibende Kopie ist die in Telegram.",
+      "confirm": "Aktivieren und löschen",
+      "cancel": "Abbrechen"
+    },
+    "waitingTelegram": "Warten auf Telegram bis {{time}} (noch {{remaining}}). Das Backup wird automatisch fortgesetzt.",
+    "manifestCorrupt": "Der Backup-Datensatz dieses Geräts ist beschädigt, daher sind Backups pausiert.",
+    "rebuildManifest": "Aus Telegram wiederherstellen",
+    "rebuildManifestDone": "Backup-Datensatz wiederhergestellt. Dateien, die bereits in Telegram liegen, werden neu verknüpft statt erneut hochgeladen.",
+    "rebuildManifestFailed": "Der Backup-Datensatz konnte nicht wiederhergestellt werden.",
+    "watch": {
+      "error": "Die Ordnerüberwachung funktioniert nicht. Änderungen werden beim regelmäßigen Scan erkannt.",
+      "degraded_one": "{{count}} Ordner wird nicht überwacht (fehlt oder ist nicht zugänglich). Neuer Versuch alle 5 Minuten.",
+      "degraded_other": "{{count}} Ordner werden nicht überwacht (fehlen oder sind nicht zugänglich). Neuer Versuch alle 5 Minuten.",
+      "nextRetry": "Einige Dateien sind fehlgeschlagen. Nächster automatischer Versuch um {{time}}."
+    }
   },
   "appearance": {
     "title": "Erscheinungsbild",

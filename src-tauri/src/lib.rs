@@ -578,7 +578,7 @@ async fn delete_backed_up_files(
         })
         .await
         .map_err(|e| format!("cleanup join failed: {e}"))?;
-        return serde_json::to_value(result).map_err(|e| e.to_string());
+        serde_json::to_value(result).map_err(|e| e.to_string())
     }
     #[cfg(not(desktop))]
     {

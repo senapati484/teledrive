@@ -94,7 +94,8 @@
       "off": "Désactivé",
       "every6h": "Toutes les 6 heures",
       "every12h": "Toutes les 12 heures",
-      "every24h": "Toutes les 24 heures"
+      "every24h": "Toutes les 24 heures",
+      "onChange": "Quand des fichiers changent"
     },
     "lastBackup": "Dernière sauvegarde :",
     "lastBackupAgo": "Il y a {{time}}",
@@ -121,7 +122,9 @@
       "unchanged_one": "{{count}} inchangé, ",
       "unchanged_other": "{{count}} inchangés, ",
       "failed_one": "{{count}} a échoué",
-      "failed_other": "{{count}} ont échoué"
+      "failed_other": "{{count}} ont échoué",
+      "deleted_one": "{{count}} supprimé du disque",
+      "deleted_other": "{{count}} supprimés du disque"
     },
     "progressHint": "Consultez le panneau de progression dans le coin inférieur droit.",
     "cancel": "Annuler",
@@ -137,7 +140,27 @@
     },
     "missingRoots_one": "{{count}} dossier source n'est pas disponible. Les autres dossiers ont été sauvegardés.",
     "missingRoots_other": "{{count}} dossiers sources ne sont pas disponibles. Les autres dossiers ont été sauvegardés.",
-    "editFolders": "Modifier les dossiers"
+    "editFolders": "Modifier les dossiers",
+    "autoDelete": {
+      "title": "Supprimer du disque après la sauvegarde",
+      "description": "Après chaque sauvegarde, les fichiers de vos dossiers de sauvegarde déjà en sécurité dans Telegram sont supprimés de cet ordinateur. Seuls les fichiers des dossiers listés ci-dessus sont concernés, et un fichier modifié après son envoi est conservé jusqu'à sa prochaine sauvegarde.",
+      "activeWarning": "Activé : les fichiers sauvegardés sont supprimés de cet ordinateur. Restaurez-les depuis TeleDrive si besoin.",
+      "confirmTitle": "Supprimer de cet ordinateur les fichiers sauvegardés ?",
+      "confirmBody": "À partir de la prochaine sauvegarde, chaque fichier de ces dossiers déjà présent dans Telegram sera supprimé de votre disque. TeleDrive ne peut pas annuler cette action : la seule copie restante sera celle de Telegram.",
+      "confirm": "Activer et supprimer",
+      "cancel": "Annuler"
+    },
+    "waitingTelegram": "En attente de Telegram jusqu'à {{time}} (encore {{remaining}}). La sauvegarde reprendra d'elle-même.",
+    "manifestCorrupt": "Le registre de sauvegarde de cet appareil est endommagé ; les sauvegardes sont en pause.",
+    "rebuildManifest": "Reconstruire depuis Telegram",
+    "rebuildManifestDone": "Registre reconstruit. Les fichiers déjà dans Telegram seront reliés à nouveau, sans nouvel envoi.",
+    "rebuildManifestFailed": "Impossible de reconstruire le registre de sauvegarde.",
+    "watch": {
+      "error": "La surveillance des dossiers ne fonctionne pas. Les modifications seront détectées lors de l'analyse périodique.",
+      "degraded_one": "{{count}} dossier n'est pas surveillé (absent ou inaccessible). Nouvel essai toutes les 5 minutes.",
+      "degraded_other": "{{count}} dossiers ne sont pas surveillés (absents ou inaccessibles). Nouvel essai toutes les 5 minutes.",
+      "nextRetry": "Certains fichiers ont échoué. Prochain essai automatique à {{time}}."
+    }
   },
   "appearance": {
     "title": "Apparence",

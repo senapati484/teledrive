@@ -20,7 +20,8 @@
       "walkerFailed": "Pemindai gagal: {{message}}",
       "manifestCorrupt": "Manifest cadangan rusak — menolak mengunggah sampai ditinjau.",
       "cancelled": "Dibatalkan oleh pengguna.",
-      "sessionExpired": "Sesi Telegram telah kedaluwarsa. Sambungkan kembali akun Anda di Pengaturan → Akun Telegram, lalu jalankan pencadangan lagi."
+      "sessionExpired": "Sesi Telegram telah kedaluwarsa. Sambungkan kembali akun Anda di Pengaturan → Akun Telegram, lalu jalankan pencadangan lagi.",
+      "rateLimited": "Telegram meminta jeda unggahan sekitar {{minutes}} menit. File yang tersisa akan dicoba lagi nanti."
     }
   },
   "upload": {

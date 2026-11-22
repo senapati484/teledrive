@@ -94,7 +94,8 @@
       "off": "Nonaktif",
       "every6h": "Setiap 6 jam",
       "every12h": "Setiap 12 jam",
-      "every24h": "Setiap 24 jam"
+      "every24h": "Setiap 24 jam",
+      "onChange": "Saat file berubah"
     },
     "lastBackup": "Pencadangan terakhir:",
     "lastBackupAgo": "{{time}} yang lalu",
@@ -121,7 +122,9 @@
       "unchanged_one": "{{count}} tidak berubah, ",
       "unchanged_other": "{{count}} tidak berubah, ",
       "failed_one": "{{count}} gagal",
-      "failed_other": "{{count}} gagal"
+      "failed_other": "{{count}} gagal",
+      "deleted_one": "{{count}} dihapus dari disk",
+      "deleted_other": "{{count}} dihapus dari disk"
     },
     "progressHint": "Lihat panel progres di sudut kanan bawah.",
     "cancel": "Batal",
@@ -137,7 +140,27 @@
     },
     "missingRoots_one": "{{count}} folder sumber tidak tersedia. Folder lain berhasil dicadangkan.",
     "missingRoots_other": "{{count}} folder sumber tidak tersedia. Folder lain berhasil dicadangkan.",
-    "editFolders": "Edit folder"
+    "editFolders": "Edit folder",
+    "autoDelete": {
+      "title": "Hapus dari disk setelah dicadangkan",
+      "description": "Setelah setiap pencadangan, file dari folder cadangan Anda yang sudah aman di Telegram dihapus dari komputer ini. Hanya file di folder yang tercantum di atas yang terpengaruh, dan file yang diubah setelah diunggah tetap disimpan hingga dicadangkan lagi.",
+      "activeWarning": "Aktif: file yang sudah dicadangkan sedang dihapus dari komputer ini. Pulihkan dari TeleDrive bila perlu.",
+      "confirmTitle": "Hapus file yang sudah dicadangkan dari komputer ini?",
+      "confirmBody": "Mulai pencadangan berikutnya, setiap file di folder ini yang sudah ada di Telegram akan dihapus dari disk Anda. TeleDrive tidak dapat membatalkannya: satu-satunya salinan yang tersisa adalah yang ada di Telegram.",
+      "confirm": "Aktifkan dan hapus",
+      "cancel": "Batal"
+    },
+    "waitingTelegram": "Menunggu Telegram hingga {{time}} (sisa {{remaining}}). Pencadangan akan berlanjut sendiri.",
+    "manifestCorrupt": "Catatan cadangan perangkat ini rusak, sehingga pencadangan dijeda.",
+    "rebuildManifest": "Bangun ulang dari Telegram",
+    "rebuildManifestDone": "Catatan cadangan dibangun ulang. File yang sudah ada di Telegram akan ditautkan ulang tanpa diunggah lagi.",
+    "rebuildManifestFailed": "Tidak dapat membangun ulang catatan cadangan.",
+    "watch": {
+      "error": "Pemantauan folder tidak berfungsi. Perubahan akan terdeteksi saat pemindaian berkala.",
+      "degraded_one": "{{count}} folder tidak dipantau (hilang atau tidak dapat diakses). Dicoba lagi setiap 5 menit.",
+      "degraded_other": "{{count}} folder tidak dipantau (hilang atau tidak dapat diakses). Dicoba lagi setiap 5 menit.",
+      "nextRetry": "Beberapa file gagal. Percobaan otomatis berikutnya pukul {{time}}."
+    }
   },
   "appearance": {
     "title": "Tampilan",

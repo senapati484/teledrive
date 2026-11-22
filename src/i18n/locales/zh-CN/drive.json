@@ -108,7 +108,19 @@
     "partial": "备份完成（存在警告）",
     "summaryMissing_one": "{{count}} 个文件夹不可用",
     "summaryMissing_other": "{{count}} 个文件夹不可用",
-    "cancel": "取消备份"
+    "cancel": "取消备份",
+    "phase": {
+      "connecting": "正在连接 Telegram…",
+      "scanning": "正在扫描文件夹…",
+      "comparing": "正在检查更改…",
+      "saving": "正在保存备份目录…"
+    },
+    "comparingProgress": "已检查 {{processed}} / {{total}} 个文件",
+    "catalogRetry": "Telegram 要求等待 — 距离下次保存目录还有 {{remaining}}",
+    "fileTransfer": "当前文件：已发送 {{percent}}%",
+    "waitingTelegram": "等待 Telegram 至 {{time}}（剩余 {{remaining}}）。备份将自动继续。",
+    "summaryDeleted_one": "已从磁盘删除 {{count}} 个",
+    "summaryDeleted_other": "已从磁盘删除 {{count}} 个"
   },
   "errorBoundary": {
     "title": "出了点问题",

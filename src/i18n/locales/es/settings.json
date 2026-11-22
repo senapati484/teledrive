@@ -113,7 +113,8 @@
       "off": "Desactivado",
       "every6h": "Cada 6 horas",
       "every12h": "Cada 12 horas",
-      "every24h": "Cada 24 horas"
+      "every24h": "Cada 24 horas",
+      "onChange": "Cuando cambien los archivos"
     },
     "lastBackup": "Última copia de seguridad:",
     "lastBackupAgo": "hace {{time}}",
@@ -127,7 +128,9 @@
       "failed_other": "{{count}} fallidos",
       "uploaded_zero": "{{count}} subidos, ",
       "unchanged_zero": "{{count}} sin cambios, ",
-      "failed_zero": "{{count}} fallidos"
+      "failed_zero": "{{count}} fallidos",
+      "deleted_one": "{{count}} eliminado del disco",
+      "deleted_other": "{{count}} eliminados del disco"
     },
     "progressHint": "Sigue el progreso en el panel flotante de la esquina inferior derecha.",
     "cancel": "Cancelar",
@@ -155,7 +158,27 @@
     },
     "missingRoots_one": "{{count}} carpeta de origen no está disponible. Se respaldaron las demás carpetas.",
     "missingRoots_other": "{{count}} carpetas de origen no están disponibles. Se respaldaron las demás carpetas.",
-    "editFolders": "Editar carpetas"
+    "editFolders": "Editar carpetas",
+    "autoDelete": {
+      "title": "Eliminar del disco tras el respaldo",
+      "description": "Después de cada respaldo, los archivos de tus carpetas de respaldo que ya están a salvo en Telegram se eliminan de este equipo. Solo se ven afectados los archivos de las carpetas indicadas arriba, y un archivo editado después de subirse se conserva hasta que se respalde de nuevo.",
+      "activeWarning": "Activado: los archivos respaldados se están eliminando de este equipo. Restáuralos desde TeleDrive cuando los necesites.",
+      "confirmTitle": "¿Eliminar de este equipo los archivos respaldados?",
+      "confirmBody": "A partir del próximo respaldo, todo archivo de estas carpetas que ya esté en Telegram se eliminará de tu disco. TeleDrive no puede deshacerlo: la única copia que quedará será la de Telegram.",
+      "confirm": "Activar y eliminar",
+      "cancel": "Cancelar"
+    },
+    "waitingTelegram": "Esperando a Telegram hasta las {{time}} (faltan {{remaining}}). El respaldo continuará solo.",
+    "manifestCorrupt": "El registro de respaldo de este dispositivo está dañado, por lo que los respaldos están en pausa.",
+    "rebuildManifest": "Reconstruir desde Telegram",
+    "rebuildManifestDone": "Registro reconstruido. Los archivos que ya están en Telegram se volverán a vincular sin subirse de nuevo.",
+    "rebuildManifestFailed": "No se pudo reconstruir el registro de respaldo.",
+    "watch": {
+      "error": "La supervisión de carpetas no funciona. Los cambios se detectarán en el análisis periódico.",
+      "degraded_one": "{{count}} carpeta no se está supervisando (falta o no es accesible). Se reintentará cada 5 minutos.",
+      "degraded_other": "{{count}} carpetas no se están supervisando (faltan o no son accesibles). Se reintentará cada 5 minutos.",
+      "nextRetry": "Algunos archivos fallaron. Próximo reintento automático a las {{time}}."
+    }
   },
   "appearance": {
     "title": "Apariencia",

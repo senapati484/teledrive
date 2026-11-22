@@ -108,7 +108,19 @@
     "partial": "警告付きでバックアップが完了しました",
     "summaryMissing_one": "{{count}} 個のフォルダーが利用できません",
     "summaryMissing_other": "{{count}} 個のフォルダーが利用できません",
-    "cancel": "バックアップをキャンセル"
+    "cancel": "バックアップをキャンセル",
+    "phase": {
+      "connecting": "Telegram に接続しています…",
+      "scanning": "フォルダーをスキャンしています…",
+      "comparing": "変更を確認しています…",
+      "saving": "バックアップカタログを保存しています…"
+    },
+    "comparingProgress": "{{total}} 件中 {{processed}} 件を確認済み",
+    "catalogRetry": "Telegram から待機を求められました — 次のカタログ再試行まで {{remaining}}",
+    "fileTransfer": "現在のファイル: {{percent}}% 送信済み",
+    "waitingTelegram": "{{time}} まで Telegram を待機中（残り {{remaining}}）。バックアップは自動で再開されます。",
+    "summaryDeleted_one": "{{count}} 件をディスクから削除",
+    "summaryDeleted_other": "{{count}} 件をディスクから削除"
   },
   "errorBoundary": {
     "title": "何か問題が発生しました",

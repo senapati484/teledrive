@@ -181,8 +181,12 @@ mod tests {
         let outside = other.join("f.txt");
         std::fs::write(&outside, b"data").unwrap();
         let escaping = CleanupFile {
-            path: root.join("..").join(other.file_name().unwrap()).join("f.txt")
-                .to_string_lossy().into_owned(),
+            path: root
+                .join("..")
+                .join(other.file_name().unwrap())
+                .join("f.txt")
+                .to_string_lossy()
+                .into_owned(),
             ..entry(&outside)
         };
 

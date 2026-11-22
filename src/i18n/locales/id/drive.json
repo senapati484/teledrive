@@ -108,7 +108,19 @@
     "partial": "Pencadangan selesai dengan peringatan",
     "summaryMissing_one": "{{count}} folder tidak tersedia",
     "summaryMissing_other": "{{count}} folder tidak tersedia",
-    "cancel": "Batalkan pencadangan"
+    "cancel": "Batalkan pencadangan",
+    "phase": {
+      "connecting": "Menghubungkan ke Telegram…",
+      "scanning": "Memindai folder…",
+      "comparing": "Memeriksa perubahan…",
+      "saving": "Menyimpan katalog cadangan…"
+    },
+    "comparingProgress": "{{processed}} dari {{total}} file diperiksa",
+    "catalogRetry": "Telegram meminta menunggu — {{remaining}} hingga percobaan katalog berikutnya",
+    "fileTransfer": "File saat ini: {{percent}}% terkirim",
+    "waitingTelegram": "Menunggu Telegram hingga {{time}} (sisa {{remaining}}). Pencadangan akan berlanjut sendiri.",
+    "summaryDeleted_one": "{{count}} dihapus dari disk",
+    "summaryDeleted_other": "{{count}} dihapus dari disk"
   },
   "errorBoundary": {
     "title": "Terjadi kesalahan",

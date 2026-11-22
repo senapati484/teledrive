@@ -108,7 +108,19 @@
     "partial": "Sauvegarde terminée avec des avertissements",
     "summaryMissing_one": "{{count}} dossier non disponible",
     "summaryMissing_other": "{{count}} dossiers non disponibles",
-    "cancel": "Annuler la sauvegarde"
+    "cancel": "Annuler la sauvegarde",
+    "phase": {
+      "connecting": "Connexion à Telegram…",
+      "scanning": "Analyse des dossiers…",
+      "comparing": "Recherche des modifications…",
+      "saving": "Enregistrement du catalogue de sauvegarde…"
+    },
+    "comparingProgress": "{{processed}} fichiers vérifiés sur {{total}}",
+    "catalogRetry": "Telegram demande d'attendre : {{remaining}} avant la prochaine tentative du catalogue",
+    "fileTransfer": "Fichier en cours : {{percent}} % envoyé",
+    "waitingTelegram": "En attente de Telegram jusqu'à {{time}} (encore {{remaining}}). La sauvegarde reprendra d'elle-même.",
+    "summaryDeleted_one": "{{count}} supprimé du disque",
+    "summaryDeleted_other": "{{count}} supprimés du disque"
   },
   "errorBoundary": {
     "title": "Un problème est survenu",

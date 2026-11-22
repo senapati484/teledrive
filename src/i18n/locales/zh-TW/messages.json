@@ -20,7 +20,8 @@
       "walkerFailed": "Walker失敗：{{message}}",
       "manifestCorrupt": "備份清單已損毀 - 在經過稽核之前拒絕上傳。",
       "cancelled": "已被使用者取消。",
-      "sessionExpired": "Telegram會話已過期。在“設定”→“Telegram帳戶”中重新連線您的帳戶，然後再次執行備份。"
+      "sessionExpired": "Telegram會話已過期。在“設定”→“Telegram帳戶”中重新連線您的帳戶，然後再次執行備份。",
+      "rateLimited": "Telegram 要求暫停上傳約 {{minutes}} 分鐘。剩餘檔案稍後將重試。"
     }
   },
   "upload": {

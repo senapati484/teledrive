@@ -791,7 +791,7 @@ export default function BackupSection() {
                   type="button"
                   disabled={rebuilding || isRunning}
                   onClick={() => void handleRebuildManifest()}
-                  className="font-semibold underline underline-offset-2 hover:no-underline disabled:opacity-50"
+                  className="font-semibold underline underline-offset-2 hover:no-underline cursor-pointer disabled:cursor-default disabled:opacity-50"
                 >
                   {t("backup.rebuildManifest")}
                 </button>

@@ -108,7 +108,19 @@
     "partial": "Copia de seguridad completada con advertencias",
     "summaryMissing_one": "{{count}} carpeta no disponible",
     "summaryMissing_other": "{{count}} carpetas no disponibles",
-    "cancel": "Cancelar copia de seguridad"
+    "cancel": "Cancelar copia de seguridad",
+    "phase": {
+      "connecting": "Conectando con Telegram…",
+      "scanning": "Analizando carpetas…",
+      "comparing": "Buscando cambios…",
+      "saving": "Guardando el catálogo del respaldo…"
+    },
+    "comparingProgress": "{{processed}} de {{total}} archivos revisados",
+    "catalogRetry": "Telegram pidió esperar: {{remaining}} hasta el próximo intento del catálogo",
+    "fileTransfer": "Archivo actual: {{percent}} % enviado",
+    "waitingTelegram": "Esperando a Telegram hasta las {{time}} (faltan {{remaining}}). El respaldo continuará solo.",
+    "summaryDeleted_one": "{{count}} eliminado del disco",
+    "summaryDeleted_other": "{{count}} eliminados del disco"
   },
   "errorBoundary": {
     "title": "Algo salió mal",

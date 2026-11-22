@@ -20,7 +20,8 @@
       "walkerFailed": "Échec de l'explorateur : {{message}}",
       "manifestCorrupt": "Le manifeste de sauvegarde est corrompu — téléversement refusé avant vérification.",
       "cancelled": "Annulé par l'utilisateur.",
-      "sessionExpired": "Session Telegram expirée. Reconnectez votre compte dans Paramètres → Compte Telegram, puis relancez la sauvegarde."
+      "sessionExpired": "Session Telegram expirée. Reconnectez votre compte dans Paramètres → Compte Telegram, puis relancez la sauvegarde.",
+      "rateLimited": "Telegram a demandé de suspendre les envois pendant environ {{minutes}} min. Les fichiers restants seront réessayés plus tard."
     }
   },
   "upload": {

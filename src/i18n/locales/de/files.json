@@ -255,5 +255,12 @@
       "failed": "Elemente konnten nicht verschoben werden"
     },
     "indexStuck": "Änderungen konnten noch nicht gespeichert werden. Ihre Änderungen werden lokal beibehalten und automatisch wiederholt — oder nutzen Sie 'Wiederholen' im Banner."
+  },
+  "info": {
+    "versions": {
+      "title": "Frühere Versionen",
+      "none": "Für diese Datei sind keine früheren Versionen gespeichert.",
+      "download": "Herunterladen"
+    }
   }
 }
