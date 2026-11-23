@@ -830,7 +830,7 @@ export default function DriveLayout() {
               variant="ghost"
               size="icon"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="h-10 w-10 rounded-full hover:bg-muted text-muted-foreground cursor-pointer"
+              className="h-10 w-10 rounded-full hover:bg-muted text-muted-foreground cursor-pointer outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0B57D0]/50 dark:focus-visible:ring-[#8ab4f8]/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
               title={theme === "dark" ? t("header.switchToLight") : t("header.switchToDark")}
             >
               {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
@@ -841,9 +841,9 @@ export default function DriveLayout() {
                 variant="ghost"
                 size="icon"
                 onClick={lockNow}
-                className="h-10 w-10 rounded-full hover:bg-muted text-muted-foreground flex cursor-pointer"
-                title={`${t("header.lock", "Lock TeleDrive")} (Cmd+L)`}
-                aria-label={t("header.lock", "Lock TeleDrive")}
+                className="h-10 w-10 rounded-full hover:bg-muted text-muted-foreground flex cursor-pointer outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0B57D0]/50 dark:focus-visible:ring-[#8ab4f8]/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+                title={`${t("header.lock", "Lock TeleDrive")} (${modKey}+L)`}
+                aria-label={`${t("header.lock", "Lock TeleDrive")} (${modKey}+L)`}
               >
                 <Lock className="h-5 w-5" />
               </Button>
@@ -853,14 +853,14 @@ export default function DriveLayout() {
               variant="ghost"
               size="icon"
               onClick={() => navigate("/settings")}
-              className="h-10 w-10 rounded-full hover:bg-muted text-muted-foreground flex cursor-pointer"
+              className="h-10 w-10 rounded-full hover:bg-muted text-muted-foreground flex cursor-pointer outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0B57D0]/50 dark:focus-visible:ring-[#8ab4f8]/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
               title={t("header.settings")}
             >
               <Settings className="h-5 w-5" />
             </Button>
 
             <Avatar
-              className="h-9 w-9 border border-border cursor-pointer hover:opacity-90 transition-opacity"
+              className="h-9 w-9 border border-border cursor-pointer hover:opacity-90 transition-opacity outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0B57D0]/50 dark:focus-visible:ring-[#8ab4f8]/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background"
               onClick={() => navigate("/settings")}
             >
               <AvatarFallback className="bg-gradient-to-tr from-[#0b57d0] to-[#1a73e8] text-white font-semibold text-xs select-none">

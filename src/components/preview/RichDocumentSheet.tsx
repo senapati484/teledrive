@@ -66,8 +66,8 @@ export function RichDocumentSheet({ htmlContent, slides, isDark }: RichDocumentS
                 )}
               </div>
               {slide.notes && (
-                <div className="px-6 py-3 bg-amber-50/50 dark:bg-amber-500/[0.05] border-t border-amber-200/40 dark:border-amber-500/10 text-xs text-slate-600 dark:text-slate-400">
-                  <span className="font-semibold text-amber-700 dark:text-amber-400 mr-1.5">
+                <div className="px-6 py-3 bg-amber-50/70 dark:bg-amber-500/[0.08] border-t border-amber-200/60 dark:border-amber-500/20 text-xs text-amber-950/85 dark:text-amber-200/90">
+                  <span className="font-semibold text-amber-800 dark:text-amber-300 mr-1.5">
                     {t("document.speakerNotes", "Notes:")}
                   </span>
                   {slide.notes}

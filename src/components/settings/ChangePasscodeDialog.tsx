@@ -127,6 +127,10 @@ export function ChangePasscodeDialog({
               <Input
                 type="password"
                 inputMode={format === "pin" ? "numeric" : "text"}
+                maxLength={format === "pin" ? 6 : undefined}
+                autoComplete="off"
+                autoCorrect="off"
+                spellCheck={false}
                 value={currentPass}
                 onChange={(e) => setCurrentPass(e.target.value)}
                 placeholder="••••"
@@ -143,6 +147,10 @@ export function ChangePasscodeDialog({
             <Input
               type="password"
               inputMode={format === "pin" ? "numeric" : "text"}
+              maxLength={format === "pin" ? 6 : undefined}
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
               value={newPass}
               onChange={(e) => setNewPass(e.target.value)}
               placeholder="••••"
@@ -158,6 +166,10 @@ export function ChangePasscodeDialog({
             <Input
               type="password"
               inputMode={format === "pin" ? "numeric" : "text"}
+              maxLength={format === "pin" ? 6 : undefined}
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
               value={confirmPass}
               onChange={(e) => setConfirmPass(e.target.value)}
               placeholder="••••"

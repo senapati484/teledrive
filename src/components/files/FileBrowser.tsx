@@ -1636,7 +1636,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                 type="button"
                 onClick={() => setFilterType(filter)}
                 className={cn(
-                  "px-3 py-1.5 sm:px-3.5 text-xs font-medium rounded-lg border transition-all duration-150 cursor-pointer whitespace-nowrap active:scale-95 inline-flex items-center gap-1.5 shrink-0",
+                  "px-3 py-1.5 sm:px-3.5 text-xs font-medium rounded-lg border transition-all duration-150 cursor-pointer whitespace-nowrap active:scale-95 inline-flex items-center gap-1.5 shrink-0 outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0B57D0]/50 dark:focus-visible:ring-[#8ab4f8]/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background",
                   isActive
                     ? "bg-[#c2e7ff] text-[#001d35] border-transparent font-semibold dark:bg-[#004a77] dark:text-[#c2e7ff] shadow-xs"
                     : "bg-white dark:bg-[#161719] border-slate-300/70 dark:border-white/[0.04] text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] hover:text-[#1f1f1f] dark:hover:text-[#e3e3e3]"
@@ -1655,7 +1655,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                 type="button"
                 aria-label={t("browser.filters.dateLabel", "Filter by date")}
                 className={cn(
-                  "px-2.5 py-1.5 sm:px-3 text-xs font-medium rounded-lg border transition-all duration-150 cursor-pointer whitespace-nowrap active:scale-95 inline-flex items-center gap-1.5 shrink-0",
+                  "px-2.5 py-1.5 sm:px-3 text-xs font-medium rounded-lg border transition-all duration-150 cursor-pointer whitespace-nowrap active:scale-95 inline-flex items-center gap-1.5 shrink-0 outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0B57D0]/50 dark:focus-visible:ring-[#8ab4f8]/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background",
                   dateRangeFilter !== "all"
                     ? "bg-[#c2e7ff] text-[#001d35] border-transparent font-semibold dark:bg-[#004a77] dark:text-[#c2e7ff] shadow-xs"
                     : "bg-white dark:bg-[#161719] border-slate-300/70 dark:border-white/[0.04] text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] hover:text-[#1f1f1f] dark:hover:text-[#e3e3e3]"
@@ -1701,7 +1701,7 @@ export function FileBrowser({ folderPath = "/", mode = "drive", searchQuery = ""
                 type="button"
                 aria-label={t("browser.filters.sizeLabel", "Filter by size")}
                 className={cn(
-                  "px-2.5 py-1.5 sm:px-3 text-xs font-medium rounded-lg border transition-all duration-150 cursor-pointer whitespace-nowrap active:scale-95 inline-flex items-center gap-1.5 shrink-0",
+                  "px-2.5 py-1.5 sm:px-3 text-xs font-medium rounded-lg border transition-all duration-150 cursor-pointer whitespace-nowrap active:scale-95 inline-flex items-center gap-1.5 shrink-0 outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0B57D0]/50 dark:focus-visible:ring-[#8ab4f8]/50 focus-visible:ring-offset-1 focus-visible:ring-offset-background",
                   sizeRangeFilter !== "all"
                     ? "bg-[#c2e7ff] text-[#001d35] border-transparent font-semibold dark:bg-[#004a77] dark:text-[#c2e7ff] shadow-xs"
                     : "bg-white dark:bg-[#161719] border-slate-300/70 dark:border-white/[0.04] text-[#444746] dark:text-[#c4c7c5] hover:bg-[#f0f4f9] dark:hover:bg-[#1f2124] hover:text-[#1f1f1f] dark:hover:text-[#e3e3e3]"

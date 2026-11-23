@@ -111,6 +111,7 @@ export default function SecuritySection() {
           type="button"
           role="switch"
           aria-checked={enabled}
+          aria-label={t("security.enableLock", "Enable App Lock")}
           onClick={handleToggleEnable}
           className={cn(
             "relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden",
@@ -136,7 +137,16 @@ export default function SecuritySection() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Option 1: Device Credentials / Biometrics */}
             <div
+              role="button"
+              tabIndex={0}
+              aria-pressed={mode === "device_biometric"}
               onClick={handleSelectBiometrics}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  void handleSelectBiometrics();
+                }
+              }}
               className={cn(
                 "p-4 rounded-xl border text-left cursor-pointer transition-all duration-150 flex flex-col justify-between relative",
                 mode === "device_biometric"
@@ -172,7 +182,16 @@ export default function SecuritySection() {
 
             {/* Option 2: Custom Passcode */}
             <div
+              role="button"
+              tabIndex={0}
+              aria-pressed={mode === "custom_passcode"}
               onClick={handleSelectCustom}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  handleSelectCustom();
+                }
+              }}
               className={cn(
                 "p-4 rounded-xl border text-left cursor-pointer transition-all duration-150 flex flex-col justify-between relative",
                 mode === "custom_passcode"
@@ -284,6 +303,7 @@ export default function SecuritySection() {
                 type="button"
                 role="switch"
                 aria-checked={lockOnMinimize}
+                aria-label={t("security.options.lockOnMinimize", "Lock on Minimize")}
                 onClick={() => void updateSettings({ lockOnMinimize: !lockOnMinimize })}
                 className={cn(
                   "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden",
@@ -315,6 +335,7 @@ export default function SecuritySection() {
                 type="button"
                 role="switch"
                 aria-checked={privacyShield}
+                aria-label={t("security.options.privacyShield", "Window Privacy Shield")}
                 onClick={() => void updateSettings({ privacyShield: !privacyShield })}
                 className={cn(
                   "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden",

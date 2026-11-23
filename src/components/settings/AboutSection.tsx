@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { logger } from "@/lib/logger";
-import { Bug, ShieldAlert, Globe, FlaskConical, Star, Sparkles } from "lucide-react";
+import { Bug, ShieldAlert, Globe, FlaskConical, Star, Sparkles, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { APP_VERSION } from "@/lib/telegram/config";
 import { runtimeGetVersion, runtimeOpenUrl } from "@/lib/runtime/bridge";
+import { checkForUpdates, type UpdateCheckResult } from "@/lib/support/updateChecker";
+import { UpdateAvailableDialog } from "@/components/support/UpdateAvailableDialog";
 
 const GithubIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -47,6 +49,8 @@ export default function AboutSection() {
   const { t } = useTranslation("settings");
   const [version, setVersion] = useState(APP_VERSION);
   const [checking, setChecking] = useState(false);
+  const [updateResult, setUpdateResult] = useState<UpdateCheckResult | null>(null);
+  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
 
   useEffect(() => {
     async function fetchVersion() {
@@ -67,14 +71,44 @@ export default function AboutSection() {
     }
   };
 
-  const handleCheckUpdates = () => {
+  const handleCheckUpdates = async () => {
     setChecking(true);
-    setTimeout(() => {
+    try {
+      const res = await checkForUpdates(version);
       setChecking(false);
-      toast.success(t("about.toasts.upToDate"), {
-        description: t("about.toasts.latestVersion", { version }),
-      });
-    }, 800);
+
+      if (res.hasUpdate) {
+        setUpdateResult(res);
+        setUpdateDialogOpen(true);
+        toast.info(t("about.toasts.updateAvailable", "Update Available!"), {
+          description: t("about.toasts.updateAvailableDesc", {
+            version: res.latestVersion,
+            defaultValue: `TeleDrive v${res.latestVersion} is available for download.`,
+          }),
+        });
+      } else if (res.success) {
+        toast.success(t("about.toasts.upToDate", "You're up to date!"), {
+          description: t("about.toasts.latestVersion", {
+            version,
+            defaultValue: `TeleDrive v${version} is the latest version.`,
+          }),
+        });
+      } else {
+        toast.error(t("about.toasts.checkFailed", "Unable to check for updates."), {
+          description:
+            res.error ||
+            t("about.toasts.checkFailedDesc", "Please check your connection or visit GitHub releases."),
+          action: {
+            label: "GitHub",
+            onClick: () => handleOpenLink(LINKS.github + "/releases"),
+          },
+        });
+      }
+    } catch (err: any) {
+      setChecking(false);
+      logger.error("Check for updates error:", err);
+      toast.error(t("about.toasts.checkFailed", "Unable to check for updates."));
+    }
   };
 
   return (
@@ -197,9 +231,10 @@ export default function AboutSection() {
           <Button
             onClick={handleCheckUpdates}
             disabled={checking}
-            className="rounded-full text-xs font-semibold bg-[#0B57D0] hover:bg-[#0842A0] text-white dark:bg-[#1a73e8] dark:hover:bg-[#1558b0] dark:text-white px-5 h-9 cursor-pointer transition-colors shadow-xs border-0"
+            className="rounded-full text-xs font-semibold bg-[#0B57D0] hover:bg-[#0842A0] text-white dark:bg-[#1a73e8] dark:hover:bg-[#1558b0] dark:text-white px-5 h-9 cursor-pointer transition-colors shadow-xs border-0 inline-flex items-center gap-2"
           >
-            {checking ? t("about.checkingUpdates") : t("about.checkUpdates")}
+            {checking && <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />}
+            <span>{checking ? t("about.checkingUpdates") : t("about.checkUpdates")}</span>
           </Button>
         </div>
       </div>
@@ -216,6 +251,13 @@ export default function AboutSection() {
           </p>
         </div>
       </div>
+
+      {/* Update Available Modal */}
+      <UpdateAvailableDialog
+        open={updateDialogOpen}
+        onOpenChange={setUpdateDialogOpen}
+        updateInfo={updateResult}
+      />
     </div>
   );
 }
