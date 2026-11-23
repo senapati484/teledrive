@@ -253,7 +253,11 @@ export default function SecuritySection() {
                   {cadenceOptions.map((opt) => (
                     <DropdownMenuItem
                       key={opt.value}
-                      onClick={() => void updateSettings({ autoLockMinutes: opt.value })}
+                      onClick={() => {
+                        const updates: any = { autoLockMinutes: opt.value };
+                        if (opt.value === 0) updates.lockOnMinimize = true;
+                        void updateSettings(updates);
+                      }}
                       className="text-xs cursor-pointer flex items-center justify-between"
                     >
                       <span>{opt.label}</span>

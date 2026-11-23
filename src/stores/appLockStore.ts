@@ -28,6 +28,7 @@ export interface AppLockStoreState {
   isLocked: boolean;
   mode: AppLockMode;
   passcodeFormat: PasscodeFormat;
+  pinLength: number;
   autoLockMinutes: number;
   lockOnMinimize: boolean;
   privacyShield: boolean;
@@ -64,6 +65,7 @@ export const useAppLockStore = create<AppLockStoreState>((set, get) => ({
   isLocked: false,
   mode: "device_biometric",
   passcodeFormat: "pin",
+  pinLength: 4,
   autoLockMinutes: DEFAULT_AUTO_LOCK_MINUTES,
   lockOnMinimize: false,
   privacyShield: true,
@@ -114,6 +116,7 @@ export const useAppLockStore = create<AppLockStoreState>((set, get) => ({
       isLocked: true, // Lock immediately on fresh launch
       mode: config.mode,
       passcodeFormat: config.passcodeFormat ?? "pin",
+      pinLength: config.pinLength ?? 4,
       autoLockMinutes: config.autoLockMinutes ?? DEFAULT_AUTO_LOCK_MINUTES,
       lockOnMinimize: config.lockOnMinimize ?? false,
       privacyShield: config.privacyShield ?? true,
@@ -178,6 +181,7 @@ export const useAppLockStore = create<AppLockStoreState>((set, get) => ({
       enabled: true,
       mode: "custom_passcode",
       passcodeFormat: format,
+      pinLength: format === "pin" ? passcode.length : 4,
       autoLockMinutes: config.autoLockMinutes,
       lockOnMinimize: config.lockOnMinimize,
       privacyShield: config.privacyShield,

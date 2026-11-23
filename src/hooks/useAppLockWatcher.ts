@@ -14,6 +14,7 @@ export function useAppLockWatcher() {
   const isLocked = useAppLockStore((s) => s.isLocked);
   const autoLockMinutes = useAppLockStore((s) => s.autoLockMinutes);
   const lockOnMinimize = useAppLockStore((s) => s.lockOnMinimize);
+  const privacyShield = useAppLockStore((s) => s.privacyShield);
   const lockNow = useAppLockStore((s) => s.lockNow);
 
   const lastActivityRef = useRef<number>(Date.now());
@@ -65,7 +66,8 @@ export function useAppLockWatcher() {
 
   // Window blur / minimize listener
   useEffect(() => {
-    if (!enabled || isLocked || !lockOnMinimize) return;
+    const shouldLockOnBlur = lockOnMinimize || autoLockMinutes === 0;
+    if (!enabled || isLocked || !shouldLockOnBlur) return;
 
     const handleBlur = () => {
       lockNow();
@@ -73,7 +75,32 @@ export function useAppLockWatcher() {
 
     window.addEventListener("blur", handleBlur);
     return () => window.removeEventListener("blur", handleBlur);
-  }, [enabled, isLocked, lockOnMinimize, lockNow]);
+  }, [enabled, isLocked, lockOnMinimize, autoLockMinutes, lockNow]);
+
+  // Window privacy shield (anti-task-switcher content scraping)
+  useEffect(() => {
+    if (!privacyShield) {
+      document.documentElement.classList.remove("teledrive-privacy-shield");
+      return;
+    }
+
+    const handleBlur = () => {
+      document.documentElement.classList.add("teledrive-privacy-shield");
+    };
+
+    const handleFocus = () => {
+      document.documentElement.classList.remove("teledrive-privacy-shield");
+    };
+
+    window.addEventListener("blur", handleBlur);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("focus", handleFocus);
+      document.documentElement.classList.remove("teledrive-privacy-shield");
+    };
+  }, [privacyShield]);
 
   // Global keyboard shortcut: Cmd+L (Mac) / Ctrl+L (Win/Linux)
   useEffect(() => {

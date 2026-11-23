@@ -31,6 +31,7 @@ export function LockScreen() {
   const enabled = useAppLockStore((s) => s.enabled);
   const mode = useAppLockStore((s) => s.mode);
   const passcodeFormat = useAppLockStore((s) => s.passcodeFormat);
+  const pinLength = useAppLockStore((s) => s.pinLength);
   const lockoutRemainingSec = useAppLockStore((s) => s.lockoutRemainingSec);
   const biometricsType = useAppLockStore((s) => s.biometricsType);
   const unlockWithBiometrics = useAppLockStore((s) => s.unlockWithBiometrics);
@@ -73,12 +74,13 @@ export function LockScreen() {
       if (isSubmitting || lockoutRemainingSec > 0) return;
       setErrorMessage(null);
 
+      const targetLength = pinLength || 4;
       const nextDigits = [...pinDigits, digit];
-      if (nextDigits.length <= 6) {
+      if (nextDigits.length <= targetLength) {
         setPinDigits(nextDigits);
 
-        // Auto-submit when reaches 4 digits (standard PIN length)
-        if (nextDigits.length === 4) {
+        // Auto-submit when target PIN length is reached
+        if (nextDigits.length === targetLength) {
           setIsSubmitting(true);
           const pinStr = nextDigits.join("");
           const res = await unlockWithPasscode(pinStr);
@@ -109,8 +111,40 @@ export function LockScreen() {
         }
       }
     },
-    [pinDigits, isSubmitting, lockoutRemainingSec, unlockWithPasscode, triggerShake, t]
+    [pinDigits, isSubmitting, lockoutRemainingSec, pinLength, unlockWithPasscode, triggerShake, t]
   );
+
+  const handlePinSubmit = useCallback(async () => {
+    if (pinDigits.length < 4 || isSubmitting || lockoutRemainingSec > 0) return;
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    const pinStr = pinDigits.join("");
+    const res = await unlockWithPasscode(pinStr);
+
+    if (!res.success) {
+      triggerShake();
+      setTimeout(() => {
+        setPinDigits([]);
+        setIsSubmitting(false);
+      }, 300);
+
+      if (res.error === "cooldown") {
+        setErrorMessage(
+          t("security.lockScreen.cooldown", {
+            seconds: res.lockoutSec ?? 30,
+            defaultValue: `Too many attempts. Try again in ${res.lockoutSec ?? 30}s.`,
+          })
+        );
+      } else {
+        setErrorMessage(
+          t("security.lockScreen.wrongPin", "Incorrect PIN. Please try again.")
+        );
+      }
+    } else {
+      setPinDigits([]);
+      setIsSubmitting(false);
+    }
+  }, [pinDigits, isSubmitting, lockoutRemainingSec, unlockWithPasscode, triggerShake, t]);
 
   const handleBackspace = useCallback(() => {
     if (isSubmitting || pinDigits.length === 0) return;
@@ -259,9 +293,9 @@ export function LockScreen() {
         {/* Custom Passcode Mode */}
         {mode === "custom_passcode" && passcodeFormat === "pin" && (
           <div className="w-full flex flex-col items-center">
-            {/* 4 Dot Indicators */}
+            {/* Dynamic Dot Indicators */}
             <div className="flex items-center gap-4 mb-8">
-              {[0, 1, 2, 3].map((idx) => {
+              {Array.from({ length: pinLength || 4 }).map((_, idx) => {
                 const filled = pinDigits.length > idx;
                 return (
                   <div
@@ -281,6 +315,7 @@ export function LockScreen() {
             <PinKeypad
               onDigit={handleDigit}
               onBackspace={handleBackspace}
+              onSubmit={handlePinSubmit}
               disabled={isSubmitting || lockoutRemainingSec > 0}
             />
           </div>

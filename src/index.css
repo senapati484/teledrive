@@ -1,6 +1,13 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* TeleDrive Privacy Shield for OS Task Switchers / Alt-Tab */
+html.teledrive-privacy-shield #root {
+  filter: blur(28px);
+  pointer-events: none;
+  transition: filter 0.15s ease-out;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {

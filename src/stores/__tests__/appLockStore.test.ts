@@ -92,6 +92,19 @@ describe("useAppLockStore", () => {
     expect(useAppLockStore.getState().failedAttempts).toBe(0);
   });
 
+  it("handles 6-digit PIN with dynamic length", async () => {
+    const success = await useAppLockStore.getState().setCustomPasscode("123456", "pin");
+    expect(success).toBe(true);
+    expect(useAppLockStore.getState().pinLength).toBe(6);
+
+    useAppLockStore.getState().lockNow();
+    expect(useAppLockStore.getState().isLocked).toBe(true);
+
+    const rightRes = await useAppLockStore.getState().unlockWithPasscode("123456");
+    expect(rightRes.success).toBe(true);
+    expect(useAppLockStore.getState().isLocked).toBe(false);
+  });
+
   it("disables app lock cleanly", async () => {
     await useAppLockStore.getState().enableDeviceBiometrics();
     expect(useAppLockStore.getState().enabled).toBe(true);

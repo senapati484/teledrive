@@ -26,6 +26,7 @@ export interface StoredAppLockConfig {
   enabled: boolean;
   mode: AppLockMode;
   passcodeFormat?: PasscodeFormat;
+  pinLength?: number;
   saltB64?: string;
   iterations?: number;
   canaryIvB64?: string;
@@ -222,6 +223,7 @@ export async function createPasscodeConfig(
     enabled: true,
     mode: "custom_passcode",
     passcodeFormat: format,
+    pinLength: format === "pin" ? passcode.length : undefined,
     saltB64: bytesToBase64(salt),
     iterations: DEFAULT_PBKDF2_ITERATIONS,
     canaryIvB64: canary.ivB64,
