@@ -6,6 +6,9 @@ use tauri::async_runtime::JoinHandle;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::Mutex as AsyncMutex;
 
+pub mod biometrics;
+use biometrics::{authenticate_device_owner, check_biometrics_available};
+
 #[tauri::command]
 async fn log_vault_state(app: tauri::AppHandle, state: String) {
     let log_path = if let Ok(data_dir) = app.path().app_data_dir() {
@@ -1602,6 +1605,8 @@ pub fn run() {
             cleanup_preview_cache,
             open_file_in_system_viewer,
             open_telegram_app,
+            check_biometrics_available,
+            authenticate_device_owner,
         ])
         .setup(|app| {
             #[cfg(not(mobile))]

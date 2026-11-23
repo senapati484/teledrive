@@ -30,6 +30,9 @@ const WhatsNewDialog = lazy(() => import("./components/support/WhatsNewDialog"))
 import { useSupportStore } from "./stores/supportStore";
 import { useEncryptionStore } from "./lib/secure/e2ee";
 import { UnlockEncryptionDialog } from "./components/files/UnlockEncryptionDialog";
+import { LockScreen } from "./components/auth/LockScreen";
+import { useAppLockWatcher } from "./hooks/useAppLockWatcher";
+import { useAppLockStore } from "./stores/appLockStore";
 import {
   hasCachedFilesHint,
   loadCachedFilesSnapshot,
@@ -105,6 +108,7 @@ import { useTheme } from "./hooks/useTheme";
 
 function App() {
   useTheme(); // Initialize theme logic
+  useAppLockWatcher(); // Inactivity, blur, and Cmd+L hotkey watcher
   const [isRestoring, setIsRestoring] = useState(true);
   const [splashProgress, setSplashProgress] = useState(20);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -114,6 +118,7 @@ function App() {
   useEffect(() => {
     useSupportStore.getState().initFirstLaunch();
     void useEncryptionStore.getState().initFromVault();
+    void useAppLockStore.getState().init();
     let active = true;
     async function initSession() {
       try {
@@ -270,6 +275,7 @@ function App() {
         </Suspense>
       )}
       <UnlockEncryptionDialog />
+      <LockScreen />
       <Toaster />
     </BrowserRouter>
   );

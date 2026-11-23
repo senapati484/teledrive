@@ -93,6 +93,7 @@ export function BackupVersionList({ file, formatBytes, formatDateTime }: BackupV
               <button
                 type="button"
                 onClick={() => download(version)}
+                aria-label={`${t("info.versions.download", "Download")} ${versionFileName(file.name, version.uploadedAt)}`}
                 className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-medium cursor-pointer text-[#0B57D0] dark:text-[#8ab4f8] hover:bg-[#e8f0fe] dark:hover:bg-[#1f2124]"
               >
                 <Download className="h-3.5 w-3.5" />
