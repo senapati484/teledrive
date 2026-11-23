@@ -10,7 +10,8 @@
     "language": "Idioma",
     "storage": "Almacenamiento",
     "about": "Acerca de",
-    "encryption": "Cifrado"
+    "encryption": "Cifrado",
+    "security": "Seguridad y Bloqueo"
   },
   "language": {
     "title": "Idioma",
@@ -329,6 +330,82 @@
       "unlocked": "Bóveda de cifrado desbloqueada.",
       "locked": "Bóveda de cifrado bloqueada.",
       "disabled": "Configuración de cifrado local eliminada."
+    }
+  },
+  "security": {
+    "title": "Seguridad y Bloqueo",
+    "description": "Protege TeleDrive en este dispositivo cuando te ausentes.",
+    "enableLock": "Activar bloqueo de aplicación",
+    "enableLockDesc": "Exigir autenticación al abrir TeleDrive o tras inactividad.",
+    "methodHeader": "Método de Desbloqueo",
+    "methods": {
+      "biometricTitle": "Contraseña y Biometría del Dispositivo",
+      "biometricDesc": "Desbloquea usando Touch ID, Face ID, Windows Hello o tu contraseña del sistema.",
+      "biometricRecommended": "Recomendado",
+      "customTitle": "Código personalizado de TeleDrive",
+      "customDesc": "Define un PIN de 4-6 dígitos o contraseña maestra exclusiva para TeleDrive.",
+      "changePasscode": "Cambiar código"
+    },
+    "cadenceHeader": "Frecuencia de Bloqueo",
+    "cadence": {
+      "title": "Tiempo de bloqueo automático",
+      "desc": "Bloquear automáticamente tras un periodo de inactividad.",
+      "immediate": "Inmediatamente al minimizar",
+      "1m": "Tras 1 minuto de inactividad",
+      "5m": "Tras 5 minutos de inactividad (Recomendado)",
+      "15m": "Tras 15 minutos de inactividad",
+      "1h": "Tras 1 hora de inactividad",
+      "never": "Nunca (Solo bloqueo manual)"
+    },
+    "options": {
+      "lockOnMinimize": "Bloquear al minimizar",
+      "lockOnMinimizeDesc": "Bloquea de inmediato cuando la ventana se minimiza u oculta.",
+      "privacyShield": "Escudo de privacidad de ventana",
+      "privacyShieldDesc": "Oculta el contenido en Mission Control, Alt-Tab y aplicaciones recientes."
+    },
+    "shortcutHint": "Consejo: Puedes bloquear TeleDrive pulsando Cmd+L (macOS) o Ctrl+L (Windows/Linux).",
+    "toasts": {
+      "enabled": "¡Bloqueo de app activado!",
+      "disabled": "Bloqueo de app desactivado.",
+      "switchedBio": "Usando credenciales del dispositivo y biometría.",
+      "passcodeSaved": "¡Código de acceso actualizado con éxito!"
+    },
+    "dialog": {
+      "setTitle": "Establecer código de bloqueo",
+      "changeTitle": "Cambiar código de acceso",
+      "pinHint": "Introduce un PIN numérico de 4 a 6 dígitos.",
+      "passphraseHint": "Introduce una contraseña maestra.",
+      "currentPass": "Código actual",
+      "newPass": "Nuevo código",
+      "confirmPass": "Confirmar nuevo código",
+      "cancel": "Cancelar",
+      "save": "Guardar código"
+    },
+    "errors": {
+      "wrongCurrentPass": "El código actual es incorrecto.",
+      "pinFormat": "El PIN debe tener entre 4 y 6 dígitos.",
+      "passphraseLength": "La contraseña debe tener al menos 6 caracteres.",
+      "mismatch": "Los códigos no coinciden.",
+      "saveFailed": "Error al guardar el nuevo código."
+    },
+    "lockScreen": {
+      "title": "TeleDrive está bloqueado",
+      "lockedBadge": "Bloqueado",
+      "touchId": "Desbloquear con Touch ID",
+      "faceId": "Desbloquear con Face ID",
+      "windowsHello": "Desbloquear con Windows Hello",
+      "deviceCreds": "Desbloquear con contraseña del dispositivo",
+      "biometricHint": "Toca tu sensor de huella o escribe tu contraseña del equipo.",
+      "enterPassphrase": "Introduce la contraseña maestra",
+      "unlockBtn": "Desbloquear",
+      "wrongPin": "PIN incorrecto. Inténtalo de nuevo.",
+      "wrongPasscode": "Contraseña incorrecta. Inténtalo de nuevo.",
+      "cooldown": "Demasiados intentos fallidos. Vuelve a intentarlo en {{seconds}}s.",
+      "forgot": "¿Olvidaste tu código?",
+      "forgotTitle": "¿Olvidaste tu código de acceso?",
+      "forgotDescription": "Por tu privacidad, TeleDrive no puede recuperar contraseñas olvidadas. Restablecerla cerrará la sesión en este dispositivo y quitará el bloqueo. Tus archivos permanecerán intactos en tu Telegram.",
+      "cancel": "Cancelar",
+      "resetAndLogout": "Cerrar sesión y restablecer bloqueo"
     }
   }
 }

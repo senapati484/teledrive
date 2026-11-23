@@ -4712,6 +4712,7 @@ name = "teledrive"
 version = "0.1.4"
 dependencies = [
  "argon2",
+ "cc",
  "notify",
  "serde",
  "serde_json",

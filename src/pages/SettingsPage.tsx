@@ -2,7 +2,7 @@ import { useState } from "react";
 import { logger } from "@/lib/logger";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, ChevronRight, Smartphone, Eye, HardDrive, Info, Shield, Languages } from "lucide-react";
+import { ArrowLeft, ChevronRight, Smartphone, Eye, HardDrive, Info, Shield, Languages, Lock } from "lucide-react";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { Button } from "@/components/ui/button";
 import TelegramAccountSection from "@/components/settings/TelegramAccountSection";
@@ -10,10 +10,11 @@ import AppearanceSection from "@/components/settings/AppearanceSection";
 import LanguageSection from "@/components/settings/LanguageSection";
 import StorageSection from "@/components/settings/StorageSection";
 import BackupSection from "@/components/settings/BackupSection";
+import SecuritySection from "@/components/settings/SecuritySection";
 import AboutSection from "@/components/settings/AboutSection";
 import RecoveryDialog from "@/components/settings/RecoveryDialog";
 
-type SectionType = "account" | "backup" | "appearance" | "language" | "storage" | "about";
+type SectionType = "account" | "backup" | "security" | "appearance" | "language" | "storage" | "about";
 
 export default function SettingsPage() {
   const { t } = useTranslation("settings");
@@ -38,6 +39,12 @@ export default function SettingsPage() {
       label: t("nav.backup"),
       icon: Shield,
       component: BackupSection,
+    },
+    {
+      id: "security" as const,
+      label: t("nav.security", "Security & App Lock"),
+      icon: Lock,
+      component: SecuritySection,
     },
     {
       id: "appearance" as const,

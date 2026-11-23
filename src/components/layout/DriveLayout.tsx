@@ -8,6 +8,7 @@ import {
   Star,
   Trash2,
   Settings,
+  Lock,
   Menu,
   Loader2,
   Archive,
@@ -31,6 +32,7 @@ import SearchBar from "./SearchBar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useAppLockStore } from "@/stores/appLockStore";
 
 import { cn } from "@/lib/utils";
 import { bootstrapTeleDrive, retryIndexNow } from "@/lib/telegram/bootstrap";
@@ -206,6 +208,8 @@ export default function DriveLayout() {
   const location = useLocation();
   const isMobile = useIsMobile();
   const { t } = useTranslation("drive");
+  const appLockEnabled = useAppLockStore((s) => s.enabled);
+  const lockNow = useAppLockStore((s) => s.lockNow);
   const phoneNumber = useAuthStore((state) => state.phoneNumber);
   const modKey = useMemo(() => getModKey(), []);
   
@@ -831,6 +835,19 @@ export default function DriveLayout() {
             >
               {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </Button>
+
+            {appLockEnabled && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={lockNow}
+                className="h-10 w-10 rounded-full hover:bg-muted text-muted-foreground flex cursor-pointer"
+                title={`${t("header.lock", "Lock TeleDrive")} (Cmd+L)`}
+                aria-label={t("header.lock", "Lock TeleDrive")}
+              >
+                <Lock className="h-5 w-5" />
+              </Button>
+            )}
 
             <Button
               variant="ghost"
