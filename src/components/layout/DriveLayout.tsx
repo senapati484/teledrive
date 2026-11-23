@@ -842,8 +842,8 @@ export default function DriveLayout() {
                 size="icon"
                 onClick={lockNow}
                 className="h-10 w-10 rounded-full hover:bg-muted text-muted-foreground flex cursor-pointer"
-                title={`${t("header.lock", "Lock TeleDrive")} (Cmd+L)`}
-                aria-label={t("header.lock", "Lock TeleDrive")}
+                title={`${t("header.lock", "Lock TeleDrive")} (${modKey}+L)`}
+                aria-label={`${t("header.lock", "Lock TeleDrive")} (${modKey}+L)`}
               >
                 <Lock className="h-5 w-5" />
               </Button>

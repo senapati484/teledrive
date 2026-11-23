@@ -51,7 +51,7 @@ export function PinKeypad({
   }, [handleKeyDown]);
 
   return (
-    <div className="grid grid-cols-3 gap-3 sm:gap-4 max-w-[280px] sm:max-w-[320px] mx-auto select-none">
+    <div className="grid grid-cols-3 gap-3 sm:gap-4 max-w-[280px] sm:max-w-[320px] mx-auto select-none touch-manipulation">
       {KEYS.map(({ digit, letters }) => (
         <button
           key={digit}
@@ -86,7 +86,7 @@ export function PinKeypad({
         type="button"
         disabled={disabled}
         onClick={onBackspace}
-        aria-label="Backspace"
+        aria-label="Delete last digit"
         className={cn(
           "h-16 w-16 sm:h-20 sm:w-20 mx-auto rounded-full flex items-center justify-center cursor-pointer",
           "text-slate-500 dark:text-slate-400",
@@ -125,7 +125,7 @@ export function PinKeypad({
         type="button"
         disabled={disabled}
         onClick={onSubmit}
-        aria-label="Unlock"
+        aria-label="Submit passcode"
         className={cn(
           "h-16 w-16 sm:h-20 sm:w-20 mx-auto rounded-full flex items-center justify-center cursor-pointer",
           "text-[#0B57D0] dark:text-[#8ab4f8]",

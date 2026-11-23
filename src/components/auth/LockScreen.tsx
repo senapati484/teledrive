@@ -201,7 +201,7 @@ export function LockScreen() {
       : t("security.lockScreen.deviceCreds", "Unlock with Device Password");
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col items-center justify-between p-6 sm:p-10 select-none bg-white/90 dark:bg-[#090A0D]/95 backdrop-blur-3xl animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-between p-6 sm:p-10 select-none bg-white/90 dark:bg-[#090A0D]/95 backdrop-blur-3xl animate-in fade-in duration-200 overflow-y-auto max-h-screen">
       {/* Top TeleDrive emblem & header */}
       <div className="w-full flex items-center justify-between max-w-sm sm:max-w-md">
         <div className="flex items-center gap-2.5">

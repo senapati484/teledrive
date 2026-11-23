@@ -369,13 +369,13 @@ img, svg {
 .teledrive-markdown-body blockquote {
   margin: 1.2em 0;
   padding: 0.6em 1.25em;
-  border-left: 4px solid #0b57d0;
-  background: rgba(11, 87, 208, 0.05);
+  border-left: 2px solid var(--border);
+  background: rgba(11, 87, 208, 0.03);
   border-radius: 0 0.5rem 0.5rem 0;
 }
 :is(.dark) .teledrive-markdown-body blockquote {
-  border-left-color: #a8c7fa;
-  background: rgba(168, 199, 250, 0.06);
+  border-left-color: rgba(255, 255, 255, 0.15);
+  background: rgba(168, 199, 250, 0.04);
 }
 
 .teledrive-markdown-body code {
