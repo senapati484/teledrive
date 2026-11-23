@@ -274,10 +274,21 @@
       "title": "Disclaimer",
       "body": "TeleDrive is an independent open-source client application and is not affiliated with, authorized, maintained, sponsored or endorsed by Telegram FZ-LLC or any of its affiliates."
     },
+    "updateDialog": {
+      "readyBadge": "Update Available",
+      "releaseNotesTitle": "What's in this version",
+      "description": "A newer version of TeleDrive is ready to download.",
+      "later": "Remind me later",
+      "downloadPlatform": "Download {{platform}}"
+    },
     "toasts": {
       "openLinkFailed": "Failed to open link.",
       "upToDate": "You're up to date!",
-      "latestVersion": "TeleDrive v{{version}} is the latest version."
+      "latestVersion": "TeleDrive v{{version}} is the latest version.",
+      "updateAvailable": "Update Available!",
+      "updateAvailableDesc": "TeleDrive v{{version}} is available for download.",
+      "checkFailed": "Unable to check for updates.",
+      "checkFailedDesc": "Please check your connection or visit GitHub releases."
     }
   },
   "encryption": {
