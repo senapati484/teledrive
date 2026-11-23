@@ -65,7 +65,8 @@ export function PinKeypad({
             "bg-white/80 dark:bg-white/[0.04] backdrop-blur-md",
             "text-slate-900 dark:text-white shadow-xs",
             "hover:bg-[#f0f4f9] dark:hover:bg-white/[0.1] hover:border-slate-300 dark:hover:border-white/[0.15]",
-            "active:scale-92 active:bg-[#e2e8f0] dark:active:bg-white/[0.18]",
+            "active:scale-95 active:bg-[#e2e8f0] dark:active:bg-white/[0.18]",
+            "outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0B57D0]/60 dark:focus-visible:ring-[#8ab4f8]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
             "transition-all duration-150 ease-out",
             "disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
           )}
@@ -91,7 +92,8 @@ export function PinKeypad({
           "h-16 w-16 sm:h-20 sm:w-20 mx-auto rounded-full flex items-center justify-center cursor-pointer",
           "text-slate-500 dark:text-slate-400",
           "hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-white/[0.06]",
-          "active:scale-92 transition-all duration-150 ease-out",
+          "active:scale-95 transition-all duration-150 ease-out",
+          "outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0B57D0]/60 dark:focus-visible:ring-[#8ab4f8]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           "disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
         )}
       >
@@ -110,7 +112,8 @@ export function PinKeypad({
           "bg-white/80 dark:bg-white/[0.04] backdrop-blur-md",
           "text-slate-900 dark:text-white shadow-xs",
           "hover:bg-[#f0f4f9] dark:hover:bg-white/[0.1] hover:border-slate-300 dark:hover:border-white/[0.15]",
-          "active:scale-92 active:bg-[#e2e8f0] dark:active:bg-white/[0.18]",
+          "active:scale-95 active:bg-[#e2e8f0] dark:active:bg-white/[0.18]",
+          "outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0B57D0]/60 dark:focus-visible:ring-[#8ab4f8]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           "transition-all duration-150 ease-out",
           "disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
         )}
@@ -130,7 +133,8 @@ export function PinKeypad({
           "h-16 w-16 sm:h-20 sm:w-20 mx-auto rounded-full flex items-center justify-center cursor-pointer",
           "text-[#0B57D0] dark:text-[#8ab4f8]",
           "hover:bg-[#0B57D0]/10 dark:hover:bg-[#8ab4f8]/10",
-          "active:scale-92 transition-all duration-150 ease-out",
+          "active:scale-95 transition-all duration-150 ease-out",
+          "outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0B57D0]/60 dark:focus-visible:ring-[#8ab4f8]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           "disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none"
         )}
       >

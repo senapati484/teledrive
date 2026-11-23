@@ -248,7 +248,7 @@ export function renderReleaseNotes(notes: string) {
       parsedNodes.push(
         <blockquote
           key={idx}
-          className="pl-3 py-1 my-2 border-l-2 border-blue-500/50 bg-blue-500/5 rounded-r-md text-xs italic text-slate-600 dark:text-slate-300"
+          className="px-3.5 py-2 my-2 rounded-xl bg-slate-100/70 dark:bg-white/[0.04] border border-slate-200/60 dark:border-white/[0.06] text-xs italic text-slate-700 dark:text-slate-200 leading-relaxed"
         >
           {formatInline(trimmed.replace(/^>\s*/, ""))}
         </blockquote>

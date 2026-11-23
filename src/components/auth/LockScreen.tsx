@@ -251,7 +251,11 @@ export function LockScreen() {
 
         {/* Lockout alert */}
         {lockoutRemainingSec > 0 && (
-          <div className="w-full mb-6 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/50 flex items-center gap-2.5 text-rose-700 dark:text-rose-300 text-xs text-left">
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="w-full mb-6 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/50 flex items-center gap-2.5 text-rose-700 dark:text-rose-300 text-xs text-left"
+          >
             <AlertTriangle className="h-4 w-4 shrink-0" />
             <span>
               {t("security.lockScreen.cooldown", {
@@ -264,7 +268,11 @@ export function LockScreen() {
 
         {/* Error message */}
         {errorMessage && lockoutRemainingSec === 0 && (
-          <div className="w-full mb-4 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 text-amber-700 dark:text-amber-300 text-xs">
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="w-full mb-4 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 text-amber-700 dark:text-amber-300 text-xs"
+          >
             {errorMessage}
           </div>
         )}
@@ -276,7 +284,7 @@ export function LockScreen() {
               type="button"
               disabled={isSubmitting || lockoutRemainingSec > 0}
               onClick={() => void unlockWithBiometrics()}
-              className="w-full h-12 rounded-full bg-[#0B57D0] hover:bg-[#0B57D0]/90 text-white font-medium text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer transition-all active:scale-98"
+              className="w-full h-12 rounded-full bg-[#0B57D0] hover:bg-[#0842a0] dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-medium text-sm flex items-center justify-center gap-2 shadow-sm cursor-pointer transition-all active:scale-98 outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0B57D0]/60 dark:focus-visible:ring-[#8ab4f8]/60 focus-visible:ring-offset-2"
             >
               <Fingerprint className="h-5 w-5" />
               <span>{biometryLabel}</span>
@@ -303,7 +311,7 @@ export function LockScreen() {
                     className={cn(
                       "h-4 w-4 rounded-full transition-all duration-200 ease-out",
                       filled
-                        ? "bg-[#0B57D0] dark:bg-[#8ab4f8] scale-110 shadow-xs"
+                        ? "bg-[#0B57D0] dark:bg-[#8ab4f8] scale-110 shadow-xs ring-2 ring-blue-500/20 dark:ring-blue-400/25"
                         : "border-2 border-slate-300 dark:border-white/20 bg-transparent scale-100"
                     )}
                   />
@@ -363,7 +371,7 @@ export function LockScreen() {
         <button
           type="button"
           onClick={() => setForgotDialogOpen(true)}
-          className="text-xs font-medium text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer transition-colors"
+          className="text-xs font-medium text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 cursor-pointer transition-colors px-2.5 py-1 rounded-lg outline-none focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0B57D0]/50 dark:focus-visible:ring-[#8ab4f8]/50"
         >
           {t("security.lockScreen.forgot", "Forgot passcode?")}
         </button>
