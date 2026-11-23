@@ -204,8 +204,14 @@ html.teledrive-privacy-shield #root {
   }
 
   :focus-visible {
-    outline: 2px solid var(--primary);
+    outline: 2px solid var(--ring);
     outline-offset: 2px;
+    border-radius: inherit;
+  }
+
+  button:focus:not(:focus-visible),
+  [role="button"]:focus:not(:focus-visible) {
+    outline: none !important;
   }
 }
 
