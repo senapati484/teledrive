@@ -11,7 +11,7 @@ Zéro coût d'infrastructure. Zéro abonnement. Chiffrement direct MTProto de bo
 
 [![Téléchargements Totaux](https://img.shields.io/sourceforge/dt/teledrive?style=flat-square&logo=sourceforge&logoColor=white)](https://sourceforge.net/projects/teledrive/files/)
 [![Téléchargements / Mois](https://img.shields.io/sourceforge/dm/teledrive?style=flat-square&logo=sourceforge&logoColor=white)](https://sourceforge.net/projects/teledrive/files/)
-[![Dernière Version](https://img.shields.io/badge/version-v0.1.4-2082f7.svg?style=flat-square)](https://sourceforge.net/projects/teledrive/files/v0.1.4/)
+[![Dernière Version](https://img.shields.io/badge/version-v0.1.5-2082f7.svg?style=flat-square)](https://sourceforge.net/projects/teledrive/files/v0.1.5/)
 [![Product Hunt](https://img.shields.io/badge/Product%20Hunt-Featured-FF6154.svg?style=flat-square&logo=producthunt&logoColor=white)](https://www.producthunt.com/products/teledrive-3)
 [![Démo YouTube](https://img.shields.io/badge/YouTube-Vidéo%20Démo-red.svg?style=flat-square&logo=youtube&logoColor=white)](https://youtu.be/4AiMn7HSlFg)
 [![Licence : GPL v3](https://img.shields.io/badge/licence-GPLv3-gray.svg?style=flat-square)](../LICENSE)
@@ -57,14 +57,14 @@ Zéro coût d'infrastructure. Zéro abonnement. Chiffrement direct MTProto de bo
 
 <br/><br/>
 
-[**Site Officiel**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**Architecture 🏗️**](../docs/ARCHITECTURE.md) • [**Star History ⭐**](#star-history) • [**Téléchargements**](#-téléchargements) • [**Sondage Beta Testing 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**Vidéo Démo**](#-visite-guidée-en-vidéo--démo) • [**Signaler un Bug**](https://github.com/senapati484/teledrive/issues/new/choose) • [**Proposer une Fonctionnalité**](https://github.com/senapati484/teledrive/issues/new/choose)
+[**Site Officiel**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**Architecture 🏗️**](../docs/ARCHITECTURE.md) • [**Star History ⭐**](#star-history) • [**Téléchargements**](#-téléchargements) • [**Nouveautés de la v0.1.5 📝**](https://github.com/senapati484/teledrive/releases/tag/v0.1.5) • [**Sondage Beta Testing 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**Vidéo Démo**](#-visite-guidée-en-vidéo--démo) • [**Signaler un Bug**](https://github.com/senapati484/teledrive/issues/new/choose) • [**Proposer une Fonctionnalité**](https://github.com/senapati484/teledrive/issues/new/choose)
 
 </div>
 
 ---
 
 > [!IMPORTANT]
-> 🚀 **TeleDrive v0.1.4 est officiellement disponible !** Incluant des feuilles inférieures natives sur mobile, une sauvegarde renforcée et une parité complète en 11 langues. Voir les [**Notes de version v0.1.4**](https://github.com/senapati484/teledrive/releases/tag/v0.1.4).
+> 🚀 **TeleDrive v0.1.5 est officiellement disponible !** Introduit l'authentification biométrique matérielle (Touch ID, Windows Hello, biométrie Android), un code PIN dynamique de 4 à 6 chiffres, le masquage de confidentialité dans le sélecteur d'applications, la vérification des mises à jour en direct et des finitions UI/UX soignées. Voir les [**Notes de version v0.1.5**](https://github.com/senapati484/teledrive/releases/tag/v0.1.5) ou télécharger les installateurs vérifiés ci-dessous.
 
 ## 🎬 Visite guidée en vidéo & Démo
 
@@ -96,34 +96,33 @@ Telegram offre un espace de stockage cloud pratiquement illimité dans les canau
 
 ## 📥 Téléchargements
 
-Dernière version : **v0.1.4** · Fichiers binaires natifs précompilés pour les 5 plateformes :
+Dernière version : **v0.1.5** · Fichiers binaires natifs précompilés pour les 5 plateformes :
 
 | Système d'exploitation | Format du paquet | Téléchargement direct | Architecture / Compatibilité | Taille |
 |:---|:---|:---|:---|---:|
-| **Windows** | Programme d'installation (`.exe`) | [**teledrive-setup.exe**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive-setup.exe/download) | x64 64-Bit (Windows 10 / 11) | 6.2 MB |
-| **Windows** | Paquet MSI (`.msi`) | [**teledrive.msi**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.msi/download) | Installateur Entreprise (Win 10 / 11) | 8.0 MB |
-| **macOS** | Image disque universelle (`.dmg`) | [**teledrive.dmg**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.dmg/download) | Apple Silicon (M1–M4) & Intel x64 | 15.3 MB |
-| **Linux** | AppImage universelle (`.AppImage`) | [**teledrive.AppImage**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.AppImage/download) | Portable autonome (glibc 2.31+) | 86.3 MB |
-| **Linux** | Debian / Ubuntu (`.deb`) | [**teledrive.deb**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.deb/download) | x86_64 / amd64 | 8.0 MB |
-| **Linux** | Fedora / RHEL (`.rpm`) | [**teledrive.rpm**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.rpm/download) | x86_64 / amd64 | 8.0 MB |
-| **Android** | APK Universel (`.apk`) | [**teledrive.apk**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.apk/download) | Android 8.0+ (ARM64, ARMv7a, x86_64) | 48.5 MB |
-| **iOS** | Paquet Sideload (`.ipa`) | [**teledrive.ipa**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.ipa/download) | iOS 15.0+ (AltStore / TrollStore) | 24.0 MB |
-| **iOS** | Build Simulateur (`.zip`) | [**teledrive-ios-simulator.zip**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive-ios-simulator.zip/download) | Simulateur iOS (x86_64 / arm64) | 24.0 MB |
+| **Windows** | Programme d'installation (`.exe`) | [**teledrive-setup.exe**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive-setup.exe/download) | x64 64-Bit (Windows 10 / 11) | 6.0 MB |
+| **Windows** | Paquet MSI (`.msi`) | [**teledrive.msi**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.msi/download) | Installateur Entreprise (Win 10 / 11) | 7.5 MB |
+| **macOS** | Image disque universelle (`.dmg`) | [**teledrive.dmg**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.dmg/download) | Apple Silicon (M1–M4) & Intel x64 | 15.0 MB |
+| **Linux** | AppImage universelle (`.AppImage`) | [**teledrive.AppImage**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.AppImage/download) | Portable autonome (glibc 2.31+) | 82.4 MB |
+| **Linux** | Debian / Ubuntu (`.deb`) | [**teledrive.deb**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.deb/download) | x86_64 / amd64 | 7.8 MB |
+| **Linux** | Fedora / RHEL (`.rpm`) | [**teledrive.rpm**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.rpm/download) | x86_64 / amd64 | 7.8 MB |
+| **Android** | APK Universel (`.apk`) | [**teledrive.apk**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.apk/download) | Android 8.0+ (ARM64, ARMv7a, x86_64) | 46.8 MB |
+| **iOS** | Paquet Sideload (`.ipa`) | [**teledrive.ipa**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.ipa/download) | iOS 15.0+ (AltStore / TrollStore) | 23.1 MB |
 
-> 🌐 Le catalogue complet des paquets, miroirs de téléchargement et sommes de contrôle cryptographiques sont disponibles sur [**SourceForge**](https://sourceforge.net/projects/teledrive/files/) ou sur [**teledrive.space**](https://teledrive.space).
+> 🌐 Le catalogue complet des paquets, miroirs de téléchargement et sommes de contrôle cryptographiques sont disponibles sur [**SourceForge**](https://sourceforge.net/projects/teledrive/files/v0.1.5/) ou sur [**teledrive.space**](https://teledrive.space).
 
 <details>
-<summary>🔐 <b>Vérifier les sommes de contrôle cryptographiques SHA-256 (v0.1.4)</b></summary>
+<summary>🔐 <b>Vérifier les sommes de contrôle cryptographiques SHA-256 (v0.1.5)</b></summary>
 
 ```
-4e3ce970ab9aed37d0e47a9ef89ac09ae3a461332034aefdccb4391ee96dd551  teledrive-setup.exe
-46248343d3383278de1b3add616121f78a31c02bcf152cc61108c3f50abb3f08  teledrive.AppImage
-043c07d68e25db586c1cc1801b290c6a98ece892af7d1f118d179b6df2b4285d  teledrive.apk
-06aa37205cb80d72d7dec8362eb28b73dc971c830f51683a8b762d976b3c1611  teledrive.deb
-19639ff5d43736a20f611182eb05365e66dada583a9590157040440c7de7ff88  teledrive.dmg
-9053c1dc3879e76fd815a01cf7e300a85186c385d23f10fff743f04407c34a0c  teledrive.ipa
-391ee2a19b8657a6f949127087a85c5478aac8917690536a24cf707078f465d1  teledrive.msi
-c2968431b0eea6db2237bedb08ac827ecb151874ac9c6c02fabcbbc1ebac5f24  teledrive.rpm
+ccd312b929778edc7d3f9969eac29e89c013464e9f8fe60dc77143aff289776e  teledrive-setup.exe
+77473cd7e9c2a62fe91953cce18f3a848f48ac099a6521c2372b8be6165949c7  teledrive.AppImage
+523db94bb82d55433e74364380ef292d8ac42c79b1d31740cb4222f4071ad5f0  teledrive.apk
+14a982f9784fd03ff1cce64d1830c281957493edc1a979fdaeb20be7f21b0304  teledrive.deb
+9c81dece56a58a535ba238dd840f097eedc4b5cda4d64a40abc224e9a90e557a  teledrive.dmg
+89d428a70ef005fbc12d6ea48456546562ddb76576f60466c5b9a51d05934549  teledrive.ipa
+c6f6c3a6c88104527ee3d88ee159f425b4fb91b03846cd9f31c201f0590d342e  teledrive.msi
+5ffa74bd2e50bd841bba2cdbc4470ed0f15dfcbc382d91e1b83b2e46464a9a68  teledrive.rpm
 ```
 </details>
 
@@ -131,6 +130,8 @@ c2968431b0eea6db2237bedb08ac827ecb151874ac9c6c02fabcbbc1ebac5f24  teledrive.rpm
 
 ## ✨ Fonctionnalités
 
+- **Biométrie matérielle & Verrouillage de l'application (v0.1.5)** : Sécurisez votre drive avec Touch ID, Windows Hello et la biométrie Android, un code PIN dynamique personnalisable de 4 à 6 chiffres, un bouclier de confidentialité lors du changement de fenêtre et un verrouillage automatique par minuterie.
+- **Vérificateur de mises à jour intégré (v0.1.5)** : Détection sémantique automatique des versions en arrière-plan et à la demande avec alertes intégrées et accès direct aux installateurs SourceForge.
 - **Stockage Cloud Illimité** : utilise votre canal privé Telegram comme support de stockage, sans frais récurrents.
 - **Léger et multiplateforme natif** : conçu avec Tauri v2 + Rust pour 5 plateformes (macOS, Windows, Linux, Android et iOS) avec une réactivité instantanée et une empreinte mémoire minimale (< 250 Mo).
 - **11 Langues Localisées** : prise en charge native du français, anglais, espagnol, allemand, portugais, russe, chinois (simplifié et traditionnel), hindi, indonésien et japonais.

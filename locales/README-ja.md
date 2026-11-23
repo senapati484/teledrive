@@ -11,7 +11,7 @@
 
 [![総ダウンロード数](https://img.shields.io/sourceforge/dt/teledrive?style=flat-square&logo=sourceforge&logoColor=white)](https://sourceforge.net/projects/teledrive/files/)
 [![月間ダウンロード数](https://img.shields.io/sourceforge/dm/teledrive?style=flat-square&logo=sourceforge&logoColor=white)](https://sourceforge.net/projects/teledrive/files/)
-[![最新リリース](https://img.shields.io/badge/リリース-v0.1.4-2082f7.svg?style=flat-square)](https://sourceforge.net/projects/teledrive/files/v0.1.4/)
+[![最新リリース](https://img.shields.io/badge/リリース-v0.1.5-2082f7.svg?style=flat-square)](https://sourceforge.net/projects/teledrive/files/v0.1.5/)
 [![Product Hunt](https://img.shields.io/badge/Product%20Hunt-Featured-FF6154.svg?style=flat-square&logo=producthunt&logoColor=white)](https://www.producthunt.com/products/teledrive-3)
 [![YouTube デモ動画](https://img.shields.io/badge/YouTube-動画デモ-red.svg?style=flat-square&logo=youtube&logoColor=white)](https://youtu.be/4AiMn7HSlFg)
 [![ライセンス: GPL v3](https://img.shields.io/badge/ライセンス-GPLv3-gray.svg?style=flat-square)](../LICENSE)
@@ -57,14 +57,14 @@
 
 <br/><br/>
 
-[**公式サイト**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**アーキテクチャ 🏗️**](../docs/ARCHITECTURE.md) • [**Star History ⭐**](#star-history) • [**ダウンロード**](#-ダウンロード) • [**ベータテスト投票 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**デモ動画**](#-デモ動画) • [**バグ報告**](https://github.com/senapati484/teledrive/issues/new/choose) • [**機能リクエスト**](https://github.com/senapati484/teledrive/issues/new/choose)
+[**公式サイト**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**アーキテクチャ 🏗️**](../docs/ARCHITECTURE.md) • [**Star History ⭐**](#star-history) • [**ダウンロード**](#-ダウンロード) • [**v0.1.5 の新機能 📝**](https://github.com/senapati484/teledrive/releases/tag/v0.1.5) • [**ベータテスト投票 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**デモ動画**](#-デモ動画) • [**バグ報告**](https://github.com/senapati484/teledrive/issues/new/choose) • [**機能リクエスト**](https://github.com/senapati484/teledrive/issues/new/choose)
 
 </div>
 
 ---
 
 > [!IMPORTANT]
-> 🚀 **TeleDrive v0.1.4 が正式リリースされました！** モバイル向けネイティブボトムシート、バックアップ耐久性の向上、11言語の完全ローカライズに対応。[**v0.1.4 リリースノート**](https://github.com/senapati484/teledrive/releases/tag/v0.1.4)をご覧ください。
+> 🚀 **TeleDrive v0.1.5 が正式リリースされました！** ハードウェア生体認証（Touch ID、Windows Hello、Android 生体認証）、4〜6桁の動的PIN保護、OSアプリアプリスイッチャーでのプライバシーシールド、アプリ内リアルタイム更新チェッカー、洗練されたUI/UXを搭載。[**v0.1.5 リリースノート**](https://github.com/senapati484/teledrive/releases/tag/v0.1.5)をご覧いただくか、以下の検証済みインストーラーをダウンロードしてください。
 
 ## 🎬 デモ動画
 
@@ -96,34 +96,33 @@ Telegram はプライベートチャンネルで実質無制限のクラウド�
 
 ## 📥 ダウンロード
 
-最新リリース: **v0.1.4** · 全5プラットフォーム対応ビルド済みネイティブインストーラー：
+最新リリース: **v0.1.5** · 全5プラットフォーム対応ビルド済みネイティブインストーラー：
 
 | オペレーティングシステム | パッケージ形式 | 直接ダウンロード | アーキテクチャ / 互換性 | サイズ |
 |:---|:---|:---|:---|---:|
-| **Windows** | セットアップインストーラー (`.exe`) | [**teledrive-setup.exe**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive-setup.exe/download) | x64 64-Bit (Windows 10 / 11) | 6.2 MB |
-| **Windows** | MSI パッケージ (`.msi`) | [**teledrive.msi**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.msi/download) | エンタープライズインストーラー (Win 10 / 11) | 8.0 MB |
-| **macOS** | Universal ディスクイメージ (`.dmg`) | [**teledrive.dmg**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.dmg/download) | Apple Silicon (M1–M4) & Intel x64 | 15.3 MB |
-| **Linux** | Universal AppImage (`.AppImage`) | [**teledrive.AppImage**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.AppImage/download) | スタンドアロンポータブル (glibc 2.31+) | 86.3 MB |
-| **Linux** | Debian / Ubuntu (`.deb`) | [**teledrive.deb**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.deb/download) | x86_64 / amd64 | 8.0 MB |
-| **Linux** | Fedora / RHEL (`.rpm`) | [**teledrive.rpm**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.rpm/download) | x86_64 / amd64 | 8.0 MB |
-| **Android** | Universal APK (`.apk`) | [**teledrive.apk**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.apk/download) | Android 8.0+ (ARM64, ARMv7a, x86_64) | 48.5 MB |
-| **iOS** | サイドロードパッケージ (`.ipa`) | [**teledrive.ipa**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.ipa/download) | iOS 15.0+ (AltStore / TrollStore) | 24.0 MB |
-| **iOS** | シミュレータビルド (`.zip`) | [**teledrive-ios-simulator.zip**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive-ios-simulator.zip/download) | iOS シミュレータ (x86_64 / arm64) | 24.0 MB |
+| **Windows** | セットアップインストーラー (`.exe`) | [**teledrive-setup.exe**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive-setup.exe/download) | x64 64-Bit (Windows 10 / 11) | 6.0 MB |
+| **Windows** | MSI パッケージ (`.msi`) | [**teledrive.msi**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.msi/download) | エンタープライズインストーラー (Win 10 / 11) | 7.5 MB |
+| **macOS** | Universal ディスクイメージ (`.dmg`) | [**teledrive.dmg**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.dmg/download) | Apple Silicon (M1–M4) & Intel x64 | 15.0 MB |
+| **Linux** | Universal AppImage (`.AppImage`) | [**teledrive.AppImage**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.AppImage/download) | スタンドアロンポータブル (glibc 2.31+) | 82.4 MB |
+| **Linux** | Debian / Ubuntu (`.deb`) | [**teledrive.deb**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.deb/download) | x86_64 / amd64 | 7.8 MB |
+| **Linux** | Fedora / RHEL (`.rpm`) | [**teledrive.rpm**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.rpm/download) | x86_64 / amd64 | 7.8 MB |
+| **Android** | Universal APK (`.apk`) | [**teledrive.apk**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.apk/download) | Android 8.0+ (ARM64, ARMv7a, x86_64) | 46.8 MB |
+| **iOS** | サイドロードパッケージ (`.ipa`) | [**teledrive.ipa**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.ipa/download) | iOS 15.0+ (AltStore / TrollStore) | 23.1 MB |
 
-> 🌐 パッケージ一覧、ミラーリンク、暗号化チェックサムは [**SourceForge**](https://sourceforge.net/projects/teledrive/files/) または [**teledrive.space**](https://teledrive.space) で確認できます。
+> 🌐 パッケージ一覧、ミラーリンク、暗号化チェックサムは [**SourceForge**](https://sourceforge.net/projects/teledrive/files/v0.1.5/) または [**teledrive.space**](https://teledrive.space) で確認できます。
 
 <details>
-<summary>🔐 <b>SHA-256 暗号化チェックサムの検証 (v0.1.4)</b></summary>
+<summary>🔐 <b>SHA-256 暗号化チェックサムの検証 (v0.1.5)</b></summary>
 
 ```
-4e3ce970ab9aed37d0e47a9ef89ac09ae3a461332034aefdccb4391ee96dd551  teledrive-setup.exe
-46248343d3383278de1b3add616121f78a31c02bcf152cc61108c3f50abb3f08  teledrive.AppImage
-043c07d68e25db586c1cc1801b290c6a98ece892af7d1f118d179b6df2b4285d  teledrive.apk
-06aa37205cb80d72d7dec8362eb28b73dc971c830f51683a8b762d976b3c1611  teledrive.deb
-19639ff5d43736a20f611182eb05365e66dada583a9590157040440c7de7ff88  teledrive.dmg
-9053c1dc3879e76fd815a01cf7e300a85186c385d23f10fff743f04407c34a0c  teledrive.ipa
-391ee2a19b8657a6f949127087a85c5478aac8917690536a24cf707078f465d1  teledrive.msi
-c2968431b0eea6db2237bedb08ac827ecb151874ac9c6c02fabcbbc1ebac5f24  teledrive.rpm
+ccd312b929778edc7d3f9969eac29e89c013464e9f8fe60dc77143aff289776e  teledrive-setup.exe
+77473cd7e9c2a62fe91953cce18f3a848f48ac099a6521c2372b8be6165949c7  teledrive.AppImage
+523db94bb82d55433e74364380ef292d8ac42c79b1d31740cb4222f4071ad5f0  teledrive.apk
+14a982f9784fd03ff1cce64d1830c281957493edc1a979fdaeb20be7f21b0304  teledrive.deb
+9c81dece56a58a535ba238dd840f097eedc4b5cda4d64a40abc224e9a90e557a  teledrive.dmg
+89d428a70ef005fbc12d6ea48456546562ddb76576f60466c5b9a51d05934549  teledrive.ipa
+c6f6c3a6c88104527ee3d88ee159f425b4fb91b03846cd9f31c201f0590d342e  teledrive.msi
+5ffa74bd2e50bd841bba2cdbc4470ed0f15dfcbc382d91e1b83b2e46464a9a68  teledrive.rpm
 ```
 </details>
 
@@ -131,6 +130,8 @@ c2968431b0eea6db2237bedb08ac827ecb151874ac9c6c02fabcbbc1ebac5f24  teledrive.rpm
 
 ## ✨ 主な機能
 
+- **ハードウェア生体認証＆アプリロック (v0.1.5)**：Touch ID、Windows Hello、Android 生体認証による安全なロック解除、4〜6桁のカスタマイズ可能な動的PIN、OSアプリスイッチャー用のプライバシー保護シールド、無操作自動ロックタイマーを搭載。
+- **アプリ内リアルタイムアップデート確認 (v0.1.5)**：バックグラウンドおよび手動でのセマンティックバージョン自動確認、アプリ内アップデート通知、SourceForge からの直接インストーラーダウンロードに対応。
 - **真の無制限クラウド**：非公開 Telegram チャンネルをバックエンドストレージとして活用し、月額費用は永年ゼロ。
 - **軽量ネイティブクロスプラットフォーム**：5プラットフォーム（macOS、Windows、Linux、Android、iOS）向けに Tauri v2 + Rust を採用し、メモリ消費量は通常 250MB 未満と極めて軽量。
 - **11言語のネイティブ多言語対応**：日本語、英語、簡体字中国語、繁体字中国語、スペイン語、ドイツ語、フランス語、ポルトガル語、ロシア語、ヒンディー語、インドネシア語を完全サポート。
