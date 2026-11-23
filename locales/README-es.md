@@ -11,7 +11,7 @@ Cero costos de servidor. Cero suscripciones. Cifrado MTProto directo hacia Teleg
 
 [![Descargas Totales](https://img.shields.io/sourceforge/dt/teledrive?style=flat-square&logo=sourceforge&logoColor=white)](https://sourceforge.net/projects/teledrive/files/)
 [![Descargas / Mes](https://img.shields.io/sourceforge/dm/teledrive?style=flat-square&logo=sourceforge&logoColor=white)](https://sourceforge.net/projects/teledrive/files/)
-[![Última Versión](https://img.shields.io/badge/versión-v0.1.4-2082f7.svg?style=flat-square)](https://sourceforge.net/projects/teledrive/files/v0.1.4/)
+[![Última Versión](https://img.shields.io/badge/versión-v0.1.5-2082f7.svg?style=flat-square)](https://sourceforge.net/projects/teledrive/files/v0.1.5/)
 [![Product Hunt](https://img.shields.io/badge/Product%20Hunt-Featured-FF6154.svg?style=flat-square&logo=producthunt&logoColor=white)](https://www.producthunt.com/products/teledrive-3)
 [![Demostración en YouTube](https://img.shields.io/badge/YouTube-Vídeo%20Demo-red.svg?style=flat-square&logo=youtube&logoColor=white)](https://youtu.be/4AiMn7HSlFg)
 [![Licencia: GPL v3](https://img.shields.io/badge/licencia-GPLv3-gray.svg?style=flat-square)](../LICENSE)
@@ -57,14 +57,14 @@ Cero costos de servidor. Cero suscripciones. Cifrado MTProto directo hacia Teleg
 
 <br/><br/>
 
-[**Sitio Web**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**Arquitectura 🏗️**](../docs/ARCHITECTURE.md) • [**Star History ⭐**](#star-history) • [**Descargas**](#-descargas) • [**Beta Testing Poll 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**Vídeo Demo**](#-vídeo-de-demostración) • [**Reportar un Error**](https://github.com/senapati484/teledrive/issues/new/choose) • [**Solicitar una Función**](https://github.com/senapati484/teledrive/issues/new/choose)
+[**Sitio Web**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**Arquitectura 🏗️**](../docs/ARCHITECTURE.md) • [**Star History ⭐**](#star-history) • [**Descargas**](#-descargas) • [**Novedades en v0.1.5 📝**](https://github.com/senapati484/teledrive/releases/tag/v0.1.5) • [**Beta Testing Poll 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**Vídeo Demo**](#-vídeo-de-demostración) • [**Reportar un Error**](https://github.com/senapati484/teledrive/issues/new/choose) • [**Solicitar una Función**](https://github.com/senapati484/teledrive/issues/new/choose)
 
 </div>
 
 ---
 
 > [!IMPORTANT]
-> 🚀 **¡TeleDrive v0.1.4 ya está oficialmente disponible!** Con paneles inferiores nativos en móviles, copia de seguridad por lotes resistente y compatibilidad total en 11 idiomas. Consulta las [**Notas de la versión v0.1.4**](https://github.com/senapati484/teledrive/releases/tag/v0.1.4).
+> 🚀 **¡TeleDrive v0.1.5 ya está oficialmente disponible!** Incorpora autenticación biométrica de hardware (Touch ID, Windows Hello, biometría de Android), PIN dinámico de 4 a 6 dígitos, protección de privacidad en el conmutador de aplicaciones del sistema, comprobador de actualizaciones integrado y refinamientos de interfaz Impeccable UI. Consulta las [**Notas de la versión v0.1.5**](https://github.com/senapati484/teledrive/releases/tag/v0.1.5) o descarga instaladores verificados a continuación.
 
 ## 🎬 Vídeo de Demostración
 
@@ -96,34 +96,33 @@ Telegram ofrece almacenamiento en la nube prácticamente ilimitado en canales pr
 
 ## 📥 Descargas
 
-Versión actual: **v0.1.4** · Instaladores nativos precompilados para las 5 plataformas:
+Versión actual: **v0.1.5** · Instaladores nativos precompilados para las 5 plataformas:
 
 | Sistema Operativo | Formato de Paquete | Descarga Directa | Arquitectura / Compatibilidad | Tamaño |
 |:---|:---|:---|:---|---:|
-| **Windows** | Instalador Setup (`.exe`) | [**teledrive-setup.exe**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive-setup.exe/download) | x64 64-Bit (Windows 10 / 11) | 6.2 MB |
-| **Windows** | Paquete MSI (`.msi`) | [**teledrive.msi**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.msi/download) | Instalador Enterprise (Win 10 / 11) | 8.0 MB |
-| **macOS** | Imagen de Disco Universal (`.dmg`) | [**teledrive.dmg**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.dmg/download) | Apple Silicon (M1–M4) e Intel x64 | 15.3 MB |
-| **Linux** | AppImage Universal (`.AppImage`) | [**teledrive.AppImage**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.AppImage/download) | Portable Independiente (glibc 2.31+) | 86.3 MB |
-| **Linux** | Debian / Ubuntu (`.deb`) | [**teledrive.deb**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.deb/download) | x86_64 / amd64 | 8.0 MB |
-| **Linux** | Fedora / RHEL (`.rpm`) | [**teledrive.rpm**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.rpm/download) | x86_64 / amd64 | 8.0 MB |
-| **Android** | APK Universal (`.apk`) | [**teledrive.apk**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.apk/download) | Android 8.0+ (ARM64, ARMv7a, x86_64) | 48.5 MB |
-| **iOS** | Paquete Sideload (`.ipa`) | [**teledrive.ipa**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.ipa/download) | iOS 15.0+ (AltStore / TrollStore) | 24.0 MB |
-| **iOS** | Build para Simulador (`.zip`) | [**teledrive-ios-simulator.zip**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive-ios-simulator.zip/download) | Simulador iOS (x86_64 / arm64) | 24.0 MB |
+| **Windows** | Instalador Setup (`.exe`) | [**teledrive-setup.exe**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive-setup.exe/download) | x64 64-Bit (Windows 10 / 11) | 6.0 MB |
+| **Windows** | Paquete MSI (`.msi`) | [**teledrive.msi**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.msi/download) | Instalador Enterprise (Win 10 / 11) | 7.5 MB |
+| **macOS** | Imagen de Disco Universal (`.dmg`) | [**teledrive.dmg**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.dmg/download) | Apple Silicon (M1–M4) e Intel x64 | 15.0 MB |
+| **Linux** | AppImage Universal (`.AppImage`) | [**teledrive.AppImage**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.AppImage/download) | Portable Independiente (glibc 2.31+) | 82.4 MB |
+| **Linux** | Debian / Ubuntu (`.deb`) | [**teledrive.deb**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.deb/download) | x86_64 / amd64 | 7.8 MB |
+| **Linux** | Fedora / RHEL (`.rpm`) | [**teledrive.rpm**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.rpm/download) | x86_64 / amd64 | 7.8 MB |
+| **Android** | APK Universal (`.apk`) | [**teledrive.apk**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.apk/download) | Android 8.0+ (ARM64, ARMv7a, x86_64) | 46.8 MB |
+| **iOS** | Paquete Sideload (`.ipa`) | [**teledrive.ipa**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.ipa/download) | iOS 15.0+ (AltStore / TrollStore) | 23.1 MB |
 
-> 🌐 El catálogo completo de paquetes, enlaces espejo y sumas de verificación criptográficas están disponibles en [**SourceForge**](https://sourceforge.net/projects/teledrive/files/) o en [**teledrive.space**](https://teledrive.space).
+> 🌐 El catálogo completo de paquetes, enlaces espejo y sumas de verificación criptográficas están disponibles en [**SourceForge**](https://sourceforge.net/projects/teledrive/files/v0.1.5/) o en [**teledrive.space**](https://teledrive.space).
 
 <details>
-<summary>🔐 <b>Verificar sumas criptográficas SHA-256 (v0.1.4)</b></summary>
+<summary>🔐 <b>Verificar sumas criptográficas SHA-256 (v0.1.5)</b></summary>
 
 ```
-4e3ce970ab9aed37d0e47a9ef89ac09ae3a461332034aefdccb4391ee96dd551  teledrive-setup.exe
-46248343d3383278de1b3add616121f78a31c02bcf152cc61108c3f50abb3f08  teledrive.AppImage
-043c07d68e25db586c1cc1801b290c6a98ece892af7d1f118d179b6df2b4285d  teledrive.apk
-06aa37205cb80d72d7dec8362eb28b73dc971c830f51683a8b762d976b3c1611  teledrive.deb
-19639ff5d43736a20f611182eb05365e66dada583a9590157040440c7de7ff88  teledrive.dmg
-9053c1dc3879e76fd815a01cf7e300a85186c385d23f10fff743f04407c34a0c  teledrive.ipa
-391ee2a19b8657a6f949127087a85c5478aac8917690536a24cf707078f465d1  teledrive.msi
-c2968431b0eea6db2237bedb08ac827ecb151874ac9c6c02fabcbbc1ebac5f24  teledrive.rpm
+ccd312b929778edc7d3f9969eac29e89c013464e9f8fe60dc77143aff289776e  teledrive-setup.exe
+77473cd7e9c2a62fe91953cce18f3a848f48ac099a6521c2372b8be6165949c7  teledrive.AppImage
+523db94bb82d55433e74364380ef292d8ac42c79b1d31740cb4222f4071ad5f0  teledrive.apk
+14a982f9784fd03ff1cce64d1830c281957493edc1a979fdaeb20be7f21b0304  teledrive.deb
+9c81dece56a58a535ba238dd840f097eedc4b5cda4d64a40abc224e9a90e557a  teledrive.dmg
+89d428a70ef005fbc12d6ea48456546562ddb76576f60466c5b9a51d05934549  teledrive.ipa
+c6f6c3a6c88104527ee3d88ee159f425b4fb91b03846cd9f31c201f0590d342e  teledrive.msi
+5ffa74bd2e50bd841bba2cdbc4470ed0f15dfcbc382d91e1b83b2e46464a9a68  teledrive.rpm
 ```
 </details>
 
@@ -131,6 +130,8 @@ c2968431b0eea6db2237bedb08ac827ecb151874ac9c6c02fabcbbc1ebac5f24  teledrive.rpm
 
 ## ✨ Características
 
+- **Biometría por Hardware y Bloqueo de App (v0.1.5)**: Protege tu unidad con Touch ID, Windows Hello y biometría de Android, PIN dinámico personalizable de 4 a 6 dígitos, escudo de privacidad en conmutadores de ventanas y temporizadores de bloqueo automático por inactividad.
+- **Comprobador de Actualizaciones en la App (v0.1.5)**: Verificación semántica automatizada en segundo plano y a petición con alertas de versión integradas y acceso directo a los instaladores de SourceForge.
 - **Nube Ilimitada**: Utiliza tu canal privado de Telegram como almacenamiento con 0 pagos recurrentes.
 - **Multiplataforma Nativo**: Binarios ultraligeros para 5 plataformas (macOS, Windows, Linux, Android e iOS) creados sobre Tauri v2 y Rust.
 - **11 Idiomas Localizados**: Soporte nativo para Español, Inglés, Portugués, Francés, Alemán, Ruso, Chino (simplificado y tradicional), Hindi, Indonesio y Japonés.

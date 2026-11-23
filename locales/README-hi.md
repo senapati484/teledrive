@@ -11,7 +11,7 @@
 
 [![कुल डाउनलोड](https://img.shields.io/sourceforge/dt/teledrive?style=flat-square&logo=sourceforge&logoColor=white)](https://sourceforge.net/projects/teledrive/files/)
 [![डाउनलोड / महीना](https://img.shields.io/sourceforge/dm/teledrive?style=flat-square&logo=sourceforge&logoColor=white)](https://sourceforge.net/projects/teledrive/files/)
-[![नवीनतम रिलीज़](https://img.shields.io/badge/रिलीज़-v0.1.4-2082f7.svg?style=flat-square)](https://sourceforge.net/projects/teledrive/files/v0.1.4/)
+[![नवीनतम रिलीज़](https://img.shields.io/badge/रिलीज़-v0.1.5-2082f7.svg?style=flat-square)](https://sourceforge.net/projects/teledrive/files/v0.1.5/)
 [![Product Hunt](https://img.shields.io/badge/Product%20Hunt-Featured-FF6154.svg?style=flat-square&logo=producthunt&logoColor=white)](https://www.producthunt.com/products/teledrive-3)
 [![YouTube डेमो](https://img.shields.io/badge/YouTube-वीडियो%20डेमो-red.svg?style=flat-square&logo=youtube&logoColor=white)](https://youtu.be/4AiMn7HSlFg)
 [![लाइसेंस: GPL v3](https://img.shields.io/badge/लाइसेंस-GPLv3-gray.svg?style=flat-square)](../LICENSE)
@@ -57,14 +57,14 @@
 
 <br/><br/>
 
-[**वेबसाइट**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**आर्किटेक्चर 🏗️**](../docs/ARCHITECTURE.md) • [**Star History ⭐**](#star-history) • [**डाउनलोड**](#-डाउनलोड) • [**बीटा टेस्टिंग पोल 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**वीडियो डेमो**](#-वीडियो-वॉकथ्रू-और-डेमो) • [**बग रिपोर्ट करें**](https://github.com/senapati484/teledrive/issues/new/choose) • [**सुविधा का अनुरोध करें**](https://github.com/senapati484/teledrive/issues/new/choose)
+[**वेबसाइट**](https://teledrive.space) • [**Product Hunt 🚀**](https://www.producthunt.com/products/teledrive-3) • [**आर्किटेक्चर 🏗️**](../docs/ARCHITECTURE.md) • [**Star History ⭐**](#star-history) • [**डाउनलोड**](#-डाउनलोड) • [**v0.1.5 में क्या नया है 📝**](https://github.com/senapati484/teledrive/releases/tag/v0.1.5) • [**बीटा टेस्टिंग पोल 🧪**](https://github.com/senapati484/teledrive/discussions/35) • [**वीडियो डेमो**](#-वीडियो-वॉकथ्रू-और-डेमो) • [**बग रिपोर्ट करें**](https://github.com/senapati484/teledrive/issues/new/choose) • [**सुविधा का अनुरोध करें**](https://github.com/senapati484/teledrive/issues/new/choose)
 
 </div>
 
 ---
 
 > [!IMPORTANT]
-> 🚀 **TeleDrive v0.1.4 आधिकारिक तौर पर लाइव है!** मोबाइल के लिए नेटिव बॉटम शीट्स, टेलीग्राम सीमा सुरक्षा और 11 भाषाओं में पूर्ण अनुवाद। [**v0.1.4 रिलीज़ नोट्स**](https://github.com/senapati484/teledrive/releases/tag/v0.1.4) देखें।
+> 🚀 **TeleDrive v0.1.5 आधिकारिक तौर पर लाइव है!** हार्डवेयर बायोमेट्रिक्स प्रमाणीकरण (Touch ID, Windows Hello, Android Biometrics), 4-6 अंकों का गतिशील पिन, ऐप स्विचर प्राइवेसी शील्ड, लाइव इन-ऐप अपडेट चेकर और परिष्कृत UI/UX शिल्प। [**v0.1.5 रिलीज़ नोट्स**](https://github.com/senapati484/teledrive/releases/tag/v0.1.5) देखें या नीचे सत्यापित इंस्टॉलर डाउनलोड करें।
 
 ## 🎬 वीडियो वॉकथ्रू और डेमो
 
@@ -96,34 +96,33 @@
 
 ## 📥 डाउनलोड
 
-नवीनतम संस्करण: **v0.1.4** · सभी 5 प्लेटफ़ॉर्म के लिए पूर्व-संकलित मूल बाइनरी:
+नवीनतम संस्करण: **v0.1.5** · सभी 5 प्लेटफ़ॉर्म के लिए पूर्व-संकलित मूल बाइनरी:
 
 | ऑपरेटिंग सिस्टम | पैकेज प्रारूप | सीधा डाउनलोड लिंक | आर्किटेक्चर / अनुकूलता | आकार |
 |:---|:---|:---|:---|---:|
-| **Windows** | सेटअप इंस्टॉलर (`.exe`) | [**teledrive-setup.exe**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive-setup.exe/download) | x64 64-Bit (Windows 10 / 11) | 6.2 MB |
-| **Windows** | MSI पैकेज (`.msi`) | [**teledrive.msi**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.msi/download) | एंटरप्राइज़ इंस्टॉलर (Win 10 / 11) | 8.0 MB |
-| **macOS** | यूनिवर्सल डिस्क इमेज (`.dmg`) | [**teledrive.dmg**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.dmg/download) | Apple Silicon (M1–M4) और Intel x64 | 15.3 MB |
-| **Linux** | यूनिवर्सल AppImage (`.AppImage`) | [**teledrive.AppImage**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.AppImage/download) | स्टैंडअलोन पोर्टेबल (glibc 2.31+) | 86.3 MB |
-| **Linux** | Debian / Ubuntu (`.deb`) | [**teledrive.deb**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.deb/download) | x86_64 / amd64 | 8.0 MB |
-| **Linux** | Fedora / RHEL (`.rpm`) | [**teledrive.rpm**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.rpm/download) | x86_64 / amd64 | 8.0 MB |
-| **Android** | यूनिवर्सल APK (`.apk`) | [**teledrive.apk**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.apk/download) | Android 8.0+ (ARM64, ARMv7a, x86_64) | 48.5 MB |
-| **iOS** | साइडलोड पैकेज (`.ipa`) | [**teledrive.ipa**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive.ipa/download) | iOS 15.0+ (AltStore / TrollStore) | 24.0 MB |
-| **iOS** | सिम्युलेटर बिल्ड (`.zip`) | [**teledrive-ios-simulator.zip**](https://sourceforge.net/projects/teledrive/files/v0.1.4/teledrive-ios-simulator.zip/download) | iOS सिम्युलेटर (x86_64 / arm64) | 24.0 MB |
+| **Windows** | सेटअप इंस्टॉलर (`.exe`) | [**teledrive-setup.exe**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive-setup.exe/download) | x64 64-Bit (Windows 10 / 11) | 6.0 MB |
+| **Windows** | MSI पैकेज (`.msi`) | [**teledrive.msi**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.msi/download) | एंटरप्राइज़ इंस्टॉलर (Win 10 / 11) | 7.5 MB |
+| **macOS** | यूनिवर्सल डिस्क इमेज (`.dmg`) | [**teledrive.dmg**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.dmg/download) | Apple Silicon (M1–M4) और Intel x64 | 15.0 MB |
+| **Linux** | यूनिवर्सल AppImage (`.AppImage`) | [**teledrive.AppImage**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.AppImage/download) | स्टैंडअलोन पोर्टेबल (glibc 2.31+) | 82.4 MB |
+| **Linux** | Debian / Ubuntu (`.deb`) | [**teledrive.deb**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.deb/download) | x86_64 / amd64 | 7.8 MB |
+| **Linux** | Fedora / RHEL (`.rpm`) | [**teledrive.rpm**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.rpm/download) | x86_64 / amd64 | 7.8 MB |
+| **Android** | यूनिवर्सल APK (`.apk`) | [**teledrive.apk**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.apk/download) | Android 8.0+ (ARM64, ARMv7a, x86_64) | 46.8 MB |
+| **iOS** | साइडलोड पैकेज (`.ipa`) | [**teledrive.ipa**](https://sourceforge.net/projects/teledrive/files/v0.1.5/teledrive.ipa/download) | iOS 15.0+ (AltStore / TrollStore) | 23.1 MB |
 
-> 🌐 संपूर्ण पैकेज कैटलॉग, मिरर लिंक और क्रिप्टोग्राफ़िक चेकसम [**SourceForge**](https://sourceforge.net/projects/teledrive/files/) या [**teledrive.space**](https://teledrive.space) पर उपलब्ध हैं।
+> 🌐 संपूर्ण पैकेज कैटलॉग, मिरर लिंक और क्रिप्टोग्राफ़िक चेकसम [**SourceForge**](https://sourceforge.net/projects/teledrive/files/v0.1.5/) या [**teledrive.space**](https://teledrive.space) पर उपलब्ध हैं।
 
 <details>
-<summary>🔐 <b>SHA-256 क्रिप्टोग्राफ़िक चेकसम सत्यापित करें (v0.1.4)</b></summary>
+<summary>🔐 <b>SHA-256 क्रिप्टोग्राफ़िक चेकसम सत्यापित करें (v0.1.5)</b></summary>
 
 ```
-4e3ce970ab9aed37d0e47a9ef89ac09ae3a461332034aefdccb4391ee96dd551  teledrive-setup.exe
-46248343d3383278de1b3add616121f78a31c02bcf152cc61108c3f50abb3f08  teledrive.AppImage
-043c07d68e25db586c1cc1801b290c6a98ece892af7d1f118d179b6df2b4285d  teledrive.apk
-06aa37205cb80d72d7dec8362eb28b73dc971c830f51683a8b762d976b3c1611  teledrive.deb
-19639ff5d43736a20f611182eb05365e66dada583a9590157040440c7de7ff88  teledrive.dmg
-9053c1dc3879e76fd815a01cf7e300a85186c385d23f10fff743f04407c34a0c  teledrive.ipa
-391ee2a19b8657a6f949127087a85c5478aac8917690536a24cf707078f465d1  teledrive.msi
-c2968431b0eea6db2237bedb08ac827ecb151874ac9c6c02fabcbbc1ebac5f24  teledrive.rpm
+ccd312b929778edc7d3f9969eac29e89c013464e9f8fe60dc77143aff289776e  teledrive-setup.exe
+77473cd7e9c2a62fe91953cce18f3a848f48ac099a6521c2372b8be6165949c7  teledrive.AppImage
+523db94bb82d55433e74364380ef292d8ac42c79b1d31740cb4222f4071ad5f0  teledrive.apk
+14a982f9784fd03ff1cce64d1830c281957493edc1a979fdaeb20be7f21b0304  teledrive.deb
+9c81dece56a58a535ba238dd840f097eedc4b5cda4d64a40abc224e9a90e557a  teledrive.dmg
+89d428a70ef005fbc12d6ea48456546562ddb76576f60466c5b9a51d05934549  teledrive.ipa
+c6f6c3a6c88104527ee3d88ee159f425b4fb91b03846cd9f31c201f0590d342e  teledrive.msi
+5ffa74bd2e50bd841bba2cdbc4470ed0f15dfcbc382d91e1b83b2e46464a9a68  teledrive.rpm
 ```
 </details>
 
@@ -131,6 +130,8 @@ c2968431b0eea6db2237bedb08ac827ecb151874ac9c6c02fabcbbc1ebac5f24  teledrive.rpm
 
 ## ✨ मुख्य विशेषताएं
 
+- **हार्डवेयर बायोमेट्रिक्स और ऐप लॉक (v0.1.5)**: Touch ID, Windows Hello और Android बायोमेट्रिक्स, अनुकूलन योग्य 4–6 अंकों के डायनामिक पिन, ऐप स्विचर प्राइवेसी शील्ड और निष्क्रियता ऑटो-लॉक टाइमर के साथ अपने ड्राइव को सुरक्षित करें।
+- **लाइव इन-ऐप अपडेट चेकर (v0.1.5)**: आधिकारिक रिलीज़ के लिए स्वचालित पृष्ठभूमि और ऑन-डिमांड संस्करण जांच, इन-ऐप रिलीज़ अलर्ट और सीधे SourceForge इंस्टॉलर डाउनलोड लिंक के साथ।
 - **वास्तव में असीमित क्लाउड**: बिना किसी आवर्ती शुल्क के आपके निजी टेलीग्राम चैनल को बैकएंड के रूप में उपयोग करता है।
 - **हल्का और नेटिव क्रॉस-प्लेटफ़ॉर्म**: 5 प्लेटफ़ॉर्म (macOS, Windows, Linux, Android और iOS) के लिए Tauri v2 + Rust पर निर्मित, अत्यधिक तेज़ और कम मेमोरी उपयोग (सामान्यतः 250MB से कम)।
 - **11 स्थानीय भाषाएं**: हिंदी, अंग्रेज़ी, स्पैनिश, जर्मन, फ्रेंच, पुर्तगाली, रूसी, चीनी (सरलीकृत और पारंपरिक), इंडोनेशियाई और जापानी के लिए पूर्ण नेटिव यूआई समर्थन।
