@@ -11,7 +11,8 @@
     "storage": "Almacenamiento",
     "about": "Acerca de",
     "encryption": "Cifrado",
-    "security": "Seguridad y Bloqueo"
+    "security": "Seguridad y Bloqueo",
+    "general": "General"
   },
   "language": {
     "title": "Idioma",
@@ -406,6 +407,31 @@
       "forgotDescription": "Por tu privacidad, TeleDrive no puede recuperar contraseñas olvidadas. Restablecerla cerrará la sesión en este dispositivo y quitará el bloqueo. Tus archivos permanecerán intactos en tu Telegram.",
       "cancel": "Cancelar",
       "resetAndLogout": "Cerrar sesión y restablecer bloqueo"
+    }
+  },
+  "general": {
+    "title": "General",
+    "description": "Configura cómo se inicia TeleDrive con tu equipo y cómo funciona en la bandeja del sistema.",
+    "startup": {
+      "title": "Inicio y bandeja del sistema",
+      "description": "Controla de forma independiente el inicio automático y la ejecución silenciosa en segundo plano.",
+      "launchAtLogin": {
+        "title": "Iniciar al arrancar el sistema",
+        "description": "Abre TeleDrive automáticamente al iniciar sesión para mantener activas las copias de seguridad programadas y la sincronización."
+      },
+      "startMinimized": {
+        "title": "Iniciar minimizado en la bandeja",
+        "description": "Mantiene la ventana principal oculta en la bandeja del sistema al iniciar TeleDrive para no interrumpir tu escritorio."
+      }
+    },
+    "callout": "<strong>Funcionamiento en la bandeja:</strong> Cuando TeleDrive se inicia de forma silenciosa, permanece activo en la bandeja con las copias de seguridad y la sincronización activas. Haz clic en el icono de la bandeja o vuelve a abrir TeleDrive para mostrar la ventana.",
+    "toasts": {
+      "launchAtLoginEnabled": "TeleDrive se iniciará automáticamente al iniciar sesión.",
+      "launchAtLoginDisabled": "Se eliminó TeleDrive del inicio del sistema.",
+      "launchAtLoginFailed": "No se pudo actualizar el inicio automático.",
+      "startMinimizedEnabled": "TeleDrive se iniciará minimizado en la bandeja del sistema.",
+      "startMinimizedDisabled": "TeleDrive abrirá la ventana principal al iniciarse.",
+      "startMinimizedFailed": "No se pudo actualizar la preferencia de ventana inicial."
     }
   }
 }

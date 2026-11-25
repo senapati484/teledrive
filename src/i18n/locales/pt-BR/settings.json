@@ -11,7 +11,8 @@
     "storage": "Armazenamento",
     "about": "Sobre",
     "encryption": "Criptografia",
-    "security": "Security & App Lock"
+    "security": "Security & App Lock",
+    "general": "Geral"
   },
   "language": {
     "title": "Idioma",
@@ -387,6 +388,31 @@
       "forgotDescription": "To protect your privacy, TeleDrive cannot recover a forgotten passcode. Resetting it will sign you out of this device and remove the lock. All your files and backups remain completely safe and untouched in your Telegram cloud.",
       "cancel": "Cancel",
       "resetAndLogout": "Sign Out & Reset Lock"
+    }
+  },
+  "general": {
+    "title": "Geral",
+    "description": "Configure como o TeleDrive inicia com o computador e opera na bandeja do sistema.",
+    "startup": {
+      "title": "Inicialização e Bandeja do Sistema",
+      "description": "Controle de forma independente a inicialização no login e a execução silenciosa na bandeja.",
+      "launchAtLogin": {
+        "title": "Iniciar no login",
+        "description": "Inicia o TeleDrive automaticamente ao entrar no sistema para manter backups agendados e sincronização ativos."
+      },
+      "startMinimized": {
+        "title": "Iniciar minimizado na bandeja",
+        "description": "Mantém a janela principal oculta na bandeja do sistema ao iniciar sem roubar foco da área de trabalho."
+      }
+    },
+    "callout": "<strong>Operação em Segundo Plano na Bandeja:</strong> Quando iniciado silenciosamente, o TeleDrive permanece ativo na bandeja executando backups e sincronização. Clique no ícone da bandeja ou abra o TeleDrive novamente para exibir a janela.",
+    "toasts": {
+      "launchAtLoginEnabled": "O TeleDrive iniciará automaticamente no login.",
+      "launchAtLoginDisabled": "TeleDrive removido da inicialização do sistema.",
+      "launchAtLoginFailed": "Não foi possível atualizar a inicialização no login.",
+      "startMinimizedEnabled": "O TeleDrive iniciará minimizado na bandeja do sistema.",
+      "startMinimizedDisabled": "O TeleDrive abrirá a janela principal ao iniciar.",
+      "startMinimizedFailed": "Não foi possível atualizar a preferência de janela inicial."
     }
   }
 }

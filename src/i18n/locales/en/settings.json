@@ -11,7 +11,8 @@
     "storage": "Storage",
     "about": "About",
     "encryption": "Encryption",
-    "security": "Security & App Lock"
+    "security": "Security & App Lock",
+    "general": "General"
   },
   "language": {
     "title": "Language",
@@ -412,6 +413,31 @@
       "forgotDescription": "To protect your privacy, TeleDrive cannot recover a forgotten passcode. Resetting it will sign you out of this device and remove the lock. All your files and backups remain completely safe and untouched in your Telegram cloud.",
       "cancel": "Cancel",
       "resetAndLogout": "Sign Out & Reset Lock"
+    }
+  },
+  "general": {
+    "title": "General",
+    "description": "Configure how TeleDrive starts with your computer and runs in the system tray.",
+    "startup": {
+      "title": "Startup & System Tray",
+      "description": "Control login autostart and background tray behavior independently.",
+      "launchAtLogin": {
+        "title": "Launch at login",
+        "description": "Automatically start TeleDrive when you sign in so scheduled device backups and folder sync stay active."
+      },
+      "startMinimized": {
+        "title": "Start minimized to tray",
+        "description": "Keep the main window hidden in the system tray when TeleDrive launches instead of interrupting your desktop."
+      }
+    },
+    "callout": "<strong>Background Tray Operation:</strong> When TeleDrive starts silently, it remains active in your system tray with scheduled backups and sync running. Click the tray icon or launch TeleDrive again to bring the window forward.",
+    "toasts": {
+      "launchAtLoginEnabled": "TeleDrive will launch automatically at login.",
+      "launchAtLoginDisabled": "Removed TeleDrive from login startup.",
+      "launchAtLoginFailed": "Could not update launch at login setting.",
+      "startMinimizedEnabled": "TeleDrive will start minimized in the system tray.",
+      "startMinimizedDisabled": "TeleDrive will open the main window on startup.",
+      "startMinimizedFailed": "Could not update startup window setting."
     }
   }
 }

@@ -42,10 +42,11 @@ argon2 = "0.5.3"
 sha2 = "0.10"
 tokio = { version = "1", features = ["sync", "time"] }
 
-# Tray icons and single-instance locking are desktop-only; keep them off mobile
-# builds so the underlying platform crates are never pulled into Android/iOS.
+# Tray icons, autostart, and single-instance locking are desktop-only; keep them
+# off mobile builds so the underlying platform crates are never pulled into Android/iOS.
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri = { version = "2", features = ["protocol-asset", "tray-icon"] }
+tauri-plugin-autostart = "2.7.0"
 tauri-plugin-single-instance = "2.5.5"
 notify = "8.2"
 

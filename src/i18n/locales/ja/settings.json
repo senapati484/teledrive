@@ -11,7 +11,8 @@
     "storage": "ストレージ",
     "about": "について",
     "encryption": "暗号化",
-    "security": "Security & App Lock"
+    "security": "Security & App Lock",
+    "general": "一般"
   },
   "language": {
     "title": "言語",
@@ -382,6 +383,31 @@
       "forgotDescription": "To protect your privacy, TeleDrive cannot recover a forgotten passcode. Resetting it will sign you out of this device and remove the lock. All your files and backups remain completely safe and untouched in your Telegram cloud.",
       "cancel": "Cancel",
       "resetAndLogout": "Sign Out & Reset Lock"
+    }
+  },
+  "general": {
+    "title": "一般",
+    "description": "PC 起動時の動作とシステムトレイでのバックグラウンド動作を設定します。",
+    "startup": {
+      "title": "起動とシステムトレイ",
+      "description": "ログイン時の自動起動とトレイ最小化起動を個別に設定できます。",
+      "launchAtLogin": {
+        "title": "ログイン時に起動",
+        "description": "サインイン時に TeleDrive を自動で起動し、スケジュール済みバックアップとフォルダー同期を維持します。"
+      },
+      "startMinimized": {
+        "title": "トレイに最小化して起動",
+        "description": "起動時にメインウィンドウを開かず、システムトレイに格納した状態でバックグラウンド起動します。"
+      }
+    },
+    "callout": "<strong>バックグラウンドトレイ動作：</strong> サイレント起動時はメインウィンドウを表示せず、バックアップと同期を実行したままシステムトレイに常駐します。ウィンドウを開くにはトレイアイコンをクリックするか TeleDrive を再度起動してください。",
+    "toasts": {
+      "launchAtLoginEnabled": "ログイン時に TeleDrive が自動起動するよう設定しました。",
+      "launchAtLoginDisabled": "ログイン時の自動起動から TeleDrive を解除しました。",
+      "launchAtLoginFailed": "ログイン時起動の設定を更新できませんでした。",
+      "startMinimizedEnabled": "次回からシステムトレイに最小化して起動します。",
+      "startMinimizedDisabled": "次回から起動時にメインウィンドウを表示します。",
+      "startMinimizedFailed": "起動ウィンドウ設定を更新できませんでした。"
     }
   }
 }
