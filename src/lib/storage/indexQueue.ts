@@ -84,6 +84,12 @@ export class IndexConflictError extends Error {
   }
 }
 
+/** Conservative metadata edit cadence for Telegram channel edits. */
+export const DEFAULT_METADATA_EDIT_INTERVAL_MS = 5_000;
+/** Adaptive cap after a FLOOD_WAIT; never balloon to Telegram's 300 s. */
+export const METADATA_EDIT_INTERVAL_CAP_MS = 30_000;
+const EDIT_INTERVAL_STORAGE_PREFIX = "teledrive_index_edit_interval:";
+
 export const INDEX_CONFLICT_MESSAGE =
   "Another device changed the drive; refreshed - retry.";
 export const INDEX_REVISION_UNAVAILABLE_MESSAGE =
@@ -209,6 +215,8 @@ interface QueueEntry {
    * until the state that includes this mutation is actually committed.
    */
   durable?: boolean;
+  /** Pace this write through the metadata edit token bucket. */
+  rateLimited?: boolean;
   /** Durable callers carried over from superseded entries. */
   followers?: Array<{ resolve: () => void; reject: (err: any) => void }>;
 }
@@ -234,6 +242,8 @@ interface EnqueueOptions {
    * committed, even when a newer snapshot supersedes it.
    */
   durable?: boolean;
+  /** Pace this write through the metadata edit token bucket. */
+  rateLimited?: boolean;
 }
 
 /**
@@ -268,6 +278,11 @@ class ChannelQueue {
   /** Deadlines backing `remainingBackoffMs` (0 = no timer). */
   private retryDeadlineAt = 0;
   private stuckDeadlineAt = 0;
+  /** Token bucket pacing Telegram channel edits. */
+  private metadataEditIntervalMs: number;
+  private metadataTokens = 1;
+  private metadataTokensAt = Date.now();
+  private metadataEditChain: Promise<void> = Promise.resolve();
   private commitOverride: ((state: TeleFile[]) => Promise<void>) | null = null;
   private readonly channelId: string;
   private serverRetryAt = 0;
@@ -298,12 +313,76 @@ class ChannelQueue {
 
   constructor(channelId: string) {
     this.channelId = channelId;
+    this.metadataEditIntervalMs = DEFAULT_METADATA_EDIT_INTERVAL_MS;
     try {
       const deadline = Number(localStorage.getItem(this.retryStorageKey()));
       if (Number.isFinite(deadline) && deadline > Date.now()) this.serverRetryAt = deadline;
+      const interval = Number(localStorage.getItem(this.editIntervalStorageKey()));
+      if (Number.isFinite(interval) && interval > 0) {
+        this.metadataEditIntervalMs = Math.min(
+          METADATA_EDIT_INTERVAL_CAP_MS,
+          Math.max(DEFAULT_METADATA_EDIT_INTERVAL_MS, interval),
+        );
+      }
     } catch {
       // The in-memory queue still respects Telegram's cooldown.
     }
+  }
+
+  private editIntervalStorageKey(): string {
+    return `${EDIT_INTERVAL_STORAGE_PREFIX}${this.channelId}`;
+  }
+
+  private refillMetadataTokens(now = Date.now()): void {
+    const elapsed = Math.max(0, now - this.metadataTokensAt);
+    this.metadataTokens = Math.min(
+      1,
+      this.metadataTokens + elapsed / this.metadataEditIntervalMs,
+    );
+    this.metadataTokensAt = now;
+  }
+
+  /** Milliseconds until the next metadata edit token (0 = available). */
+  nextMetadataEditSlotMs(now = Date.now()): number {
+    this.refillMetadataTokens(now);
+    return this.metadataTokens >= 1
+      ? 0
+      : Math.ceil((1 - this.metadataTokens) * this.metadataEditIntervalMs);
+  }
+
+  getMetadataEditIntervalMs(): number {
+    return this.metadataEditIntervalMs;
+  }
+
+  private rememberHigherEditInterval(floodSeconds: number): void {
+    if (!Number.isFinite(floodSeconds) || floodSeconds <= 0) return;
+    const next = Math.min(
+      METADATA_EDIT_INTERVAL_CAP_MS,
+      Math.max(this.metadataEditIntervalMs, floodSeconds * 1000),
+    );
+    if (next <= this.metadataEditIntervalMs) return;
+    this.metadataEditIntervalMs = next;
+    try {
+      localStorage.setItem(this.editIntervalStorageKey(), String(next));
+    } catch {
+      // In-memory pacing still applies for this session.
+    }
+  }
+
+  private acquireMetadataEditSlot(): Promise<void> {
+    const run = this.metadataEditChain.then(async () => {
+      for (;;) {
+        const wait = this.nextMetadataEditSlotMs();
+        if (wait <= 0) {
+          this.metadataTokens = Math.max(0, this.metadataTokens - 1);
+          this.metadataTokensAt = Date.now();
+          return;
+        }
+        await sleep(wait);
+      }
+    });
+    this.metadataEditChain = run.catch(() => {});
+    return run;
   }
 
   private retryStorageKey(): string {
@@ -472,6 +551,7 @@ class ChannelQueue {
         reject,
         recordPending,
         durable,
+        rateLimited: options.rateLimited ?? false,
         followers,
       };
       // Mirror the latest pending state to the store snapshot too — this is
@@ -521,6 +601,7 @@ class ChannelQueue {
 
     try {
       this.inflightState = entry.state;
+      if (entry.rateLimited) await this.acquireMetadataEditSlot();
       await withTimeout(
         this.commit(entry.state, entry.base),
         15_000,
@@ -642,8 +723,30 @@ class ChannelQueue {
             }
             this.retryingEntry = null;
           }
-          const entry = this.pending ?? this.retryingEntry;
+          let entry = this.pending ?? this.retryingEntry;
           if (!entry) break;
+          if (entry.rateLimited) {
+            // Wait before taking the entry so newer mutations can coalesce
+            // into the same edit instead of queueing a second one.
+            await this.acquireMetadataEditSlot();
+            if (this.pending && this.retryingEntry) {
+              this.pending.followers = [
+                ...(this.pending.followers ?? []),
+                ...(this.retryingEntry.followers ?? []),
+              ];
+              if (this.retryingEntry.durable) {
+                this.pending.followers.push({
+                  resolve: this.retryingEntry.resolve,
+                  reject: this.retryingEntry.reject,
+                });
+              } else {
+                this.retryingEntry.resolve();
+              }
+              this.retryingEntry = null;
+            }
+            entry = this.pending ?? this.retryingEntry;
+            if (!entry) break;
+          }
           this.pending = null;
           this.retryingEntry = null;
           this.lastError = null;
@@ -723,6 +826,9 @@ class ChannelQueue {
     }
 
     const floodSeconds = parseFloodWaitSeconds(err);
+    if (floodSeconds !== null) {
+      this.rememberHigherEditInterval(floodSeconds);
+    }
     // Non-flood errors (timeouts, network drops) count against MAX_TRANSIENT_RETRIES.
     // For FLOOD_WAIT, Telegram explicitly dictates the wait duration. Waiting out
     // Telegram's cooldown should not burn through retries unless it repeatedly exceeds
@@ -1950,8 +2056,9 @@ export function enqueueSave(
 export function enqueueSaveDurable(
   channelId: string,
   state: TeleFile[],
+  options: Omit<EnqueueOptions, "durable"> = {},
 ): Promise<void> {
-  return enqueueSave(channelId, state, { durable: true });
+  return enqueueSave(channelId, state, { ...options, durable: true });
 }
 
 /**

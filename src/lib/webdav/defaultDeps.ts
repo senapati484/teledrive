@@ -2,6 +2,7 @@ import { useAuthStore } from "../../stores/authStore";
 import { useFileStore } from "../../stores/fileStore";
 import type { TeleFile, TeleFileSegment } from "../types";
 import { logger } from "../logger";
+import { toast } from "sonner";
 import { useEncryptionStore } from "../secure/e2ee";
 import { channelIdKey, getSecret, VAULT_KEY_CHANNEL_ID } from "../secure/vault";
 import {
@@ -33,8 +34,6 @@ import {
 import {
   createWebdavHandler,
   DEFAULT_METADATA_COMMIT_DEADLINE_MS,
-  DEFAULT_METADATA_EDIT_BURST,
-  DEFAULT_METADATA_EDIT_INTERVAL_MS,
   type WebdavHandler,
   type WebdavHandlerDeps,
 } from "./handler";
@@ -69,6 +68,12 @@ export function createDefaultWebdavDeps(): WebdavHandlerDeps {
     isBootstrapComplete: () => useFileStore.getState().bootstrapComplete,
     getChannelId: resolveChannelId,
     saveIndex: (channelId, files) => enqueueSaveDurable(channelId, files),
+    saveIndexBackground: (channelId, files) =>
+      enqueueSaveDurable(channelId, files, { rateLimited: true }),
+    warn: (message) => {
+      logger.warn(`[webdav] ${message}`);
+      toast.warning(message);
+    },
     isDeferredError: (err) => err instanceof IndexRetryExhaustedError,
     uploadFile: async (args) => {
       const result = await uploadFileToTelegram(
@@ -153,9 +158,7 @@ export function createDefaultWebdavDeps(): WebdavHandlerDeps {
     getIndexBackoffMs: (channelId) => getIndexBackoffMs(channelId),
     metadataCommitDeadlineMs: DEFAULT_METADATA_COMMIT_DEADLINE_MS,
     floodWaitAbortSeconds: 10,
-    catalogCoalesceMs: 250,
-    metadataEditIntervalMs: DEFAULT_METADATA_EDIT_INTERVAL_MS,
-    metadataEditBurst: DEFAULT_METADATA_EDIT_BURST,
+
     describeConflict: (err) => {
       if (!(err instanceof IndexConflictError)) return null;
       return { transient: err.transient, message: err.message };

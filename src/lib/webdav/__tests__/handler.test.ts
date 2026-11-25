@@ -68,6 +68,8 @@ function makeDeps(initial: TeleFile[]) {
     prepareCalls: 0,
     clearedTombstones: [] as number[],
     indexBackoffMs: 0,
+    backgroundStates: [] as TeleFile[][],
+    warnings: [] as string[],
     saveDeferred: null as {
       promise: Promise<void>;
       resolve: () => void;
@@ -90,6 +92,15 @@ function makeDeps(initial: TeleFile[]) {
       state.saveCalls += 1;
       if (state.saveError) throw state.saveError;
       if (state.saveDeferred) await state.saveDeferred.promise;
+    },
+    saveIndexBackground: async (_channelId, files) => {
+      state.saveCalls += 1;
+      state.backgroundStates.push(files);
+      if (state.saveError) throw state.saveError;
+      if (state.saveDeferred) await state.saveDeferred.promise;
+    },
+    warn: (message) => {
+      state.warnings.push(message);
     },
     isDeferredError: () => false,
     uploadFile: async (args) => {
@@ -122,9 +133,6 @@ function makeDeps(initial: TeleFile[]) {
     getIndexBackoffMs: () => state.indexBackoffMs,
     metadataCommitDeadlineMs: 25,
     floodWaitAbortSeconds: 10,
-    catalogCoalesceMs: 5,
-    metadataEditIntervalMs: 0,
-    metadataEditBurst: 1,
     describeConflict: isConflict,
     validateSize: async (size) =>
       size > 1000
@@ -564,7 +572,7 @@ describe("WebDAV handler", () => {
     expect(state.files.some((entry) => entry.name === "contended.txt")).toBe(true);
   });
 
-  it("coalesces concurrent metadata mutations into one commit and waits for it", async () => {
+  it("acknowledges metadata immediately and persists it in the background", async () => {
     const { deps, state } = makeDeps(baseFiles());
     let resolveSave!: () => void;
     let rejectSave!: (err: unknown) => void;
@@ -578,52 +586,41 @@ describe("WebDAV handler", () => {
     };
     const handler = createWebdavHandler(deps);
 
-    let mkcolSettled = false;
-    const first = handler
-      .handle(request({ id: 1, method: "MKCOL", path: "/Docs/BatchA" }))
-      .then((response) => {
-        mkcolSettled = true;
-        return response;
-      });
-    const second = handler.handle(
-      request({ id: 2, method: "MKCOL", path: "/Docs/BatchB" })
-    );
-    const removed = handler.handle(
-      request({ id: 3, method: "DELETE", path: "/Docs/a.txt" })
-    );
+    const [a, b, deleted] = await Promise.all([
+      handler.handle(request({ id: 1, method: "MKCOL", path: "/Docs/LocalA" })),
+      handler.handle(request({ id: 2, method: "MKCOL", path: "/Docs/LocalB" })),
+      handler.handle(request({ id: 3, method: "DELETE", path: "/Docs/a.txt" })),
+    ]);
 
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    // One shared save, and no response before it settles.
-    expect(state.saveCalls).toBe(1);
-    expect(mkcolSettled).toBe(false);
-    expect(state.files.some((entry) => entry.name === "BatchA")).toBe(true);
-    expect(state.files.some((entry) => entry.name === "BatchB")).toBe(true);
+    // Responses do not wait for Telegram.
+    expect([a.status, b.status, deleted.status]).toEqual([201, 201, 204]);
+    expect(state.files.some((entry) => entry.name === "LocalA")).toBe(true);
+    expect(state.files.some((entry) => entry.name === "LocalB")).toBe(true);
+    expect(state.files.some((entry) => entry.name === "a.txt")).toBe(false);
     expect(state.tombstones).toContain(5);
+    expect(state.deleted).not.toContain(5);
+    expect(state.backgroundStates.length).toBe(3);
 
     resolveSave();
-    const [a, b, deleted] = await Promise.all([first, second, removed]);
-    expect([a.status, b.status, deleted.status]).toEqual([201, 201, 204]);
-    expect(state.files.some((entry) => entry.name === "a.txt")).toBe(false);
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(state.deleted).toContain(5);
   });
 
-  it("returns 503 for a coalesced batch that misses the commit deadline", async () => {
+  it("keeps local metadata and warns when the background commit fails", async () => {
     const { deps, state } = makeDeps(baseFiles());
-    state.saveDeferred = {
-      promise: new Promise<void>(() => {}),
-      resolve: () => {},
-      reject: () => {},
-    };
+    state.saveError = new Error("permanent background failure");
     const handler = createWebdavHandler(deps);
+
     const response = await handler.handle(
-      request({ id: 1, method: "MKCOL", path: "/Docs/Slow" })
+      request({ id: 1, method: "MKCOL", path: "/Docs/Survives" })
     );
-    expect(response.status).toBe(503);
-    expect(response.headers?.["Retry-After"]).toBe("3");
+    expect(response.status).toBe(201);
+    expect(state.files.some((entry) => entry.name === "Survives")).toBe(true);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(state.warnings.length).toBeGreaterThan(0);
   });
 
-  it("rejects metadata mutations while the index queue is backing off", async () => {
+  it("keeps metadata local-ack during a queue cooldown but caps PUT Retry-After", async () => {
     const { deps, state } = makeDeps(baseFiles());
     state.indexBackoffMs = 60_000;
     const handler = createWebdavHandler(deps);
@@ -638,16 +635,16 @@ describe("WebDAV handler", () => {
       })
     );
     expect(put.status).toBe(503);
-    expect(put.headers?.["Retry-After"]).toBe("60");
+    expect(Number(put.headers?.["Retry-After"])).toBeLessThanOrEqual(10);
     expect(state.uploads).toHaveLength(0);
     expect(state.saveCalls).toBe(0);
 
     const mkcol = await handler.handle(
       request({ id: 2, method: "MKCOL", path: "/Docs/Backoff" })
     );
-    expect(mkcol.status).toBe(503);
-    expect(mkcol.headers?.["Retry-After"]).toBe("60");
-    expect(state.files.some((entry) => entry.name === "Backoff")).toBe(false);
+    expect(mkcol.status).toBe(201);
+    expect(state.files.some((entry) => entry.name === "Backoff")).toBe(true);
+    expect(state.backgroundStates.length).toBe(1);
   });
 
   it("returns 503 when a catalog commit exceeds the deadline and cleans up later", async () => {
@@ -783,35 +780,7 @@ describe("WebDAV handler", () => {
     expect(response.headers?.["Server-Timing"]).toContain("total;dur=");
   });
 
-  it("rolls back a failed coalesced batch and reports 503", async () => {
-    const { deps, state } = makeDeps(baseFiles());
-    let rejectSave!: (err: unknown) => void;
-    state.saveDeferred = {
-      promise: new Promise<void>((_resolve, reject) => {
-        rejectSave = reject;
-      }),
-      resolve: () => {},
-      reject: (err) => rejectSave(err),
-    };
-    const handler = createWebdavHandler(deps);
-
-    const first = handler.handle(
-      request({ id: 1, method: "MKCOL", path: "/Docs/RollbackA" })
-    );
-    const second = handler.handle(
-      request({ id: 2, method: "MKCOL", path: "/Docs/RollbackB" })
-    );
-    await new Promise((resolve) => setTimeout(resolve, 20));
-    rejectSave(new Error("hard batch failure"));
-
-    const [a, b] = await Promise.all([first, second]);
-    expect(a.status).toBe(503);
-    expect(b.status).toBe(503);
-    expect(state.files.some((entry) => entry.name === "RollbackA")).toBe(false);
-    expect(state.files.some((entry) => entry.name === "RollbackB")).toBe(false);
-  });
-
-  it("keeps duplicate-name MKCOL validation outside the batch", async () => {
+  it("keeps duplicate-name MKCOL validation outside the background save", async () => {
     const { deps } = makeDeps(baseFiles());
     const handler = createWebdavHandler(deps);
     const [a, b] = await Promise.all([
@@ -821,116 +790,53 @@ describe("WebDAV handler", () => {
     expect([a.status, b.status].sort()).toEqual([201, 405]);
   });
 
-  it("rate-limits 20 MKCOL over 10 s under the production cadence", async () => {
+  it("acks 15 metadata operations over 10 s immediately", async () => {
     vi.useFakeTimers();
     const { deps, state } = makeDeps(baseFiles());
-    deps.metadataEditIntervalMs = 2_000;
-    deps.metadataEditBurst = 1;
-    deps.metadataCommitDeadlineMs = 12_000;
     const handler = createWebdavHandler(deps);
 
     const promises: Array<Promise<{ status: number }>> = [];
-    for (let index = 0; index < 20; index++) {
+    for (let index = 0; index < 15; index++) {
       promises.push(
         handler.handle(
-          request({ id: 100 + index, method: "MKCOL", path: `/Docs/Sustained-${index}` })
+          request({ id: 100 + index, method: "MKCOL", path: `/Docs/Burst-${index}` })
         )
       );
       await vi.advanceTimersByTimeAsync(500);
     }
-    await vi.advanceTimersByTimeAsync(30_000);
     const responses = await Promise.all(promises);
-
     expect(responses.every((response) => response.status === 201)).toBe(true);
-    // 10 s of arrivals with one edit per 2 s: at most six edits.
-    expect(state.saveCalls).toBeLessThanOrEqual(6);
-    for (let index = 0; index < 20; index++) {
+    expect(state.backgroundStates).toHaveLength(15);
+    for (let index = 0; index < 15; index++) {
       expect(
-        state.files.filter((entry) => entry.name === `Sustained-${index}`)
+        state.files.filter((entry) => entry.name === `Burst-${index}`)
       ).toHaveLength(1);
     }
   });
 
-  it("keeps 5 staggered parallel MKCOLs under the edit rate", async () => {
-    vi.useFakeTimers();
+  it("acks 3 and 5 parallel MKCOL immediately", async () => {
     const { deps, state } = makeDeps(baseFiles());
-    deps.metadataEditIntervalMs = 200;
-    deps.metadataEditBurst = 1;
-    deps.metadataCommitDeadlineMs = 5_000;
     const handler = createWebdavHandler(deps);
-
-    const promises: Array<Promise<{ status: number }>> = [];
-    for (let index = 0; index < 5; index++) {
-      promises.push(
+    const three = await Promise.all(
+      Array.from({ length: 3 }, (_, index) =>
         handler.handle(
-          request({ id: 200 + index, method: "MKCOL", path: `/Docs/Stagger-${index}` })
+          request({ id: 1 + index, method: "MKCOL", path: `/Docs/Three-${index}` })
         )
-      );
-      await vi.advanceTimersByTimeAsync(100);
-    }
-    await vi.advanceTimersByTimeAsync(5_000);
-    const responses = await Promise.all(promises);
-
-    expect(responses.every((response) => response.status === 201)).toBe(true);
-    expect(state.saveCalls).toBeLessThanOrEqual(3);
+      )
+    );
+    const five = await Promise.all(
+      Array.from({ length: 5 }, (_, index) =>
+        handler.handle(
+          request({ id: 10 + index, method: "MKCOL", path: `/Docs/Five-${index}` })
+        )
+      )
+    );
+    expect(three.every((response) => response.status === 201)).toBe(true);
+    expect(five.every((response) => response.status === 201)).toBe(true);
+    expect(state.files.filter((entry) => entry.name.startsWith("Three-"))).toHaveLength(3);
+    expect(state.files.filter((entry) => entry.name.startsWith("Five-"))).toHaveLength(5);
   });
 
-  it("returns Retry-After with the actual limiter wait", async () => {
-    vi.useFakeTimers();
-    const { deps } = makeDeps(baseFiles());
-    deps.metadataEditIntervalMs = 1_000;
-    deps.metadataEditBurst = 1;
-    deps.metadataCommitDeadlineMs = 100;
-    deps.catalogCoalesceMs = 0;
-    const handler = createWebdavHandler(deps);
-
-    // First edit consumes the only token.
-    const first = handler.handle(
-      request({ id: 1, method: "MKCOL", path: "/Docs/TokenA" })
-    );
-    await vi.advanceTimersByTimeAsync(10);
-    await first;
-
-    const second = handler.handle(
-      request({ id: 2, method: "MKCOL", path: "/Docs/TokenB" })
-    );
-    await vi.advanceTimersByTimeAsync(10);
-    const response = await second;
-    expect(response.status).toBe(503);
-    expect(Number(response.headers?.["Retry-After"])).toBeGreaterThanOrEqual(1);
-  });
-
-  it("rate-limits PUT catalog commits without orphaning the upload", async () => {
-    vi.useFakeTimers();
-    const { deps, state } = makeDeps(baseFiles());
-    deps.metadataEditIntervalMs = 1_000;
-    deps.metadataEditBurst = 1;
-    deps.metadataCommitDeadlineMs = 100;
-    const handler = createWebdavHandler(deps);
-
-    const first = handler.handle(
-      request({ id: 1, method: "MKCOL", path: "/Docs/PutTokenA" })
-    );
-    await vi.advanceTimersByTimeAsync(10);
-    await first;
-
-    const put = handler.handle(
-      request({
-        id: 2,
-        method: "PUT",
-        path: "/Docs/rated.bin",
-        bodyPath: "C:/tmp/body.bin",
-        contentLength: 10,
-      })
-    );
-    await vi.advanceTimersByTimeAsync(10);
-    const response = await put;
-
-    expect(response.status).toBe(503);
-    expect(Number(response.headers?.["Retry-After"])).toBeGreaterThanOrEqual(1);
-    expect(state.deleted).toContain(99);
-    expect(state.files.some((entry) => entry.name === "rated.bin")).toBe(false);
-  });
   it("answers PROPPATCH with 207 containing a 403 propstat", async () => {
     const { deps } = makeDeps(baseFiles());
     const handler = createWebdavHandler(deps);

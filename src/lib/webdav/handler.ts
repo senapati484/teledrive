@@ -34,10 +34,8 @@ import type { WebdavBridgeRequest, WebdavBridgeResponse } from "./types";
 const MAX_PROPFIND_ENTRIES = 10_000;
 const MAX_COPY_FILES = 500;
 export const DEFAULT_METADATA_COMMIT_DEADLINE_MS = 12_000;
-/** Telegram's channel edit budget is tight; one metadata edit per 2 s. */
-export const DEFAULT_METADATA_EDIT_INTERVAL_MS = 2_000;
-/** Small allowance for the first edit of a quiet period. */
-export const DEFAULT_METADATA_EDIT_BURST = 1;
+/** Cap for PUT Retry-After; a real flood value is too long for a mount client. */
+export const MAX_PUT_RETRY_AFTER_SECONDS = 10;
 const COMMIT_DEADLINE = Symbol("webdav-commit-deadline");
 
 export interface WebdavUploadResult {
@@ -107,12 +105,10 @@ export interface WebdavHandlerDeps {
   metadataCommitDeadlineMs: number;
   /** Abort a PUT instead of waiting out a Telegram FLOOD_WAIT above this. */
   floodWaitAbortSeconds: number;
-  /** Coalescing window for concurrent metadata mutations (150-500 ms). */
-  catalogCoalesceMs: number;
-  /** Minimum gap between metadata index edits (>0). */
-  metadataEditIntervalMs: number;
-  /** Tokens available after a quiet period. */
-  metadataEditBurst: number;
+  /** Durable, coalesced, rate-limited background save for metadata. */
+  saveIndexBackground(channelId: string, files: TeleFile[]): Promise<void>;
+  /** Surface a permanent background commit failure to the user. */
+  warn(message: string): void;
   /**
    * Verifies the live index revision before a PUT transfers bytes and
    * refreshes the catalog when another device committed first. Throws
@@ -298,7 +294,12 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
       throw new WebdavError(
         503,
         "Catalog is temporarily rate-limited; retry shortly",
-        { retryAfterSeconds: Math.max(1, Math.ceil(backoffMs / 1000)) }
+        {
+          retryAfterSeconds: Math.min(
+            MAX_PUT_RETRY_AFTER_SECONDS,
+            Math.max(1, Math.ceil(backoffMs / 1000))
+          ),
+        }
       );
     }
   };
@@ -335,16 +336,17 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
    */
   const applyCatalogMutation = async (
     channelId: string,
-    build: (current: TeleFile[]) => TeleFile[]
+    build: (current: TeleFile[]) => TeleFile[],
+    requireWritable = true,
   ): Promise<{
     previous: TeleFile[];
     applied: TeleFile[];
     next: TeleFile[];
   }> => {
     return withCatalogLock(async () => {
-      // Fail before mutating the store when Telegram has already asked us to
-      // wait; a 503+Retry-After is better than a 60 s hang.
-      assertIndexWritable(channelId);
+      // PUT fails before mutating when the queue is cooling down. Metadata is
+      // local-ack and queued for a background commit even during a cooldown.
+      if (requireWritable) assertIndexWritable(channelId);
       const previous = deps.getFiles();
       const next = build(previous);
       deps.setFiles(next);
@@ -362,17 +364,6 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
   ): Promise<TeleFile[]> => {
     const { previous, applied, next } = await applyCatalogMutation(channelId, build);
     const deadlineAt = Date.now() + deps.metadataCommitDeadlineMs;
-    const limiterWaitMs = await takeEditTokenWithin(deadlineAt);
-    if (limiterWaitMs > 0) {
-      // No durable commit was enqueued; roll this mutation back so the caller's
-      // retry is a clean upload and no catalog entry references deleted bytes.
-      if (deps.getFiles() === applied) deps.setFiles(previous);
-      throw new WebdavError(
-        503,
-        "Catalog edit rate-limited; retry shortly",
-        { retryAfterSeconds: Math.max(1, Math.ceil(limiterWaitMs / 1000)) }
-      );
-    }
     const commitPromise = deps.saveIndex(channelId, next);
     let timer: ReturnType<typeof setTimeout> | undefined;
     const deadline = new Promise<typeof COMMIT_DEADLINE>((resolve) => {
@@ -414,238 +405,24 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
     return next;
   };
 
-  interface CatalogBatch {
-    channelId: string;
-    /** Store state before the first mutation in this batch (for rollback). */
-    baseState: TeleFile[];
-    /** Store reference after the latest mutation in this batch. */
-    applied: TeleFile[];
-    files: TeleFile[];
-    deadlineAt: number;
-    waiters: Array<{ resolve: () => void; reject: (err: unknown) => void }>;
-    outcome: Promise<boolean>;
-    resolveOutcome: (committed: boolean) => void;
-  }
-
-  let pendingBatch: CatalogBatch | null = null;
-  let batchTimer: ReturnType<typeof setTimeout> | null = null;
-  let batchInFlight = false;
-  const editIntervalMs = deps.metadataEditIntervalMs;
-  const editBurst = Math.max(1, deps.metadataEditBurst);
-  let editTokens = editBurst;
-  let editTokensAt = Date.now();
-
-  const refillEditTokens = (now = Date.now()) => {
-    if (editIntervalMs <= 0) {
-      editTokens = editBurst;
-      editTokensAt = now;
-      return;
-    }
-    const elapsed = Math.max(0, now - editTokensAt);
-    editTokens = Math.min(editBurst, editTokens + elapsed / editIntervalMs);
-    editTokensAt = now;
-  };
-
-  const nextEditSlotMs = (now = Date.now()): number => {
-    if (editIntervalMs <= 0) return 0;
-    refillEditTokens(now);
-    return editTokens >= 1 ? 0 : Math.ceil((1 - editTokens) * editIntervalMs);
-  };
-
   /**
-   * Waits for a metadata edit token until `deadlineAt`. Returns 0 on success
-   * (token consumed) or the remaining limiter wait when the deadline wins.
+   * Metadata path: apply atomically in memory, then enqueue ONE durable,
+   * rate-limited background commit. The HTTP response is local-ack; cleanup
+   * (deleted messages, tombstones, COPY clones) follows the eventual commit.
    */
-  const takeEditTokenWithin = async (deadlineAt: number): Promise<number> => {
-    for (;;) {
-      const slotWait = nextEditSlotMs();
-      if (slotWait === 0) {
-        if (editIntervalMs > 0) {
-          const now = Date.now();
-          refillEditTokens(now);
-          editTokens = Math.max(0, editTokens - 1);
-          editTokensAt = now;
-        }
-        return 0;
-      }
-      const remaining = deadlineAt - Date.now();
-      if (slotWait > remaining) return slotWait;
-      await new Promise<void>((resolve) => setTimeout(resolve, slotWait));
-    }
-  };
-
-  const flushCatalogBatch = async (): Promise<void> => {
-    batchTimer = null;
-    const batch = pendingBatch;
-    if (!batch) return;
-
-    const now = Date.now();
-    const slotWaitMs = nextEditSlotMs(now);
-    const remainingMs = Math.max(0, batch.deadlineAt - now);
-    if (slotWaitMs > 0) {
-      if (slotWaitMs > remainingMs) {
-        // Preserve the mutations for a later durable commit, but tell these
-        // clients exactly how long the edit rate limiter needs.
-        pendingBatch = { ...batch, waiters: [] };
-        batch.waiters.forEach((waiter) =>
-          waiter.reject(
-            new WebdavError(
-              503,
-              "Catalog edit rate-limited; retry shortly",
-              {
-                retryAfterSeconds: Math.max(1, Math.ceil(slotWaitMs / 1000)),
-                commitOutcome: batch.outcome,
-              }
-            )
-          )
-        );
-        if (!batchTimer) {
-          batchTimer = setTimeout(
-            flushCatalogBatch,
-            Math.max(0, slotWaitMs)
-          );
-        }
-        return;
-      }
-      pendingBatch = batch;
-      if (!batchTimer) {
-        batchTimer = setTimeout(flushCatalogBatch, Math.max(1, slotWaitMs));
-      }
-      return;
-    }
-
-    pendingBatch = null;
-    batchInFlight = true;
-    if (editIntervalMs > 0) {
-      refillEditTokens(now);
-      editTokens = Math.max(0, editTokens - 1);
-      editTokensAt = now;
-    }
-
-    const commitPromise = deps.saveIndex(batch.channelId, batch.files);
-    const outcome = commitPromise.then(
-      () => true,
-      () => false
-    );
-    outcome.catch(() => {});
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    const deadline = new Promise<typeof COMMIT_DEADLINE>((resolve) => {
-      timer = setTimeout(
-        () => resolve(COMMIT_DEADLINE),
-        Math.max(1, batch.deadlineAt - Date.now())
-      );
-    });
-
-    let timedOut = false;
-    try {
-      const result = await Promise.race([
-        commitPromise.then(() => "committed" as const),
-        deadline,
-      ]);
-      if (result === COMMIT_DEADLINE) {
-        timedOut = true;
-        commitPromise.then(
-          () => batch.resolveOutcome(true),
-          () => batch.resolveOutcome(false)
-        );
-        commitPromise.catch(() => {});
-      }
-    } catch (err) {
-      const conflict = deps.describeConflict(err);
-      const retryable = new WebdavError(
-        503,
-        "Catalog commit failed; retry shortly",
-        { retryAfterSeconds: 3 }
-      );
-      batch.resolveOutcome(false);
-      for (const waiter of batch.waiters) {
-        waiter.reject(conflict ? err : retryable);
-      }
-      // A newer batch may already contain later mutations; only roll back when
-      // this batch is still the newest applied state.
-      if (
-        !deps.isDeferredError(err) &&
-        !conflict &&
-        !pendingBatch &&
-        deps.getFiles() === batch.applied
-      ) {
-        deps.setFiles(batch.baseState);
-      }
-      return;
-    } finally {
-      if (timer) clearTimeout(timer);
-      batchInFlight = false;
-      if (pendingBatch && !batchTimer) {
-        batchTimer = setTimeout(
-          flushCatalogBatch,
-          Math.max(0, deps.catalogCoalesceMs)
-        );
-      }
-    }
-
-    if (timedOut) {
-      const retryAfter = Math.max(
-        3,
-        Math.ceil(Math.max(0, deps.getIndexBackoffMs(batch.channelId)) / 1000),
-        Math.ceil(nextEditSlotMs() / 1000)
-      );
-      for (const waiter of batch.waiters) {
-        waiter.reject(
-          new WebdavError(
-            503,
-            "Catalog commit is still pending; retry shortly",
-            { retryAfterSeconds: retryAfter, commitOutcome: outcome }
-          )
-        );
-      }
-      return;
-    }
-    batch.resolveOutcome(true);
-    for (const waiter of batch.waiters) waiter.resolve();
-  };
-
-  /**
-   * Metadata path: apply under the catalog lock, then join a short coalescing
-   * window so concurrent MKCOL/DELETE/MOVE/COPY requests share ONE Telegram
-   * edit. Every caller still waits for that shared commit (or a retryable
-   * error), so success is never fire-and-forget.
-   */
-  const commitFilesCoalesced = async (
+  const commitMetadataBackground = async (
     channelId: string,
     build: (current: TeleFile[]) => TeleFile[]
-  ): Promise<TeleFile[]> => {
-    const { previous, applied, next } = await applyCatalogMutation(channelId, build);
-    return new Promise<TeleFile[]>((resolve, reject) => {
-      if (!pendingBatch) {
-        let resolveOutcome: (committed: boolean) => void = () => {};
-        const outcome = new Promise<boolean>((resolve) => {
-          resolveOutcome = resolve;
-        });
-        pendingBatch = {
-          channelId,
-          baseState: previous,
-          applied,
-          files: next,
-          deadlineAt: Date.now() + deps.metadataCommitDeadlineMs,
-          waiters: [],
-          outcome,
-          resolveOutcome,
-        };
-      } else {
-        pendingBatch.files = next;
-        pendingBatch.applied = applied;
-      }
-      pendingBatch.waiters.push({
-        resolve: () => resolve(next),
-        reject,
-      });
-      if (!batchTimer && !batchInFlight) {
-        batchTimer = setTimeout(
-          flushCatalogBatch,
-          Math.max(0, deps.catalogCoalesceMs)
-        );
-      }
+  ): Promise<{ files: TeleFile[]; commit: Promise<void> }> => {
+    const { next } = await applyCatalogMutation(channelId, build, false);
+    const commit = deps.saveIndexBackground(channelId, next);
+    commit.catch((err) => {
+      deps.warn(
+        "TeleDrive could not save a background drive change; it will keep retrying."
+      );
+      deps.log(`background metadata commit failed: ${String(err)}`);
     });
+    return { files: next, commit };
   };
 
   const handlePropfind = async (request: WebdavBridgeRequest): Promise<WebdavBridgeResponse> => {
@@ -907,7 +684,6 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
 
   const handleMkcol = async (request: WebdavBridgeRequest): Promise<WebdavBridgeResponse> => {
     const channelId = await requireChannel();
-    assertIndexWritable(channelId);
     const target = normalizeVirtualPath(request.path);
     if (target === "/") throw new WebdavError(405, "Drive root already exists");
     const parent = dirname(target);
@@ -917,7 +693,7 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
     }
     assertWriteAllowed(target, request);
 
-    await commitFilesCoalesced(channelId, (current) => {
+    await commitMetadataBackground(channelId, (current) => {
       if (nodeForPath(current, target)) {
         throw new WebdavError(405, "Resource already exists");
       }
@@ -941,7 +717,6 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
 
   const handleDelete = async (request: WebdavBridgeRequest): Promise<WebdavBridgeResponse> => {
     const channelId = await requireChannel();
-    assertIndexWritable(channelId);
     const target = normalizeVirtualPath(request.path);
     if (target === "/") throw new WebdavError(403, "Cannot delete the drive root");
     const files = deps.getFiles();
@@ -955,33 +730,26 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
     deps.recordDeletedMessages(channelId, ids);
 
     const removedIds = new Set(targets.map((entry) => entry.id));
-    try {
-      await commitFilesCoalesced(channelId, (current) =>
-        current.filter((entry) => !removedIds.has(entry.id))
-      );
-    } catch (err) {
-      const deferred = scheduleCommitCleanup(
-        err,
-        () =>
-          ids.length > 0
-            ? deps.deleteMessages(channelId, ids)
-            : Promise.resolve(),
-        async () => deps.clearDeletedMessages(channelId, ids)
-      );
-      if (!deferred) deps.clearDeletedMessages(channelId, ids);
-      throw err;
-    }
-    if (ids.length > 0) {
-      await deps.deleteMessages(channelId, ids).catch((err) => {
-        deps.log(`telegram delete failed for ${ids.length} message(s): ${String(err)}`);
-      });
-    }
+    const { commit } = await commitMetadataBackground(channelId, (current) =>
+      current.filter((entry) => !removedIds.has(entry.id))
+    );
+    void commit.then(
+      () => {
+        if (ids.length === 0) return;
+        return deps.deleteMessages(channelId, ids).catch((err) => {
+          deps.log(`telegram delete failed for ${ids.length} message(s): ${String(err)}`);
+        });
+      },
+      () => {
+        // Keep tombstones until a retry succeeds; the queue still owns the
+        // local deletion and a later commit must not resurrect the files.
+      }
+    );
     return { status: 204 };
   };
 
   const handleMove = async (request: WebdavBridgeRequest): Promise<WebdavBridgeResponse> => {
     const channelId = await requireChannel();
-    assertIndexWritable(channelId);
     if (!request.destination) throw new WebdavError(400, "Missing Destination header");
     const source = normalizeVirtualPath(request.path);
     const destination = normalizeVirtualPath(request.destination);
@@ -1005,7 +773,7 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
     let replaced: TeleFile[] = [];
     {
       try {
-        await commitFilesCoalesced(channelId, (current) => {
+        const { commit } = await commitMetadataBackground(channelId, (current) => {
         const sourceNode = nodeForPath(current, source);
         if (!sourceNode) throw new WebdavError(404, "Source not found");
         const currentNode = nodeForPath(current, destination);
@@ -1036,27 +804,24 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
 
           return deps.reconstructMissingFolders(moved, channelId).healedFiles;
         });
-      } catch (err) {
-        // A timed-out commit may still land; delete displaced messages only
-        // after it succeeds. Other failures leave the old catalog intact.
-        scheduleCommitCleanup(
-          err,
-          () => deps.deleteMessages(channelId, messageIds(replaced)),
-          async () => {}
+        void commit.then(
+          () => {
+            if (replaced.length === 0) return;
+            return deps.deleteMessages(channelId, messageIds(replaced)).catch(() => {});
+          },
+          () => {}
         );
+      } catch (err) {
+        // Validation failed before enqueue; no messages were touched.
         throw err;
       }
     }
 
-    if (replaced.length > 0) {
-      await deps.deleteMessages(channelId, messageIds(replaced)).catch(() => {});
-    }
     return { status: existed ? 204 : 201 };
   };
 
   const handleCopy = async (request: WebdavBridgeRequest): Promise<WebdavBridgeResponse> => {
     const channelId = await requireChannel();
-    assertIndexWritable(channelId);
     if (!request.destination) throw new WebdavError(400, "Missing Destination header");
     const source = normalizeVirtualPath(request.path);
     const destination = normalizeVirtualPath(request.destination);
@@ -1120,8 +885,9 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
 
     let existed = false;
     {
+      let commitPromise: Promise<void> | null = null;
       try {
-        await commitFilesCoalesced(channelId, (current) => {
+        const applied = await commitMetadataBackground(channelId, (current) => {
           const currentNode = nodeForPath(current, destination);
           existed = Boolean(currentNode);
           if (currentNode && !overwrite) {
@@ -1152,26 +918,24 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
             });
           }
 
-          return deps.reconstructMissingFolders(
+                  return deps.reconstructMissingFolders(
             [...base, ...folders, ...created],
             channelId
           ).healedFiles;
         });
+        commitPromise = applied.commit;
       } catch (err) {
         const partial = created.flatMap((entry) => messageIds([entry]));
-        const deferred = scheduleCommitCleanup(
-          err,
-          async () => {},
-          () =>
-            partial.length > 0
-              ? deps.deleteMessages(channelId, partial)
-              : Promise.resolve()
-        );
-        if (!deferred && partial.length > 0) {
+        if (partial.length > 0) {
           await deps.deleteMessages(channelId, partial).catch(() => {});
         }
         throw err;
       }
+      const partial = created.flatMap((entry) => messageIds([entry]));
+      void commitPromise.catch(() => {
+        if (partial.length === 0) return;
+        return deps.deleteMessages(channelId, partial).catch(() => {});
+      });
     }
 
     return { status: existed ? 204 : 201 };

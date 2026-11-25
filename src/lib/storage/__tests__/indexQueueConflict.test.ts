@@ -8,6 +8,7 @@ import {
   type ParsedIndexChunk,
 } from "../indexFormat";
 import {
+  DEFAULT_METADATA_EDIT_INTERVAL_MS,
   enqueueSave,
   ensureFreshIndexForWrite,
   getIndexBackoffMs,
@@ -17,6 +18,7 @@ import {
   setCommitImplForTests,
 } from "../indexQueue";
 import { discoverIndex } from "../metadataStore";
+import { readPendingMarker } from "../pendingIndex";
 
 const h = vi.hoisted(() => ({
   client: null as any,
@@ -307,6 +309,89 @@ describe("commit-time index revision guard", () => {
 
 
 
+
+
+  it("writes the pending marker before the background commit, surviving a restart", async () => {
+    const store = new Map<string, string>();
+    vi.stubGlobal("localStorage", {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => store.set(key, value),
+      removeItem: (key: string) => store.delete(key),
+      clear: () => store.clear(),
+    });
+    useFileStore.setState({ files: [] });
+    const pending = enqueueSave(
+      CHANNEL,
+      [makeFile("survives-restart")],
+      { rateLimited: true }
+    );
+    pending.catch(() => {});
+    expect(readPendingMarker(CHANNEL)).not.toBeNull();
+
+    // Simulate a crash/restart: queue state is lost, the marker is not.
+    resetQueuesForTests();
+    expect(readPendingMarker(CHANNEL)).not.toBeNull();
+    vi.unstubAllGlobals();
+  });
+  it("paces 15 rate-limited metadata saves over 10 s", async () => {
+    vi.useFakeTimers();
+    const shared = [makeFile("base")];
+    seed(shared);
+    useFileStore.setState({ files: shared });
+    let commits = 0;
+    setCommitImplForTests(CHANNEL, async () => {
+      commits++;
+    });
+
+    const added = Array.from({ length: 15 }, (_, index) => makeFile(`paced-${index}`));
+    const promises: Array<Promise<void>> = [];
+    for (let index = 0; index < added.length; index++) {
+      promises.push(
+        enqueueSave(
+          CHANNEL,
+          [...shared, ...added.slice(0, index + 1)],
+          { rateLimited: true }
+        )
+      );
+      await vi.advanceTimersByTimeAsync(500);
+    }
+    await vi.advanceTimersByTimeAsync(30_000);
+    await Promise.all(promises);
+
+    expect(commits).toBeLessThanOrEqual(3);
+    expect(DEFAULT_METADATA_EDIT_INTERVAL_MS).toBe(5_000);
+    vi.useRealTimers();
+  });
+
+  it("widens the metadata edit interval after a FLOOD_WAIT", async () => {
+    vi.useFakeTimers();
+    const shared = [makeFile("base")];
+    seed(shared);
+    useFileStore.setState({ files: shared });
+    let attempts = 0;
+    setCommitImplForTests(CHANNEL, async () => {
+      attempts++;
+      if (attempts === 1) {
+        throw Object.assign(new Error("A wait of 20 seconds is required"), {
+          seconds: 20,
+        });
+      }
+    });
+
+    const pending = enqueueSave(
+      CHANNEL,
+      [...shared, makeFile("adaptive")],
+      { rateLimited: true }
+    );
+    await vi.advanceTimersByTimeAsync(0);
+    expect(getIndexQueue(CHANNEL).getMetadataEditIntervalMs()).toBeGreaterThanOrEqual(
+      20_000
+    );
+    await vi.advanceTimersByTimeAsync(25_000);
+    await pending;
+    expect(attempts).toBe(2);
+    vi.useRealTimers();
+  });
   it("clears the WebDAV backoff after the Telegram flood deadline", async () => {
     vi.useFakeTimers();
     const shared = [makeFile("base")];

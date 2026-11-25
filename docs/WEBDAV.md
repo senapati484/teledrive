@@ -170,23 +170,22 @@ sudo mount -t davfs http://127.0.0.1:8747/ /mnt/teledrive
   A Telegram `FLOOD_WAIT` longer than 10 s aborts the PUT with
   `503 + Retry-After: <flood seconds>` instead of holding the request for the
   full cooldown; shorter waits are still absorbed by the uploader.
-- **Bounded metadata.** Mutations fail fast with `503 + Retry-After` while the
-  index queue is in a Telegram backoff instead of waiting for the 60 s stuck
-  retry. The backoff deadline is honoured, then the queue retries and requests
-  succeed again (a `FLOOD_WAIT` may legitimately last minutes).
-- **Coalesced catalog writes.** MKCOL/DELETE/MOVE/COPY mutations arriving
-  within a **250 ms window** are applied in order, merged into one catalog
-  state, and persisted with a single `EditMessage`; every caller waits for that
-  shared commit, so success is never reported before persistence.
-- **Edit rate limit.** WebDAV index writes take a token bucket of **1 edit per
-  2 s with a burst of 1** (`DEFAULT_METADATA_EDIT_INTERVAL_MS` /
-  `DEFAULT_METADATA_EDIT_BURST`). Mutations arriving while no token is available
-  stay queued and coalesce into the next edit. A batch/PUT that cannot get a
-  token before its **12 s** deadline returns `503 + Retry-After` with the actual
-  remaining limiter wait, instead of letting RaiDrive surface `EACCES` after
-  ~20 s. PUT keeps its own commit so overwrite/conflict failures remain
-  visible. Metadata cleanup (deleted messages, tombstones, cloned COPY
-  messages) follows the eventual queue outcome.
+- **Metadata local-ack + background commit.** MKCOL/DELETE/MOVE/COPY apply
+  atomically to the local catalog, write the pending marker/cache, and return
+  `2xx` immediately. One coalesced, **durable** background commit is queued;
+  it retries until success and keeps the local state on failure (with an app
+  warning), so a Telegram cooldown never surfaces as `EACCES` or a slow
+  response. Deleted messages, tombstones and COPY clones are reconciled when
+  that background commit eventually succeeds.
+- **Conservative, adaptive edit pacing.** Rate-limited metadata saves use a
+  token bucket starting at **1 edit per 5 s with a burst of 1**
+  (`DEFAULT_METADATA_EDIT_INTERVAL_MS`). A `FLOOD_WAIT` raises the interval up
+  to 30 s and persists the cooldown; mutations coalesce while waiting instead
+  of emitting one edit each.
+- **PUT remains durable.** WebDAV `PUT` waits for its bounded catalog commit
+  (2 concurrent uploads). While the index is cooling down it returns
+  `503 + Retry-After` capped at 10 s (never Telegram's 261–300 s flood value),
+  so mount clients retry quickly without orphaned uploads.
 - **Methods.** `OPTIONS`, `PROPFIND` (Depth 0/1/infinity), `GET`, `HEAD`
   (with `Range` → `206`/`416`), `PUT`, `MKCOL`, `DELETE` (recursive),
   `MOVE`, `COPY`, `LOCK`, `UNLOCK`; `PROPPATCH` responds `207` with a `403`
