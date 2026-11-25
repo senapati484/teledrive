@@ -9,6 +9,7 @@ import {
 } from "../indexFormat";
 import {
   enqueueSave,
+  ensureFreshIndexForWrite,
   getIndexQueue,
   IndexConflictError,
   resetQueuesForTests,
@@ -259,6 +260,25 @@ describe("commit-time index revision guard", () => {
     expect(fake.messages.get(ids[0])).toBe(aText);
     expect(useFileStore.getState().indexQueueState).toBe("failed");
     expect(useFileStore.getState().indexQueueError).toContain("Another device");
+  });
+
+  it("refreshes the catalog and known revision before a WebDAV write", async () => {
+    const shared = [makeFile("base")];
+    const { ids } = seed(shared);
+    useFileStore.setState({ files: shared });
+
+    const deviceA = [...shared, makeFile("pushed-by-a")];
+    const aText = chunkText(deviceA, 0, 1, 2000);
+    fake.messages.set(ids[0], aText);
+    h.discovery = ready(deviceA, ids, [aText]);
+
+    await expect(ensureFreshIndexForWrite(CHANNEL)).resolves.toBe("refreshed");
+    expect(useFileStore.getState().files.map((file) => file.id)).toContain(
+      deviceA[deviceA.length - 1].id,
+    );
+    // A second probe is current, so the PUT does not re-discover.
+    await expect(ensureFreshIndexForWrite(CHANNEL)).resolves.toBe("current");
+    expect(vi.mocked(discoverIndex)).toHaveBeenCalledTimes(1);
   });
 
   it("fails closed when the revision check cannot read the channel", async () => {

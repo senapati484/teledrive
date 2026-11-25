@@ -1213,14 +1213,13 @@ class ChannelQueue {
     );
     const store = useFileStore.getState();
     const before = store.files;
-    await store.setRemoteSnapshot(authoritative, before);
-    if (
-      useFileStore.getState().files === before &&
-      !catalogsEqual(authoritative, before)
-    ) {
-      // Another optimistic action won the race; never let the WebDAV caller
-      // build its mutation on the pre-refresh list.
-      throw new IndexConflictError(INDEX_CONFLICT_MESSAGE, false);
+    if (!catalogsEqual(authoritative, before)) {
+      if (store.files !== before) {
+        // Another optimistic action won the race; never let the WebDAV caller
+        // build its mutation on the pre-refresh list.
+        throw new IndexConflictError(INDEX_CONFLICT_MESSAGE, false);
+      }
+      store.setFiles(authoritative);
     }
     await this.log("INDEX_CONFLICT_PRECHECK_REFRESHED");
     return "refreshed";
