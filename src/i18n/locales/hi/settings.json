@@ -458,54 +458,24 @@
   },
   "network": {
     "title": "नेटवर्क और प्रॉक्सी",
-    "description": "MTProxy, SOCKS5 या HTTP प्रॉक्सी के ज़रिए Telegram से कनेक्ट करें। बिना रीस्टार्ट के तुरंत लागू होता है।",
+    "description": "प्रॉक्सी लिंक से जुड़ें। TeleDrive बाकी काम खुद करता है।",
     "authButton": "प्रॉक्सी",
-    "loading": "प्रॉक्सी कॉन्फ़िगरेशन लोड हो रहा है...",
-    "callout": "<strong>डायरेक्ट बनाम प्रॉक्सी:</strong> TeleDrive प्रॉक्सी सीक्रेट्स को निजी फ़ाइल अनुमतियों के साथ सहेजता है और मोड बदलने पर आपका Telegram सत्र सुरक्षित रखता है।",
-    "enableProxy": {
-      "title": "कस्टम प्रॉक्सी उपयोग करें",
-      "description": "Telegram साइन-इन, फ़ाइल ट्रांसफ़र और सिंक ट्रैफ़िक को अपने प्रॉक्सी के माध्यम से भेजें।"
-    },
+    "loading": "लोड हो रहा है...",
     "importLink": {
-      "label": "लिंक से त्वरित आयात",
-      "placeholder": "tg://proxy?..., t.me/proxy?..., socks5://... या http://... पेस्ट करें",
-      "apply": "आयात करें",
+      "placeholder": "प्रॉक्सी लिंक पेस्ट करें: tg://proxy?..., socks5://..., http://...",
+      "apply": "कनेक्ट करें",
       "paste": "पेस्ट करें"
     },
-    "protocol": {
-      "label": "प्रॉक्सी प्रोटोकॉल",
-      "mtproxy": "MTProxy",
-      "socks5": "SOCKS5",
-      "http": "HTTP"
+    "status": {
+      "detecting": "कनेक्ट हो रहा है…",
+      "connected": "{{protocol}} प्रॉक्सी सक्रिय",
+      "direct": "सीधा कनेक्शन"
     },
-    "fields": {
-      "host": "सर्वर होस्ट या IP",
-      "port": "पोर्ट",
-      "secret": "MTProxy सीक्रेट",
-      "secretPlaceholder": "Hex (32 अक्षर, dd..., या ee... Fake-TLS) या base64",
-      "showSecret": "सीक्रेट दिखाएं",
-      "hideSecret": "सीक्रेट छिपाएं",
-      "username": "यूज़रनेम (वैकल्पिक)",
-      "password": "पासवर्ड (वैकल्पिक)",
-      "showPassword": "पासवर्ड दिखाएं",
-      "hidePassword": "पासवर्ड छिपाएं"
-    },
-    "secretModes": {
-      "fakeTls": "Fake-TLS ({{domain}})",
-      "padded": "रैंडम पैडिंग (dd)",
-      "standard": "मानक (16-बाइट)"
-    },
-    "actions": {
-      "test": "कनेक्शन जांचें",
-      "testing": "जांच हो रही है...",
-      "save": "सहेजें और लागू करें",
-      "saving": "लागू हो रहा है..."
-    },
+    "clearProxy": "प्रॉक्सी हटाएं और सीधे कनेक्ट करें",
     "toasts": {
-      "linkImported": "लिंक से प्रॉक्सी सेटिंग्स आयात हो गईं।",
-      "savedConnected": "प्रॉक्सी सहेजा गया और Telegram फिर से कनेक्ट हुआ।",
-      "directRestored": "प्रॉक्सी अक्षम। डायरेक्ट कनेक्शन बहाल किया गया।",
-      "savedReconnectFailed": "प्रॉक्सी सहेजा गया, लेकिन कनेक्शन विफल रहा: {{error}}"
+      "connected": "{{protocol}} के माध्यम से कनेक्ट हुए",
+      "directFallback": "प्रॉक्सी उपलब्ध नहीं। सीधा कनेक्शन उपयोग हो रहा है।",
+      "directRestored": "सीधा कनेक्शन उपयोग हो रहा है।"
     }
   }
 }

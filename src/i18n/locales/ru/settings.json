@@ -413,54 +413,24 @@
   },
   "network": {
     "title": "Сеть и прокси",
-    "description": "Подключайтесь к Telegram через MTProxy, SOCKS5 или HTTP-прокси. Изменения применяются сразу без перезапуска.",
+    "description": "Подключитесь через ссылку на прокси. TeleDrive сделает всё остальное автоматически.",
     "authButton": "Прокси",
-    "loading": "Загрузка настроек прокси...",
-    "callout": "<strong>Прямое подключение и прокси:</strong> TeleDrive сохраняет ключи прокси локально с приватными правами доступа и автоматически сохраняет сессию Telegram при переключении режима.",
-    "enableProxy": {
-      "title": "Использовать прокси",
-      "description": "Направлять авторизацию, передачу файлов и фоновую синхронизацию Telegram через прокси."
-    },
+    "loading": "Загрузка...",
     "importLink": {
-      "label": "Быстрый импорт по ссылке",
-      "placeholder": "Вставьте tg://proxy?..., t.me/proxy?..., socks5://... или http://...",
-      "apply": "Импорт",
+      "placeholder": "Вставьте ссылку на прокси: tg://proxy?..., socks5://..., http://...",
+      "apply": "Подключить",
       "paste": "Вставить"
     },
-    "protocol": {
-      "label": "Протокол прокси",
-      "mtproxy": "MTProxy",
-      "socks5": "SOCKS5",
-      "http": "HTTP"
+    "status": {
+      "detecting": "Подключение…",
+      "connected": "Прокси {{protocol}} активен",
+      "direct": "Прямое соединение"
     },
-    "fields": {
-      "host": "Сервер или IP-адрес",
-      "port": "Порт",
-      "secret": "Секрет MTProxy",
-      "secretPlaceholder": "Hex (32 символа, dd..., или ee... Fake-TLS) или base64",
-      "showSecret": "Показать секрет",
-      "hideSecret": "Скрыть секрет",
-      "username": "Логин (необязательно)",
-      "password": "Пароль (необязательно)",
-      "showPassword": "Показать пароль",
-      "hidePassword": "Скрыть пароль"
-    },
-    "secretModes": {
-      "fakeTls": "Fake-TLS ({{domain}})",
-      "padded": "Случайный паддинг (dd)",
-      "standard": "Обычный (16 байт)"
-    },
-    "actions": {
-      "test": "Проверить соединение",
-      "testing": "Проверка...",
-      "save": "Сохранить и применить",
-      "saving": "Применение..."
-    },
+    "clearProxy": "Удалить прокси и использовать прямое соединение",
     "toasts": {
-      "linkImported": "Настройки прокси импортированы из ссылки.",
-      "savedConnected": "Прокси сохранён, Telegram переподключён.",
-      "directRestored": "Прокси отключён. Восстановлено прямое подключение.",
-      "savedReconnectFailed": "Прокси сохранён, но подключиться не удалось: {{error}}"
+      "connected": "Подключено через {{protocol}}",
+      "directFallback": "Прокси недоступен. Используется прямое соединение.",
+      "directRestored": "Используется прямое соединение."
     }
   }
 }

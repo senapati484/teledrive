@@ -457,55 +457,25 @@
     }
   },
   "network": {
-    "title": "Jaringan & Proksi",
-    "description": "Hubungkan ke Telegram melalui proksi MTProxy, SOCKS5, atau HTTP. Langsung berlaku tanpa mulai ulang.",
-    "authButton": "Proksi",
-    "loading": "Memuat konfigurasi proksi...",
-    "callout": "<strong>Langsung vs Proksi:</strong> TeleDrive menyimpan rahasia proksi secara lokal dengan izin file privat dan menjaga sesi Telegram Anda tetap utuh saat berpindah mode.",
-    "enableProxy": {
-      "title": "Gunakan proksi khusus",
-      "description": "Arahkan semua proses masuk, transfer file, dan sinkronisasi Telegram melalui proksi Anda."
-    },
+    "title": "Jaringan & Proxy",
+    "description": "Hubungkan melalui tautan proxy. TeleDrive menangani sisanya secara otomatis.",
+    "authButton": "Proxy",
+    "loading": "Memuat...",
     "importLink": {
-      "label": "Impor cepat dari tautan",
-      "placeholder": "Tempel tg://proxy?..., t.me/proxy?..., socks5://... atau http://...",
-      "apply": "Impor",
+      "placeholder": "Tempel tautan proxy: tg://proxy?..., socks5://..., http://...",
+      "apply": "Hubungkan",
       "paste": "Tempel"
     },
-    "protocol": {
-      "label": "Protokol proksi",
-      "mtproxy": "MTProxy",
-      "socks5": "SOCKS5",
-      "http": "HTTP"
+    "status": {
+      "detecting": "Menghubungkan…",
+      "connected": "Proxy {{protocol}} aktif",
+      "direct": "Koneksi langsung"
     },
-    "fields": {
-      "host": "Host server atau IP",
-      "port": "Port",
-      "secret": "Rahasia MTProxy",
-      "secretPlaceholder": "Hex (32 karakter, dd..., atau ee... Fake-TLS) atau base64",
-      "showSecret": "Tampilkan rahasia",
-      "hideSecret": "Sembunyikan rahasia",
-      "username": "Nama pengguna (opsional)",
-      "password": "Kata sandi (opsional)",
-      "showPassword": "Tampilkan kata sandi",
-      "hidePassword": "Sembunyikan kata sandi"
-    },
-    "secretModes": {
-      "fakeTls": "Fake-TLS ({{domain}})",
-      "padded": "Padding Acak (dd)",
-      "standard": "Standar (16-byte)"
-    },
-    "actions": {
-      "test": "Uji koneksi",
-      "testing": "Menguji...",
-      "save": "Simpan & Terapkan",
-      "saving": "Menerapkan..."
-    },
+    "clearProxy": "Hapus proxy dan gunakan koneksi langsung",
     "toasts": {
-      "linkImported": "Pengaturan proksi diimpor dari tautan.",
-      "savedConnected": "Proksi disimpan dan Telegram terhubung kembali.",
-      "directRestored": "Proksi dinonaktifkan. Kembali ke koneksi langsung.",
-      "savedReconnectFailed": "Proksi disimpan, tetapi koneksi gagal: {{error}}"
+      "connected": "Terhubung melalui {{protocol}}",
+      "directFallback": "Proxy tidak dapat dijangkau. Menggunakan koneksi langsung.",
+      "directRestored": "Menggunakan koneksi langsung."
     }
   }
 }

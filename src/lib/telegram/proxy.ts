@@ -394,3 +394,50 @@ export async function testProxyConnection(settings: ProxySettings): Promise<Test
   }
   return invoke<TestProxyResult>("test_proxy_connection", { settings });
 }
+
+/**
+ * Clears proxy settings and returns to direct connection.
+ * Silently saves `enabled: false` via Rust backend.
+ */
+export async function clearProxy(): Promise<ProxySettings> {
+  const cleared: ProxySettings = { ...DEFAULT_PROXY_SETTINGS, enabled: false };
+  if (!isProxySupported()) {
+    return cleared;
+  }
+  const saved = await invoke<ProxySettings>("save_proxy_settings", { settings: cleared });
+  notifyProxyListeners(saved);
+  return saved;
+}
+
+/**
+ * Parses a proxy link, auto-tests it, and saves if reachable.
+ * Tries the protocol dictated by the link format; throws if unreachable.
+ * Never shows protocol selectors or technical fields to the user.
+ *
+ * @param rawLink - A tg://proxy, t.me/proxy, tg://socks, socks5://, or http:// URL
+ * @returns The saved ProxySettings if a working connection was found
+ * @throws If the link is invalid or no connection could be established
+ */
+export async function autoDetectAndSaveProxy(rawLink: string): Promise<ProxySettings> {
+  if (!isProxySupported()) {
+    throw new Error("Custom proxy settings are only supported in the native TeleDrive app.");
+  }
+
+  // Parse the link — throws on bad format
+  const parsed = parseProxyLink(rawLink);
+
+  const candidate: ProxySettings = {
+    ...DEFAULT_PROXY_SETTINGS,
+    ...parsed,
+    enabled: true,
+  };
+
+  // Test the parsed settings
+  const result = await testProxyConnection(candidate);
+  if (result.ok) {
+    const saved = await saveProxySettings(candidate);
+    return saved;
+  }
+
+  throw new Error(result.message || "Proxy is not reachable.");
+}

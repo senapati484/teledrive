@@ -413,54 +413,24 @@
   },
   "network": {
     "title": "Netzwerk & Proxy",
-    "description": "Verbinde dich über einen MTProxy-, SOCKS5- oder HTTP-Proxy mit Telegram. Wird sofort ohne Neustart angewendet.",
+    "description": "Verbinde über einen Proxy-Link. TeleDrive kümmert sich um den Rest.",
     "authButton": "Proxy",
-    "loading": "Proxy-Konfiguration wird geladen...",
-    "callout": "<strong>Direkt vs. Proxy:</strong> TeleDrive speichert Proxy-Geheimnisse lokal mit privaten Dateiberechtigungen und behält deine Telegram-Sitzung beim Wechsel automatisch bei.",
-    "enableProxy": {
-      "title": "Benutzerdefinierten Proxy verwenden",
-      "description": "Leite Anmeldungen, Dateiübertragungen und Synchronisierung vollständig über deinen Proxy."
-    },
+    "loading": "Lädt...",
     "importLink": {
-      "label": "Link schnell importieren",
-      "placeholder": "tg://proxy?..., t.me/proxy?..., socks5://... oder http://... einfügen",
-      "apply": "Importieren",
+      "placeholder": "Proxy-Link einfügen: tg://proxy?..., socks5://..., http://...",
+      "apply": "Verbinden",
       "paste": "Einfügen"
     },
-    "protocol": {
-      "label": "Proxy-Protokoll",
-      "mtproxy": "MTProxy",
-      "socks5": "SOCKS5",
-      "http": "HTTP"
+    "status": {
+      "detecting": "Verbinde…",
+      "connected": "{{protocol}} Proxy aktiv",
+      "direct": "Direkte Verbindung"
     },
-    "fields": {
-      "host": "Server-Host oder IP",
-      "port": "Port",
-      "secret": "MTProxy-Secret",
-      "secretPlaceholder": "Hex (32 Zeichen, dd... oder ee... Fake-TLS) oder Base64",
-      "showSecret": "Secret anzeigen",
-      "hideSecret": "Secret ausblenden",
-      "username": "Benutzername (optional)",
-      "password": "Passwort (optional)",
-      "showPassword": "Passwort anzeigen",
-      "hidePassword": "Passwort ausblenden"
-    },
-    "secretModes": {
-      "fakeTls": "Fake-TLS ({{domain}})",
-      "padded": "Zufälliges Padding (dd)",
-      "standard": "Standard (16 Byte)"
-    },
-    "actions": {
-      "test": "Verbindung testen",
-      "testing": "Teste...",
-      "save": "Speichern & Anwenden",
-      "saving": "Wird angewendet..."
-    },
+    "clearProxy": "Proxy entfernen und direkt verbinden",
     "toasts": {
-      "linkImported": "Proxy-Einstellungen aus Link importiert.",
-      "savedConnected": "Proxy gespeichert und Telegram neu verbunden.",
-      "directRestored": "Proxy deaktiviert. Zur direkten Verbindung zurückgekehrt.",
-      "savedReconnectFailed": "Proxy gespeichert, aber Verbindung fehlgeschlagen: {{error}}"
+      "connected": "Verbunden über {{protocol}}",
+      "directFallback": "Proxy nicht erreichbar. Direkte Verbindung wird verwendet.",
+      "directRestored": "Direkte Verbindung wird verwendet."
     }
   }
 }

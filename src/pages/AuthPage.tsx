@@ -2464,7 +2464,7 @@ export default function AuthPage() {
               <DialogDescription className="text-xs">
                 {t(
                   "settings:network.description",
-                  "Connect to Telegram through an MTProxy, SOCKS5, or HTTP proxy. Applies immediately without restarting."
+                  "Connect via a proxy link. TeleDrive handles the rest automatically."
                 )}
               </DialogDescription>
             </DialogHeader>
@@ -2475,6 +2475,7 @@ export default function AuthPage() {
                 setProxyRevision((n) => n + 1);
                 setError(null);
                 setLastError(null);
+                // Close dialog after auto-connect succeeds
                 setProxyDialogOpen(false);
               }}
             />
