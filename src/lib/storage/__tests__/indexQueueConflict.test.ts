@@ -339,8 +339,10 @@ describe("commit-time index revision guard", () => {
     seed(shared);
     useFileStore.setState({ files: shared });
     let commits = 0;
-    setCommitImplForTests(CHANNEL, async () => {
+    let lastState: TeleFile[] = [];
+    setCommitImplForTests(CHANNEL, async (state) => {
       commits++;
+      lastState = state;
     });
 
     const added = Array.from({ length: 15 }, (_, index) => makeFile(`paced-${index}`));
@@ -359,6 +361,9 @@ describe("commit-time index revision guard", () => {
     await Promise.all(promises);
 
     expect(commits).toBeLessThanOrEqual(3);
+    expect(new Set(lastState.map((entry) => entry.id))).toEqual(
+      new Set([shared[0].id, ...added.map((entry) => entry.id)])
+    );
     expect(DEFAULT_METADATA_EDIT_INTERVAL_MS).toBe(5_000);
     vi.useRealTimers();
   });
