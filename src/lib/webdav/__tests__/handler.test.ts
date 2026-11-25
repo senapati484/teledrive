@@ -122,6 +122,7 @@ function makeDeps(initial: TeleFile[]) {
     getIndexBackoffMs: () => state.indexBackoffMs,
     metadataCommitDeadlineMs: 25,
     floodWaitAbortSeconds: 10,
+    catalogCoalesceMs: 5,
     describeConflict: isConflict,
     validateSize: async (size) =>
       size > 1000
@@ -557,7 +558,7 @@ describe("WebDAV handler", () => {
     expect(state.files.some((entry) => entry.name === "contended.txt")).toBe(true);
   });
 
-  it("acknowledges metadata optimistically and coalesces the queued save", async () => {
+  it("coalesces concurrent metadata mutations into one commit and waits for it", async () => {
     const { deps, state } = makeDeps(baseFiles());
     let resolveSave!: () => void;
     let rejectSave!: (err: unknown) => void;
@@ -571,25 +572,49 @@ describe("WebDAV handler", () => {
     };
     const handler = createWebdavHandler(deps);
 
-    const mkcol = await handler.handle(
-      request({ id: 1, method: "MKCOL", path: "/Docs/FastFolder" })
+    let mkcolSettled = false;
+    const first = handler
+      .handle(request({ id: 1, method: "MKCOL", path: "/Docs/BatchA" }))
+      .then((response) => {
+        mkcolSettled = true;
+        return response;
+      });
+    const second = handler.handle(
+      request({ id: 2, method: "MKCOL", path: "/Docs/BatchB" })
     );
-    expect(mkcol.status).toBe(201);
-    expect(state.files.some((entry) => entry.name === "FastFolder")).toBe(true);
+    const removed = handler.handle(
+      request({ id: 3, method: "DELETE", path: "/Docs/a.txt" })
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    // One shared save, and no response before it settles.
     expect(state.saveCalls).toBe(1);
-
-    const removed = await handler.handle(
-      request({ id: 2, method: "DELETE", path: "/Docs/a.txt" })
-    );
-    expect(removed.status).toBe(204);
+    expect(mkcolSettled).toBe(false);
+    expect(state.files.some((entry) => entry.name === "BatchA")).toBe(true);
+    expect(state.files.some((entry) => entry.name === "BatchB")).toBe(true);
     expect(state.tombstones).toContain(5);
-    expect(state.clearedTombstones).not.toContain(5);
 
-    // The queue reports a hard failure later; DELETE reconciles its tombstone.
-    state.saveDeferred = null;
-    rejectSave(new Error("late hard failure"));
+    resolveSave();
+    const [a, b, deleted] = await Promise.all([first, second, removed]);
+    expect([a.status, b.status, deleted.status]).toEqual([201, 201, 204]);
+    expect(state.files.some((entry) => entry.name === "a.txt")).toBe(false);
     await new Promise((resolve) => setTimeout(resolve, 0));
-    expect(state.clearedTombstones).toContain(5);
+    expect(state.deleted).toContain(5);
+  });
+
+  it("returns 503 for a coalesced batch that misses the commit deadline", async () => {
+    const { deps, state } = makeDeps(baseFiles());
+    state.saveDeferred = {
+      promise: new Promise<void>(() => {}),
+      resolve: () => {},
+      reject: () => {},
+    };
+    const handler = createWebdavHandler(deps);
+    const response = await handler.handle(
+      request({ id: 1, method: "MKCOL", path: "/Docs/Slow" })
+    );
+    expect(response.status).toBe(503);
+    expect(response.headers?.["Retry-After"]).toBe("3");
   });
 
   it("rejects metadata mutations while the index queue is backing off", async () => {
@@ -750,6 +775,44 @@ describe("WebDAV handler", () => {
     );
     expect(response.status).toBe(201);
     expect(response.headers?.["Server-Timing"]).toContain("total;dur=");
+  });
+
+  it("rolls back a failed coalesced batch and reports 503", async () => {
+    const { deps, state } = makeDeps(baseFiles());
+    let rejectSave!: (err: unknown) => void;
+    state.saveDeferred = {
+      promise: new Promise<void>((_resolve, reject) => {
+        rejectSave = reject;
+      }),
+      resolve: () => {},
+      reject: (err) => rejectSave(err),
+    };
+    const handler = createWebdavHandler(deps);
+
+    const first = handler.handle(
+      request({ id: 1, method: "MKCOL", path: "/Docs/RollbackA" })
+    );
+    const second = handler.handle(
+      request({ id: 2, method: "MKCOL", path: "/Docs/RollbackB" })
+    );
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    rejectSave(new Error("hard batch failure"));
+
+    const [a, b] = await Promise.all([first, second]);
+    expect(a.status).toBe(503);
+    expect(b.status).toBe(503);
+    expect(state.files.some((entry) => entry.name === "RollbackA")).toBe(false);
+    expect(state.files.some((entry) => entry.name === "RollbackB")).toBe(false);
+  });
+
+  it("keeps duplicate-name MKCOL validation outside the batch", async () => {
+    const { deps } = makeDeps(baseFiles());
+    const handler = createWebdavHandler(deps);
+    const [a, b] = await Promise.all([
+      handler.handle(request({ id: 1, method: "MKCOL", path: "/Docs/Same" })),
+      handler.handle(request({ id: 2, method: "MKCOL", path: "/Docs/Same" })),
+    ]);
+    expect([a.status, b.status].sort()).toEqual([201, 405]);
   });
   it("answers PROPPATCH with 207 containing a 403 propstat", async () => {
     const { deps } = makeDeps(baseFiles());

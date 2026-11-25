@@ -151,6 +151,7 @@ export function createDefaultWebdavDeps(): WebdavHandlerDeps {
     getIndexBackoffMs: (channelId) => getIndexBackoffMs(channelId),
     metadataCommitDeadlineMs: DEFAULT_METADATA_COMMIT_DEADLINE_MS,
     floodWaitAbortSeconds: 10,
+    catalogCoalesceMs: 250,
     describeConflict: (err) => {
       if (!(err instanceof IndexConflictError)) return null;
       return { transient: err.transient, message: err.message };

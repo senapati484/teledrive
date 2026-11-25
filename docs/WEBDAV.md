@@ -174,13 +174,15 @@ sudo mount -t davfs http://127.0.0.1:8747/ /mnt/teledrive
   index queue is in a Telegram backoff instead of waiting for the 60 s stuck
   retry. The backoff deadline is honoured, then the queue retries and requests
   succeed again (a `FLOOD_WAIT` may legitimately last minutes).
-- **Coalesced catalog writes.** MKCOL/DELETE/MOVE/COPY are acknowledged after
-  the atomic in-memory apply and enqueue; their Telegram index write is
-  coalesced with any other pending save, so a burst of sequential metadata
-  operations produces one or two `EditMessage` calls instead of one per
-  request. PUT still waits for its bounded catalog commit so overwrite/conflict
-  failures are visible. Metadata cleanup (deleted messages, tombstones, cloned
-  COPY messages) is reconciled with the eventual queue outcome.
+- **Coalesced catalog writes.** MKCOL/DELETE/MOVE/COPY mutations arriving
+  within a **250 ms window** are applied in order, merged into one catalog
+  state, and persisted with a single `EditMessage`; every caller waits for that
+  shared commit, so success is never reported before persistence. The batch has
+  a **12 s** deadline: if Telegram is still throttling, each request returns
+  `503 + Retry-After: 3` instead of letting the mount time out into `EACCES`.
+  PUT still has its own bounded commit so overwrite/conflict failures remain
+  visible. Metadata cleanup (deleted messages, tombstones, cloned COPY
+  messages) follows the eventual queue outcome.
 - **Methods.** `OPTIONS`, `PROPFIND` (Depth 0/1/infinity), `GET`, `HEAD`
   (with `Range` → `206`/`416`), `PUT`, `MKCOL`, `DELETE` (recursive),
   `MOVE`, `COPY`, `LOCK`, `UNLOCK`; `PROPPATCH` responds `207` with a `403`
