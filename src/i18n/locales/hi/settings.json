@@ -11,7 +11,8 @@
     "storage": "स्टोरेज",
     "about": "परिचय",
     "encryption": "एन्क्रिप्शन",
-    "security": "Security & App Lock"
+    "security": "Security & App Lock",
+    "general": "सामान्य"
   },
   "language": {
     "title": "भाषा",
@@ -427,6 +428,31 @@
       "forgotDescription": "To protect your privacy, TeleDrive cannot recover a forgotten passcode. Resetting it will sign you out of this device and remove the lock. All your files and backups remain completely safe and untouched in your Telegram cloud.",
       "cancel": "Cancel",
       "resetAndLogout": "Sign Out & Reset Lock"
+    }
+  },
+  "general": {
+    "title": "सामान्य",
+    "description": "कॉन्फ़िगर करें कि TeleDrive आपके कंप्यूटर के साथ कैसे प्रारंभ होता है और सिस्टम ट्रे में कैसे चलता है।",
+    "startup": {
+      "title": "स्टार्टअप और सिस्टम ट्रे",
+      "description": "लॉगिन ऑटोस्टार्ट और बैकग्राउंड ट्रे व्यवहार को स्वतंत्र रूप से नियंत्रित करें।",
+      "launchAtLogin": {
+        "title": "लॉगिन पर लॉन्च करें",
+        "description": "साइन इन करते ही TeleDrive को स्वचालित रूप से शुरू करें ताकि शेड्यूल किए गए बैकअप और फ़ोल्डर सिंक सक्रिय रहें।"
+      },
+      "startMinimized": {
+        "title": "ट्रे में मिनिमाइज़ करके प्रारंभ करें",
+        "description": "लॉन्च होने पर मुख्य विंडो को सिस्टम ट्रे में छिपाकर रखें ताकि आपके डेस्कटॉप में कोई बाधा न आए।"
+      }
+    },
+    "callout": "<strong>बैकग्राउंड ट्रे संचालन:</strong> जब TeleDrive चुपचाप शुरू होता है, तो यह शेड्यूल्ड बैकअप और सिंक के साथ सिस्टम ट्रे में सक्रिय रहता है। विंडो को सामने लाने के लिए ट्रे आइकन पर क्लिक करें या TeleDrive को फिर से खोलें।",
+    "toasts": {
+      "launchAtLoginEnabled": "TeleDrive अब लॉगिन पर स्वचालित रूप से लॉन्च होगा।",
+      "launchAtLoginDisabled": "लॉगिन स्टार्टअप से TeleDrive को हटा दिया गया।",
+      "launchAtLoginFailed": "लॉगिन पर लॉन्च सेटिंग अपडेट नहीं की जा सकी।",
+      "startMinimizedEnabled": "TeleDrive अब सिस्टम ट्रे में मिनिमाइज़ होकर शुरू होगा।",
+      "startMinimizedDisabled": "TeleDrive अब स्टार्टअप पर मुख्य विंडो खोलेगा।",
+      "startMinimizedFailed": "स्टार्टअप विंडो सेटिंग अपडेट नहीं की जा सकी।"
     }
   }
 }

@@ -11,7 +11,8 @@
     "storage": "貯存",
     "about": "關於",
     "encryption": "端對端加密",
-    "security": "Security & App Lock"
+    "security": "Security & App Lock",
+    "general": "一般"
   },
   "language": {
     "title": "語言",
@@ -382,6 +383,31 @@
       "forgotDescription": "To protect your privacy, TeleDrive cannot recover a forgotten passcode. Resetting it will sign you out of this device and remove the lock. All your files and backups remain completely safe and untouched in your Telegram cloud.",
       "cancel": "Cancel",
       "resetAndLogout": "Sign Out & Reset Lock"
+    }
+  },
+  "general": {
+    "title": "一般",
+    "description": "設定 TeleDrive 隨系統開機啟動及系統匣背景執行方式。",
+    "startup": {
+      "title": "開機啟動與系統匣",
+      "description": "獨立控制登入自動啟動與靜默系統匣啟動行為。",
+      "launchAtLogin": {
+        "title": "登入時自動啟動",
+        "description": "登入系統時自動啟動 TeleDrive，確保排程備份與資料夾同步持續運作。"
+      },
+      "startMinimized": {
+        "title": "啟動時最小化至系統匣",
+        "description": "啟動時不彈出主視窗搶佔焦點，直接隱藏於系統匣中安靜執行。"
+      }
+    },
+    "callout": "<strong>背景系統匣運作說明：</strong> 靜默啟動時，TeleDrive 會在系統匣中維持排程備份與同步任務執行。點擊系統匣圖示或再次開啟 TeleDrive 即可喚起主視窗。",
+    "toasts": {
+      "launchAtLoginEnabled": "已設定登入時自動啟動 TeleDrive。",
+      "launchAtLoginDisabled": "已從系統登入啟動項目中移除 TeleDrive。",
+      "launchAtLoginFailed": "無法更新登入自動啟動設定。",
+      "startMinimizedEnabled": "TeleDrive 將在啟動時直接最小化至系統匣。",
+      "startMinimizedDisabled": "TeleDrive 將在啟動時正常開啟主視窗。",
+      "startMinimizedFailed": "無法更新啟動視窗設定。"
     }
   }
 }

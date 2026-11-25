@@ -23,6 +23,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { isTauriRuntime } from "@/lib/runtime/bridge";
 
 export function LockScreen() {
   const { t } = useTranslation("settings");
@@ -51,15 +52,75 @@ export function LockScreen() {
 
   const autoBiometricsTriggered = useRef(false);
 
-  // Auto-trigger biometric prompt on mount if in biometric mode
+  // Auto-trigger biometric prompt once the window is actually visible.
+  // Prevents OS Touch ID / Windows Hello prompts from popping up when launched minimized to tray.
   useEffect(() => {
-    if (isLocked && enabled && mode === "device_biometric" && !autoBiometricsTriggered.current) {
-      autoBiometricsTriggered.current = true;
-      const timer = setTimeout(() => {
-        void unlockWithBiometrics();
-      }, 300);
-      return () => clearTimeout(timer);
+    if (!isLocked) {
+      autoBiometricsTriggered.current = false;
+      return;
     }
+    if (!enabled || mode !== "device_biometric" || autoBiometricsTriggered.current) {
+      return;
+    }
+
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let unlistenFocus: (() => void) | null = null;
+
+    const triggerIfVisible = async () => {
+      if (cancelled || autoBiometricsTriggered.current) return;
+      let visible = typeof document !== "undefined" ? !document.hidden : true;
+      if (visible && isTauriRuntime()) {
+        try {
+          const { getCurrentWindow } = await import("@tauri-apps/api/window");
+          visible = await getCurrentWindow().isVisible();
+        } catch {
+          // Fall back to document visibility in non-window test environments
+        }
+      }
+      if (!visible || cancelled || autoBiometricsTriggered.current) return;
+      autoBiometricsTriggered.current = true;
+      timer = setTimeout(() => {
+        if (!cancelled) {
+          void unlockWithBiometrics();
+        }
+      }, 300);
+    };
+
+    void triggerIfVisible();
+
+    const handleVisibleOrFocus = () => {
+      void triggerIfVisible();
+    };
+    window.addEventListener("focus", handleVisibleOrFocus);
+    document.addEventListener("visibilitychange", handleVisibleOrFocus);
+
+    if (isTauriRuntime()) {
+      void import("@tauri-apps/api/window")
+        .then(({ getCurrentWindow }) =>
+          getCurrentWindow().onFocusChanged(({ payload: focused }) => {
+            if (focused) {
+              void triggerIfVisible();
+            }
+          })
+        )
+        .then((unlisten) => {
+          if (cancelled) {
+            unlisten();
+          } else {
+            unlistenFocus = unlisten;
+          }
+        })
+        .catch(() => {});
+    }
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      window.removeEventListener("focus", handleVisibleOrFocus);
+      document.removeEventListener("visibilitychange", handleVisibleOrFocus);
+      if (unlistenFocus) unlistenFocus();
+    };
   }, [isLocked, enabled, mode, unlockWithBiometrics]);
 
   // Trigger shake animation on error

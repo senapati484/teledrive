@@ -19,7 +19,8 @@
         "height": 800,
         "minWidth": 375,
         "minHeight": 600,
-        "dragDropEnabled": false
+        "dragDropEnabled": false,
+        "create": false
       }
     ],
     "security": {
@@ -72,7 +73,8 @@
         "sidebarImage": "icons/nsis-sidebar.bmp",
         "headerImage": "icons/nsis-header.bmp",
         "languages": ["English"],
-        "displayLanguageSelector": false
+        "displayLanguageSelector": false,
+        "installerHooks": "windows/hooks.nsh"
       },
       "wix": {
         "language": "en-US"
