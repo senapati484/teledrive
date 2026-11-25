@@ -12,8 +12,7 @@
     "about": "Sobre",
     "encryption": "Criptografia",
     "security": "Security & App Lock",
-    "general": "Geral",
-    "network": "Rede e Proxy"
+    "general": "Geral"
   },
   "language": {
     "title": "Idioma",
@@ -414,28 +413,6 @@
       "startMinimizedEnabled": "O TeleDrive iniciará minimizado na bandeja do sistema.",
       "startMinimizedDisabled": "O TeleDrive abrirá a janela principal ao iniciar.",
       "startMinimizedFailed": "Não foi possível atualizar a preferência de janela inicial."
-    }
-  },
-  "network": {
-    "title": "Rede & Proxy",
-    "description": "Conecte-se via um link de proxy. O TeleDrive cuida do restante automaticamente.",
-    "authButton": "Proxy",
-    "loading": "Carregando...",
-    "importLink": {
-      "placeholder": "Cole um link de proxy: tg://proxy?..., socks5://..., http://...",
-      "apply": "Conectar",
-      "paste": "Colar"
-    },
-    "status": {
-      "detecting": "Conectando…",
-      "connected": "Proxy {{protocol}} ativo",
-      "direct": "Conexão direta"
-    },
-    "clearProxy": "Remover proxy e usar conexão direta",
-    "toasts": {
-      "connected": "Conectado via {{protocol}}",
-      "directFallback": "Proxy inacessível. Usando conexão direta.",
-      "directRestored": "Usando conexão direta."
     }
   }
 }

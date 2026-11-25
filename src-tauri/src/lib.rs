@@ -1633,6 +1633,7 @@ pub fn run() {
             proxy::get_proxy_settings,
             proxy::save_proxy_settings,
             proxy::test_proxy_connection,
+            proxy::discover_telegram_route,
             proxy::proxy_socket_connect,
             proxy::proxy_socket_write,
             proxy::proxy_socket_close,

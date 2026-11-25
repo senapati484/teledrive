@@ -12,8 +12,7 @@
     "about": "परिचय",
     "encryption": "एन्क्रिप्शन",
     "security": "Security & App Lock",
-    "general": "सामान्य",
-    "network": "नेटवर्क और प्रॉक्सी"
+    "general": "सामान्य"
   },
   "language": {
     "title": "भाषा",
@@ -454,28 +453,6 @@
       "startMinimizedEnabled": "TeleDrive अब सिस्टम ट्रे में मिनिमाइज़ होकर शुरू होगा।",
       "startMinimizedDisabled": "TeleDrive अब स्टार्टअप पर मुख्य विंडो खोलेगा।",
       "startMinimizedFailed": "स्टार्टअप विंडो सेटिंग अपडेट नहीं की जा सकी।"
-    }
-  },
-  "network": {
-    "title": "नेटवर्क और प्रॉक्सी",
-    "description": "प्रॉक्सी लिंक से जुड़ें। TeleDrive बाकी काम खुद करता है।",
-    "authButton": "प्रॉक्सी",
-    "loading": "लोड हो रहा है...",
-    "importLink": {
-      "placeholder": "प्रॉक्सी लिंक पेस्ट करें: tg://proxy?..., socks5://..., http://...",
-      "apply": "कनेक्ट करें",
-      "paste": "पेस्ट करें"
-    },
-    "status": {
-      "detecting": "कनेक्ट हो रहा है…",
-      "connected": "{{protocol}} प्रॉक्सी सक्रिय",
-      "direct": "सीधा कनेक्शन"
-    },
-    "clearProxy": "प्रॉक्सी हटाएं और सीधे कनेक्ट करें",
-    "toasts": {
-      "connected": "{{protocol}} के माध्यम से कनेक्ट हुए",
-      "directFallback": "प्रॉक्सी उपलब्ध नहीं। सीधा कनेक्शन उपयोग हो रहा है।",
-      "directRestored": "सीधा कनेक्शन उपयोग हो रहा है।"
     }
   }
 }

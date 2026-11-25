@@ -12,8 +12,7 @@
     "about": "Acerca de",
     "encryption": "Cifrado",
     "security": "Seguridad y Bloqueo",
-    "general": "General",
-    "network": "Red y Proxy"
+    "general": "General"
   },
   "language": {
     "title": "Idioma",
@@ -433,28 +432,6 @@
       "startMinimizedEnabled": "TeleDrive se iniciará minimizado en la bandeja del sistema.",
       "startMinimizedDisabled": "TeleDrive abrirá la ventana principal al iniciarse.",
       "startMinimizedFailed": "No se pudo actualizar la preferencia de ventana inicial."
-    }
-  },
-  "network": {
-    "title": "Red y Proxy",
-    "description": "Conéctate con un enlace de proxy. TeleDrive hace el resto automáticamente.",
-    "authButton": "Proxy",
-    "loading": "Cargando...",
-    "importLink": {
-      "placeholder": "Pega un enlace de proxy: tg://proxy?..., socks5://..., http://...",
-      "apply": "Conectar",
-      "paste": "Pegar"
-    },
-    "status": {
-      "detecting": "Conectando…",
-      "connected": "Proxy {{protocol}} activo",
-      "direct": "Conexión directa"
-    },
-    "clearProxy": "Eliminar proxy y usar conexión directa",
-    "toasts": {
-      "connected": "Conectado mediante {{protocol}}",
-      "directFallback": "Proxy no accesible. Usando conexión directa.",
-      "directRestored": "Usando conexión directa."
     }
   }
 }

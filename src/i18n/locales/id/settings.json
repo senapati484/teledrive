@@ -12,8 +12,7 @@
     "about": "Tentang",
     "encryption": "Enkripsi",
     "security": "Security & App Lock",
-    "general": "Umum",
-    "network": "Jaringan & Proksi"
+    "general": "Umum"
   },
   "language": {
     "title": "Bahasa",
@@ -454,28 +453,6 @@
       "startMinimizedEnabled": "TeleDrive akan dimulai tersembunyi di system tray.",
       "startMinimizedDisabled": "TeleDrive akan membuka jendela utama saat dijalankan.",
       "startMinimizedFailed": "Tidak dapat memperbarui pengaturan jendela startup."
-    }
-  },
-  "network": {
-    "title": "Jaringan & Proxy",
-    "description": "Hubungkan melalui tautan proxy. TeleDrive menangani sisanya secara otomatis.",
-    "authButton": "Proxy",
-    "loading": "Memuat...",
-    "importLink": {
-      "placeholder": "Tempel tautan proxy: tg://proxy?..., socks5://..., http://...",
-      "apply": "Hubungkan",
-      "paste": "Tempel"
-    },
-    "status": {
-      "detecting": "Menghubungkan…",
-      "connected": "Proxy {{protocol}} aktif",
-      "direct": "Koneksi langsung"
-    },
-    "clearProxy": "Hapus proxy dan gunakan koneksi langsung",
-    "toasts": {
-      "connected": "Terhubung melalui {{protocol}}",
-      "directFallback": "Proxy tidak dapat dijangkau. Menggunakan koneksi langsung.",
-      "directRestored": "Menggunakan koneksi langsung."
     }
   }
 }

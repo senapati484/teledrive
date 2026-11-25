@@ -12,8 +12,7 @@
     "about": "Um",
     "encryption": "Verschlüsselung",
     "security": "Security & App Lock",
-    "general": "Allgemein",
-    "network": "Netzwerk & Proxy"
+    "general": "Allgemein"
   },
   "language": {
     "title": "Sprache",
@@ -409,28 +408,6 @@
       "startMinimizedEnabled": "TeleDrive startet ab sofort minimiert im Infobereich.",
       "startMinimizedDisabled": "TeleDrive öffnet beim Start wieder das Hauptfenster.",
       "startMinimizedFailed": "Startfenster-Einstellung konnte nicht aktualisiert werden."
-    }
-  },
-  "network": {
-    "title": "Netzwerk & Proxy",
-    "description": "Verbinde über einen Proxy-Link. TeleDrive kümmert sich um den Rest.",
-    "authButton": "Proxy",
-    "loading": "Lädt...",
-    "importLink": {
-      "placeholder": "Proxy-Link einfügen: tg://proxy?..., socks5://..., http://...",
-      "apply": "Verbinden",
-      "paste": "Einfügen"
-    },
-    "status": {
-      "detecting": "Verbinde…",
-      "connected": "{{protocol}} Proxy aktiv",
-      "direct": "Direkte Verbindung"
-    },
-    "clearProxy": "Proxy entfernen und direkt verbinden",
-    "toasts": {
-      "connected": "Verbunden über {{protocol}}",
-      "directFallback": "Proxy nicht erreichbar. Direkte Verbindung wird verwendet.",
-      "directRestored": "Direkte Verbindung wird verwendet."
     }
   }
 }

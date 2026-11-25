@@ -12,8 +12,7 @@
     "about": "О программе",
     "encryption": "Шифрование",
     "security": "Security & App Lock",
-    "general": "Общие",
-    "network": "Сеть и прокси"
+    "general": "Общие"
   },
   "language": {
     "title": "Язык",
@@ -409,28 +408,6 @@
       "startMinimizedEnabled": "TeleDrive будет запускаться свернутым в системный трей.",
       "startMinimizedDisabled": "При запуске TeleDrive будет открывать главное окно.",
       "startMinimizedFailed": "Не удалось обновить настройку окна при запуске."
-    }
-  },
-  "network": {
-    "title": "Сеть и прокси",
-    "description": "Подключитесь через ссылку на прокси. TeleDrive сделает всё остальное автоматически.",
-    "authButton": "Прокси",
-    "loading": "Загрузка...",
-    "importLink": {
-      "placeholder": "Вставьте ссылку на прокси: tg://proxy?..., socks5://..., http://...",
-      "apply": "Подключить",
-      "paste": "Вставить"
-    },
-    "status": {
-      "detecting": "Подключение…",
-      "connected": "Прокси {{protocol}} активен",
-      "direct": "Прямое соединение"
-    },
-    "clearProxy": "Удалить прокси и использовать прямое соединение",
-    "toasts": {
-      "connected": "Подключено через {{protocol}}",
-      "directFallback": "Прокси недоступен. Используется прямое соединение.",
-      "directRestored": "Используется прямое соединение."
     }
   }
 }

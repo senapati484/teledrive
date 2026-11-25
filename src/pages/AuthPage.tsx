@@ -22,7 +22,6 @@ import {
   Copy,
   PhoneCall,
   RefreshCw,
-  Globe,
 } from "lucide-react";
 import { Api, TelegramClient } from "telegram";
 import { useAuthStore } from "@/stores/authStore";
@@ -87,19 +86,6 @@ import {
 } from "@/lib/telegram/channelManager";
 import { toast } from "sonner";
 import { invoke } from "@tauri-apps/api/core";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import ProxySettingsPanel from "@/components/settings/ProxySettingsPanel";
-import {
-  getProxySettings,
-  isProxySupported,
-  subscribeProxySettings,
-} from "@/lib/telegram/proxy";
 import {
   isTauriRuntime,
   runtimeOpenUrl,
@@ -474,26 +460,6 @@ export default function AuthPage() {
   const [configApiId, setConfigApiId] = useState<number | null>(null);
   const [configApiHash, setConfigApiHash] = useState<string | null>(null);
   const [checkingConfig, setCheckingConfig] = useState(true);
-  const [proxyDialogOpen, setProxyDialogOpen] = useState(false);
-  const [proxyEnabled, setProxyEnabled] = useState(false);
-  const [proxyRevision, setProxyRevision] = useState(0);
-
-  useEffect(() => {
-    if (!isProxySupported()) return;
-    let active = true;
-    void getProxySettings()
-      .then((s) => {
-        if (active) setProxyEnabled(s.enabled);
-      })
-      .catch(() => {});
-    const unsub = subscribeProxySettings((s) => {
-      if (active) setProxyEnabled(s.enabled);
-    });
-    return () => {
-      active = false;
-      unsub();
-    };
-  }, []);
 
   const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
@@ -878,7 +844,7 @@ export default function AuthPage() {
         qrCleanupRef.current = null;
       }
     };
-  }, [step, configApiId, configApiHash, proxyRevision, completeAuthentication, showError]);
+  }, [step, configApiId, configApiHash, completeAuthentication, showError]);
 
   const handleOpenTelegram = useCallback(
     async (url: string, oneTap = false) => {
@@ -1561,24 +1527,6 @@ export default function AuthPage() {
   return (
     <div className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-background select-none flex flex-col justify-between items-center py-3 sm:py-6 px-4 relative">
       <div className="absolute top-[max(calc(var(--safe-area-top,0px)+0.75rem),1.5rem)] sm:top-4 right-4 sm:right-4 z-30 flex items-center gap-2">
-        {isProxySupported() && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={() => setProxyDialogOpen(true)}
-            className="h-8 px-2.5 rounded-full text-xs font-medium text-muted-foreground hover:text-foreground bg-secondary/50 hover:bg-secondary/80 border border-border/40 transition-all flex items-center gap-1.5 cursor-pointer"
-          >
-            <Globe className="h-3.5 w-3.5 text-[#0B57D0] dark:text-[#A8C7FA]" />
-            <span>{t("settings:network.authButton", "Proxy")}</span>
-            {proxyEnabled && (
-              <span
-                className="h-1.5 w-1.5 rounded-full bg-emerald-500"
-                aria-hidden="true"
-              />
-            )}
-          </Button>
-        )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -2453,35 +2401,6 @@ export default function AuthPage() {
         </p>
       </footer>
 
-      {isProxySupported() && (
-        <Dialog open={proxyDialogOpen} onOpenChange={setProxyDialogOpen}>
-          <DialogContent className="sm:max-w-[460px] rounded-2xl">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-base">
-                <Globe className="h-4.5 w-4.5 text-[#0B57D0] dark:text-[#8ab4f8]" />
-                <span>{t("settings:network.title", "Network & Proxy")}</span>
-              </DialogTitle>
-              <DialogDescription className="text-xs">
-                {t(
-                  "settings:network.description",
-                  "Connect via a proxy link. TeleDrive handles the rest automatically."
-                )}
-              </DialogDescription>
-            </DialogHeader>
-            <ProxySettingsPanel
-              compact
-              onSaved={(saved) => {
-                setProxyEnabled(saved.enabled);
-                setProxyRevision((n) => n + 1);
-                setError(null);
-                setLastError(null);
-                // Close dialog after auto-connect succeeds
-                setProxyDialogOpen(false);
-              }}
-            />
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   );
 }

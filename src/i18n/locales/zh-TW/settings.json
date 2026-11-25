@@ -12,8 +12,7 @@
     "about": "關於",
     "encryption": "端對端加密",
     "security": "Security & App Lock",
-    "general": "一般",
-    "network": "網路與代理"
+    "general": "一般"
   },
   "language": {
     "title": "語言",
@@ -409,28 +408,6 @@
       "startMinimizedEnabled": "TeleDrive 將在啟動時直接最小化至系統匣。",
       "startMinimizedDisabled": "TeleDrive 將在啟動時正常開啟主視窗。",
       "startMinimizedFailed": "無法更新啟動視窗設定。"
-    }
-  },
-  "network": {
-    "title": "網路與代理",
-    "description": "透過代理連結連線，TeleDrive 會自動完成其餘設定。",
-    "authButton": "代理",
-    "loading": "載入中...",
-    "importLink": {
-      "placeholder": "貼上代理連結：tg://proxy?..., socks5://..., http://...",
-      "apply": "連線",
-      "paste": "貼上"
-    },
-    "status": {
-      "detecting": "連線中…",
-      "connected": "{{protocol}} 代理已啟用",
-      "direct": "直接連線"
-    },
-    "clearProxy": "移除代理並使用直接連線",
-    "toasts": {
-      "connected": "已透過 {{protocol}} 連線",
-      "directFallback": "代理無法連線，正在使用直接連線。",
-      "directRestored": "正在使用直接連線。"
     }
   }
 }

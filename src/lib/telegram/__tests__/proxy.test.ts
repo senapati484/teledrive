@@ -62,6 +62,16 @@ describe("MTProxy secret validation & normalization", () => {
     expect(
       validateProxySettings({ ...DEFAULT_PROXY_SETTINGS, host: "proxy.example.com", port: 443, secret: "bad" })
     ).toContain("Invalid MTProxy secret");
+
+    expect(
+      validateProxySettings({
+        ...DEFAULT_PROXY_SETTINGS,
+        enabled: true,
+        proxyType: "direct",
+        host: "",
+        secret: "",
+      })
+    ).toBeNull();
   });
 });
 

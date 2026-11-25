@@ -29,10 +29,11 @@ const TELEGRAM_TEST_DC_IP: &str = "149.154.167.91";
 const TELEGRAM_TEST_DC_PORT: u16 = 443;
 const TELEGRAM_TEST_DC_ID: i16 = 4;
 
-/// Supported transport proxy protocols.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+/// Supported transport routes (direct raw MTProto TCP or via proxy).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ProxyType {
+    Direct,
     #[default]
     Mtproxy,
     Socks5,
@@ -324,6 +325,9 @@ fn sanitize_settings(settings: &ProxySettings) -> ProxySettings {
 
 /// Validates user-supplied proxy configuration before dialing or saving an active config.
 pub(crate) fn validate_proxy_settings(settings: &ProxySettings) -> Result<(), String> {
+    if settings.proxy_type == ProxyType::Direct {
+        return Ok(());
+    }
     let host = settings.host.trim();
     if host.is_empty() {
         return Err("Proxy host is required.".to_string());
@@ -734,9 +738,13 @@ fn classify_io_error(context: &str, err: &std::io::Error) -> String {
     format!("{context}: {detail}")
 }
 
-async fn connect_tcp(host: &str, port: u16) -> Result<TcpStream, String> {
+async fn connect_tcp_with_timeout(
+    host: &str,
+    port: u16,
+    connect_timeout: Duration,
+) -> Result<TcpStream, String> {
     let addr = format_host_port(host, port);
-    let stream = timeout(CONNECT_TIMEOUT, TcpStream::connect(&addr))
+    let stream = timeout(connect_timeout, TcpStream::connect(&addr))
         .await
         .map_err(|_| format!("Connection timed out connecting to {addr}"))?
         .map_err(|e| classify_io_error(&format!("Failed to connect to {addr}"), &e))?;
@@ -1064,15 +1072,47 @@ async fn connect_through_proxy(
     target_host: &str,
     target_port: u16,
 ) -> Result<(ProxyReadStream, ProxyWriteStream, Option<[u8; 16]>), String> {
+    connect_through_proxy_with_timeout(
+        settings,
+        target_host,
+        target_port,
+        CONNECT_TIMEOUT,
+        HANDSHAKE_TIMEOUT,
+    )
+    .await
+}
+
+async fn connect_through_proxy_with_timeout(
+    settings: &ProxySettings,
+    target_host: &str,
+    target_port: u16,
+    connect_timeout: Duration,
+    handshake_timeout: Duration,
+) -> Result<(ProxyReadStream, ProxyWriteStream, Option<[u8; 16]>), String> {
     validate_proxy_settings(settings)?;
-    let mut tcp = connect_tcp(&settings.host, settings.port).await?;
+
+    if settings.proxy_type == ProxyType::Direct {
+        let tcp = connect_tcp_with_timeout(target_host, target_port, connect_timeout).await?;
+        let (reader, writer) = tokio::io::split(tcp);
+        return Ok((
+            ProxyReadStream::Plain {
+                reader,
+                buffered: Vec::new(),
+            },
+            ProxyWriteStream::Plain { writer },
+            None,
+        ));
+    }
+
+    let mut tcp = connect_tcp_with_timeout(&settings.host, settings.port, connect_timeout).await?;
 
     match settings.proxy_type {
+        ProxyType::Direct => unreachable!(),
         ProxyType::Mtproxy => {
             let parsed = parse_mtproxy_secret(&settings.secret)?;
             if let Some(domain) = parsed.fake_tls_domain.as_deref() {
                 timeout(
-                    HANDSHAKE_TIMEOUT,
+                    handshake_timeout,
                     perform_fake_tls_handshake(&mut tcp, &parsed.secret_16, domain),
                 )
                 .await
@@ -1104,7 +1144,7 @@ async fn connect_through_proxy(
         }
         ProxyType::Socks5 => {
             timeout(
-                HANDSHAKE_TIMEOUT,
+                handshake_timeout,
                 perform_socks5_handshake(
                     &mut tcp,
                     &settings.username,
@@ -1128,7 +1168,7 @@ async fn connect_through_proxy(
         }
         ProxyType::Http => {
             let leftover = timeout(
-                HANDSHAKE_TIMEOUT,
+                handshake_timeout,
                 perform_http_connect_handshake(
                     &mut tcp,
                     &settings.username,
@@ -1330,6 +1370,317 @@ pub async fn test_proxy_connection(settings: ProxySettings) -> TestProxyResult {
             message: "MTProto handshake timed out waiting for Telegram response.".to_string(),
         },
     }
+}
+
+/// Parses a proxy endpoint string (with or without URL scheme / credentials) into `ProxySettings`.
+pub(crate) fn parse_proxy_url_candidate(
+    raw: &str,
+    default_type: ProxyType,
+) -> Option<ProxySettings> {
+    let trimmed = raw.trim().trim_end_matches('/');
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    let (proxy_type, rest) = if let Some((scheme, after)) = trimmed.split_once("://") {
+        let lower_scheme = scheme.to_ascii_lowercase();
+        let parsed_type = match lower_scheme.as_str() {
+            "socks5" | "socks5h" | "socks" => ProxyType::Socks5,
+            "http" | "https" => ProxyType::Http,
+            _ => return None,
+        };
+        (parsed_type, after)
+    } else {
+        if default_type != ProxyType::Socks5 && default_type != ProxyType::Http {
+            return None;
+        }
+        (default_type, trimmed)
+    };
+
+    // Strip any trailing path (e.g. from proxy URLs)
+    let authority = rest.split('/').next()?.trim();
+    if authority.is_empty() {
+        return None;
+    }
+
+    let (username, password, host_port) = if let Some((creds, hp)) = authority.rsplit_once('@') {
+        let (u, p) = creds.split_once(':').unwrap_or((creds, ""));
+        (u.to_string(), p.to_string(), hp)
+    } else {
+        (String::new(), String::new(), authority)
+    };
+
+    let (host, port) = if host_port.starts_with('[') {
+        let end_bracket = host_port.find(']')?;
+        let h = &host_port[1..end_bracket];
+        let after = &host_port[end_bracket + 1..];
+        let p = if let Some(port_str) = after.strip_prefix(':') {
+            port_str.parse::<u16>().ok()?
+        } else if proxy_type == ProxyType::Socks5 {
+            1080
+        } else {
+            8080
+        };
+        (h.to_string(), p)
+    } else if let Some((h, port_str)) = host_port.rsplit_once(':') {
+        let p = port_str.parse::<u16>().ok()?;
+        (h.to_string(), p)
+    } else {
+        let default_port = if proxy_type == ProxyType::Socks5 { 1080 } else { 8080 };
+        (host_port.to_string(), default_port)
+    };
+
+    if host.is_empty() || host.chars().any(|c| c.is_whitespace() || c.is_control()) || port == 0 {
+        return None;
+    }
+
+    Some(ProxySettings {
+        enabled: true,
+        proxy_type,
+        host,
+        port,
+        secret: String::new(),
+        username,
+        password,
+    })
+}
+
+/// Parses `scutil --proxy` output into ordered SOCKS5 / HTTP proxy candidates.
+#[allow(dead_code)]
+pub(crate) fn parse_scutil_proxy_output(output: &str) -> Vec<ProxySettings> {
+    let mut map: HashMap<String, String> = HashMap::new();
+    for line in output.lines() {
+        let trimmed = line.trim();
+        if let Some((k, v)) = trimmed.split_once(':') {
+            map.insert(k.trim().to_string(), v.trim().to_string());
+        }
+    }
+
+    let mut out = Vec::new();
+    let specs = [
+        ("SOCKSEnable", "SOCKSProxy", "SOCKSPort", ProxyType::Socks5),
+        ("HTTPSEnable", "HTTPSProxy", "HTTPSPort", ProxyType::Http),
+        ("HTTPEnable", "HTTPProxy", "HTTPPort", ProxyType::Http),
+    ];
+
+    for (enable_key, host_key, port_key, ptype) in specs {
+        if map.get(enable_key).map(|v| v == "1").unwrap_or(false) {
+            if let (Some(host), Some(port_str)) = (map.get(host_key), map.get(port_key)) {
+                if let Ok(port) = port_str.parse::<u16>() {
+                    if !host.is_empty() && port > 0 {
+                        out.push(ProxySettings {
+                            enabled: true,
+                            proxy_type: ptype,
+                            host: host.clone(),
+                            port,
+                            secret: String::new(),
+                            username: String::new(),
+                            password: String::new(),
+                        });
+                    }
+                }
+            }
+        }
+    }
+    out
+}
+
+/// Parses Windows Registry `ProxyServer` value (`socks=...;http=...` or `host:port`).
+#[allow(dead_code)]
+pub(crate) fn parse_windows_proxy_server(proxy_server: &str) -> Vec<ProxySettings> {
+    let mut out = Vec::new();
+    let trimmed = proxy_server.trim();
+    if trimmed.is_empty() {
+        return out;
+    }
+
+    if trimmed.contains('=') {
+        // Explicit per-protocol entries: socks=127.0.0.1:1080;http=127.0.0.1:8080
+        let mut socks_list = Vec::new();
+        let mut http_list = Vec::new();
+        for part in trimmed.split(';') {
+            let Some((proto, addr)) = part.trim().split_once('=') else {
+                continue;
+            };
+            match proto.trim().to_ascii_lowercase().as_str() {
+                "socks" | "socks5" => {
+                    if let Some(cfg) = parse_proxy_url_candidate(addr, ProxyType::Socks5) {
+                        socks_list.push(cfg);
+                    }
+                }
+                "https" | "http" => {
+                    if let Some(cfg) = parse_proxy_url_candidate(addr, ProxyType::Http) {
+                        http_list.push(cfg);
+                    }
+                }
+                _ => {}
+            }
+        }
+        out.extend(socks_list);
+        out.extend(http_list);
+    } else {
+        // Single proxy string (`host:port`) — try both SOCKS5 and HTTP CONNECT
+        if let Some(s5) = parse_proxy_url_candidate(trimmed, ProxyType::Socks5) {
+            out.push(s5);
+        }
+        if let Some(http) = parse_proxy_url_candidate(trimmed, ProxyType::Http) {
+            out.push(http);
+        }
+    }
+    out
+}
+
+fn discover_os_and_env_proxies() -> Vec<ProxySettings> {
+    let mut raw_candidates = Vec::new();
+
+    // 1. Standard proxy environment variables (SOCKS5 preferred over HTTP)
+    let env_specs = [
+        ("ALL_PROXY", ProxyType::Socks5),
+        ("all_proxy", ProxyType::Socks5),
+        ("SOCKS_PROXY", ProxyType::Socks5),
+        ("socks_proxy", ProxyType::Socks5),
+        ("HTTPS_PROXY", ProxyType::Http),
+        ("https_proxy", ProxyType::Http),
+        ("HTTP_PROXY", ProxyType::Http),
+        ("http_proxy", ProxyType::Http),
+    ];
+    for (var, default_type) in env_specs {
+        if let Ok(val) = std::env::var(var) {
+            if let Some(parsed) = parse_proxy_url_candidate(&val, default_type) {
+                raw_candidates.push(parsed);
+            }
+        }
+    }
+
+    // 2. macOS system network proxy (scutil --proxy)
+    #[cfg(target_os = "macos")]
+    {
+        if let Ok(out) = std::process::Command::new("scutil").arg("--proxy").output() {
+            if out.status.success() {
+                let text = String::from_utf8_lossy(&out.stdout);
+                raw_candidates.extend(parse_scutil_proxy_output(&text));
+            }
+        }
+    }
+
+    // 3. Windows system Internet Settings proxy registry
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x08000000;
+        if let Ok(out) = std::process::Command::new("reg")
+            .args([
+                "query",
+                r"HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings",
+            ])
+            .creation_flags(CREATE_NO_WINDOW)
+            .output()
+        {
+            if out.status.success() {
+                let text = String::from_utf8_lossy(&out.stdout);
+                let enabled = text.lines().any(|l| {
+                    l.contains("ProxyEnable") && (l.contains("0x1") || l.trim_end().ends_with('1'))
+                });
+                if enabled {
+                    for line in text.lines() {
+                        if let Some(idx) = line.find("ProxyServer") {
+                            let rest = &line[idx + "ProxyServer".len()..];
+                            // `reg query` format: ProxyServer    REG_SZ    value
+                            if let Some(val) = rest.split("REG_SZ").nth(1) {
+                                raw_candidates.extend(parse_windows_proxy_server(val));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    raw_candidates
+}
+
+fn collect_auto_route_candidates(saved: &ProxySettings) -> Vec<ProxySettings> {
+    let mut ordered = Vec::new();
+    let mut seen: Vec<(ProxyType, String, u16, String)> = Vec::new();
+
+    let mut push_unique = |cfg: ProxySettings| {
+        let key = (
+            cfg.proxy_type,
+            cfg.host.to_ascii_lowercase(),
+            cfg.port,
+            cfg.secret.clone(),
+        );
+        if !seen.contains(&key) {
+            seen.push(key);
+            ordered.push(cfg);
+        }
+    };
+
+    // 1. Saved proxy configuration if explicitly enabled and valid
+    if saved.enabled && validate_proxy_settings(saved).is_ok() {
+        push_unique(sanitize_settings(saved));
+    }
+
+    // 2. Direct Native MTProto TCP (bypasses web.telegram.org DNS/SNI blocks)
+    push_unique(ProxySettings {
+        enabled: true,
+        proxy_type: ProxyType::Direct,
+        host: String::new(),
+        port: 443,
+        secret: String::new(),
+        username: String::new(),
+        password: String::new(),
+    });
+
+    // 3. Discovered OS/environment proxies (SOCKS5 first, then HTTP)
+    let discovered = discover_os_and_env_proxies();
+    for p in discovered.iter().filter(|p| p.proxy_type == ProxyType::Socks5) {
+        push_unique(p.clone());
+    }
+    for p in discovered.iter().filter(|p| p.proxy_type == ProxyType::Http) {
+        push_unique(p.clone());
+    }
+
+    ordered
+}
+
+async fn probe_route_fast(settings: &ProxySettings) -> bool {
+    const PROBE_TIMEOUT: Duration = Duration::from_secs(4);
+    let Ok((mut reader, mut writer, mtproxy_secret)) = connect_through_proxy_with_timeout(
+        settings,
+        TELEGRAM_TEST_DC_IP,
+        TELEGRAM_TEST_DC_PORT,
+        PROBE_TIMEOUT,
+        PROBE_TIMEOUT,
+    )
+    .await
+    else {
+        return false;
+    };
+
+    let res = timeout(
+        PROBE_TIMEOUT,
+        probe_telegram_mtproto(&mut reader, &mut writer, mtproxy_secret),
+    )
+    .await;
+    writer.shutdown().await;
+    matches!(res, Ok(Ok(())))
+}
+
+/// Silently discovers the first working native Telegram transport (saved proxy -> direct TCP -> OS SOCKS5/HTTP).
+#[tauri::command]
+pub async fn discover_telegram_route(app: AppHandle) -> Option<ProxySettings> {
+    let saved = settings_path(&app)
+        .map(|p| load_from_path(&p))
+        .unwrap_or_default();
+    let candidates = collect_auto_route_candidates(&saved);
+
+    for candidate in candidates {
+        if probe_route_fast(&candidate).await {
+            return Some(candidate);
+        }
+    }
+    None
 }
 
 /// Opens a managed TCP/proxy tunnel for GramJS and streams incoming bytes over a raw Tauri Channel.
@@ -1572,5 +1923,85 @@ mod tests {
         let dom = build_socks5_connect_request("proxy.example.com", 8443).unwrap();
         assert_eq!(dom[3], 0x03);
         assert_eq!(dom[4] as usize, "proxy.example.com".len());
+    }
+
+    #[test]
+    fn direct_route_validates_without_external_host() {
+        let direct = ProxySettings {
+            enabled: true,
+            proxy_type: ProxyType::Direct,
+            host: String::new(),
+            port: 443,
+            secret: String::new(),
+            username: String::new(),
+            password: String::new(),
+        };
+        assert!(validate_proxy_settings(&direct).is_ok());
+    }
+
+    #[test]
+    fn parses_proxy_url_candidates_across_formats() {
+        let s5 = parse_proxy_url_candidate("socks5://alice:pw@127.0.0.1:1080/", ProxyType::Http).unwrap();
+        assert_eq!(s5.proxy_type, ProxyType::Socks5);
+        assert_eq!(s5.host, "127.0.0.1");
+        assert_eq!(s5.port, 1080);
+        assert_eq!(s5.username, "alice");
+        assert_eq!(s5.password, "pw");
+
+        let bare = parse_proxy_url_candidate("10.0.0.2:8080", ProxyType::Http).unwrap();
+        assert_eq!(bare.proxy_type, ProxyType::Http);
+        assert_eq!(bare.host, "10.0.0.2");
+        assert_eq!(bare.port, 8080);
+
+        let v6 = parse_proxy_url_candidate("http://[::1]:3128", ProxyType::Http).unwrap();
+        assert_eq!(v6.proxy_type, ProxyType::Http);
+        assert_eq!(v6.host, "::1");
+        assert_eq!(v6.port, 3128);
+
+        assert!(parse_proxy_url_candidate("socks4://127.0.0.1:1080", ProxyType::Socks5).is_none());
+        assert!(parse_proxy_url_candidate("", ProxyType::Http).is_none());
+    }
+
+    #[test]
+    fn parses_scutil_and_windows_proxy_configs() {
+        let scutil = "\
+<dictionary> {
+  HTTPEnable : 1
+  HTTPPort : 7890
+  HTTPProxy : 127.0.0.1
+  SOCKSEnable : 1
+  SOCKSPort : 7891
+  SOCKSProxy : 127.0.0.1
+}";
+        let mac_list = parse_scutil_proxy_output(scutil);
+        assert_eq!(mac_list.len(), 2);
+        assert_eq!(mac_list[0].proxy_type, ProxyType::Socks5);
+        assert_eq!(mac_list[0].port, 7891);
+        assert_eq!(mac_list[1].proxy_type, ProxyType::Http);
+        assert_eq!(mac_list[1].port, 7890);
+
+        let win_list = parse_windows_proxy_server("http=10.1.0.1:8080;socks=10.1.0.1:1080");
+        assert_eq!(win_list.len(), 2);
+        assert_eq!(win_list[0].proxy_type, ProxyType::Socks5);
+        assert_eq!(win_list[0].port, 1080);
+        assert_eq!(win_list[1].proxy_type, ProxyType::Http);
+        assert_eq!(win_list[1].port, 8080);
+    }
+
+    #[test]
+    fn auto_route_candidates_prioritize_saved_then_direct_then_os_proxies() {
+        let saved = ProxySettings {
+            enabled: true,
+            proxy_type: ProxyType::Socks5,
+            host: "127.0.0.1".to_string(),
+            port: 9999,
+            secret: String::new(),
+            username: String::new(),
+            password: String::new(),
+        };
+        let list = collect_auto_route_candidates(&saved);
+        assert_eq!(list[0].proxy_type, ProxyType::Socks5);
+        assert_eq!(list[0].port, 9999);
+        assert_eq!(list[1].proxy_type, ProxyType::Direct);
     }
 }

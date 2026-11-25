@@ -3,7 +3,7 @@ import type { StringSession } from "telegram/sessions";
 import { isTauriRuntime } from "@/lib/runtime/bridge";
 import { logger } from "@/lib/logger";
 
-export type ProxyType = "mtproxy" | "socks5" | "http";
+export type ProxyType = "direct" | "mtproxy" | "socks5" | "http";
 
 export interface ProxySettings {
   enabled: boolean;
@@ -179,6 +179,9 @@ export function normalizeMtproxySecretForGramJs(rawSecret: string): string {
 }
 
 export function validateProxySettings(settings: ProxySettings): string | null {
+  if (settings.proxyType === "direct") {
+    return null;
+  }
   const host = settings.host.trim();
   if (!host) {
     return "Proxy host is required.";
@@ -399,45 +402,18 @@ export async function testProxyConnection(settings: ProxySettings): Promise<Test
  * Clears proxy settings and returns to direct connection.
  * Silently saves `enabled: false` via Rust backend.
  */
-export async function clearProxy(): Promise<ProxySettings> {
-  const cleared: ProxySettings = { ...DEFAULT_PROXY_SETTINGS, enabled: false };
-  if (!isProxySupported()) {
-    return cleared;
-  }
-  const saved = await invoke<ProxySettings>("save_proxy_settings", { settings: cleared });
-  notifyProxyListeners(saved);
-  return saved;
-}
-
 /**
- * Parses a proxy link, auto-tests it, and saves if reachable.
- * Tries the protocol dictated by the link format; throws if unreachable.
- * Never shows protocol selectors or technical fields to the user.
- *
- * @param rawLink - A tg://proxy, t.me/proxy, tg://socks, socks5://, or http:// URL
- * @returns The saved ProxySettings if a working connection was found
- * @throws If the link is invalid or no connection could be established
+ * Silently probes Direct Native MTProto TCP and OS/environment SOCKS5/HTTP proxies
+ * in Rust, returning the first reachable transport route (or `null` if none work).
  */
-export async function autoDetectAndSaveProxy(rawLink: string): Promise<ProxySettings> {
+export async function discoverTelegramRoute(): Promise<ProxySettings | null> {
   if (!isProxySupported()) {
-    throw new Error("Custom proxy settings are only supported in the native TeleDrive app.");
+    return null;
   }
-
-  // Parse the link — throws on bad format
-  const parsed = parseProxyLink(rawLink);
-
-  const candidate: ProxySettings = {
-    ...DEFAULT_PROXY_SETTINGS,
-    ...parsed,
-    enabled: true,
-  };
-
-  // Test the parsed settings
-  const result = await testProxyConnection(candidate);
-  if (result.ok) {
-    const saved = await saveProxySettings(candidate);
-    return saved;
+  try {
+    return await invoke<ProxySettings | null>("discover_telegram_route");
+  } catch (err) {
+    logger.warn("Automatic route discovery failed:", err);
+    return null;
   }
-
-  throw new Error(result.message || "Proxy is not reachable.");
 }

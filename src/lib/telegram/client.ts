@@ -5,6 +5,7 @@ import { StringSession } from "telegram/sessions";
 import { getPlatform } from "../platform";
 import { APP_VERSION } from "./config";
 import {
+  discoverTelegramRoute,
   getProxySettings,
   isProxySupported,
   normalizeMtproxySecretForGramJs,
@@ -20,11 +21,20 @@ let isConnectedStatus = false;
 let activeApiId: number | null = null;
 let activeApiHash: string | null = null;
 let activeSessionString: string | null = null;
-let activeProxySignature: string | null = null;
+let activeRouteSignature: string | null = null;
+/** Remembers the last working native route in this session so subsequent connects avoid probing delay. */
+let sessionPreferredRoute: ProxySettings | null | undefined = undefined;
 
-async function resolveActiveProxySettings(): Promise<ProxySettings | null> {
+function routeSignature(route: ProxySettings | null): string {
+  return route ? JSON.stringify(route) : "wss-direct";
+}
+
+async function resolveInitialRoute(): Promise<ProxySettings | null> {
   if (!isProxySupported()) {
     return null;
+  }
+  if (sessionPreferredRoute !== undefined) {
+    return sessionPreferredRoute;
   }
   try {
     const settings = await getProxySettings();
@@ -43,50 +53,20 @@ async function resolveActiveProxySettings(): Promise<ProxySettings | null> {
   }
 }
 
-export async function initClient(
+/**
+ * Instantiates and connects a `TelegramClient` over either standard WSS (`route === null`)
+ * or a native Rust socket route (`Direct` raw MTProto TCP, `MTProxy`, `SOCKS5`, or `HTTP`).
+ */
+async function connectWithRoute(
   apiId: number,
   apiHash: string,
-  sessionString: string = "",
-  forceNew: boolean = false
-): Promise<void> {
-  const proxySettings = await resolveActiveProxySettings();
-  const proxySignature = proxySettings ? JSON.stringify(proxySettings) : "direct";
-
-  // If already instantiated with the SAME credentials, session, proxy, and no force-new requested, reuse or reconnect
-  if (
-    !forceNew &&
-    clientInstance &&
-    activeApiId === apiId &&
-    activeApiHash === apiHash &&
-    activeSessionString === sessionString &&
-    activeProxySignature === proxySignature
-  ) {
-    if (!clientInstance.connected) {
-      try {
-        await clientInstance.connect();
-        isConnectedStatus = true;
-      } catch (err) {
-        logger.warn("Reconnection failed, creating fresh client:", err);
-      }
-    }
-    if (isConnectedStatus && clientInstance?.connected) {
-      return;
-    }
-  }
-
-  // Tear down any existing client
-  if (clientInstance) {
-    try { await clientInstance.disconnect(); } catch { /* ignore */ }
-    clientInstance = null;
-    isConnectedStatus = false;
-    activeApiId = null;
-    activeApiHash = null;
-    activeSessionString = null;
-    activeProxySignature = null;
-  }
-
+  sessionString: string,
+  route: ProxySettings | null,
+  fastAttempt: boolean = false
+): Promise<TelegramClient> {
   const stringSession = new StringSession(sessionString);
-  normalizeStringSessionTransport(stringSession, proxySettings !== null);
+  const useNativeTcp = route !== null;
+  normalizeStringSessionTransport(stringSession, useNativeTcp);
 
   const platform = getPlatform();
   const deviceModel =
@@ -97,9 +77,9 @@ export async function initClient(
       : "TeleDrive Desktop";
 
   const clientParams: Record<string, any> = {
-    connectionRetries: proxySettings ? 2 : 5,
-    retryDelay: proxySettings ? 500 : 1000,
-    useWSS: proxySettings === null,
+    connectionRetries: useNativeTcp || fastAttempt ? 2 : 5,
+    retryDelay: useNativeTcp || fastAttempt ? 500 : 1000,
+    useWSS: !useNativeTcp,
     deviceModel,
     systemVersion: "1.0.0",
     appVersion: APP_VERSION,
@@ -107,13 +87,13 @@ export async function initClient(
     systemLangCode: "en",
   };
 
-  if (proxySettings) {
-    clientParams.networkSocket = createTauriProxySocketClass(proxySettings);
-    if (proxySettings.proxyType === "mtproxy") {
+  if (route) {
+    clientParams.networkSocket = createTauriProxySocketClass(route);
+    if (route.proxyType === "mtproxy") {
       clientParams.proxy = {
-        ip: proxySettings.host,
-        port: proxySettings.port,
-        secret: normalizeMtproxySecretForGramJs(proxySettings.secret),
+        ip: route.host,
+        port: route.port,
+        secret: normalizeMtproxySecretForGramJs(route.secret),
         MTProxy: true,
       };
     } else {
@@ -121,46 +101,156 @@ export async function initClient(
     }
   }
 
-  const nextClient = new TelegramClient(stringSession, apiId, apiHash, clientParams);
+  const client = new TelegramClient(stringSession, apiId, apiHash, clientParams);
 
-  if (proxySettings) {
-    // Route DC lookups and exported upload/download DCs to raw IPv4 endpoints over TCP proxy
-    (nextClient as any).getDC = async (dcId: number) => {
-      if (!(nextClient as any)._config) {
+  if (useNativeTcp) {
+    // Route DC lookups and exported upload/download DCs to raw IPv4 endpoints over TCP
+    (client as any).getDC = async (dcId: number) => {
+      if (!(client as any)._config) {
         try {
-          (nextClient as any)._config = await nextClient.invoke(new Api.help.GetConfig());
+          (client as any)._config = await client.invoke(new Api.help.GetConfig());
         } catch {
           // Fall back to canonical production DC map when initial config is unavailable
         }
       }
       return resolveTelegramDcEndpoint(
         dcId,
-        (nextClient as any)._config?.dcOptions,
-        Boolean((nextClient as any)._useIPV6)
+        (client as any)._config?.dcOptions,
+        Boolean((client as any)._useIPV6)
       );
     };
   }
 
-  // Set the log level to warn
-  nextClient.setLogLevel("warn" as any);
+  client.setLogLevel("warn" as any);
 
   try {
-    await nextClient.connect();
+    await client.connect();
   } catch (err) {
-    try { await nextClient.disconnect(); } catch { /* ignore */ }
+    try {
+      await client.disconnect();
+    } catch {
+      /* ignore */
+    }
     throw err;
   }
 
-  clientInstance = nextClient;
+  return client;
+}
+
+export async function initClient(
+  apiId: number,
+  apiHash: string,
+  sessionString: string = "",
+  forceNew: boolean = false
+): Promise<void> {
+  const initialRoute = await resolveInitialRoute();
+  const initialSig = routeSignature(initialRoute);
+
+  // If already instantiated with the SAME credentials, session, route, and no force-new requested, reuse or reconnect
+  if (
+    !forceNew &&
+    clientInstance &&
+    activeApiId === apiId &&
+    activeApiHash === apiHash &&
+    activeSessionString === sessionString &&
+    activeRouteSignature === initialSig
+  ) {
+    if (!clientInstance.connected) {
+      try {
+        await clientInstance.connect();
+        isConnectedStatus = true;
+      } catch (err) {
+        logger.warn("Reconnection failed, creating fresh client with automatic fallback:", err);
+      }
+    }
+    if (isConnectedStatus && clientInstance?.connected) {
+      return;
+    }
+  }
+
+  // Tear down any existing client
+  if (clientInstance) {
+    try {
+      await clientInstance.disconnect();
+    } catch {
+      /* ignore */
+    }
+    clientInstance = null;
+    isConnectedStatus = false;
+    activeApiId = null;
+    activeApiHash = null;
+    activeSessionString = null;
+    activeRouteSignature = null;
+  }
+
+  const nativeFallbackAvailable = isProxySupported();
+  let connectedClient: TelegramClient | null = null;
+  let usedRoute: ProxySettings | null = initialRoute;
+  let primaryError: unknown;
+
+  try {
+    connectedClient = await connectWithRoute(
+      apiId,
+      apiHash,
+      sessionString,
+      initialRoute,
+      nativeFallbackAvailable
+    );
+  } catch (err) {
+    primaryError = err;
+    if (!nativeFallbackAvailable) {
+      throw err;
+    }
+
+    logger.warn(
+      `Primary Telegram transport (${initialSig}) failed; probing fallback routes automatically:`,
+      err
+    );
+
+    // 1. Discover any reachable native route in Rust (saved proxy -> Direct TCP -> OS SOCKS5 -> OS HTTP)
+    const discovered = await discoverTelegramRoute();
+    if (discovered && routeSignature(discovered) !== initialSig) {
+      try {
+        connectedClient = await connectWithRoute(apiId, apiHash, sessionString, discovered, true);
+        usedRoute = discovered;
+        logger.info(`Connected seamlessly via fallback route: ${discovered.proxyType}`);
+      } catch (fallbackErr) {
+        logger.warn(`Discovered fallback route (${discovered.proxyType}) failed to connect:`, fallbackErr);
+      }
+    }
+
+    // 2. If primary wasn't WSS direct (e.g. cached proxy went offline on a new Wi-Fi), also try WSS direct
+    if (!connectedClient && initialRoute !== null) {
+      try {
+        connectedClient = await connectWithRoute(apiId, apiHash, sessionString, null, true);
+        usedRoute = null;
+        logger.info("Connected seamlessly via direct WSS fallback.");
+      } catch (wssErr) {
+        logger.warn("Direct WSS fallback also failed:", wssErr);
+      }
+    }
+
+    if (!connectedClient) {
+      // Clear stale cached route so next attempt starts fresh, then surface error to caller/restoreSession
+      sessionPreferredRoute = undefined;
+      throw primaryError;
+    }
+  }
+
+  if (nativeFallbackAvailable) {
+    sessionPreferredRoute = usedRoute;
+  }
+
+  clientInstance = connectedClient;
   isConnectedStatus = true;
   activeApiId = apiId;
   activeApiHash = apiHash;
   activeSessionString = sessionString;
-  activeProxySignature = proxySignature;
+  activeRouteSignature = routeSignature(usedRoute);
 }
 
 /**
- * Rebuilds and reconnects the active `TelegramClient` in place (e.g. after proxy changes)
+ * Rebuilds and reconnects the active `TelegramClient` in place (e.g. after network/Wi-Fi changes)
  * while preserving the current API credentials and session authKey.
  */
 export async function reconnectActiveClient(
@@ -191,8 +281,8 @@ export function getClient(): TelegramClient {
 }
 
 /**
- * Ensures the client instance is connected. If the connection was dropped
- * (e.g. app was backgrounded or network socket dropped), attempts to reconnect.
+ * Ensures the client instance is connected. If the connection was dropped or the network changed,
+ * attempts to reconnect — falling back across transports automatically if direct reconnect fails.
  */
 export async function ensureConnected(): Promise<TelegramClient> {
   const client = getClient();
@@ -201,7 +291,14 @@ export async function ensureConnected(): Promise<TelegramClient> {
       await client.connect();
       isConnectedStatus = true;
     } catch (err) {
-      logger.warn("[TelegramClient] Reconnection attempt failed:", err);
+      logger.warn("[TelegramClient] Direct reconnection failed, trying route fallback:", err);
+      sessionPreferredRoute = undefined;
+      try {
+        await reconnectActiveClient();
+        return getClient();
+      } catch (fallbackErr) {
+        logger.warn("[TelegramClient] Fallback reconnection attempt failed:", fallbackErr);
+      }
     }
   }
   return client;
@@ -214,7 +311,7 @@ export async function disconnectClient(): Promise<void> {
   activeApiId = null;
   activeApiHash = null;
   activeSessionString = null;
-  activeProxySignature = null;
+  activeRouteSignature = null;
   if (client) {
     try {
       await client.disconnect();
@@ -231,7 +328,8 @@ export function resetClient(): void {
   activeApiId = null;
   activeApiHash = null;
   activeSessionString = null;
-  activeProxySignature = null;
+  activeRouteSignature = null;
+  sessionPreferredRoute = undefined;
 }
 
 export function isClientConnected(): boolean {
