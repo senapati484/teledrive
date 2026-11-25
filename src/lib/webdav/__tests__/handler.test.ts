@@ -821,12 +821,12 @@ describe("WebDAV handler", () => {
     expect([a.status, b.status].sort()).toEqual([201, 405]);
   });
 
-  it("rate-limits sustained metadata edits", async () => {
+  it("rate-limits 20 MKCOL over 10 s under the production cadence", async () => {
     vi.useFakeTimers();
     const { deps, state } = makeDeps(baseFiles());
-    deps.metadataEditIntervalMs = 200;
+    deps.metadataEditIntervalMs = 2_000;
     deps.metadataEditBurst = 1;
-    deps.metadataCommitDeadlineMs = 5_000;
+    deps.metadataCommitDeadlineMs = 12_000;
     const handler = createWebdavHandler(deps);
 
     const promises: Array<Promise<{ status: number }>> = [];
@@ -836,14 +836,14 @@ describe("WebDAV handler", () => {
           request({ id: 100 + index, method: "MKCOL", path: `/Docs/Sustained-${index}` })
         )
       );
-      await vi.advanceTimersByTimeAsync(50);
+      await vi.advanceTimersByTimeAsync(500);
     }
-    await vi.advanceTimersByTimeAsync(5_000);
+    await vi.advanceTimersByTimeAsync(30_000);
     const responses = await Promise.all(promises);
 
     expect(responses.every((response) => response.status === 201)).toBe(true);
-    // 1 s of arrivals at 50 ms with a 200 ms edit interval: <= 7 edits.
-    expect(state.saveCalls).toBeLessThanOrEqual(7);
+    // 10 s of arrivals with one edit per 2 s: at most six edits.
+    expect(state.saveCalls).toBeLessThanOrEqual(6);
     for (let index = 0; index < 20; index++) {
       expect(
         state.files.filter((entry) => entry.name === `Sustained-${index}`)
