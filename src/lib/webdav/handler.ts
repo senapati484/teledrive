@@ -541,7 +541,6 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
         floodWaitAbortSeconds: deps.floodWaitAbortSeconds,
         onRetry: (event) => {
           uploadRetryWaitMs += event.waitMs;
-          if (event.floodSeconds) uploadRetryWaitMs += event.floodSeconds * 1000;
         },
       });
     } catch (err) {
