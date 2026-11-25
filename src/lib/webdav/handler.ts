@@ -318,11 +318,19 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
     }
   };
 
-  /** Applies a catalog mutation atomically and rolls back on hard failures. */
-  const commitFiles = async (
+  /**
+   * Applies a mutation to the in-memory catalog under the serialization lock.
+   * The Telegram commit happens outside the lock so concurrent WebDAV requests
+   * can enqueue while one save is in flight and let IndexQueue coalesce them.
+   */
+  const applyCatalogMutation = async (
     channelId: string,
     build: (current: TeleFile[]) => TeleFile[]
-  ): Promise<TeleFile[]> => {
+  ): Promise<{
+    previous: TeleFile[];
+    applied: TeleFile[];
+    next: TeleFile[];
+  }> => {
     return withCatalogLock(async () => {
       // Fail before mutating the store when Telegram has already asked us to
       // wait; a 503+Retry-After is better than a 60 s hang.
@@ -333,46 +341,76 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
       // `setFiles` normalizes into a new array; capture the applied reference
       // so a concurrent action can never be rolled back by this request.
       const applied = deps.getFiles();
-      const commitPromise = deps.saveIndex(channelId, next);
-      let timer: ReturnType<typeof setTimeout> | undefined;
-      const deadline = new Promise<typeof COMMIT_DEADLINE>((resolve) => {
-        timer = setTimeout(
-          () => resolve(COMMIT_DEADLINE),
-          Math.max(1, deps.metadataCommitDeadlineMs)
-        );
-      });
-      try {
-        const result = await Promise.race([
-          commitPromise.then(() => "committed" as const),
-          deadline,
-        ]);
-        if (result === COMMIT_DEADLINE) {
-          // The queue still owns the write. Keep the optimistic state and let
-          // the route schedule cleanup based on the eventual outcome.
-          commitPromise.catch(() => {});
-          const outcome = commitPromise.then(
-            () => true,
-            () => false
-          );
-          throw new WebdavError(
-            503,
-            "Catalog commit is still pending; retry shortly",
-            { retryAfterSeconds: 3, commitOutcome: outcome }
-          );
-        }
-      } catch (err) {
-        if (err instanceof WebdavError && err.commitOutcome) throw err;
-        // Transient index failures keep the optimistic state and retry in the
-        // IndexQueue; only hard errors roll the catalog back.
-        if (!deps.isDeferredError(err)) {
-          if (deps.getFiles() === applied) deps.setFiles(previous);
-          throw err;
-        }
-      } finally {
-        if (timer) clearTimeout(timer);
-      }
-      return next;
+      return { previous, applied, next };
     });
+  };
+
+  /** PUT path: await the commit (bounded) so overwrite/conflict failures are visible. */
+  const commitFiles = async (
+    channelId: string,
+    build: (current: TeleFile[]) => TeleFile[]
+  ): Promise<TeleFile[]> => {
+    const { previous, applied, next } = await applyCatalogMutation(channelId, build);
+    const commitPromise = deps.saveIndex(channelId, next);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const deadline = new Promise<typeof COMMIT_DEADLINE>((resolve) => {
+      timer = setTimeout(
+        () => resolve(COMMIT_DEADLINE),
+        Math.max(1, deps.metadataCommitDeadlineMs)
+      );
+    });
+    try {
+      const result = await Promise.race([
+        commitPromise.then(() => "committed" as const),
+        deadline,
+      ]);
+      if (result === COMMIT_DEADLINE) {
+        // The queue still owns the write. Keep the optimistic state and let
+        // the route schedule cleanup based on the eventual outcome.
+        commitPromise.catch(() => {});
+        const outcome = commitPromise.then(
+          () => true,
+          () => false
+        );
+        throw new WebdavError(
+          503,
+          "Catalog commit is still pending; retry shortly",
+          { retryAfterSeconds: 3, commitOutcome: outcome }
+        );
+      }
+    } catch (err) {
+      if (err instanceof WebdavError && err.commitOutcome) throw err;
+      // Transient index failures keep the optimistic state and retry in the
+      // IndexQueue; only hard errors roll the catalog back.
+      if (!deps.isDeferredError(err)) {
+        if (deps.getFiles() === applied) deps.setFiles(previous);
+        throw err;
+      }
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+    return next;
+  };
+
+  /**
+   * Metadata path: acknowledge after the local atomic apply and queue the
+   * Telegram write. Sequential MKCOL/DELETE/MOVE/COPY requests then coalesce in
+   * IndexQueue into one EditMessage instead of one edit per request.
+   */
+  const commitFilesOptimistic = async (
+    channelId: string,
+    build: (current: TeleFile[]) => TeleFile[]
+  ): Promise<{ files: TeleFile[]; outcome: Promise<boolean> }> => {
+    const { next } = await applyCatalogMutation(channelId, build);
+    const commitPromise = deps.saveIndex(channelId, next);
+    commitPromise.catch(() => {});
+    return {
+      files: next,
+      outcome: commitPromise.then(
+        () => true,
+        () => false
+      ),
+    };
   };
 
   const handlePropfind = async (request: WebdavBridgeRequest): Promise<WebdavBridgeResponse> => {
@@ -644,7 +682,7 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
     }
     assertWriteAllowed(target, request);
 
-    await commitFiles(channelId, (current) => {
+    await commitFilesOptimistic(channelId, (current) => {
       if (nodeForPath(current, target)) {
         throw new WebdavError(405, "Resource already exists");
       }
@@ -682,25 +720,19 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
     deps.recordDeletedMessages(channelId, ids);
 
     const removedIds = new Set(targets.map((entry) => entry.id));
-    try {
-      await commitFiles(channelId, (current) =>
-        current.filter((entry) => !removedIds.has(entry.id))
-      );
-    } catch (err) {
-      const deferred = scheduleCommitCleanup(
-        err,
-        () => deps.deleteMessages(channelId, ids),
-        async () => deps.clearDeletedMessages(channelId, ids)
-      );
-      if (!deferred) deps.clearDeletedMessages(channelId, ids);
-      throw err;
-    }
-
-    if (ids.length > 0) {
-      await deps.deleteMessages(channelId, ids).catch((err) => {
+    const commit = await commitFilesOptimistic(channelId, (current) =>
+      current.filter((entry) => !removedIds.has(entry.id))
+    );
+    void commit.outcome.then((committed) => {
+      if (!committed) {
+        deps.clearDeletedMessages(channelId, ids);
+        return;
+      }
+      if (ids.length === 0) return;
+      return deps.deleteMessages(channelId, ids).catch((err) => {
         deps.log(`telegram delete failed for ${ids.length} message(s): ${String(err)}`);
       });
-    }
+    });
     return { status: 204 };
   };
 
@@ -728,8 +760,8 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
 
     let existed = Boolean(destinationNode);
     let replaced: TeleFile[] = [];
-    try {
-      await commitFiles(channelId, (current) => {
+    {
+      const commit = await commitFilesOptimistic(channelId, (current) => {
         const sourceNode = nodeForPath(current, source);
         if (!sourceNode) throw new WebdavError(404, "Source not found");
         const currentNode = nodeForPath(current, destination);
@@ -760,18 +792,12 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
 
         return deps.reconstructMissingFolders(moved, channelId).healedFiles;
       });
-    } catch (err) {
-      scheduleCommitCleanup(
-        err,
-        () => deps.deleteMessages(channelId, messageIds(replaced)),
-        async () => {}
-      );
-      throw err;
+      void commit.outcome.then((committed) => {
+        if (!committed || replaced.length === 0) return;
+        return deps.deleteMessages(channelId, messageIds(replaced)).catch(() => {});
+      });
     }
 
-    if (replaced.length > 0) {
-      await deps.deleteMessages(channelId, messageIds(replaced)).catch(() => {});
-    }
     return { status: existed ? 204 : 201 };
   };
 
@@ -840,59 +866,58 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
     }
 
     let existed = false;
-    try {
-      await commitFiles(channelId, (current) => {
-        const currentNode = nodeForPath(current, destination);
-        existed = Boolean(currentNode);
-        if (currentNode && !overwrite) {
-          throw new WebdavError(412, "Destination exists and Overwrite is F");
-        }
-        const replaced = currentNode ? subtreeEntries(current, destination) : [];
-        const replacedIds = new Set(replaced.map((entry) => entry.id));
-        const base = current.filter((entry) => !replacedIds.has(entry.id));
+    {
+      let commit: Awaited<ReturnType<typeof commitFilesOptimistic>>;
+      try {
+        commit = await commitFilesOptimistic(channelId, (current) => {
+          const currentNode = nodeForPath(current, destination);
+          existed = Boolean(currentNode);
+          if (currentNode && !overwrite) {
+            throw new WebdavError(412, "Destination exists and Overwrite is F");
+          }
+          const replaced = currentNode ? subtreeEntries(current, destination) : [];
+          const replacedIds = new Set(replaced.map((entry) => entry.id));
+          const base = current.filter((entry) => !replacedIds.has(entry.id));
 
-        const folders: TeleFile[] = [];
-      const existingPaths = new Set(
-        base
-          .filter(isFolderEntry)
-          .map((entry) => fullPathOf(entry))
-      );
-      for (const folderPath of folderPaths) {
-        if (existingPaths.has(folderPath)) continue;
-        folders.push({
-          id: deps.newId(),
-          name: basename(folderPath),
-          size: 0,
-          mime: "inode/directory",
-          folderPath: dirname(folderPath),
-          messageId: 0,
-          channelId,
-          uploadedAt: deps.now(),
-          starred: false,
-          trashed: false,
-          archived: false,
+          const folders: TeleFile[] = [];
+          const existingPaths = new Set(
+            base.filter(isFolderEntry).map((entry) => fullPathOf(entry))
+          );
+          for (const folderPath of folderPaths) {
+            if (existingPaths.has(folderPath)) continue;
+            folders.push({
+              id: deps.newId(),
+              name: basename(folderPath),
+              size: 0,
+              mime: "inode/directory",
+              folderPath: dirname(folderPath),
+              messageId: 0,
+              channelId,
+              uploadedAt: deps.now(),
+              starred: false,
+              trashed: false,
+              archived: false,
+            });
+          }
+
+          return deps.reconstructMissingFolders(
+            [...base, ...folders, ...created],
+            channelId
+          ).healedFiles;
         });
+      } catch (err) {
+        // Validation failed before enqueue: remove the clones immediately.
+        const partial = created.flatMap((entry) => messageIds([entry]));
+        if (partial.length > 0) {
+          await deps.deleteMessages(channelId, partial).catch(() => {});
+        }
+        throw err;
       }
-
-        return deps.reconstructMissingFolders([...base, ...folders, ...created], channelId)
-          .healedFiles;
-      });
-    } catch (err) {
-      // Catalog rejected the copy: remove the cloned messages too. If the
-      // commit is still queued after the deadline, wait for its outcome.
       const partial = created.flatMap((entry) => messageIds([entry]));
-      const deferred = scheduleCommitCleanup(
-        err,
-        async () => {},
-        () =>
-          partial.length > 0
-            ? deps.deleteMessages(channelId, partial)
-            : Promise.resolve()
-      );
-      if (!deferred && partial.length > 0) {
-        await deps.deleteMessages(channelId, partial).catch(() => {});
-      }
-      throw err;
+      void commit.outcome.then((committed) => {
+        if (committed || partial.length === 0) return;
+        return deps.deleteMessages(channelId, partial).catch(() => {});
+      });
     }
 
     return { status: existed ? 204 : 201 };

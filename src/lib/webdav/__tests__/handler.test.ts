@@ -557,23 +557,38 @@ describe("WebDAV handler", () => {
     expect(state.files.some((entry) => entry.name === "contended.txt")).toBe(true);
   });
 
-  it("routes MKCOL and DELETE through the conflict guard", async () => {
+  it("acknowledges metadata optimistically and coalesces the queued save", async () => {
     const { deps, state } = makeDeps(baseFiles());
-    state.saveError = conflictError(false);
+    let resolveSave!: () => void;
+    let rejectSave!: (err: unknown) => void;
+    state.saveDeferred = {
+      promise: new Promise<void>((resolve, reject) => {
+        resolveSave = resolve;
+        rejectSave = reject;
+      }),
+      resolve: () => resolveSave(),
+      reject: (err) => rejectSave(err),
+    };
     const handler = createWebdavHandler(deps);
 
     const mkcol = await handler.handle(
-      request({ id: 1, method: "MKCOL", path: "/Docs/ConflictFolder" })
+      request({ id: 1, method: "MKCOL", path: "/Docs/FastFolder" })
     );
-    expect(mkcol.status).toBe(409);
-    expect(state.files.some((entry) => entry.name === "ConflictFolder")).toBe(false);
+    expect(mkcol.status).toBe(201);
+    expect(state.files.some((entry) => entry.name === "FastFolder")).toBe(true);
+    expect(state.saveCalls).toBe(1);
 
     const removed = await handler.handle(
       request({ id: 2, method: "DELETE", path: "/Docs/a.txt" })
     );
-    expect(removed.status).toBe(409);
-    expect(state.files.some((entry) => entry.name === "a.txt")).toBe(true);
+    expect(removed.status).toBe(204);
     expect(state.tombstones).toContain(5);
+    expect(state.clearedTombstones).not.toContain(5);
+
+    // The queue reports a hard failure later; DELETE reconciles its tombstone.
+    state.saveDeferred = null;
+    rejectSave(new Error("late hard failure"));
+    await new Promise((resolve) => setTimeout(resolve, 0));
     expect(state.clearedTombstones).toContain(5);
   });
 

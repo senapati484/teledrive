@@ -10,9 +10,11 @@ import {
 import {
   enqueueSave,
   ensureFreshIndexForWrite,
+  getIndexBackoffMs,
   getIndexQueue,
   IndexConflictError,
   resetQueuesForTests,
+  setCommitImplForTests,
 } from "../indexQueue";
 import { discoverIndex } from "../metadataStore";
 
@@ -303,6 +305,50 @@ describe("commit-time index revision guard", () => {
     expect(fake.calls).toHaveLength(0);
   });
 
+
+
+  it("clears the WebDAV backoff after the Telegram flood deadline", async () => {
+    vi.useFakeTimers();
+    const shared = [makeFile("base")];
+    seed(shared);
+    useFileStore.setState({ files: shared });
+    let attempts = 0;
+    setCommitImplForTests(CHANNEL, async () => {
+      attempts++;
+      if (attempts === 1) {
+        throw Object.assign(new Error("A wait of 5 seconds is required"), {
+          seconds: 5,
+        });
+      }
+    });
+
+    const pending = enqueueSave(CHANNEL, [...shared, makeFile("after-flood")]);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(getIndexBackoffMs(CHANNEL)).toBeGreaterThan(0);
+
+    await vi.advanceTimersByTimeAsync(6_000);
+    await pending;
+    expect(attempts).toBe(2);
+    expect(getIndexBackoffMs(CHANNEL)).toBe(0);
+    vi.useRealTimers();
+  });
+  it("coalesces a burst of metadata saves into few index edits", async () => {
+    const shared = [makeFile("base")];
+    const { ids } = seed(shared);
+    useFileStore.setState({ files: shared });
+
+    const added = Array.from({ length: 5 }, (_, index) => makeFile(`burst-${index}`));
+    const states = added.map((_, index) => [...shared, ...added.slice(0, index + 1)]);
+
+    // All WebDAV metadata responses now return after the local apply, so the
+    // requests overlap one in-flight commit and coalesce in the queue.
+    await Promise.all(states.map((state) => enqueueSave(CHANNEL, state)));
+
+    const edits = fake.calls.filter((call) => call.op === "edit");
+    expect(edits.length).toBeLessThanOrEqual(2);
+    const committed = idSet(fake.messages.get(ids[0]));
+    for (const entry of added) expect(committed).toContain(entry.id);
+  });
   it("fails closed when discovery cannot verify the channel", async () => {
     resetQueuesForTests();
     h.discovery = { status: "incomplete", reason: "timeout" };
