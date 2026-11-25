@@ -9,6 +9,7 @@ use tokio::sync::Mutex as AsyncMutex;
 pub mod biometrics;
 use biometrics::{authenticate_device_owner, check_biometrics_available};
 mod desktop_settings;
+mod proxy;
 
 #[tauri::command]
 async fn log_vault_state(app: tauri::AppHandle, state: String) {
@@ -1591,6 +1592,7 @@ pub fn run() {
         .plugin(tauri_plugin_process::init());
 
     builder
+        .manage(proxy::ProxySocketState::default())
         .invoke_handler(tauri::generate_handler![
             log_vault_state,
             get_vault_state,
@@ -1628,6 +1630,12 @@ pub fn run() {
             desktop_settings::get_desktop_startup_settings,
             desktop_settings::set_launch_at_login,
             desktop_settings::set_start_minimized_to_tray,
+            proxy::get_proxy_settings,
+            proxy::save_proxy_settings,
+            proxy::test_proxy_connection,
+            proxy::proxy_socket_connect,
+            proxy::proxy_socket_write,
+            proxy::proxy_socket_close,
         ])
         .setup(|app| {
             #[cfg(not(mobile))]

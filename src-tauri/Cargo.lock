@@ -4833,8 +4833,11 @@ dependencies = [
 name = "teledrive"
 version = "0.1.5"
 dependencies = [
+ "aes",
  "argon2",
  "cc",
+ "ctr",
+ "getrandom 0.2.17",
  "notify",
  "serde",
  "serde_json",

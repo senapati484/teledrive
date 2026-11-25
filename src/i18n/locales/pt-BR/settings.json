@@ -12,7 +12,8 @@
     "about": "Sobre",
     "encryption": "Criptografia",
     "security": "Security & App Lock",
-    "general": "Geral"
+    "general": "Geral",
+    "network": "Rede e Proxy"
   },
   "language": {
     "title": "Idioma",
@@ -413,6 +414,58 @@
       "startMinimizedEnabled": "O TeleDrive iniciará minimizado na bandeja do sistema.",
       "startMinimizedDisabled": "O TeleDrive abrirá a janela principal ao iniciar.",
       "startMinimizedFailed": "Não foi possível atualizar a preferência de janela inicial."
+    }
+  },
+  "network": {
+    "title": "Rede e Proxy",
+    "description": "Conecte-se ao Telegram por meio de um proxy MTProxy, SOCKS5 ou HTTP. Aplica imediatamente sem reiniciar.",
+    "authButton": "Proxy",
+    "loading": "Carregando configuração de proxy...",
+    "callout": "<strong>Direto vs. Proxy:</strong> O TeleDrive salva segredos localmente com permissões privadas e preserva sua sessão do Telegram ao alternar entre modos.",
+    "enableProxy": {
+      "title": "Usar proxy personalizado",
+      "description": "Roteie todo o login, transferências de arquivos e sincronização do Telegram pelo seu proxy."
+    },
+    "importLink": {
+      "label": "Importação rápida por link",
+      "placeholder": "Cole tg://proxy?..., t.me/proxy?..., socks5://... ou http://...",
+      "apply": "Importar",
+      "paste": "Colar"
+    },
+    "protocol": {
+      "label": "Protocolo de proxy",
+      "mtproxy": "MTProxy",
+      "socks5": "SOCKS5",
+      "http": "HTTP"
+    },
+    "fields": {
+      "host": "Host do servidor ou IP",
+      "port": "Porta",
+      "secret": "Segredo MTProxy",
+      "secretPlaceholder": "Hex (32 caracteres, dd..., ou ee... Fake-TLS) ou base64",
+      "showSecret": "Mostrar segredo",
+      "hideSecret": "Ocultar segredo",
+      "username": "Usuário (opcional)",
+      "password": "Senha (opcional)",
+      "showPassword": "Mostrar senha",
+      "hidePassword": "Ocultar senha"
+    },
+    "secretModes": {
+      "fakeTls": "Fake-TLS ({{domain}})",
+      "padded": "Preenchimento aleatório (dd)",
+      "standard": "Padrão (16 bytes)"
+    },
+    "actions": {
+      "test": "Testar conexão",
+      "testing": "Testando...",
+      "save": "Salvar e aplicar",
+      "saving": "Aplicando..."
+    },
+    "toasts": {
+      "linkImported": "Configurações de proxy importadas do link.",
+      "savedConnected": "Proxy salvo e Telegram reconectado.",
+      "directRestored": "Proxy desativado. Conexão direta restaurada.",
+      "savedReconnectFailed": "Proxy salvo, mas a conexão falhou: {{error}}"
     }
   }
 }

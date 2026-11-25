@@ -12,7 +12,8 @@
     "about": "關於",
     "encryption": "端對端加密",
     "security": "Security & App Lock",
-    "general": "一般"
+    "general": "一般",
+    "network": "網路與代理"
   },
   "language": {
     "title": "語言",
@@ -408,6 +409,58 @@
       "startMinimizedEnabled": "TeleDrive 將在啟動時直接最小化至系統匣。",
       "startMinimizedDisabled": "TeleDrive 將在啟動時正常開啟主視窗。",
       "startMinimizedFailed": "無法更新啟動視窗設定。"
+    }
+  },
+  "network": {
+    "title": "網路與代理",
+    "description": "透過 MTProxy、SOCKS5 或 HTTP 代理連線至 Telegram。儲存後無需重新啟動即可立即套用。",
+    "authButton": "代理",
+    "loading": "正在載入代理設定...",
+    "callout": "<strong>直連與代理模式：</strong> TeleDrive 會以私密檔案權限在本地保存代理金鑰，並在切換連線模式時自動保留您的 Telegram 工作階段。",
+    "enableProxy": {
+      "title": "啟用自訂代理",
+      "description": "將所有 Telegram 登入、檔案傳輸與同步流量透過您的代理傳送。"
+    },
+    "importLink": {
+      "label": "連結快速匯入",
+      "placeholder": "貼上 tg://proxy?..., t.me/proxy?..., socks5://... 或 http://...",
+      "apply": "匯入",
+      "paste": "貼上"
+    },
+    "protocol": {
+      "label": "代理通訊協定",
+      "mtproxy": "MTProxy",
+      "socks5": "SOCKS5",
+      "http": "HTTP"
+    },
+    "fields": {
+      "host": "伺服器位址或 IP",
+      "port": "連接埠",
+      "secret": "MTProxy 金鑰",
+      "secretPlaceholder": "十六進位（32 字元、dd... 或 ee... Fake-TLS）或 base64",
+      "showSecret": "顯示金鑰",
+      "hideSecret": "隱藏金鑰",
+      "username": "使用者名稱（選填）",
+      "password": "密碼（選填）",
+      "showPassword": "顯示密碼",
+      "hidePassword": "隱藏密碼"
+    },
+    "secretModes": {
+      "fakeTls": "Fake-TLS ({{domain}})",
+      "padded": "隨機填充 (dd)",
+      "standard": "標準 (16 位元組)"
+    },
+    "actions": {
+      "test": "測試連線",
+      "testing": "測試中...",
+      "save": "儲存並套用",
+      "saving": "套用中..."
+    },
+    "toasts": {
+      "linkImported": "已從連結匯入代理設定。",
+      "savedConnected": "已儲存代理並重新連線 Telegram。",
+      "directRestored": "已停用代理，恢復直接連線。",
+      "savedReconnectFailed": "代理設定已儲存，但連線失敗：{{error}}"
     }
   }
 }
