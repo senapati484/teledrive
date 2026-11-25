@@ -17,13 +17,21 @@ import {
 } from "../transfer/downloadMath";
 import { toast } from "sonner";
 import i18n from "@/i18n";
-import type { TeleFileEncryption, TeleFileSegment } from "../types";
+import type { TeleFile, TeleFileEncryption, TeleFileSegment } from "../types";
 import {
+  computeE2eeSeekPlan,
+  E2EE_BLOCK_SIZE,
+  E2EE_FRAME_OVERHEAD,
+  E2EE_HEADER_BYTES,
   EncryptionError,
   requireEncryptionKey,
   StreamDecryptor,
   useEncryptionStore,
 } from "../secure/e2ee";
+import {
+  SAFE_FREE_SEGMENT_BYTES,
+  SAFE_PREMIUM_SEGMENT_BYTES,
+} from "./uploader";
 import {
   DEFAULT_DOWNLOAD_CONCURRENCY,
   iteratePipelinedDownloadParts,
@@ -756,6 +764,265 @@ export async function streamFileToLocalPath(
     throw err;
   } finally {
     await releaseWakeLock();
+  }
+}
+
+/**
+ * Streams an arbitrary plaintext byte range of a catalog file to `targetPath`.
+ *
+ * Used by the local WebDAV bridge so HTTP `Range` requests fetch only the
+ * needed wire bytes through the existing pipelined downloader. Plain and
+ * single-segment E2EE files never decode data before the requested range;
+ * legacy multi-segment E2EE files whose segment boundaries cannot be inferred
+ * fall back to sequential decryption from the start of the file.
+ */
+export async function streamTeleFileRangeToLocalPath(
+  channelId: string,
+  file: TeleFile,
+  rangeStart: number,
+  rangeEnd: number,
+  targetPath: string,
+  options: { encryptionKey?: CryptoKey | null; signal?: AbortSignal } = {}
+): Promise<number> {
+  const signal = options.signal;
+  if (signal?.aborted) throw new DOMException("Download aborted", "AbortError");
+
+  const totalSize = Number(file.size);
+  if (!Number.isFinite(totalSize) || totalSize <= 0) {
+    throw new RangeError("File has no plaintext bytes to serve");
+  }
+  const start = Math.max(0, Math.floor(rangeStart));
+  const end = Math.min(totalSize - 1, Math.floor(rangeEnd));
+  if (!Number.isFinite(start) || !Number.isFinite(end) || start > end) {
+    throw new RangeError("Invalid byte range");
+  }
+  const needed = end - start + 1;
+
+  const { peer, segments } = await resolveDownloadSegments(
+    channelId,
+    file.messageId,
+    { segments: file.segments, enc: file.enc, plainSize: file.size }
+  );
+  if (segments.length === 0) {
+    throw new Error("File has no downloadable Telegram segments");
+  }
+
+  const encrypted = Boolean(file.enc && file.enc.v === 1);
+  let encryptionKey: CryptoKey | null = options.encryptionKey ?? null;
+  if (encrypted && !encryptionKey) {
+    // Never open the interactive unlock prompt from a background WebDAV
+    // request; the bridge turns this into a 403 the client can show.
+    encryptionKey = useEncryptionStore.getState().masterKey;
+  }
+  if (encrypted && !encryptionKey) {
+    throw new EncryptionError(
+      "locked",
+      "Encryption key is locked; unlock TeleDrive before reading encrypted files."
+    );
+  }
+
+  const client = getClient();
+  const batchLimit = getWriteBatchBytes();
+  // Set by the segment loop before streamSegmentRange() runs.
+  let currentSegmentPlainSize = totalSize;
+  let pending: Uint8Array[] = [];
+  let pendingBytes = 0;
+  let written = 0;
+
+  const flush = async () => {
+    if (pendingBytes <= 0) return;
+    const merged = concatChunks(pending, pendingBytes);
+    pending = [];
+    pendingBytes = 0;
+    await writeDownloadChunk(targetPath, merged, written > 0);
+    written += merged.length;
+  };
+
+  const push = async (bytes: Uint8Array, limit: number) => {
+    if (bytes.length > limit) bytes = bytes.subarray(0, limit);
+    if (bytes.length === 0) return;
+    pending.push(bytes);
+    pendingBytes += bytes.length;
+    if (pendingBytes >= batchLimit) await flush();
+  };
+
+  /** Reads `count` raw wire bytes from the start of one segment. */
+  const readWirePrefix = async (
+    segment: { messageId: number; media: any; size: number },
+    count: number
+  ): Promise<Uint8Array> => {
+    const parts: Uint8Array[] = [];
+    let received = 0;
+    for await (const chunk of iteratePipelinedDownloadParts({
+      client,
+      media: segment.media,
+      peer,
+      messageId: segment.messageId,
+      fileSize: segment.size,
+      startOffset: 0,
+      endOffset: Math.max(0, count - 1),
+      requestSize: 64 * 1024,
+      concurrency: 1,
+      signal,
+    })) {
+      if (received >= count) break;
+      const take = Math.min(chunk.length, count - received);
+      parts.push(chunk.subarray(0, take));
+      received += take;
+      if (received >= count) break;
+    }
+    if (received < count) {
+      throw new EncryptionError("truncated_stream", "Encrypted header is truncated.");
+    }
+    return concatChunks(parts, received);
+  };
+
+  const streamSegmentRange = async (
+    segment: { messageId: number; media: any; size: number },
+    localStart: number,
+    localEnd: number,
+    limit: number
+  ): Promise<void> => {
+    if (!encrypted) {
+      let produced = 0;
+      for await (const chunk of iteratePipelinedDownloadParts({
+        client,
+        media: segment.media,
+        peer,
+        messageId: segment.messageId,
+        fileSize: segment.size,
+        startOffset: localStart,
+        endOffset: localEnd,
+        requestSize: DOWNLOAD_CHUNK_SIZE,
+        concurrency: DEFAULT_DOWNLOAD_CONCURRENCY,
+        signal,
+      })) {
+        const before = written;
+        await push(chunk, limit - produced);
+        produced += written - before;
+        if (produced >= limit) break;
+      }
+      return;
+    }
+
+    const header = await readWirePrefix(segment, E2EE_HEADER_BYTES);
+    const plan = computeE2eeSeekPlan(
+      header,
+      currentSegmentPlainSize,
+      localStart,
+      localEnd
+    );
+    const decryptor = new StreamDecryptor(encryptionKey as CryptoKey);
+    decryptor.initSeekState(plan.fileSalt, plan.blockSize, plan.startBlock);
+    let skip = plan.firstBlockSkipBytes;
+    let remaining = Math.min(limit, plan.plainLengthNeeded);
+    for await (const wireChunk of iteratePipelinedDownloadParts({
+      client,
+      media: segment.media,
+      peer,
+      messageId: segment.messageId,
+      fileSize: segment.size,
+      startOffset: plan.wireStartOffset,
+      endOffset: plan.wireEndOffset,
+      requestSize: DOWNLOAD_CHUNK_SIZE,
+      concurrency: DEFAULT_DOWNLOAD_CONCURRENCY,
+      signal,
+    })) {
+      let plain = await decryptor.pushChunk(wireChunk);
+      if (skip > 0) {
+        const drop = Math.min(skip, plain.length);
+        skip -= drop;
+        plain = plain.subarray(drop);
+      }
+      if (plain.length === 0) continue;
+      const before = written;
+      await push(plain, remaining);
+      remaining -= written - before;
+      if (remaining <= 0) break;
+    }
+  };
+
+  // Segment plaintext sizes: plain wire sizes are plaintext sizes. Encrypted
+  // segments are sized from the app's two upload thresholds, which makes the
+  // mapping exact for every file this app produced.
+  const plainSizes: number[] | null = (() => {
+    if (!encrypted) return segments.map((seg) => seg.size);
+    const sizes: number[] = [];
+    let assigned = 0;
+    for (let index = 0; index < segments.length - 1; index++) {
+      const wire = segments[index].size;
+      const candidate = [SAFE_FREE_SEGMENT_BYTES, SAFE_PREMIUM_SEGMENT_BYTES].find(
+        (plain) =>
+          E2EE_HEADER_BYTES +
+            plain +
+            Math.ceil(plain / E2EE_BLOCK_SIZE) * E2EE_FRAME_OVERHEAD ===
+          wire
+      );
+      if (!candidate) return null;
+      sizes.push(candidate);
+      assigned += candidate;
+    }
+    const tail = totalSize - assigned;
+    if (tail <= 0) return null;
+    sizes.push(tail);
+    return sizes;
+  })();
+
+  try {
+    if (plainSizes) {
+      let base = 0;
+      let produced = 0;
+      for (let index = 0; index < segments.length && produced < needed; index++) {
+        currentSegmentPlainSize = plainSizes[index];
+        const segStart = base;
+        const segEnd = base + plainSizes[index] - 1;
+        base += plainSizes[index];
+        if (segEnd < start || segStart > end) continue;
+        const localStart = Math.max(0, start - segStart);
+        const localEnd = Math.min(plainSizes[index] - 1, end - segStart);
+        const limit = needed - produced;
+        const before = written;
+        await streamSegmentRange(segments[index], localStart, localEnd, limit);
+        produced += written - before;
+      }
+    } else {
+      // Fallback: decode from the beginning and drop bytes before `start`.
+      let skip = start;
+      let remaining = needed;
+      for await (const chunk of iterateTelegramPlainChunks({
+        peer,
+        segments,
+        enc: file.enc,
+        encryptionKey,
+        requestSize: DOWNLOAD_CHUNK_SIZE,
+        signal,
+      })) {
+        let bytes = chunk;
+        if (skip > 0) {
+          const drop = Math.min(skip, bytes.length);
+          skip -= drop;
+          bytes = bytes.subarray(drop);
+        }
+        if (bytes.length === 0) continue;
+        const before = written;
+        await push(bytes, remaining);
+        remaining -= written - before;
+        if (remaining <= 0) break;
+      }
+    }
+
+    await flush();
+    if (written !== needed) {
+      throw new EncryptionError(
+        "truncated_stream",
+        `Telegram returned ${written} of ${needed} requested bytes.`
+      );
+    }
+    await finalizeDownloadFile(targetPath);
+    return written;
+  } catch (err) {
+    await discardDownloadFile(targetPath);
+    throw err;
   }
 }
 

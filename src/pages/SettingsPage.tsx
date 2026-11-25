@@ -2,12 +2,14 @@ import { useState } from "react";
 import { logger } from "@/lib/logger";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, ChevronRight, Smartphone, Eye, HardDrive, Info, Shield, Languages, Lock, SlidersHorizontal } from "lucide-react";
+import { ArrowLeft, ChevronRight, Smartphone, Eye, HardDrive, Info, Shield, Languages, Lock, SlidersHorizontal, Cloud } from "lucide-react";
 import { useIsMobile } from "@/hooks/useIsMobile";
 import { isDesktopStartupSupported } from "@/lib/runtime/desktopStartup";
+import { isWebdavSupported } from "@/lib/webdav/settings";
 import { Button } from "@/components/ui/button";
 import TelegramAccountSection from "@/components/settings/TelegramAccountSection";
 import GeneralSection from "@/components/settings/GeneralSection";
+import WebdavSection from "@/components/settings/WebdavSection";
 import AppearanceSection from "@/components/settings/AppearanceSection";
 import LanguageSection from "@/components/settings/LanguageSection";
 import StorageSection from "@/components/settings/StorageSection";
@@ -16,7 +18,7 @@ import SecuritySection from "@/components/settings/SecuritySection";
 import AboutSection from "@/components/settings/AboutSection";
 import RecoveryDialog from "@/components/settings/RecoveryDialog";
 
-type SectionType = "account" | "backup" | "security" | "general" | "appearance" | "language" | "storage" | "about";
+type SectionType = "account" | "backup" | "security" | "general" | "webdav" | "appearance" | "language" | "storage" | "about";
 
 export default function SettingsPage() {
   const { t } = useTranslation("settings");
@@ -55,6 +57,16 @@ export default function SettingsPage() {
             label: t("nav.general", "General"),
             icon: SlidersHorizontal,
             component: GeneralSection,
+          },
+        ]
+      : []),
+    ...(isWebdavSupported()
+      ? [
+          {
+            id: "webdav" as const,
+            label: t("nav.webdav", "Network Drive (WebDAV)"),
+            icon: Cloud,
+            component: WebdavSection,
           },
         ]
       : []),

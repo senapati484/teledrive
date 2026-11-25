@@ -147,6 +147,7 @@ shasum -a 256 <filename>
 - **Automated Folder Backups & Cross-Device Sync**: Journaled `v2` local manifests for crash-safe incremental folder backups and read-only multi-device channel delta polling.
 - **11 Localized Languages**: Full native UI support for English, Portuguese, Spanish, Traditional Chinese, Simplified Chinese, Hindi, French, Indonesian, Russian, Japanese, and German.
 - **Pipelined MTProto Engine**: Direct 512 KiB chunk streaming with up to `3` concurrent MTProto `upload.GetFile` / `SaveBigFilePart` workers and adaptive `FloodWait` rate-limit handling.
+- **Opt-in Network Drive (WebDAV)**: Mount the same virtual drive as a Windows/macOS/Linux drive letter through a loopback-only WebDAV endpoint (`PROPFIND`, `GET`/`Range`, `PUT`, `MKCOL`, `DELETE`, `MOVE`, `LOCK`), bridged to the existing catalog and transfer engines. See [`docs/WEBDAV.md`](docs/WEBDAV.md).
 
 ---
 

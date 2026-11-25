@@ -32,6 +32,7 @@ import { useEncryptionStore } from "./lib/secure/e2ee";
 import { UnlockEncryptionDialog } from "./components/files/UnlockEncryptionDialog";
 import { LockScreen } from "./components/auth/LockScreen";
 import { useAppLockWatcher } from "./hooks/useAppLockWatcher";
+import { startWebdavBridge } from "./lib/webdav/server";
 import { useAppLockStore } from "./stores/appLockStore";
 import {
   hasCachedFilesHint,
@@ -117,6 +118,9 @@ function App() {
 
   useEffect(() => {
     useSupportStore.getState().initFirstLaunch();
+    // Register the WebDAV request bridge once; the listener stays alive for
+    // the whole session so enabling the server never races the first request.
+    void startWebdavBridge();
     void useEncryptionStore.getState().initFromVault();
     void useAppLockStore.getState().init();
     let active = true;

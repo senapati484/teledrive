@@ -10,6 +10,7 @@ pub mod biometrics;
 use biometrics::{authenticate_device_owner, check_biometrics_available};
 mod desktop_settings;
 mod proxy;
+pub mod webdav;
 
 #[tauri::command]
 async fn log_vault_state(app: tauri::AppHandle, state: String) {
@@ -1593,6 +1594,7 @@ pub fn run() {
 
     builder
         .manage(proxy::ProxySocketState::default())
+        .manage(webdav::WebdavState::default())
         .invoke_handler(tauri::generate_handler![
             log_vault_state,
             get_vault_state,
@@ -1630,6 +1632,11 @@ pub fn run() {
             desktop_settings::get_desktop_startup_settings,
             desktop_settings::set_launch_at_login,
             desktop_settings::set_start_minimized_to_tray,
+            webdav::get_webdav_settings,
+            webdav::set_webdav_settings,
+            webdav::webdav_bridge_ready,
+            webdav::regenerate_webdav_password,
+            webdav::webdav_bridge_response,
             proxy::get_proxy_settings,
             proxy::save_proxy_settings,
             proxy::test_proxy_connection,
@@ -1656,6 +1663,8 @@ pub fn run() {
             #[cfg(not(mobile))]
             setup_desktop_shell(app)?;
 
+            webdav::initialize(app.handle());
+
             #[cfg(debug_assertions)]
             {
                 #[cfg(not(mobile))]
@@ -1670,9 +1679,11 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
         .run(|_app_handle, _event| {
-            #[cfg(target_os = "macos")]
-            if let tauri::RunEvent::Reopen { .. } = _event {
-                show_main_window(_app_handle);
+            match &_event {
+                tauri::RunEvent::Exit => webdav::shutdown(_app_handle),
+                #[cfg(target_os = "macos")]
+                tauri::RunEvent::Reopen { .. } => show_main_window(_app_handle),
+                _ => {}
             }
         })
 }

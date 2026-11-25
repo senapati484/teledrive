@@ -12,7 +12,8 @@
     "about": "About",
     "encryption": "Encryption",
     "security": "Security & App Lock",
-    "general": "General"
+    "general": "General",
+    "webdav": "Network Drive (WebDAV)"
   },
   "language": {
     "title": "Language",
@@ -438,6 +439,44 @@
       "startMinimizedEnabled": "TeleDrive will start minimized in the system tray.",
       "startMinimizedDisabled": "TeleDrive will open the main window on startup.",
       "startMinimizedFailed": "Could not update startup window setting."
+    }
+  },
+  "webdav": {
+    "title": "Network Drive (WebDAV)",
+    "description": "Expose your TeleDrive as a local WebDAV endpoint and mount it as a drive letter.",
+    "enable": {
+      "title": "Enable local WebDAV server",
+      "description": "Runs only while TeleDrive is open. Binds to 127.0.0.1 and requires HTTP Basic auth."
+    },
+    "fields": {
+      "port": "Port",
+      "username": "Username",
+      "password": "Password",
+      "togglePassword": "Show or hide password",
+      "regenerate": "Generate a new password",
+      "passwordHint": "An empty password is replaced with a random 24-character password the first time the server starts."
+    },
+    "actions": {
+      "apply": "Apply",
+      "copyUrl": "Copy URL"
+    },
+    "status": {
+      "running": "Running",
+      "stopped": "Stopped"
+    },
+    "mountUrl": "Mount URL",
+    "mountHint": "Use this URL with RaiDrive or NetDrive on Windows, or rclone mount with WinFsp. See docs/WEBDAV.md for exact steps.",
+    "security": {
+      "title": "Security notes",
+      "body": "The server listens on 127.0.0.1 only and rejects browser-originated requests. Traffic between the mount client and TeleDrive is plain HTTP on the loopback interface; do not forward the port or bind it to a LAN address."
+    },
+    "toasts": {
+      "invalidPort": "Port must be between 1 and 65535.",
+      "started": "WebDAV server is running at {{url}}",
+      "stopped": "WebDAV server stopped.",
+      "saveFailed": "Could not update the WebDAV server.",
+      "passwordRegenerated": "New WebDAV password generated.",
+      "passwordFailed": "Could not generate a new password."
     }
   }
 }

@@ -101,7 +101,7 @@ const EXTENSION_MIME_MAP: Record<string, string> = {
   dmg: "application/x-apple-diskimage",
 };
 
-function getMimeFromExtension(fileName: string): string {
+export function getMimeFromExtension(fileName: string): string {
   const ext = fileName.split(".").pop()?.toLowerCase() ?? "";
   return EXTENSION_MIME_MAP[ext] ?? "application/octet-stream";
 }
