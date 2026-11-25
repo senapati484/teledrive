@@ -33,6 +33,8 @@ import type { WebdavBridgeRequest, WebdavBridgeResponse } from "./types";
 
 const MAX_PROPFIND_ENTRIES = 10_000;
 const MAX_COPY_FILES = 500;
+export const DEFAULT_METADATA_COMMIT_DEADLINE_MS = 15_000;
+const COMMIT_DEADLINE = Symbol("webdav-commit-deadline");
 
 export interface WebdavUploadResult {
   message: { id?: number | string };
@@ -93,6 +95,10 @@ export interface WebdavHandlerDeps {
   };
   mimeForName(name: string): string;
   validateSize(size: number): Promise<{ ok: boolean; message?: string }>;
+  /** Milliseconds until the channel index queue leaves its backoff (0 = ready). */
+  getIndexBackoffMs(channelId: string): number;
+  /** Server-side catalog commit deadline; shorter in tests. */
+  metadataCommitDeadlineMs: number;
   /**
    * Verifies the live index revision before a PUT transfers bytes and
    * refreshes the catalog when another device committed first. Throws
@@ -154,10 +160,14 @@ function xmlResponse(
   };
 }
 
-function textResponse(status: number, message: string): WebdavBridgeResponse {
+function textResponse(
+  status: number,
+  message: string,
+  extraHeaders: Record<string, string> = {}
+): WebdavBridgeResponse {
   return {
     status,
-    headers: { "Content-Type": "text/plain; charset=utf-8" },
+    headers: { "Content-Type": "text/plain; charset=utf-8", ...extraHeaders },
     body: message,
   };
 }
@@ -168,7 +178,13 @@ function errorToResponse(
   describeConflict: (err: unknown) => { transient: boolean; message: string } | null
 ): WebdavBridgeResponse {
   if (err instanceof WebdavError) {
-    return textResponse(err.status, err.message);
+    return textResponse(
+      err.status,
+      err.message,
+      err.retryAfterSeconds
+        ? { "Retry-After": String(err.retryAfterSeconds) }
+        : {}
+    );
   }
   if (err instanceof Error && err.name === "IndexNotReadyError") {
     return {
@@ -244,6 +260,29 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
     return channelId;
   };
 
+  const assertIndexWritable = (channelId: string) => {
+    const backoffMs = deps.getIndexBackoffMs(channelId);
+    if (backoffMs > 0) {
+      throw new WebdavError(
+        503,
+        "Catalog is temporarily rate-limited; retry shortly",
+        { retryAfterSeconds: Math.max(1, Math.ceil(backoffMs / 1000)) }
+      );
+    }
+  };
+
+  const scheduleCommitCleanup = (
+    err: unknown,
+    onCommitted: () => Promise<void>,
+    onFailed: () => Promise<void>
+  ): boolean => {
+    if (!(err instanceof WebdavError) || !err.commitOutcome) return false;
+    void err.commitOutcome
+      .then((committed) => (committed ? onCommitted() : onFailed()))
+      .catch(() => {});
+    return true;
+  };
+
   const assertWriteAllowed = (
     path: string,
     request: WebdavBridgeRequest,
@@ -263,21 +302,52 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
     build: (current: TeleFile[]) => TeleFile[]
   ): Promise<TeleFile[]> => {
     return withCatalogLock(async () => {
+      // Fail before mutating the store when Telegram has already asked us to
+      // wait; a 503+Retry-After is better than a 60 s hang.
+      assertIndexWritable(channelId);
       const previous = deps.getFiles();
       const next = build(previous);
       deps.setFiles(next);
       // `setFiles` normalizes into a new array; capture the applied reference
       // so a concurrent action can never be rolled back by this request.
       const applied = deps.getFiles();
+      const commitPromise = deps.saveIndex(channelId, next);
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const deadline = new Promise<typeof COMMIT_DEADLINE>((resolve) => {
+        timer = setTimeout(
+          () => resolve(COMMIT_DEADLINE),
+          Math.max(1, deps.metadataCommitDeadlineMs)
+        );
+      });
       try {
-        await deps.saveIndex(channelId, next);
+        const result = await Promise.race([
+          commitPromise.then(() => "committed" as const),
+          deadline,
+        ]);
+        if (result === COMMIT_DEADLINE) {
+          // The queue still owns the write. Keep the optimistic state and let
+          // the route schedule cleanup based on the eventual outcome.
+          commitPromise.catch(() => {});
+          const outcome = commitPromise.then(
+            () => true,
+            () => false
+          );
+          throw new WebdavError(
+            503,
+            "Catalog commit is still pending; retry shortly",
+            { retryAfterSeconds: 3, commitOutcome: outcome }
+          );
+        }
       } catch (err) {
+        if (err instanceof WebdavError && err.commitOutcome) throw err;
         // Transient index failures keep the optimistic state and retry in the
         // IndexQueue; only hard errors roll the catalog back.
         if (!deps.isDeferredError(err)) {
           if (deps.getFiles() === applied) deps.setFiles(previous);
           throw err;
         }
+      } finally {
+        if (timer) clearTimeout(timer);
       }
       return next;
     });
@@ -392,9 +462,11 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
     const target = normalizeVirtualPath(request.path);
     if (target === "/") throw new WebdavError(405, "Cannot PUT the drive root");
     if (!request.bodyPath) throw new WebdavError(400, "Missing PUT body");
+    assertIndexWritable(channelId);
     // Fail stale writes before uploading bytes. This also refreshes the
     // catalog when another device committed since our last poll.
     await deps.prepareWrite(channelId);
+    assertIndexWritable(channelId);
     const files = deps.getFiles();
     const parent = dirname(target);
     const name = basename(target);
@@ -491,8 +563,17 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
       });
     } catch (err) {
       // Bytes are on Telegram but the catalog rejected them: delete them so a
-      // failed PUT does not leave an orphaned document behind.
-      await deps.deleteMessages(channelId, messageIds([newFile])).catch(() => {});
+      // failed PUT does not leave an orphaned document behind. A commit that
+      // is still queued after the deadline must not be deleted here; clean up
+      // according to its eventual outcome instead.
+      const deferred = scheduleCommitCleanup(
+        err,
+        () => deps.deleteMessages(channelId, messageIds(replaced)),
+        () => deps.deleteMessages(channelId, messageIds([newFile]))
+      );
+      if (!deferred) {
+        await deps.deleteMessages(channelId, messageIds([newFile])).catch(() => {});
+      }
       throw err;
     }
 
@@ -508,6 +589,7 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
 
   const handleMkcol = async (request: WebdavBridgeRequest): Promise<WebdavBridgeResponse> => {
     const channelId = await requireChannel();
+    assertIndexWritable(channelId);
     const target = normalizeVirtualPath(request.path);
     if (target === "/") throw new WebdavError(405, "Drive root already exists");
     const parent = dirname(target);
@@ -541,6 +623,7 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
 
   const handleDelete = async (request: WebdavBridgeRequest): Promise<WebdavBridgeResponse> => {
     const channelId = await requireChannel();
+    assertIndexWritable(channelId);
     const target = normalizeVirtualPath(request.path);
     if (target === "/") throw new WebdavError(403, "Cannot delete the drive root");
     const files = deps.getFiles();
@@ -559,7 +642,12 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
         current.filter((entry) => !removedIds.has(entry.id))
       );
     } catch (err) {
-      deps.clearDeletedMessages(channelId, ids);
+      const deferred = scheduleCommitCleanup(
+        err,
+        () => deps.deleteMessages(channelId, ids),
+        async () => deps.clearDeletedMessages(channelId, ids)
+      );
+      if (!deferred) deps.clearDeletedMessages(channelId, ids);
       throw err;
     }
 
@@ -573,6 +661,7 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
 
   const handleMove = async (request: WebdavBridgeRequest): Promise<WebdavBridgeResponse> => {
     const channelId = await requireChannel();
+    assertIndexWritable(channelId);
     if (!request.destination) throw new WebdavError(400, "Missing Destination header");
     const source = normalizeVirtualPath(request.path);
     const destination = normalizeVirtualPath(request.destination);
@@ -594,37 +683,46 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
 
     let existed = Boolean(destinationNode);
     let replaced: TeleFile[] = [];
-    await commitFiles(channelId, (current) => {
-      const sourceNode = nodeForPath(current, source);
-      if (!sourceNode) throw new WebdavError(404, "Source not found");
-      const currentNode = nodeForPath(current, destination);
-      existed = Boolean(currentNode);
-      if (currentNode && !overwrite) {
-        throw new WebdavError(412, "Destination exists and Overwrite is F");
-      }
-      replaced = currentNode ? subtreeEntries(current, destination) : [];
-      const replacedIds = new Set(replaced.map((entry) => entry.id));
+    try {
+      await commitFiles(channelId, (current) => {
+        const sourceNode = nodeForPath(current, source);
+        if (!sourceNode) throw new WebdavError(404, "Source not found");
+        const currentNode = nodeForPath(current, destination);
+        existed = Boolean(currentNode);
+        if (currentNode && !overwrite) {
+          throw new WebdavError(412, "Destination exists and Overwrite is F");
+        }
+        replaced = currentNode ? subtreeEntries(current, destination) : [];
+        const replacedIds = new Set(replaced.map((entry) => entry.id));
 
-      const moved = current
-        .filter((entry) => !replacedIds.has(entry.id))
-        .map((entry) => {
-          const entryPath = fullPathOf(entry);
-          if (!isWithinPath(entryPath, source)) return entry;
-          if (entryPath === source) {
+        const moved = current
+          .filter((entry) => !replacedIds.has(entry.id))
+          .map((entry) => {
+            const entryPath = fullPathOf(entry);
+            if (!isWithinPath(entryPath, source)) return entry;
+            if (entryPath === source) {
+              return {
+                ...entry,
+                name: basename(destination),
+                folderPath: dirname(destination),
+              };
+            }
             return {
               ...entry,
-              name: basename(destination),
-              folderPath: dirname(destination),
+              folderPath: rebaseFolderPath(entry.folderPath, source, destination),
             };
-          }
-          return {
-            ...entry,
-            folderPath: rebaseFolderPath(entry.folderPath, source, destination),
-          };
-        });
+          });
 
-      return deps.reconstructMissingFolders(moved, channelId).healedFiles;
-    });
+        return deps.reconstructMissingFolders(moved, channelId).healedFiles;
+      });
+    } catch (err) {
+      scheduleCommitCleanup(
+        err,
+        () => deps.deleteMessages(channelId, messageIds(replaced)),
+        async () => {}
+      );
+      throw err;
+    }
 
     if (replaced.length > 0) {
       await deps.deleteMessages(channelId, messageIds(replaced)).catch(() => {});
@@ -634,6 +732,7 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
 
   const handleCopy = async (request: WebdavBridgeRequest): Promise<WebdavBridgeResponse> => {
     const channelId = await requireChannel();
+    assertIndexWritable(channelId);
     if (!request.destination) throw new WebdavError(400, "Missing Destination header");
     const source = normalizeVirtualPath(request.path);
     const destination = normalizeVirtualPath(request.destination);
@@ -734,9 +833,20 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
           .healedFiles;
       });
     } catch (err) {
-      // Catalog rejected the copy: remove the cloned messages too.
+      // Catalog rejected the copy: remove the cloned messages too. If the
+      // commit is still queued after the deadline, wait for its outcome.
       const partial = created.flatMap((entry) => messageIds([entry]));
-      if (partial.length > 0) await deps.deleteMessages(channelId, partial).catch(() => {});
+      const deferred = scheduleCommitCleanup(
+        err,
+        async () => {},
+        () =>
+          partial.length > 0
+            ? deps.deleteMessages(channelId, partial)
+            : Promise.resolve()
+      );
+      if (!deferred && partial.length > 0) {
+        await deps.deleteMessages(channelId, partial).catch(() => {});
+      }
       throw err;
     }
 

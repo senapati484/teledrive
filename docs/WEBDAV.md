@@ -160,6 +160,18 @@ sudo mount -t davfs http://127.0.0.1:8747/ /mnt/teledrive
   the pre-write check cannot refresh safely, or `503` + `Retry-After` when the
   revision could not be read. Same-file content conflicts remain
   last-writer-wins; no conflicted-copy merge is performed.
+- **Bounded uploads.** At most **2 concurrent WebDAV `PUT`s** are accepted
+  (`DEFAULT_MAX_CONCURRENT_PUTS` in `src-tauri/src/webdav.rs`); further PUTs
+  wait up to 10 s and then receive `429 Too Many Requests` with
+  `Retry-After: 2`. Each upload pipelines three MTProto parts, so this keeps at
+  most six large part RPCs in flight for the mount. A shared six-permit
+  semaphore in the uploader also bounds fan-out across in-app and WebDAV
+  uploads. The limiter also caps temp-disk use to two in-flight `PUT` bodies.
+- **Bounded metadata.** Mutations fail fast with `503 + Retry-After` while the
+  index queue is in a Telegram backoff instead of waiting for the 60 s stuck
+  retry. Catalog commits have a 15 s server-side deadline; if the commit is
+  still queued, the response is `503 + Retry-After: 3` and message cleanup is
+  deferred until the queue reports the outcome.
 - **Methods.** `OPTIONS`, `PROPFIND` (Depth 0/1/infinity), `GET`, `HEAD`
   (with `Range` → `206`/`416`), `PUT`, `MKCOL`, `DELETE` (recursive),
   `MOVE`, `COPY`, `LOCK`, `UNLOCK`; `PROPPATCH` responds `207` with a `403`
@@ -205,6 +217,7 @@ sudo mount -t davfs http://127.0.0.1:8747/ /mnt/teledrive
 | `423 Locked` | Another client holds a lock. Wait for the timeout, `UNLOCK` with the token, or restart the server from Settings. |
 | `507 Insufficient Storage` | Telegram cannot store empty files, or the request exceeded a Telegram/WebDAV limit (file size, COPY count, PROPFIND size). |
 | `503 Service Unavailable` | TeleDrive is signed out, the index is still loading, Telegram is rate-limiting, or the drive revision could not be verified (retry after the `Retry-After` delay). |
+| `429 Too Many Requests` | More than two WebDAV uploads are running. Respect `Retry-After`; RaiDrive/rclone retry automatically. |
 | Port already in use | Change the port in Settings and press Apply; the UI shows the bind error. |
 | Mount shows nothing | Sign in and wait for the drive index; run `rclone lsd teledrive:` to see the raw error. |
 
@@ -225,3 +238,15 @@ Then point stock clients at `http://127.0.0.1:18747/` with
 curl -u harness:harness-pass -X PROPFIND -H "Depth: 1" http://127.0.0.1:18747/
 curl -u harness:harness-pass -r 0-4 http://127.0.0.1:18747/hello.txt
 ```
+
+The parallel smoke test issues 8 concurrent PUTs + 8 MKCOLs, retries
+`429`/`503` according to `Retry-After`, and verifies every object appears
+exactly once before deleting the probes:
+
+```bash
+node scripts/webdav_parallel_check.mjs
+```
+
+Set `WEBDAV_HARNESS_PUT_DELAY_MS=3000` on the harness and
+`PUT_COUNT=12` for the script to force limiter rejections and exercise the
+retry path.

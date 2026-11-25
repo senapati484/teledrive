@@ -5,12 +5,27 @@ import type { TeleFile } from "../types";
  * Everything here is pure: no Tauri, Telegram, or store access.
  */
 
+export interface WebdavErrorOptions {
+  /** Adds `Retry-After` to the HTTP response. */
+  retryAfterSeconds?: number;
+  /**
+   * Set when a catalog commit exceeded the server-side deadline but is still
+   * queued. `true` means committed, `false` means it failed later.
+   */
+  commitOutcome?: Promise<boolean>;
+}
+
 export class WebdavError extends Error {
   readonly status: number;
-  constructor(status: number, message: string) {
+  readonly retryAfterSeconds?: number;
+  readonly commitOutcome?: Promise<boolean>;
+
+  constructor(status: number, message: string, options: WebdavErrorOptions = {}) {
     super(message);
     this.name = "WebdavError";
     this.status = status;
+    this.retryAfterSeconds = options.retryAfterSeconds;
+    this.commitOutcome = options.commitOutcome;
   }
 }
 

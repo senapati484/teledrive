@@ -15,6 +15,7 @@ import {
 import {
   enqueueSave,
   ensureFreshIndexForWrite,
+  getIndexBackoffMs,
   IndexConflictError,
   IndexRetryExhaustedError,
 } from "../storage/indexQueue";
@@ -29,7 +30,12 @@ import {
   clearUploadCheckpoint,
   loadUploadCheckpoint,
 } from "../upload/uploadCheckpoints";
-import { createWebdavHandler, type WebdavHandler, type WebdavHandlerDeps } from "./handler";
+import {
+  createWebdavHandler,
+  DEFAULT_METADATA_COMMIT_DEADLINE_MS,
+  type WebdavHandler,
+  type WebdavHandlerDeps,
+} from "./handler";
 import { webdavLocks } from "./locks";
 
 async function resolveChannelId(): Promise<string | null> {
@@ -141,6 +147,8 @@ export function createDefaultWebdavDeps(): WebdavHandlerDeps {
     prepareWrite: async (channelId) => {
       await ensureFreshIndexForWrite(channelId);
     },
+    getIndexBackoffMs: (channelId) => getIndexBackoffMs(channelId),
+    metadataCommitDeadlineMs: DEFAULT_METADATA_COMMIT_DEADLINE_MS,
     describeConflict: (err) => {
       if (!(err instanceof IndexConflictError)) return null;
       return { transient: err.transient, message: err.message };

@@ -67,6 +67,12 @@ function makeDeps(initial: TeleFile[]) {
     prepareError: null as Error | null,
     prepareCalls: 0,
     clearedTombstones: [] as number[],
+    indexBackoffMs: 0,
+    saveDeferred: null as {
+      promise: Promise<void>;
+      resolve: () => void;
+      reject: (err: unknown) => void;
+    } | null,
   };
 
   const deps: WebdavHandlerDeps = {
@@ -83,6 +89,7 @@ function makeDeps(initial: TeleFile[]) {
     saveIndex: async () => {
       state.saveCalls += 1;
       if (state.saveError) throw state.saveError;
+      if (state.saveDeferred) await state.saveDeferred.promise;
     },
     isDeferredError: () => false,
     uploadFile: async (args) => {
@@ -112,6 +119,8 @@ function makeDeps(initial: TeleFile[]) {
       state.prepareCalls += 1;
       if (state.prepareError) throw state.prepareError;
     },
+    getIndexBackoffMs: () => state.indexBackoffMs,
+    metadataCommitDeadlineMs: 25,
     describeConflict: isConflict,
     validateSize: async (size) =>
       size > 1000
@@ -565,6 +574,106 @@ describe("WebDAV handler", () => {
     expect(state.files.some((entry) => entry.name === "a.txt")).toBe(true);
     expect(state.tombstones).toContain(5);
     expect(state.clearedTombstones).toContain(5);
+  });
+
+  it("rejects metadata mutations while the index queue is backing off", async () => {
+    const { deps, state } = makeDeps(baseFiles());
+    state.indexBackoffMs = 60_000;
+    const handler = createWebdavHandler(deps);
+
+    const put = await handler.handle(
+      request({
+        id: 1,
+        method: "PUT",
+        path: "/Docs/backoff.txt",
+        bodyPath: "C:/tmp/body.bin",
+        contentLength: 10,
+      })
+    );
+    expect(put.status).toBe(503);
+    expect(put.headers?.["Retry-After"]).toBe("60");
+    expect(state.uploads).toHaveLength(0);
+    expect(state.saveCalls).toBe(0);
+
+    const mkcol = await handler.handle(
+      request({ id: 2, method: "MKCOL", path: "/Docs/Backoff" })
+    );
+    expect(mkcol.status).toBe(503);
+    expect(mkcol.headers?.["Retry-After"]).toBe("60");
+    expect(state.files.some((entry) => entry.name === "Backoff")).toBe(false);
+  });
+
+  it("returns 503 when a catalog commit exceeds the deadline and cleans up later", async () => {
+    const { deps, state } = makeDeps(baseFiles());
+    let resolveSave!: () => void;
+    let rejectSave!: (err: unknown) => void;
+    const promise = new Promise<void>((resolve, reject) => {
+      resolveSave = resolve;
+      rejectSave = reject;
+    });
+    state.saveDeferred = { promise, resolve: resolveSave, reject: rejectSave };
+    const handler = createWebdavHandler(deps);
+
+    const response = await handler.handle(
+      request({
+        id: 1,
+        method: "PUT",
+        path: "/Docs/pending.txt",
+        bodyPath: "C:/tmp/body.bin",
+        contentLength: 10,
+      })
+    );
+    expect(response.status).toBe(503);
+    expect(response.headers?.["Retry-After"]).toBe("3");
+    expect(state.uploads).toHaveLength(1);
+    expect(state.deleted).not.toContain(99);
+
+    rejectSave(new Error("late hard failure"));
+    await promise.catch(() => {});
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(state.deleted).toContain(99);
+  });
+
+  it("commits 8 parallel PUTs and 8 MKCOLs exactly once", async () => {
+    const { deps, state } = makeDeps(baseFiles());
+    const handler = createWebdavHandler(deps);
+
+    const puts = await Promise.all(
+      Array.from({ length: 8 }, (_, index) =>
+        handler.handle(
+          request({
+            id: 100 + index,
+            method: "PUT",
+            path: `/Docs/parallel-${index}.bin`,
+            bodyPath: "C:/tmp/body.bin",
+            contentLength: 10,
+          })
+        )
+      )
+    );
+    expect(puts.every((response) => response.status === 201)).toBe(true);
+    expect(state.uploads).toHaveLength(8);
+
+    const mkcols = await Promise.all(
+      Array.from({ length: 8 }, (_, index) =>
+        handler.handle(
+          request({ id: 200 + index, method: "MKCOL", path: `/Docs/Coll-${index}` })
+        )
+      )
+    );
+    expect(mkcols.every((response) => response.status === 201)).toBe(true);
+
+    for (let index = 0; index < 8; index++) {
+      expect(
+        state.files.filter((entry) => entry.name === `parallel-${index}.bin`)
+      ).toHaveLength(1);
+      expect(
+        state.files.filter(
+          (entry) => entry.name === `Coll-${index}` && entry.mime === "inode/directory"
+        )
+      ).toHaveLength(1);
+    }
   });
   it("answers PROPPATCH with 207 containing a 403 propstat", async () => {
     const { deps } = makeDeps(baseFiles());

@@ -243,6 +243,9 @@ class ChannelQueue {
   private retryAttempt = 0;
   private lastError: any = null;
   private successCount = 0;
+  /** Deadlines backing `remainingBackoffMs` (0 = no timer). */
+  private retryDeadlineAt = 0;
+  private stuckDeadlineAt = 0;
   private commitOverride: ((state: TeleFile[]) => Promise<void>) | null = null;
   private readonly channelId: string;
   private serverRetryAt = 0;
@@ -343,6 +346,17 @@ class ChannelQueue {
     return this.retryTimer != null || this.stuckTimer != null;
   }
 
+  /** Milliseconds until the queue can retry, for WebDAV Retry-After. */
+  remainingBackoffMs(): number {
+    const now = Date.now();
+    return Math.max(
+      0,
+      this.serverRetryAt - now,
+      this.retryDeadlineAt - now,
+      this.stuckDeadlineAt - now,
+    );
+  }
+
   getKnownIndexMsgIds(): number[] | null {
     return this.known ? [...this.known.ids] : null;
   }
@@ -413,6 +427,7 @@ class ChannelQueue {
           clearTimeout(this.stuckTimer);
           this.stuckTimer = null;
         }
+        this.stuckDeadlineAt = 0;
         this.retryAttempt = 0;
         this.lastError = null;
       }
@@ -510,6 +525,8 @@ class ChannelQueue {
   }
 
   private clearTimers(): void {
+    this.retryDeadlineAt = 0;
+    this.stuckDeadlineAt = 0;
     if (this.retryTimer) {
       clearTimeout(this.retryTimer);
       this.retryTimer = null;
@@ -640,6 +657,8 @@ class ChannelQueue {
       clearTimeout(this.retryTimer);
       this.retryTimer = null;
     }
+    this.retryDeadlineAt = 0;
+    this.stuckDeadlineAt = 0;
     this.retryAttempt = 0;
     this.lastError = null;
     void this.enqueue(state);
@@ -704,6 +723,7 @@ class ChannelQueue {
 
   private waitBeforeRetry(delayMs: number): void {
     const deadline = Date.now() + delayMs;
+    this.retryDeadlineAt = deadline;
 
     useFileStore.getState().setIndexQueueRetryInSec(Math.ceil(delayMs / 1000));
     this.retryCountdownTimer = setInterval(() => {
@@ -717,6 +737,7 @@ class ChannelQueue {
 
     this.retryTimer = setTimeout(() => {
       this.retryTimer = null;
+      this.retryDeadlineAt = 0;
       if (this.retryCountdownTimer) {
         clearInterval(this.retryCountdownTimer);
         this.retryCountdownTimer = null;
@@ -737,8 +758,10 @@ class ChannelQueue {
       this.stuckTimer = null;
     }
     if (!this.stuckEntry) return;
+    this.stuckDeadlineAt = Date.now() + 60_000;
     this.stuckTimer = setTimeout(() => {
       this.stuckTimer = null;
+      this.stuckDeadlineAt = 0;
       if (!this.stuckEntry) {
         this.updateStoreState();
         return;
@@ -1262,8 +1285,6 @@ class ChannelQueue {
         throw new IndexConflictError(INDEX_REVISION_UNAVAILABLE_MESSAGE, true);
       }
     }
-
-    await this.assertLiveRevision(client, peer);
 
     const prevChunks = this.known?.texts.map((text, idx) =>
       text
@@ -1914,6 +1935,12 @@ export async function ensureFreshIndexForWrite(
 ): Promise<"current" | "refreshed"> {
   if (!isIndexReady()) throw new IndexNotReadyError();
   return getIndexQueue(channelId).ensureFreshForWrite();
+}
+
+/** Milliseconds the channel queue is backing off (0 = writable now). */
+export function getIndexBackoffMs(channelId: string): number {
+  const queue = queues.get(channelId);
+  return queue ? queue.remainingBackoffMs() : 0;
 }
 
 /** Force an immediate retry on a currently-failed/stuck queue. */
