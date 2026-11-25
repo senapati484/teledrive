@@ -11,7 +11,8 @@
     "storage": "Хранилище",
     "about": "О программе",
     "encryption": "Шифрование",
-    "security": "Security & App Lock"
+    "security": "Security & App Lock",
+    "general": "Общие"
   },
   "language": {
     "title": "Язык",
@@ -382,6 +383,31 @@
       "forgotDescription": "To protect your privacy, TeleDrive cannot recover a forgotten passcode. Resetting it will sign you out of this device and remove the lock. All your files and backups remain completely safe and untouched in your Telegram cloud.",
       "cancel": "Cancel",
       "resetAndLogout": "Sign Out & Reset Lock"
+    }
+  },
+  "general": {
+    "title": "Общие",
+    "description": "Настройте автозапуск TeleDrive при входе в систему и работу в системном трее.",
+    "startup": {
+      "title": "Запуск и системный трей",
+      "description": "Независимое управление автозапуском при входе и тихим запуском в фоновом режиме.",
+      "launchAtLogin": {
+        "title": "Запускать при входе в систему",
+        "description": "Автоматически запускает TeleDrive при входе, чтобы запланированные резервные копии и синхронизация работали без сбоев."
+      },
+      "startMinimized": {
+        "title": "Запускать свернутым в трей",
+        "description": "Скрывает главное окно в системном трее при запуске, не отвлекая вас от рабочего стола."
+      }
+    },
+    "callout": "<strong>Фоновая работа в трее:</strong> При тихом запуске TeleDrive остается активным в системном трее, выполняя резервное копирование и синхронизацию. Нажмите на значок в трее или запустите TeleDrive снова, чтобы открыть окно.",
+    "toasts": {
+      "launchAtLoginEnabled": "TeleDrive будет запускаться автоматически при входе в систему.",
+      "launchAtLoginDisabled": "TeleDrive удален из автозагрузки.",
+      "launchAtLoginFailed": "Не удалось обновить настройку автозапуска.",
+      "startMinimizedEnabled": "TeleDrive будет запускаться свернутым в системный трей.",
+      "startMinimizedDisabled": "При запуске TeleDrive будет открывать главное окно.",
+      "startMinimizedFailed": "Не удалось обновить настройку окна при запуске."
     }
   }
 }

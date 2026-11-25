@@ -8,6 +8,7 @@ use tokio::sync::Mutex as AsyncMutex;
 
 pub mod biometrics;
 use biometrics::{authenticate_device_owner, check_biometrics_available};
+mod desktop_settings;
 
 #[tauri::command]
 async fn log_vault_state(app: tauri::AppHandle, state: String) {
@@ -172,7 +173,7 @@ fn temp_sibling(path: &Path, suffix: &str) -> Result<PathBuf, String> {
 /// exists, so fall back to copy + remove without deleting the old file first.
 /// When `private` is true the temp and destination are restricted to the
 /// current user (mode 0600 on Unix), which is required for credential files.
-fn atomic_write_with_perms(path: &Path, bytes: &[u8], private: bool) -> Result<(), String> {
+pub(crate) fn atomic_write_with_perms(path: &Path, bytes: &[u8], private: bool) -> Result<(), String> {
     let parent = path
         .parent()
         .ok_or_else(|| format!("no parent directory for {}", path.display()))?;
@@ -1508,6 +1509,7 @@ fn setup_desktop_shell(app: &tauri::App) -> tauri::Result<()> {
 
     let mut tray = TrayIconBuilder::with_id("main")
         .menu(&menu)
+        .tooltip("TeleDrive — Running in background")
         .show_menu_on_left_click(false)
         .on_menu_event(|app, event| match event.id.as_ref() {
             "show" => show_main_window(app),
@@ -1577,9 +1579,14 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init());
 
-    // Desktop-only plugins: shell and process are not available on Android/iOS
+    // Desktop-only plugins: autostart, shell, and process are not available on Android/iOS
     #[cfg(not(mobile))]
     let builder = builder
+        .plugin(
+            tauri_plugin_autostart::Builder::new()
+                .app_name("TeleDrive")
+                .build(),
+        )
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_process::init());
 
@@ -1618,16 +1625,35 @@ pub fn run() {
             open_telegram_app,
             check_biometrics_available,
             authenticate_device_owner,
+            desktop_settings::get_desktop_startup_settings,
+            desktop_settings::set_launch_at_login,
+            desktop_settings::set_start_minimized_to_tray,
         ])
         .setup(|app| {
+            #[cfg(not(mobile))]
+            let start_minimized = desktop_settings::load_sync(app.handle()).start_minimized_to_tray;
+            #[cfg(mobile)]
+            let start_minimized = false;
+
+            if let Some(window_config) = app.config().app.windows.first().cloned() {
+                let mut window_builder =
+                    tauri::WebviewWindowBuilder::from_config(app.handle(), &window_config)?;
+                if start_minimized {
+                    window_builder = window_builder.visible(false);
+                }
+                window_builder.build()?;
+            }
+
             #[cfg(not(mobile))]
             setup_desktop_shell(app)?;
 
             #[cfg(debug_assertions)]
             {
                 #[cfg(not(mobile))]
-                if let Some(window) = app.get_webview_window("TeleDrive") {
-                    window.open_devtools();
+                if !start_minimized {
+                    if let Some(window) = app.get_webview_window("TeleDrive") {
+                        window.open_devtools();
+                    }
                 }
             }
             Ok(())

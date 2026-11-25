@@ -11,7 +11,8 @@
     "storage": "Penyimpanan",
     "about": "Tentang",
     "encryption": "Enkripsi",
-    "security": "Security & App Lock"
+    "security": "Security & App Lock",
+    "general": "Umum"
   },
   "language": {
     "title": "Bahasa",
@@ -427,6 +428,31 @@
       "forgotDescription": "To protect your privacy, TeleDrive cannot recover a forgotten passcode. Resetting it will sign you out of this device and remove the lock. All your files and backups remain completely safe and untouched in your Telegram cloud.",
       "cancel": "Cancel",
       "resetAndLogout": "Sign Out & Reset Lock"
+    }
+  },
+  "general": {
+    "title": "Umum",
+    "description": "Atur cara TeleDrive berjalan saat komputer dinyalakan dan perilakunya di system tray.",
+    "startup": {
+      "title": "Startup & System Tray",
+      "description": "Kontrol peluncuran otomatis saat login dan mode latar belakang tray secara terpisah.",
+      "launchAtLogin": {
+        "title": "Jalankan saat login",
+        "description": "Jalankan TeleDrive secara otomatis saat Anda masuk agar pencadangan terjadwal dan sinkronisasi folder tetap aktif."
+      },
+      "startMinimized": {
+        "title": "Mulai tersembunyi di tray",
+        "description": "Biarkan jendela utama tersembunyi di system tray saat TeleDrive dijalankan agar tidak mengganggu desktop Anda."
+      }
+    },
+    "callout": "<strong>Operasi Latar Belakang di Tray:</strong> Saat TeleDrive dimulai secara senyap, aplikasi tetap aktif di system tray dengan pencadangan dan sinkronisasi berjalan. Klik ikon tray atau jalankan TeleDrive lagi untuk menampilkan jendela.",
+    "toasts": {
+      "launchAtLoginEnabled": "TeleDrive akan dijalankan otomatis saat login.",
+      "launchAtLoginDisabled": "TeleDrive dihapus dari daftar startup login.",
+      "launchAtLoginFailed": "Tidak dapat memperbarui pengaturan jalan otomatis saat login.",
+      "startMinimizedEnabled": "TeleDrive akan dimulai tersembunyi di system tray.",
+      "startMinimizedDisabled": "TeleDrive akan membuka jendela utama saat dijalankan.",
+      "startMinimizedFailed": "Tidak dapat memperbarui pengaturan jendela startup."
     }
   }
 }

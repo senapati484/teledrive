@@ -11,7 +11,8 @@
     "storage": "贮存",
     "about": "关于",
     "encryption": "端到端加密",
-    "security": "Security & App Lock"
+    "security": "Security & App Lock",
+    "general": "常规"
   },
   "language": {
     "title": "语言",
@@ -382,6 +383,31 @@
       "forgotDescription": "To protect your privacy, TeleDrive cannot recover a forgotten passcode. Resetting it will sign you out of this device and remove the lock. All your files and backups remain completely safe and untouched in your Telegram cloud.",
       "cancel": "Cancel",
       "resetAndLogout": "Sign Out & Reset Lock"
+    }
+  },
+  "general": {
+    "title": "常规",
+    "description": "配置 TeleDrive 随系统开机启动及系统托盘后台运行方式。",
+    "startup": {
+      "title": "开机启动与系统托盘",
+      "description": "独立控制登录自启动和静默托盘启动行为。",
+      "launchAtLogin": {
+        "title": "开机时自动启动",
+        "description": "登录系统时自动在后台启动 TeleDrive，确保定时备份和文件夹同步持续运行。"
+      },
+      "startMinimized": {
+        "title": "启动时最小化到系统托盘",
+        "description": "启动时不弹出并抢占主窗口焦点，直接隐藏在系统托盘中安静运行。"
+      }
+    },
+    "callout": "<strong>后台托盘运行说明：</strong> 静默启动时，TeleDrive 会在系统托盘中保持定时备份与同步任务运行。单击托盘图标或再次打开 TeleDrive 即可唤起主窗口。",
+    "toasts": {
+      "launchAtLoginEnabled": "已设置开机登录时自动启动 TeleDrive。",
+      "launchAtLoginDisabled": "已从系统开机启动项中移除 TeleDrive。",
+      "launchAtLoginFailed": "无法更新开机自动启动设置。",
+      "startMinimizedEnabled": "TeleDrive 将在启动时直接最小化到系统托盘。",
+      "startMinimizedDisabled": "TeleDrive 将在启动时正常打开主窗口。",
+      "startMinimizedFailed": "无法更新启动窗口设置。"
     }
   }
 }

@@ -11,7 +11,8 @@
     "storage": "Stockage",
     "about": "À propos",
     "encryption": "Chiffrement",
-    "security": "Security & App Lock"
+    "security": "Security & App Lock",
+    "general": "Général"
   },
   "language": {
     "title": "Langue",
@@ -427,6 +428,31 @@
       "forgotDescription": "To protect your privacy, TeleDrive cannot recover a forgotten passcode. Resetting it will sign you out of this device and remove the lock. All your files and backups remain completely safe and untouched in your Telegram cloud.",
       "cancel": "Cancel",
       "resetAndLogout": "Sign Out & Reset Lock"
+    }
+  },
+  "general": {
+    "title": "Général",
+    "description": "Configurez le démarrage de TeleDrive à l'ouverture de session et son fonctionnement dans la zone de notification.",
+    "startup": {
+      "title": "Démarrage et zone de notification",
+      "description": "Gérez indépendamment le lancement automatique et le démarrage silencieux en arrière-plan.",
+      "launchAtLogin": {
+        "title": "Lancer à l'ouverture de session",
+        "description": "Démarre automatiquement TeleDrive lors de votre connexion afin de maintenir vos sauvegardes planifiées et la synchronisation actives."
+      },
+      "startMinimized": {
+        "title": "Démarrer réduit dans la barre d'état",
+        "description": "Garde la fenêtre principale masquée dans la zone de notification au lancement sans interrompre votre bureau."
+      }
+    },
+    "callout": "<strong>Fonctionnement en arrière-plan :</strong> Lorsque TeleDrive démarre silencieusement, il reste actif dans votre zone de notification avec les sauvegardes et la synchronisation en cours. Cliquez sur l'icône ou relancez TeleDrive pour afficher la fenêtre.",
+    "toasts": {
+      "launchAtLoginEnabled": "TeleDrive démarrera automatiquement à la connexion.",
+      "launchAtLoginDisabled": "TeleDrive a été retiré des applications au démarrage.",
+      "launchAtLoginFailed": "Impossible de mettre à jour le démarrage automatique.",
+      "startMinimizedEnabled": "TeleDrive démarrera réduit dans la zone de notification.",
+      "startMinimizedDisabled": "TeleDrive affichera la fenêtre principale au démarrage.",
+      "startMinimizedFailed": "Impossible de mettre à jour l'option de fenêtre au démarrage."
     }
   }
 }

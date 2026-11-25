@@ -11,7 +11,8 @@
     "storage": "Lagerung",
     "about": "Um",
     "encryption": "Verschlüsselung",
-    "security": "Security & App Lock"
+    "security": "Security & App Lock",
+    "general": "Allgemein"
   },
   "language": {
     "title": "Sprache",
@@ -382,6 +383,31 @@
       "forgotDescription": "To protect your privacy, TeleDrive cannot recover a forgotten passcode. Resetting it will sign you out of this device and remove the lock. All your files and backups remain completely safe and untouched in your Telegram cloud.",
       "cancel": "Cancel",
       "resetAndLogout": "Sign Out & Reset Lock"
+    }
+  },
+  "general": {
+    "title": "Allgemein",
+    "description": "Legen Sie fest, wie TeleDrive beim Systemstart startet und im Infobereich ausgeführt wird.",
+    "startup": {
+      "title": "Autostart & Infobereich",
+      "description": "Steuern Sie Systemstart und Hintergrundmodus unabhängig voneinander.",
+      "launchAtLogin": {
+        "title": "Bei Anmeldung starten",
+        "description": "Startet TeleDrive automatisch bei der Anmeldung, damit geplante Backups und Ordnersynchronisation aktiv bleiben."
+      },
+      "startMinimized": {
+        "title": "Minimiert im Infobereich starten",
+        "description": "Startet TeleDrive lautlos im Infobereich, ohne das Hauptfenster beim Start in den Vordergrund zu öffnen."
+      }
+    },
+    "callout": "<strong>Hintergrundbetrieb im Infobereich:</strong> Wenn TeleDrive lautlos startet, bleibt es im Infobereich mit aktiven Backups und Synchronisation aktiv. Klicken Sie auf das Tray-Symbol oder starten Sie TeleDrive erneut, um das Fenster anzuzeigen.",
+    "toasts": {
+      "launchAtLoginEnabled": "TeleDrive startet ab sofort automatisch bei der Anmeldung.",
+      "launchAtLoginDisabled": "TeleDrive wurde aus dem Systemstart entfernt.",
+      "launchAtLoginFailed": "Autostart-Einstellung konnte nicht aktualisiert werden.",
+      "startMinimizedEnabled": "TeleDrive startet ab sofort minimiert im Infobereich.",
+      "startMinimizedDisabled": "TeleDrive öffnet beim Start wieder das Hauptfenster.",
+      "startMinimizedFailed": "Startfenster-Einstellung konnte nicht aktualisiert werden."
     }
   }
 }
