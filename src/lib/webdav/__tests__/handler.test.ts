@@ -740,7 +740,7 @@ describe("WebDAV handler", () => {
       })
     );
     expect(response.status).toBe(503);
-    expect(response.headers?.["Retry-After"]).toBe("137");
+    expect(Number(response.headers?.["Retry-After"])).toBeLessThanOrEqual(10);
     expect(state.deleted).toHaveLength(0);
     expect(state.files.some((entry) => entry.name === "flood.bin")).toBe(false);
   });

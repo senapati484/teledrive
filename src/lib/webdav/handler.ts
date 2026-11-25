@@ -240,7 +240,9 @@ function errorToResponse(
       "Telegram rate limit exceeded; retry after the flood wait",
       {
         "Retry-After": String(
-          Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds) : 30
+          Number.isFinite(seconds) && seconds > 0
+            ? Math.min(MAX_PUT_RETRY_AFTER_SECONDS, Math.ceil(seconds))
+            : MAX_PUT_RETRY_AFTER_SECONDS
         ),
       }
     );
