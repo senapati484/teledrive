@@ -1241,8 +1241,15 @@ class ChannelQueue {
       if (result.status === "ready" && result.ids.length > 0) {
         this.setKnownIndex(result.ids, result.texts, result.chunks);
         // A live epoch existed before this writer's snapshot was built. Never
-        // write the stale state over it; the recovery path replays the local
-        // mutation on the discovered snapshot.
+        // write the stale state over it; refresh the UI so the next action is
+        // built on the authoritative catalog, then surface the conflict.
+        const authoritative = filterDeletedMessages(
+          this.channelId,
+          result.files,
+        );
+        if (canReplaceLocalState({ allowQueueSaving: true })) {
+          useFileStore.getState().setFiles(authoritative);
+        }
         throw new IndexConflictError(INDEX_CONFLICT_MESSAGE, false);
       }
       if (
