@@ -30,6 +30,7 @@ import {
   type UploadCheckpoint,
 } from "../upload/uploadCheckpoints";
 import { acquireWakeLock, releaseWakeLock } from "@/lib/runtime/wakeLock";
+import { uploadPartSemaphore } from "./uploadSemaphore";
 import type { TeleFileEncryption, TeleFileSegment } from "../types";
 
 export const UPLOAD_CHUNK_SIZE = 512 * 1024; // 512 KiB recommended chunk size for Telegram
@@ -464,25 +465,27 @@ export async function uploadFileToTelegram(
         task = (async () => {
           await withTelegramRetry(
             () =>
-              withTimeout(
-                isBigSeg
-                  ? client.invoke(
-                      new Api.upload.SaveBigFilePart({
-                        fileId: segFileId,
-                        filePart: partIndex,
-                        fileTotalParts: segTotalParts,
-                        bytes: Buffer.from(wireBytes),
-                      })
-                    )
-                  : client.invoke(
-                      new Api.upload.SaveFilePart({
-                        fileId: segFileId,
-                        filePart: partIndex,
-                        bytes: Buffer.from(wireBytes),
-                      })
-                    ),
-                CHUNK_TIMEOUT_MS,
-                chunkLabel
+              uploadPartSemaphore.run(() =>
+                withTimeout(
+                  isBigSeg
+                    ? client.invoke(
+                        new Api.upload.SaveBigFilePart({
+                          fileId: segFileId,
+                          filePart: partIndex,
+                          fileTotalParts: segTotalParts,
+                          bytes: Buffer.from(wireBytes),
+                        })
+                      )
+                    : client.invoke(
+                        new Api.upload.SaveFilePart({
+                          fileId: segFileId,
+                          filePart: partIndex,
+                          bytes: Buffer.from(wireBytes),
+                        })
+                      ),
+                  CHUNK_TIMEOUT_MS,
+                  chunkLabel
+                )
               ),
             chunkLabel,
             5,
