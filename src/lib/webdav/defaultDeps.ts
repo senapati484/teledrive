@@ -76,7 +76,7 @@ export function createDefaultWebdavDeps(): WebdavHandlerDeps {
         args.sourcePath,
         args.folderPath,
         undefined,
-        undefined,
+        args.onRetry,
         true,
         null,
         {
@@ -85,6 +85,7 @@ export function createDefaultWebdavDeps(): WebdavHandlerDeps {
           encryptionKey: args.encryptionKey,
           encryptionSaltB64: args.encryptionSaltB64,
           anonymizedFileName: args.anonymizedFileName,
+          floodWaitAbortSeconds: args.floodWaitAbortSeconds,
         }
       );
       if (isHashedUploadResult(result)) {
@@ -149,6 +150,7 @@ export function createDefaultWebdavDeps(): WebdavHandlerDeps {
     },
     getIndexBackoffMs: (channelId) => getIndexBackoffMs(channelId),
     metadataCommitDeadlineMs: DEFAULT_METADATA_COMMIT_DEADLINE_MS,
+    floodWaitAbortSeconds: 10,
     describeConflict: (err) => {
       if (!(err instanceof IndexConflictError)) return null;
       return { transient: err.transient, message: err.message };

@@ -25,6 +25,8 @@ export interface WebdavBridgeRequest {
   bodyPath?: string;
   /** Temp path the handler writes GET bytes to. */
   outputPath?: string;
+  /** Client asked for a `Server-Timing` response header. */
+  debugTiming?: boolean;
 }
 
 export interface WebdavBridgeResponse {
@@ -100,6 +102,7 @@ export function parseBridgeRequest(raw: unknown): WebdavBridgeRequest {
     contentLength,
     bodyPath: readString(object, "bodyPath", { optional: true }),
     outputPath: readString(object, "outputPath", { optional: true }),
+    debugTiming: object.debugTiming === true,
   };
 }
 

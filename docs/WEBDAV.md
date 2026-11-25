@@ -167,6 +167,9 @@ sudo mount -t davfs http://127.0.0.1:8747/ /mnt/teledrive
   most six large part RPCs in flight for the mount. A shared six-permit
   semaphore in the uploader also bounds fan-out across in-app and WebDAV
   uploads. The limiter also caps temp-disk use to two in-flight `PUT` bodies.
+  A Telegram `FLOOD_WAIT` longer than 10 s aborts the PUT with
+  `503 + Retry-After: <flood seconds>` instead of holding the request for the
+  full cooldown; shorter waits are still absorbed by the uploader.
 - **Bounded metadata.** Mutations fail fast with `503 + Retry-After` while the
   index queue is in a Telegram backoff instead of waiting for the 60 s stuck
   retry. Catalog commits have a 15 s server-side deadline; if the commit is
@@ -220,6 +223,18 @@ sudo mount -t davfs http://127.0.0.1:8747/ /mnt/teledrive
 | `429 Too Many Requests` | More than two WebDAV uploads are running. Respect `Retry-After`; RaiDrive/rclone retry automatically. |
 | Port already in use | Change the port in Settings and press Apply; the UI shows the bind error. |
 | Mount shows nothing | Sign in and wait for the drive index; run `rclone lsd teledrive:` to see the raw error. |
+
+## Timing diagnostics
+
+Send `X-TeleDrive-Timing: 1` on a request (curl/rclone) to receive a standard
+`Server-Timing` response header. PUT reports `prepare`, `upload`,
+`upload_wait` (retry/FLOOD_WAIT time), `commit` and `total`; other methods
+report `total`. The header is opt-in and informational only.
+
+```bash
+curl -u user:pass -X PUT --data-binary @file.bin \
+  -H "X-TeleDrive-Timing: 1" -D - http://127.0.0.1:8747/file.bin
+```
 
 ## Protocol harness (maintainers)
 

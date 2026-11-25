@@ -121,6 +121,7 @@ function makeDeps(initial: TeleFile[]) {
     },
     getIndexBackoffMs: () => state.indexBackoffMs,
     metadataCommitDeadlineMs: 25,
+    floodWaitAbortSeconds: 10,
     describeConflict: isConflict,
     validateSize: async (size) =>
       size > 1000
@@ -674,6 +675,66 @@ describe("WebDAV handler", () => {
         )
       ).toHaveLength(1);
     }
+  });
+
+  it("aborts a long FLOOD_WAIT with 503 + Retry-After", async () => {
+    const { deps, state } = makeDeps(baseFiles());
+    deps.uploadFile = async () => {
+      throw Object.assign(new Error("Telegram FLOOD_WAIT_137"), {
+        name: "FloodWaitAbortError",
+        code: "FLOOD_WAIT_ABORT",
+        floodWaitSeconds: 137,
+      });
+    };
+    const handler = createWebdavHandler(deps);
+    const response = await handler.handle(
+      request({
+        id: 1,
+        method: "PUT",
+        path: "/Docs/flood.bin",
+        bodyPath: "C:/tmp/body.bin",
+        contentLength: 512,
+      })
+    );
+    expect(response.status).toBe(503);
+    expect(response.headers?.["Retry-After"]).toBe("137");
+    expect(state.deleted).toHaveLength(0);
+    expect(state.files.some((entry) => entry.name === "flood.bin")).toBe(false);
+  });
+
+  it("returns opt-in Server-Timing phases for PUT", async () => {
+    const { deps } = makeDeps(baseFiles());
+    const handler = createWebdavHandler(deps);
+    const response = await handler.handle(
+      request({
+        id: 1,
+        method: "PUT",
+        path: "/Docs/timed.bin",
+        bodyPath: "C:/tmp/body.bin",
+        contentLength: 10,
+        debugTiming: true,
+      })
+    );
+    expect(response.status).toBe(201);
+    const timing = response.headers?.["Server-Timing"] ?? "";
+    for (const phase of ["prepare;dur=", "upload;dur=", "commit;dur=", "total;dur="]) {
+      expect(timing).toContain(phase);
+    }
+  });
+
+  it("adds total Server-Timing to metadata responses when requested", async () => {
+    const { deps } = makeDeps(baseFiles());
+    const handler = createWebdavHandler(deps);
+    const response = await handler.handle(
+      request({
+        id: 1,
+        method: "MKCOL",
+        path: "/Docs/Timed",
+        debugTiming: true,
+      })
+    );
+    expect(response.status).toBe(201);
+    expect(response.headers?.["Server-Timing"]).toContain("total;dur=");
   });
   it("answers PROPPATCH with 207 containing a 403 propstat", async () => {
     const { deps } = makeDeps(baseFiles());

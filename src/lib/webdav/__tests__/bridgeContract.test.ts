@@ -18,6 +18,7 @@ describe("parseBridgeRequest", () => {
       contentLength: 10,
       bodyPath: "C:/tmp/body.bin",
       outputPath: "C:/tmp/out.bin",
+      debugTiming: true,
     });
     expect(parsed).toMatchObject({
       id: 7,
@@ -28,6 +29,7 @@ describe("parseBridgeRequest", () => {
       contentLength: 10,
       bodyPath: "C:/tmp/body.bin",
       outputPath: "C:/tmp/out.bin",
+      debugTiming: true,
     });
   });
 

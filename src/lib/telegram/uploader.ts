@@ -201,6 +201,18 @@ export interface HashedUploadResult {
   enc?: TeleFileEncryption;
 }
 
+/** Aborts a web request instead of holding it through a long Telegram cooldown. */
+export class FloodWaitAbortError extends Error {
+  readonly code = "FLOOD_WAIT_ABORT";
+  readonly floodWaitSeconds: number;
+
+  constructor(floodWaitSeconds: number) {
+    super(`Telegram FLOOD_WAIT_${floodWaitSeconds}s exceeds the WebDAV abort threshold`);
+    this.name = "FloodWaitAbortError";
+    this.floodWaitSeconds = floodWaitSeconds;
+  }
+}
+
 export interface UploadAdvancedOptions {
   /** Stable fingerprint key enabling part-level & segment-level checkpoint resume. */
   checkpointKey?: string;
@@ -214,6 +226,12 @@ export interface UploadAdvancedOptions {
   encryptionSaltB64?: string | null;
   /** Optional anonymized Telegram document filename when encrypting (e.g., `<id>.tde`). */
   anonymizedFileName?: string;
+  /**
+   * WebDAV: abort with `FloodWaitAbortError` when Telegram asks to wait longer
+   * than this, so the HTTP client gets `503 + Retry-After` instead of hanging
+   * for the full cooldown. Short cooldowns are still waited out normally.
+   */
+  floodWaitAbortSeconds?: number;
 }
 
 /**
@@ -490,6 +508,13 @@ export async function uploadFileToTelegram(
             chunkLabel,
             5,
             (e) => {
+              if (
+                e.floodSeconds !== null &&
+                advanced?.floodWaitAbortSeconds !== undefined &&
+                e.floodSeconds > advanced.floodWaitAbortSeconds
+              ) {
+                throw new FloodWaitAbortError(e.floodSeconds);
+              }
               if (e.floodSeconds !== null && partConcurrency > 1) {
                 partConcurrency = 1;
               }

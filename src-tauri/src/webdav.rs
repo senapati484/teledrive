@@ -168,6 +168,8 @@ pub struct BridgeRequest {
     pub body_path: Option<String>,
     /// Temp path the bridge must write the response bytes to (GET only).
     pub output_path: Option<String>,
+    /// Opt-in `Server-Timing` diagnostics (`X-TeleDrive-Timing: 1`).
+    pub debug_timing: bool,
 }
 
 #[derive(Debug, Clone, Default, Deserialize)]
@@ -1028,6 +1030,10 @@ fn handle_connection(
                 .as_ref()
                 .map(|p| p.to_string_lossy().to_string()),
             output_path: output_path.as_ref().map(|p| p.to_string_lossy().to_string()),
+            debug_timing: headers
+                .get("x-teledrive-timing")
+                .map(|value| value.trim() != "0" && !value.trim().is_empty())
+                .unwrap_or(false),
         };
 
         let bridge_response = bridge.handle(&request);

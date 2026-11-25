@@ -72,6 +72,8 @@ export interface WebdavHandlerDeps {
     encryptionSaltB64: string | null;
     anonymizedFileName?: string;
     checkpointKey: string;
+    floodWaitAbortSeconds?: number;
+    onRetry?: (event: { waitMs: number; floodSeconds: number | null }) => void;
   }): Promise<WebdavUploadResult>;
   cloneFile(
     channelId: string,
@@ -99,6 +101,8 @@ export interface WebdavHandlerDeps {
   getIndexBackoffMs(channelId: string): number;
   /** Server-side catalog commit deadline; shorter in tests. */
   metadataCommitDeadlineMs: number;
+  /** Abort a PUT instead of waiting out a Telegram FLOOD_WAIT above this. */
+  floodWaitAbortSeconds: number;
   /**
    * Verifies the live index revision before a PUT transfers bytes and
    * refreshes the catalog when another device committed first. Throws
@@ -216,6 +220,24 @@ function errorToResponse(
     if (code === "invalid_passphrase") {
       return textResponse(403, "Encryption key mismatch");
     }
+  }
+  if (
+    err instanceof Error &&
+    "code" in err &&
+    err.code === "FLOOD_WAIT_ABORT"
+  ) {
+    const seconds = Number(
+      (err as { floodWaitSeconds?: unknown }).floodWaitSeconds
+    );
+    return textResponse(
+      503,
+      "Telegram rate limit exceeded; retry after the flood wait",
+      {
+        "Retry-After": String(
+          Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds) : 30
+        ),
+      }
+    );
   }
   const upper = message.toUpperCase();
   if (
@@ -462,10 +484,17 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
     const target = normalizeVirtualPath(request.path);
     if (target === "/") throw new WebdavError(405, "Cannot PUT the drive root");
     if (!request.bodyPath) throw new WebdavError(400, "Missing PUT body");
+    const startedAt = Date.now();
+    let afterPrepareAt = startedAt;
+    let afterUploadAt = startedAt;
+    const timings: string[] = [];
     assertIndexWritable(channelId);
     // Fail stale writes before uploading bytes. This also refreshes the
     // catalog when another device committed since our last poll.
+    const preflightStarted = Date.now();
     await deps.prepareWrite(channelId);
+    afterPrepareAt = Date.now();
+    timings.push(`prepare;dur=${afterPrepareAt - preflightStarted}`);
     assertIndexWritable(channelId);
     const files = deps.getFiles();
     const parent = dirname(target);
@@ -496,6 +525,7 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
 
     const id = deps.newId();
     const checkpointKey = `webdav-${id}`;
+    let uploadRetryWaitMs = 0;
     let uploaded: WebdavUploadResult;
     try {
       uploaded = await deps.uploadFile({
@@ -508,6 +538,11 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
         encryptionSaltB64: shouldEncrypt ? encryption.saltB64 : null,
         anonymizedFileName: shouldEncrypt ? `${id}.tde` : undefined,
         checkpointKey,
+        floodWaitAbortSeconds: deps.floodWaitAbortSeconds,
+        onRetry: (event) => {
+          uploadRetryWaitMs += event.waitMs;
+          if (event.floodSeconds) uploadRetryWaitMs += event.floodSeconds * 1000;
+        },
       });
     } catch (err) {
       // A failed multi-segment upload may already have committed earlier
@@ -523,6 +558,11 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
       throw err;
     }
     deps.checkpoint.clear(checkpointKey);
+    afterUploadAt = Date.now();
+    timings.push(`upload;dur=${afterUploadAt - afterPrepareAt}`);
+    if (uploadRetryWaitMs > 0) {
+      timings.push(`upload_wait;dur=${uploadRetryWaitMs}`);
+    }
 
     const messageId = Number(uploaded.message?.id ?? 0);
     if (!messageId) {
@@ -581,9 +621,15 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
       await deps.deleteMessages(channelId, messageIds(replaced)).catch(() => {});
     }
 
+    const finishedAt = Date.now();
+    timings.push(`commit;dur=${finishedAt - afterUploadAt}`);
+    timings.push(`total;dur=${finishedAt - startedAt}`);
     return {
       status: replaced.length > 0 ? 204 : 201,
-      headers: { ETag: etagForFile(newFile) },
+      headers: {
+        ETag: etagForFile(newFile),
+        ...(request.debugTiming ? { "Server-Timing": timings.join(", ") } : {}),
+      },
     };
   };
 
@@ -939,11 +985,20 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
 
   return {
     async handle(request: WebdavBridgeRequest): Promise<WebdavBridgeResponse> {
+      const startedAt = Date.now();
+      let response: WebdavBridgeResponse;
       try {
-        return await route(request);
+        response = await route(request);
       } catch (err) {
-        return errorToResponse(err, deps.log, deps.describeConflict);
+        response = errorToResponse(err, deps.log, deps.describeConflict);
       }
+      if (request.debugTiming && !response.headers?.["Server-Timing"]) {
+        response.headers = {
+          ...(response.headers ?? {}),
+          "Server-Timing": `total;dur=${Date.now() - startedAt}`,
+        };
+      }
+      return response;
     },
   };
 }
