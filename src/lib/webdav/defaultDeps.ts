@@ -14,6 +14,8 @@ import {
 } from "../storage/tombstones";
 import {
   enqueueSave,
+  ensureFreshIndexForWrite,
+  IndexConflictError,
   IndexRetryExhaustedError,
 } from "../storage/indexQueue";
 import { streamTeleFileRangeToLocalPath } from "../telegram/downloader";
@@ -136,6 +138,13 @@ export function createDefaultWebdavDeps(): WebdavHandlerDeps {
       clear: (key) => clearUploadCheckpoint(key),
     },
     mimeForName: getMimeFromExtension,
+    prepareWrite: async (channelId) => {
+      await ensureFreshIndexForWrite(channelId);
+    },
+    describeConflict: (err) => {
+      if (!(err instanceof IndexConflictError)) return null;
+      return { transient: err.transient, message: err.message };
+    },
     validateSize: async (size) => {
       if (size <= 0) {
         return { ok: false, message: "Telegram cannot store empty files" };

@@ -31,6 +31,28 @@ function fileEntry(name: string, folderPath: string, overrides: Partial<TeleFile
   };
 }
 
+function conflictError(transient = false): Error {
+  return Object.assign(new Error("Another device changed the drive; refreshed - retry."), {
+    name: "IndexConflictError",
+    code: "INDEX_CONFLICT",
+    transient,
+  });
+}
+
+function isConflict(err: unknown): { transient: boolean; message: string } | null {
+  if (
+    err instanceof Error &&
+    "code" in err &&
+    err.code === "INDEX_CONFLICT"
+  ) {
+    return {
+      transient: Boolean((err as { transient?: unknown }).transient),
+      message: err.message,
+    };
+  }
+  return null;
+}
+
 function makeDeps(initial: TeleFile[]) {
   const state = {
     files: [...initial],
@@ -42,6 +64,9 @@ function makeDeps(initial: TeleFile[]) {
     saveError: null as Error | null,
     saveCalls: 0,
     idCounter: 0,
+    prepareError: null as Error | null,
+    prepareCalls: 0,
+    clearedTombstones: [] as number[],
   };
 
   const deps: WebdavHandlerDeps = {
@@ -83,6 +108,11 @@ function makeDeps(initial: TeleFile[]) {
     }),
     checkpoint: { load: () => null, clear: () => {} },
     mimeForName: () => "text/plain",
+    prepareWrite: async () => {
+      state.prepareCalls += 1;
+      if (state.prepareError) throw state.prepareError;
+    },
+    describeConflict: isConflict,
     validateSize: async (size) =>
       size > 1000
         ? { ok: false, message: "File exceeds Telegram limits" }
@@ -91,7 +121,9 @@ function makeDeps(initial: TeleFile[]) {
     recordDeletedMessages: (_channelId, ids) => {
       state.tombstones.push(...ids);
     },
-    clearDeletedMessages: () => {},
+    clearDeletedMessages: (_channelId, ids) => {
+      state.clearedTombstones.push(...ids);
+    },
     locks: new LockManager(),
     log: () => {},
   };
@@ -444,6 +476,96 @@ describe("WebDAV handler", () => {
     expect(unlocked.status).toBe(204);
   });
 
+
+  it("fails a stale PUT before uploading any bytes", async () => {
+    const { deps, state } = makeDeps(baseFiles());
+    state.prepareError = conflictError(false);
+    const handler = createWebdavHandler(deps);
+    const response = await handler.handle(
+      request({
+        id: 1,
+        method: "PUT",
+        path: "/Docs/stale.txt",
+        bodyPath: "C:/tmp/body.bin",
+        contentLength: 10,
+      })
+    );
+    expect(response.status).toBe(409);
+    expect(state.uploads).toHaveLength(0);
+    expect(state.deleted).toHaveLength(0);
+    expect(state.prepareCalls).toBe(1);
+  });
+
+  it("maps a transient pre-check failure to 503 with Retry-After", async () => {
+    const { deps, state } = makeDeps(baseFiles());
+    state.prepareError = conflictError(true);
+    const handler = createWebdavHandler(deps);
+    const response = await handler.handle(
+      request({
+        id: 1,
+        method: "PUT",
+        path: "/Docs/retry.txt",
+        bodyPath: "C:/tmp/body.bin",
+        contentLength: 10,
+      })
+    );
+    expect(response.status).toBe(503);
+    expect(response.headers?.["Retry-After"]).toBe("2");
+    expect(state.uploads).toHaveLength(0);
+  });
+
+  it("cleans up uploaded messages on an unresolved commit conflict, then retries", async () => {
+    const { deps, state } = makeDeps(baseFiles());
+    state.saveError = conflictError(false);
+    const handler = createWebdavHandler(deps);
+
+    const conflicted = await handler.handle(
+      request({
+        id: 1,
+        method: "PUT",
+        path: "/Docs/contended.txt",
+        bodyPath: "C:/tmp/body.bin",
+        contentLength: 10,
+      })
+    );
+    expect(conflicted.status).toBe(409);
+    expect(state.uploads).toHaveLength(1);
+    expect(state.deleted).toContain(99);
+    expect(state.files.some((entry) => entry.name === "contended.txt")).toBe(false);
+
+    state.saveError = null;
+    const retried = await handler.handle(
+      request({
+        id: 2,
+        method: "PUT",
+        path: "/Docs/contended.txt",
+        bodyPath: "C:/tmp/body.bin",
+        contentLength: 10,
+      })
+    );
+    expect(retried.status).toBe(201);
+    expect(state.files.some((entry) => entry.name === "contended.txt")).toBe(true);
+  });
+
+  it("routes MKCOL and DELETE through the conflict guard", async () => {
+    const { deps, state } = makeDeps(baseFiles());
+    state.saveError = conflictError(false);
+    const handler = createWebdavHandler(deps);
+
+    const mkcol = await handler.handle(
+      request({ id: 1, method: "MKCOL", path: "/Docs/ConflictFolder" })
+    );
+    expect(mkcol.status).toBe(409);
+    expect(state.files.some((entry) => entry.name === "ConflictFolder")).toBe(false);
+
+    const removed = await handler.handle(
+      request({ id: 2, method: "DELETE", path: "/Docs/a.txt" })
+    );
+    expect(removed.status).toBe(409);
+    expect(state.files.some((entry) => entry.name === "a.txt")).toBe(true);
+    expect(state.tombstones).toContain(5);
+    expect(state.clearedTombstones).toContain(5);
+  });
   it("answers PROPPATCH with 207 containing a 403 propstat", async () => {
     const { deps } = makeDeps(baseFiles());
     const handler = createWebdavHandler(deps);

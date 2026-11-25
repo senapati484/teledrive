@@ -152,6 +152,14 @@ sudo mount -t davfs http://127.0.0.1:8747/ /mnt/teledrive
   persisted through the existing `IndexQueue`. A failed `PUT` deletes any
   partially uploaded segment messages, and a failed catalog commit deletes the
   just-uploaded messages, so failed writes do not leave orphans.
+- **Concurrent devices.** Each index write verifies the live chunk ids/texts
+  immediately before writing and again after the write lands. If another
+  device committed first, the writer reloads the authoritative snapshot,
+  re-applies only its own catalog change, and retries once (two attempts
+  total). A stale `PUT` is rejected with `409` before bytes are uploaded when
+  the pre-write check cannot refresh safely, or `503` + `Retry-After` when the
+  revision could not be read. Same-file content conflicts remain
+  last-writer-wins; no conflicted-copy merge is performed.
 - **Methods.** `OPTIONS`, `PROPFIND` (Depth 0/1/infinity), `GET`, `HEAD`
   (with `Range` → `206`/`416`), `PUT`, `MKCOL`, `DELETE` (recursive),
   `MOVE`, `COPY`, `LOCK`, `UNLOCK`; `PROPPATCH` responds `207` with a `403`
@@ -196,7 +204,7 @@ sudo mount -t davfs http://127.0.0.1:8747/ /mnt/teledrive
 | `409 Conflict` | Parent folder does not exist (`MKCOL` it first) or trying to `PUT` over a folder. |
 | `423 Locked` | Another client holds a lock. Wait for the timeout, `UNLOCK` with the token, or restart the server from Settings. |
 | `507 Insufficient Storage` | Telegram cannot store empty files, or the request exceeded a Telegram/WebDAV limit (file size, COPY count, PROPFIND size). |
-| `503 Service Unavailable` | TeleDrive is signed out, the index is still loading, or Telegram is rate-limiting. |
+| `503 Service Unavailable` | TeleDrive is signed out, the index is still loading, Telegram is rate-limiting, or the drive revision could not be verified (retry after the `Retry-After` delay). |
 | Port already in use | Change the port in Settings and press Apply; the UI shows the bind error. |
 | Mount shows nothing | Sign in and wait for the drive index; run `rclone lsd teledrive:` to see the raw error. |
 

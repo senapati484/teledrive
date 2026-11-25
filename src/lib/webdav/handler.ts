@@ -93,6 +93,16 @@ export interface WebdavHandlerDeps {
   };
   mimeForName(name: string): string;
   validateSize(size: number): Promise<{ ok: boolean; message?: string }>;
+  /**
+   * Verifies the live index revision before a PUT transfers bytes and
+   * refreshes the catalog when another device committed first. Throws
+   * IndexConflictError (via the app's queue) when that is unsafe.
+   */
+  prepareWrite(channelId: string): Promise<void>;
+  /** Classifies an IndexConflictError without importing the queue here. */
+  describeConflict(
+    err: unknown
+  ): { transient: boolean; message: string } | null;
   reconstructMissingFolders(
     files: TeleFile[],
     channelId: string
@@ -152,9 +162,34 @@ function textResponse(status: number, message: string): WebdavBridgeResponse {
   };
 }
 
-function errorToResponse(err: unknown, log: (message: string) => void): WebdavBridgeResponse {
+function errorToResponse(
+  err: unknown,
+  log: (message: string) => void,
+  describeConflict: (err: unknown) => { transient: boolean; message: string } | null
+): WebdavBridgeResponse {
   if (err instanceof WebdavError) {
     return textResponse(err.status, err.message);
+  }
+  if (err instanceof Error && err.name === "IndexNotReadyError") {
+    return {
+      status: 503,
+      headers: { "Content-Type": "text/plain; charset=utf-8", "Retry-After": "2" },
+      body: "Drive index is still loading; retry shortly",
+    };
+  }
+  const conflict = describeConflict(err);
+  if (conflict) {
+    if (conflict.transient) {
+      return {
+        status: 503,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Retry-After": "2",
+        },
+        body: conflict.message,
+      };
+    }
+    return textResponse(409, conflict.message);
   }
   const message = err instanceof Error ? err.message : String(err);
   if (err instanceof Error && "code" in err) {
@@ -357,12 +392,16 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
     const target = normalizeVirtualPath(request.path);
     if (target === "/") throw new WebdavError(405, "Cannot PUT the drive root");
     if (!request.bodyPath) throw new WebdavError(400, "Missing PUT body");
+    // Fail stale writes before uploading bytes. This also refreshes the
+    // catalog when another device committed since our last poll.
+    await deps.prepareWrite(channelId);
+    const files = deps.getFiles();
     const parent = dirname(target);
     const name = basename(target);
-    if (!folderExists(deps.getFiles(), parent)) {
+    if (!folderExists(files, parent)) {
       throw new WebdavError(409, "Parent collection does not exist");
     }
-    const existingNode = nodeForPath(deps.getFiles(), target);
+    const existingNode = nodeForPath(files, target);
     if (existingNode?.isFolder) {
       throw new WebdavError(409, "Cannot overwrite a collection with a file");
     }
@@ -793,7 +832,7 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
       try {
         return await route(request);
       } catch (err) {
-        return errorToResponse(err, deps.log);
+        return errorToResponse(err, deps.log, deps.describeConflict);
       }
     },
   };
