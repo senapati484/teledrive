@@ -26,8 +26,8 @@ use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
-use std::sync::{mpsc, Arc, Mutex};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::sync::{mpsc, Arc, Condvar, Mutex};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Emitter, Manager, State};
 
 pub const DEFAULT_PORT: u16 = 8747;
@@ -39,6 +39,12 @@ const TEMP_DIR_NAME: &str = "webdav_tmp";
 const MAX_HEADER_BYTES: usize = 64 * 1024;
 const MAX_SMALL_BODY: usize = 4 * 1024 * 1024;
 const MAX_CONNECTIONS: usize = 64;
+/// Bounded WebDAV PUT concurrency. Each PUT drives up to three concurrent
+/// MTProto `SaveBigFilePart` RPCs, so two PUTs keep at most six in flight on
+/// the shared GramJS session. Raise deliberately, not dynamically.
+pub const DEFAULT_MAX_CONCURRENT_PUTS: usize = 2;
+/// How long a PUT waits for a slot before receiving `429 + Retry-After`.
+pub const DEFAULT_PUT_QUEUE_TIMEOUT: Duration = Duration::from_secs(10);
 const BRIDGE_TIMEOUT: Duration = Duration::from_secs(1800);
 const HEADER_TIMEOUT: Duration = Duration::from_secs(30);
 const BODY_TIMEOUT: Duration = Duration::from_secs(1800);
@@ -545,10 +551,84 @@ pub struct ServerConfig {
     pub password: String,
 }
 
+#[derive(Clone, Debug)]
+pub struct ServerLimits {
+    pub max_concurrent_puts: usize,
+    pub put_queue_timeout: Duration,
+}
+
+impl Default for ServerLimits {
+    fn default() -> Self {
+        Self {
+            max_concurrent_puts: DEFAULT_MAX_CONCURRENT_PUTS,
+            put_queue_timeout: DEFAULT_PUT_QUEUE_TIMEOUT,
+        }
+    }
+}
+
+/// Bounded permit pool for PUT requests. Held from before the request body is
+/// read until the response is written, so it also bounds temp-file usage.
+struct PutLimiter {
+    active: Mutex<usize>,
+    available: Condvar,
+    capacity: usize,
+    wait: Duration,
+}
+
+struct PutPermit<'a>(&'a PutLimiter);
+
+impl Drop for PutPermit<'_> {
+    fn drop(&mut self) {
+        if let Ok(mut active) = self.0.active.lock() {
+            *active = active.saturating_sub(1);
+        }
+        self.0.available.notify_one();
+    }
+}
+
+impl PutLimiter {
+    fn new(capacity: usize, wait: Duration) -> Self {
+        Self {
+            active: Mutex::new(0),
+            available: Condvar::new(),
+            capacity: capacity.max(1),
+            wait,
+        }
+    }
+
+    fn acquire(&self) -> Option<PutPermit<'_>> {
+        let mut active = self.active.lock().ok()?;
+        let deadline = Instant::now() + self.wait;
+        while *active >= self.capacity {
+            let now = Instant::now();
+            if now >= deadline {
+                return None;
+            }
+            let remaining = deadline.saturating_duration_since(now);
+            let (guard, timed_out) = self.available.wait_timeout(active, remaining).ok()?;
+            active = guard;
+            if timed_out.timed_out() && *active >= self.capacity {
+                return None;
+            }
+        }
+        *active += 1;
+        Some(PutPermit(self))
+    }
+}
+
 pub fn start_server(
     config: ServerConfig,
     temp_dir: PathBuf,
     bridge: Arc<dyn WebdavBridge>,
+) -> Result<RunningServer, String> {
+    start_server_with_limits(config, temp_dir, bridge, ServerLimits::default())
+}
+
+pub fn start_server_with_limits(
+    config: ServerConfig,
+    temp_dir: PathBuf,
+    bridge: Arc<dyn WebdavBridge>,
+    limits: ServerLimits,
 ) -> Result<RunningServer, String> {
     let listener = TcpListener::bind(("127.0.0.1", config.port))
         .map_err(|e| format!("Failed to bind 127.0.0.1:{}: {e}", config.port))?;
@@ -564,6 +644,10 @@ pub fn start_server(
     let config = Arc::new(config);
     let bridge: Arc<dyn WebdavBridge> = bridge;
     let temp_dir = Arc::new(temp_dir);
+    let limiter = Arc::new(PutLimiter::new(
+        limits.max_concurrent_puts,
+        limits.put_queue_timeout,
+    ));
 
     std::thread::Builder::new()
         .name("teledrive-webdav".to_string())
@@ -594,11 +678,19 @@ pub fn start_server(
                 let bridge = bridge.clone();
                 let temp_dir = temp_dir.clone();
                 let stop = accept_stop.clone();
+                let limiter = limiter.clone();
                 let _ = std::thread::Builder::new()
                     .name("teledrive-webdav-conn".to_string())
                     .spawn(move || {
                         let mut stream = stream;
-                        handle_connection(&mut stream, &config, bridge.as_ref(), &temp_dir, &stop);
+                        handle_connection(
+                            &mut stream,
+                            &config,
+                            bridge.as_ref(),
+                            &temp_dir,
+                            &stop,
+                            limiter.as_ref(),
+                        );
                         active.fetch_sub(1, Ordering::SeqCst);
                     });
             }
@@ -620,6 +712,7 @@ fn handle_connection(
     bridge: &dyn WebdavBridge,
     temp_dir: &Path,
     stop: &AtomicBool,
+    put_limiter: &PutLimiter,
 ) {
     let _ = stream.set_read_timeout(Some(HEADER_TIMEOUT));
     let _ = stream.set_write_timeout(Some(BODY_TIMEOUT));
@@ -760,6 +853,50 @@ fn handle_connection(
         .and_then(|value| decode_virtual_path(value).ok());
 
     let is_put = method == "PUT";
+    let _put_permit = if is_put {
+        match put_limiter.acquire() {
+            Some(permit) => Some(permit),
+            None => {
+                // Drain a body the client is already sending so the TCP
+                // connection closes cleanly and the client can read the 429.
+                // Clients using Expect: 100-continue have not sent it yet.
+                let expect_continue = headers
+                    .get("expect")
+                    .map(|value| value.trim().eq_ignore_ascii_case("100-continue"))
+                    .unwrap_or(false);
+                if !expect_continue {
+                    let content_length = headers
+                        .get("content-length")
+                        .and_then(|value| value.trim().parse::<u64>().ok());
+                    let chunked = headers
+                        .get("transfer-encoding")
+                        .map(|value| value.to_ascii_lowercase().contains("chunked"))
+                        .unwrap_or(false);
+                    let _ = stream.set_read_timeout(Some(Duration::from_secs(2)));
+                    let mut sink = std::io::sink();
+                    let mut discarded = 0u64;
+                    let _ = if chunked {
+                        copy_chunked_body(&mut reader, &mut sink, &mut discarded)
+                    } else if let Some(len) = content_length {
+                        copy_exact_body(&mut reader, &mut sink, len, &mut discarded)
+                    } else {
+                        Ok(())
+                    };
+                }
+                let _ = write_simple_response(
+                    stream,
+                    429,
+                    "Too Many Requests",
+                    &[("Retry-After".to_string(), "2".to_string())],
+                    b"Too many concurrent WebDAV uploads; retry shortly",
+                    false,
+                );
+                return;
+            }
+        }
+    } else {
+        None
+    };
     if is_put {
         // Uploads are allowed to be slow; the 30 s header timeout must not
         // abort a large PUT that pauses between chunks.
@@ -944,9 +1081,9 @@ fn read_head(reader: &mut BufReader<TcpStream>) -> Result<Vec<String>, u16> {
     }
 }
 
-fn copy_exact_body(
+fn copy_exact_body<W: Write>(
     reader: &mut BufReader<TcpStream>,
-    file: &mut File,
+    file: &mut W,
     len: u64,
     received: &mut u64,
 ) -> Result<(), u16> {
@@ -995,9 +1132,9 @@ fn read_chunked_body(
     }
 }
 
-fn copy_chunked_body(
+fn copy_chunked_body<W: Write>(
     reader: &mut BufReader<TcpStream>,
-    file: &mut File,
+    file: &mut W,
     received: &mut u64,
 ) -> Result<(), u16> {
     loop {
@@ -1507,6 +1644,7 @@ fn status_text(status: u16) -> &'static str {
         301 => "Moved Permanently",
         304 => "Not Modified",
         400 => "Bad Request",
+        429 => "Too Many Requests",
         401 => "Unauthorized",
         403 => "Forbidden",
         404 => "Not Found",
@@ -1934,6 +2072,99 @@ mod tests {
         let mut raw = Vec::new();
         stream.read_to_end(&mut raw).unwrap();
         assert!(String::from_utf8_lossy(&raw).starts_with("HTTP/1.1 403"));
+        server.stop();
+        let _ = std::fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn put_limiter_bounds_concurrent_permits() {
+        let limiter = PutLimiter::new(2, Duration::from_millis(10));
+        let first = limiter.acquire().expect("first permit");
+        let second = limiter.acquire().expect("second permit");
+        assert!(limiter.acquire().is_none(), "third permit must time out");
+        drop(first);
+        assert!(limiter.acquire().is_some(), "dropping a permit frees a slot");
+        drop(second);
+    }
+
+    #[test]
+    fn server_rejects_put_beyond_concurrency_with_429() {
+        let gate = Arc::new((Mutex::new((false, false)), Condvar::new()));
+        let bridge_gate = gate.clone();
+        let bridge: Arc<dyn WebdavBridge> = Arc::new(move |request: &BridgeRequest| {
+            if request.method == "PUT" {
+                let (state, condvar) = &*bridge_gate;
+                let mut guard = state.lock().unwrap();
+                guard.0 = true;
+                condvar.notify_all();
+                while !guard.1 {
+                    guard = condvar.wait(guard).unwrap();
+                }
+            }
+            BridgeResponse {
+                status: 201,
+                ..BridgeResponse::default()
+            }
+        });
+
+        let dir = temp_dir("put-limit");
+        let server = start_server_with_limits(
+            ServerConfig {
+                port: 0,
+                username: "user".to_string(),
+                password: "pass".to_string(),
+            },
+            dir.clone(),
+            bridge,
+            ServerLimits {
+                max_concurrent_puts: 1,
+                put_queue_timeout: Duration::from_millis(100),
+            },
+        )
+        .unwrap();
+        let port = server.port;
+        let auth = auth_header();
+        let first_auth = auth.clone();
+        let first = std::thread::spawn(move || {
+            request(
+                port,
+                "PUT",
+                "/held.txt",
+                &[("Authorization", first_auth.as_str())],
+                b"held",
+            )
+        });
+
+        {
+            let (state, condvar) = &*gate;
+            let mut guard = state.lock().unwrap();
+            let deadline = Instant::now() + Duration::from_secs(3);
+            while !guard.0 {
+                let remaining = deadline.saturating_duration_since(Instant::now());
+                assert!(!remaining.is_zero(), "first PUT never reached the bridge");
+                let (next, _) = condvar.wait_timeout(guard, remaining).unwrap();
+                guard = next;
+            }
+        }
+
+        let (status, head, _) = request(
+            port,
+            "PUT",
+            "/rejected.txt",
+            &[("Authorization", auth.as_str())],
+            b"second",
+        );
+        assert_eq!(status, 429);
+        assert!(head.contains("Retry-After: 2"));
+
+        {
+            let (state, condvar) = &*gate;
+            let mut guard = state.lock().unwrap();
+            guard.1 = true;
+            condvar.notify_all();
+        }
+        assert_eq!(first.join().unwrap().0, 201);
+
         server.stop();
         let _ = std::fs::remove_dir_all(dir);
     }

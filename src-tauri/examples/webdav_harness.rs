@@ -27,6 +27,7 @@ struct Catalog {
 struct Harness {
     temp_dir: std::path::PathBuf,
     catalog: Mutex<Catalog>,
+    put_delay: std::time::Duration,
 }
 
 fn parent_of(path: &str) -> String {
@@ -303,6 +304,9 @@ impl WebdavBridge for Harness {
                 }
             }
             "PUT" => {
+                if !self.put_delay.is_zero() {
+                    std::thread::sleep(self.put_delay);
+                }
                 let parent = parent_of(&path);
                 if !catalog.is_folder(&parent) {
                     return BridgeResponse {
@@ -459,6 +463,11 @@ fn main() {
     let temp_dir = std::env::temp_dir().join(format!("teledrive-webdav-harness-{nanos}"));
     std::fs::create_dir_all(&temp_dir).unwrap();
 
+    let put_delay_ms: u64 = std::env::var("WEBDAV_HARNESS_PUT_DELAY_MS")
+        .ok()
+        .and_then(|value| value.parse().ok())
+        .unwrap_or(0);
+
     let catalog = Catalog {
         files: HashMap::from([
             ("/hello.txt".to_string(), b"hello webdav".to_vec()),
@@ -471,6 +480,7 @@ fn main() {
     let harness = Arc::new(Harness {
         temp_dir: temp_dir.clone(),
         catalog: Mutex::new(catalog),
+        put_delay: Duration::from_millis(put_delay_ms),
     });
 
     let server = start_server(
