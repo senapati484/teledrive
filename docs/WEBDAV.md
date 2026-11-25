@@ -177,10 +177,14 @@ sudo mount -t davfs http://127.0.0.1:8747/ /mnt/teledrive
 - **Coalesced catalog writes.** MKCOL/DELETE/MOVE/COPY mutations arriving
   within a **250 ms window** are applied in order, merged into one catalog
   state, and persisted with a single `EditMessage`; every caller waits for that
-  shared commit, so success is never reported before persistence. The batch has
-  a **12 s** deadline: if Telegram is still throttling, each request returns
-  `503 + Retry-After: 3` instead of letting the mount time out into `EACCES`.
-  PUT still has its own bounded commit so overwrite/conflict failures remain
+  shared commit, so success is never reported before persistence.
+- **Edit rate limit.** WebDAV index writes take a token bucket of **1 edit per
+  2 s with a burst of 1** (`DEFAULT_METADATA_EDIT_INTERVAL_MS` /
+  `DEFAULT_METADATA_EDIT_BURST`). Mutations arriving while no token is available
+  stay queued and coalesce into the next edit. A batch/PUT that cannot get a
+  token before its **12 s** deadline returns `503 + Retry-After` with the actual
+  remaining limiter wait, instead of letting RaiDrive surface `EACCES` after
+  ~20 s. PUT keeps its own commit so overwrite/conflict failures remain
   visible. Metadata cleanup (deleted messages, tombstones, cloned COPY
   messages) follows the eventual queue outcome.
 - **Methods.** `OPTIONS`, `PROPFIND` (Depth 0/1/infinity), `GET`, `HEAD`

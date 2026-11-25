@@ -204,6 +204,23 @@ interface QueueEntry {
   reject: (err: any) => void;
   /** Whether this entry owns the pending-index marker. */
   recordPending: boolean;
+  /**
+   * WebDAV: do not resolve when a newer snapshot supersedes this one — wait
+   * until the state that includes this mutation is actually committed.
+   */
+  durable?: boolean;
+  /** Durable callers carried over from superseded entries. */
+  followers?: Array<{ resolve: () => void; reject: (err: any) => void }>;
+}
+
+function resolveQueueEntry(entry: QueueEntry): void {
+  entry.resolve();
+  for (const follower of entry.followers ?? []) follower.resolve();
+}
+
+function rejectQueueEntry(entry: QueueEntry, err: any): void {
+  entry.reject(err);
+  for (const follower of entry.followers ?? []) follower.reject(err);
 }
 
 interface EnqueueOptions {
@@ -212,6 +229,11 @@ interface EnqueueOptions {
    * writes (healing) pass false so they never masquerade as a user action.
    */
   recordPending?: boolean;
+  /**
+   * Resolve only after the state containing this mutation is durably
+   * committed, even when a newer snapshot supersedes it.
+   */
+  durable?: boolean;
 }
 
 /**
@@ -394,6 +416,7 @@ class ChannelQueue {
     // cache is flushed synchronously so a crash between here and the Telegram
     // commit still leaves a complete optimistic snapshot on disk.
     const recordPending = options.recordPending ?? true;
+    const durable = options.durable ?? false;
     if (recordPending) {
       writePendingMarker({
         channelId: this.channelId,
@@ -414,8 +437,18 @@ class ChannelQueue {
       // Resolve superseded pending and retrying entries: their callers were
       // waiting on a snapshot that has been replaced, and leaving them
       // unresolved leaks every action that overlaps a retry.
-      if (this.pending) this.pending.resolve();
-      if (this.retryingEntry) this.retryingEntry.resolve();
+      const followers: Array<{ resolve: () => void; reject: (err: any) => void }> = [];
+      const absorb = (entry: QueueEntry | null) => {
+        if (!entry) return;
+        followers.push(...(entry.followers ?? []));
+        if (entry.durable) {
+          followers.push({ resolve: entry.resolve, reject: entry.reject });
+        } else {
+          entry.resolve();
+        }
+      };
+      absorb(this.pending);
+      absorb(this.retryingEntry);
       this.pending = null;
       this.retryingEntry = null;
 
@@ -438,6 +471,8 @@ class ChannelQueue {
         resolve,
         reject,
         recordPending,
+        durable,
+        followers,
       };
       // Mirror the latest pending state to the store snapshot too — this is
       // what surfaces in the topbar's "Retrying" pill.
@@ -506,10 +541,10 @@ class ChannelQueue {
         // Never keep retrying a stale snapshot: the next user action must be
         // built on the refreshed drive instead.
         this.recoveryStoreUpdate = null;
-        entry.reject(err);
+        rejectQueueEntry(entry, err);
       } else {
         this.stuckEntry = entry;
-        entry.reject(err);
+        rejectQueueEntry(entry, err);
       }
       this.updateStoreState();
       return { status: "failed", error: err };
@@ -591,7 +626,20 @@ class ChannelQueue {
         // superseded by it (and resolved so its caller doesn't hang).
         while (this.pending || this.retryingEntry) {
           if (this.pending && this.retryingEntry) {
-            this.retryingEntry.resolve();
+            // Followers always belong to durable callers from earlier
+            // snapshots; carry them even if this entry itself is non-durable.
+            this.pending.followers = [
+              ...(this.pending.followers ?? []),
+              ...(this.retryingEntry.followers ?? []),
+            ];
+            if (this.retryingEntry.durable) {
+              this.pending.followers.push({
+                resolve: this.retryingEntry.resolve,
+                reject: this.retryingEntry.reject,
+              });
+            } else {
+              this.retryingEntry.resolve();
+            }
             this.retryingEntry = null;
           }
           const entry = this.pending ?? this.retryingEntry;
@@ -606,7 +654,7 @@ class ChannelQueue {
             await this.commit(entry.state, entry.base);
             this.committedState = entry.state;
             this.finishRecoveryStoreUpdate(entry.state);
-            entry.resolve();
+            resolveQueueEntry(entry);
             this.successCount++;
             this.retryAttempt = 0;
             this.clearMarkerIfSettled(entry);
@@ -616,7 +664,7 @@ class ChannelQueue {
               // Bounded recovery already happened inside commitOnce. Do not
               // schedule the stale snapshot for another automatic attempt.
               this.recoveryStoreUpdate = null;
-              entry.reject(err);
+              rejectQueueEntry(entry, err);
               this.retryAttempt = 0;
               this.updateStoreState();
               continue;
@@ -624,7 +672,7 @@ class ChannelQueue {
             if (isHardError(err)) {
               // Reject only this caller; a newer pending snapshot (if any)
               // still gets its turn.
-              entry.reject(err);
+              rejectQueueEntry(entry, err);
               this.retryAttempt = 0;
               this.updateStoreState();
               continue;
@@ -700,7 +748,7 @@ class ChannelQueue {
         // optimistic state and a 60s/manual retry can still commit it.
         this.stuckEntry = this.retryingEntry;
         this.retryingEntry = null;
-        this.stuckEntry.reject(wrapped);
+        rejectQueueEntry(this.stuckEntry, wrapped);
       }
       this.retryAttempt = 0;
       this.lastError = wrapped;
@@ -1893,6 +1941,17 @@ export function enqueueSave(
     return Promise.reject(new IndexNotReadyError());
   }
   return getIndexQueue(channelId).enqueue(state, options);
+}
+
+/**
+ * WebDAV mutations: resolve only after the state containing this change is
+ * committed, even if a newer snapshot supersedes this entry.
+ */
+export function enqueueSaveDurable(
+  channelId: string,
+  state: TeleFile[],
+): Promise<void> {
+  return enqueueSave(channelId, state, { durable: true });
 }
 
 /**

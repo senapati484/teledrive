@@ -13,7 +13,7 @@ import {
   recordDeletedMessages,
 } from "../storage/tombstones";
 import {
-  enqueueSave,
+  enqueueSaveDurable,
   ensureFreshIndexForWrite,
   getIndexBackoffMs,
   IndexConflictError,
@@ -33,6 +33,8 @@ import {
 import {
   createWebdavHandler,
   DEFAULT_METADATA_COMMIT_DEADLINE_MS,
+  DEFAULT_METADATA_EDIT_BURST,
+  DEFAULT_METADATA_EDIT_INTERVAL_MS,
   type WebdavHandler,
   type WebdavHandlerDeps,
 } from "./handler";
@@ -66,7 +68,7 @@ export function createDefaultWebdavDeps(): WebdavHandlerDeps {
     isIndexReady: () => useFileStore.getState().indexLoadState === "ready",
     isBootstrapComplete: () => useFileStore.getState().bootstrapComplete,
     getChannelId: resolveChannelId,
-    saveIndex: (channelId, files) => enqueueSave(channelId, files),
+    saveIndex: (channelId, files) => enqueueSaveDurable(channelId, files),
     isDeferredError: (err) => err instanceof IndexRetryExhaustedError,
     uploadFile: async (args) => {
       const result = await uploadFileToTelegram(
@@ -152,6 +154,8 @@ export function createDefaultWebdavDeps(): WebdavHandlerDeps {
     metadataCommitDeadlineMs: DEFAULT_METADATA_COMMIT_DEADLINE_MS,
     floodWaitAbortSeconds: 10,
     catalogCoalesceMs: 250,
+    metadataEditIntervalMs: DEFAULT_METADATA_EDIT_INTERVAL_MS,
+    metadataEditBurst: DEFAULT_METADATA_EDIT_BURST,
     describeConflict: (err) => {
       if (!(err instanceof IndexConflictError)) return null;
       return { transient: err.transient, message: err.message };

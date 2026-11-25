@@ -34,6 +34,10 @@ import type { WebdavBridgeRequest, WebdavBridgeResponse } from "./types";
 const MAX_PROPFIND_ENTRIES = 10_000;
 const MAX_COPY_FILES = 500;
 export const DEFAULT_METADATA_COMMIT_DEADLINE_MS = 12_000;
+/** Telegram's channel edit budget is tight; one metadata edit per 2 s. */
+export const DEFAULT_METADATA_EDIT_INTERVAL_MS = 2_000;
+/** Small allowance for the first edit of a quiet period. */
+export const DEFAULT_METADATA_EDIT_BURST = 1;
 const COMMIT_DEADLINE = Symbol("webdav-commit-deadline");
 
 export interface WebdavUploadResult {
@@ -105,6 +109,10 @@ export interface WebdavHandlerDeps {
   floodWaitAbortSeconds: number;
   /** Coalescing window for concurrent metadata mutations (150-500 ms). */
   catalogCoalesceMs: number;
+  /** Minimum gap between metadata index edits (>0). */
+  metadataEditIntervalMs: number;
+  /** Tokens available after a quiet period. */
+  metadataEditBurst: number;
   /**
    * Verifies the live index revision before a PUT transfers bytes and
    * refreshes the catalog when another device committed first. Throws
@@ -353,12 +361,24 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
     build: (current: TeleFile[]) => TeleFile[]
   ): Promise<TeleFile[]> => {
     const { previous, applied, next } = await applyCatalogMutation(channelId, build);
+    const deadlineAt = Date.now() + deps.metadataCommitDeadlineMs;
+    const limiterWaitMs = await takeEditTokenWithin(deadlineAt);
+    if (limiterWaitMs > 0) {
+      // No durable commit was enqueued; roll this mutation back so the caller's
+      // retry is a clean upload and no catalog entry references deleted bytes.
+      if (deps.getFiles() === applied) deps.setFiles(previous);
+      throw new WebdavError(
+        503,
+        "Catalog edit rate-limited; retry shortly",
+        { retryAfterSeconds: Math.max(1, Math.ceil(limiterWaitMs / 1000)) }
+      );
+    }
     const commitPromise = deps.saveIndex(channelId, next);
     let timer: ReturnType<typeof setTimeout> | undefined;
     const deadline = new Promise<typeof COMMIT_DEADLINE>((resolve) => {
       timer = setTimeout(
         () => resolve(COMMIT_DEADLINE),
-        Math.max(1, deps.metadataCommitDeadlineMs)
+        Math.max(1, deadlineAt - Date.now())
       );
     });
     try {
@@ -401,19 +421,106 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
     /** Store reference after the latest mutation in this batch. */
     applied: TeleFile[];
     files: TeleFile[];
+    deadlineAt: number;
     waiters: Array<{ resolve: () => void; reject: (err: unknown) => void }>;
+    outcome: Promise<boolean>;
+    resolveOutcome: (committed: boolean) => void;
   }
 
   let pendingBatch: CatalogBatch | null = null;
   let batchTimer: ReturnType<typeof setTimeout> | null = null;
   let batchInFlight = false;
+  const editIntervalMs = deps.metadataEditIntervalMs;
+  const editBurst = Math.max(1, deps.metadataEditBurst);
+  let editTokens = editBurst;
+  let editTokensAt = Date.now();
+
+  const refillEditTokens = (now = Date.now()) => {
+    if (editIntervalMs <= 0) {
+      editTokens = editBurst;
+      editTokensAt = now;
+      return;
+    }
+    const elapsed = Math.max(0, now - editTokensAt);
+    editTokens = Math.min(editBurst, editTokens + elapsed / editIntervalMs);
+    editTokensAt = now;
+  };
+
+  const nextEditSlotMs = (now = Date.now()): number => {
+    if (editIntervalMs <= 0) return 0;
+    refillEditTokens(now);
+    return editTokens >= 1 ? 0 : Math.ceil((1 - editTokens) * editIntervalMs);
+  };
+
+  /**
+   * Waits for a metadata edit token until `deadlineAt`. Returns 0 on success
+   * (token consumed) or the remaining limiter wait when the deadline wins.
+   */
+  const takeEditTokenWithin = async (deadlineAt: number): Promise<number> => {
+    for (;;) {
+      const slotWait = nextEditSlotMs();
+      if (slotWait === 0) {
+        if (editIntervalMs > 0) {
+          const now = Date.now();
+          refillEditTokens(now);
+          editTokens = Math.max(0, editTokens - 1);
+          editTokensAt = now;
+        }
+        return 0;
+      }
+      const remaining = deadlineAt - Date.now();
+      if (slotWait > remaining) return slotWait;
+      await new Promise<void>((resolve) => setTimeout(resolve, slotWait));
+    }
+  };
 
   const flushCatalogBatch = async (): Promise<void> => {
     batchTimer = null;
     const batch = pendingBatch;
-    pendingBatch = null;
     if (!batch) return;
+
+    const now = Date.now();
+    const slotWaitMs = nextEditSlotMs(now);
+    const remainingMs = Math.max(0, batch.deadlineAt - now);
+    if (slotWaitMs > 0) {
+      if (slotWaitMs > remainingMs) {
+        // Preserve the mutations for a later durable commit, but tell these
+        // clients exactly how long the edit rate limiter needs.
+        pendingBatch = { ...batch, waiters: [] };
+        batch.waiters.forEach((waiter) =>
+          waiter.reject(
+            new WebdavError(
+              503,
+              "Catalog edit rate-limited; retry shortly",
+              {
+                retryAfterSeconds: Math.max(1, Math.ceil(slotWaitMs / 1000)),
+                commitOutcome: batch.outcome,
+              }
+            )
+          )
+        );
+        if (!batchTimer) {
+          batchTimer = setTimeout(
+            flushCatalogBatch,
+            Math.max(0, slotWaitMs)
+          );
+        }
+        return;
+      }
+      pendingBatch = batch;
+      if (!batchTimer) {
+        batchTimer = setTimeout(flushCatalogBatch, Math.max(1, slotWaitMs));
+      }
+      return;
+    }
+
+    pendingBatch = null;
     batchInFlight = true;
+    if (editIntervalMs > 0) {
+      refillEditTokens(now);
+      editTokens = Math.max(0, editTokens - 1);
+      editTokensAt = now;
+    }
 
     const commitPromise = deps.saveIndex(batch.channelId, batch.files);
     const outcome = commitPromise.then(
@@ -425,7 +532,7 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
     const deadline = new Promise<typeof COMMIT_DEADLINE>((resolve) => {
       timer = setTimeout(
         () => resolve(COMMIT_DEADLINE),
-        Math.max(1, deps.metadataCommitDeadlineMs)
+        Math.max(1, batch.deadlineAt - Date.now())
       );
     });
 
@@ -437,6 +544,10 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
       ]);
       if (result === COMMIT_DEADLINE) {
         timedOut = true;
+        commitPromise.then(
+          () => batch.resolveOutcome(true),
+          () => batch.resolveOutcome(false)
+        );
         commitPromise.catch(() => {});
       }
     } catch (err) {
@@ -446,6 +557,7 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
         "Catalog commit failed; retry shortly",
         { retryAfterSeconds: 3 }
       );
+      batch.resolveOutcome(false);
       for (const waiter of batch.waiters) {
         waiter.reject(conflict ? err : retryable);
       }
@@ -472,17 +584,23 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
     }
 
     if (timedOut) {
+      const retryAfter = Math.max(
+        3,
+        Math.ceil(Math.max(0, deps.getIndexBackoffMs(batch.channelId)) / 1000),
+        Math.ceil(nextEditSlotMs() / 1000)
+      );
       for (const waiter of batch.waiters) {
         waiter.reject(
           new WebdavError(
             503,
             "Catalog commit is still pending; retry shortly",
-            { retryAfterSeconds: 3, commitOutcome: outcome }
+            { retryAfterSeconds: retryAfter, commitOutcome: outcome }
           )
         );
       }
       return;
     }
+    batch.resolveOutcome(true);
     for (const waiter of batch.waiters) waiter.resolve();
   };
 
@@ -499,12 +617,19 @@ export function createWebdavHandler(deps: WebdavHandlerDeps): WebdavHandler {
     const { previous, applied, next } = await applyCatalogMutation(channelId, build);
     return new Promise<TeleFile[]>((resolve, reject) => {
       if (!pendingBatch) {
+        let resolveOutcome: (committed: boolean) => void = () => {};
+        const outcome = new Promise<boolean>((resolve) => {
+          resolveOutcome = resolve;
+        });
         pendingBatch = {
           channelId,
           baseState: previous,
           applied,
           files: next,
+          deadlineAt: Date.now() + deps.metadataCommitDeadlineMs,
           waiters: [],
+          outcome,
+          resolveOutcome,
         };
       } else {
         pendingBatch.files = next;

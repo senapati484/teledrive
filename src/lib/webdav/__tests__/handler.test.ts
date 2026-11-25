@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { TeleFile } from "../../types";
 import { createWebdavHandler, type WebdavHandlerDeps } from "../handler";
 import { LockManager } from "../locks";
@@ -123,6 +123,8 @@ function makeDeps(initial: TeleFile[]) {
     metadataCommitDeadlineMs: 25,
     floodWaitAbortSeconds: 10,
     catalogCoalesceMs: 5,
+    metadataEditIntervalMs: 0,
+    metadataEditBurst: 1,
     describeConflict: isConflict,
     validateSize: async (size) =>
       size > 1000
@@ -152,6 +154,10 @@ const baseFiles = () => [
   folderEntry("Nested", "/Docs"),
   fileEntry("b.txt", "/Docs/Nested", { messageId: 6 }),
 ];
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe("WebDAV handler", () => {
   it("returns 503 until TeleDrive is signed in and indexed", async () => {
@@ -813,6 +819,117 @@ describe("WebDAV handler", () => {
       handler.handle(request({ id: 2, method: "MKCOL", path: "/Docs/Same" })),
     ]);
     expect([a.status, b.status].sort()).toEqual([201, 405]);
+  });
+
+  it("rate-limits sustained metadata edits", async () => {
+    vi.useFakeTimers();
+    const { deps, state } = makeDeps(baseFiles());
+    deps.metadataEditIntervalMs = 200;
+    deps.metadataEditBurst = 1;
+    deps.metadataCommitDeadlineMs = 5_000;
+    const handler = createWebdavHandler(deps);
+
+    const promises: Array<Promise<{ status: number }>> = [];
+    for (let index = 0; index < 20; index++) {
+      promises.push(
+        handler.handle(
+          request({ id: 100 + index, method: "MKCOL", path: `/Docs/Sustained-${index}` })
+        )
+      );
+      await vi.advanceTimersByTimeAsync(50);
+    }
+    await vi.advanceTimersByTimeAsync(5_000);
+    const responses = await Promise.all(promises);
+
+    expect(responses.every((response) => response.status === 201)).toBe(true);
+    // 1 s of arrivals at 50 ms with a 200 ms edit interval: <= 7 edits.
+    expect(state.saveCalls).toBeLessThanOrEqual(7);
+    for (let index = 0; index < 20; index++) {
+      expect(
+        state.files.filter((entry) => entry.name === `Sustained-${index}`)
+      ).toHaveLength(1);
+    }
+  });
+
+  it("keeps 5 staggered parallel MKCOLs under the edit rate", async () => {
+    vi.useFakeTimers();
+    const { deps, state } = makeDeps(baseFiles());
+    deps.metadataEditIntervalMs = 200;
+    deps.metadataEditBurst = 1;
+    deps.metadataCommitDeadlineMs = 5_000;
+    const handler = createWebdavHandler(deps);
+
+    const promises: Array<Promise<{ status: number }>> = [];
+    for (let index = 0; index < 5; index++) {
+      promises.push(
+        handler.handle(
+          request({ id: 200 + index, method: "MKCOL", path: `/Docs/Stagger-${index}` })
+        )
+      );
+      await vi.advanceTimersByTimeAsync(100);
+    }
+    await vi.advanceTimersByTimeAsync(5_000);
+    const responses = await Promise.all(promises);
+
+    expect(responses.every((response) => response.status === 201)).toBe(true);
+    expect(state.saveCalls).toBeLessThanOrEqual(3);
+  });
+
+  it("returns Retry-After with the actual limiter wait", async () => {
+    vi.useFakeTimers();
+    const { deps } = makeDeps(baseFiles());
+    deps.metadataEditIntervalMs = 1_000;
+    deps.metadataEditBurst = 1;
+    deps.metadataCommitDeadlineMs = 100;
+    deps.catalogCoalesceMs = 0;
+    const handler = createWebdavHandler(deps);
+
+    // First edit consumes the only token.
+    const first = handler.handle(
+      request({ id: 1, method: "MKCOL", path: "/Docs/TokenA" })
+    );
+    await vi.advanceTimersByTimeAsync(10);
+    await first;
+
+    const second = handler.handle(
+      request({ id: 2, method: "MKCOL", path: "/Docs/TokenB" })
+    );
+    await vi.advanceTimersByTimeAsync(10);
+    const response = await second;
+    expect(response.status).toBe(503);
+    expect(Number(response.headers?.["Retry-After"])).toBeGreaterThanOrEqual(1);
+  });
+
+  it("rate-limits PUT catalog commits without orphaning the upload", async () => {
+    vi.useFakeTimers();
+    const { deps, state } = makeDeps(baseFiles());
+    deps.metadataEditIntervalMs = 1_000;
+    deps.metadataEditBurst = 1;
+    deps.metadataCommitDeadlineMs = 100;
+    const handler = createWebdavHandler(deps);
+
+    const first = handler.handle(
+      request({ id: 1, method: "MKCOL", path: "/Docs/PutTokenA" })
+    );
+    await vi.advanceTimersByTimeAsync(10);
+    await first;
+
+    const put = handler.handle(
+      request({
+        id: 2,
+        method: "PUT",
+        path: "/Docs/rated.bin",
+        bodyPath: "C:/tmp/body.bin",
+        contentLength: 10,
+      })
+    );
+    await vi.advanceTimersByTimeAsync(10);
+    const response = await put;
+
+    expect(response.status).toBe(503);
+    expect(Number(response.headers?.["Retry-After"])).toBeGreaterThanOrEqual(1);
+    expect(state.deleted).toContain(99);
+    expect(state.files.some((entry) => entry.name === "rated.bin")).toBe(false);
   });
   it("answers PROPPATCH with 207 containing a 403 propstat", async () => {
     const { deps } = makeDeps(baseFiles());
