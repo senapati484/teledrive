@@ -1487,7 +1487,9 @@ fn open_telegram_app(app: tauri::AppHandle, url: String) -> Result<(), String> {
 fn show_main_window(app: &AppHandle) {
     if let Some(window) = app.get_webview_window("TeleDrive") {
         let _ = window.show();
-        let _ = window.unminimize();
+        if window.is_minimized().unwrap_or(false) {
+            let _ = window.unminimize();
+        }
         let _ = window.set_focus();
     }
 }
@@ -1544,11 +1546,20 @@ fn setup_desktop_shell(app: &tauri::App) -> tauri::Result<()> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // Build the Tauri application.
-    // Some plugins are desktop-only (shell, process) because they rely on
-    // system binaries that are not available in Android/iOS sandboxes.
+    // Some plugins are desktop-only (single-instance, shell, process) because they rely on
+    // desktop windowing or system APIs that are not available in Android/iOS sandboxes.
     // The cfg(mobile) / cfg(not(mobile)) guards below ensure the correct
     // plugin set is registered at compile time for each target platform.
-    let builder = tauri::Builder::default()
+    let builder = tauri::Builder::default();
+
+    // Register single-instance FIRST on desktop so secondary launches focus the
+    // running instance and exit before Stronghold, tray icons, or file watchers initialize.
+    #[cfg(not(mobile))]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+        show_main_window(app);
+    }));
+
+    let builder = builder
         .plugin(
             tauri_plugin_stronghold::Builder::new(|password| {
                 // Fixed salt for local vault key derivation
