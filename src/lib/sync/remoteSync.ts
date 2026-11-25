@@ -23,10 +23,10 @@ import {
 import { logger } from "@/lib/logger";
 import { withTelegramRetry } from "../telegram/rateLimit";
 import { useFileStore } from "../../stores/fileStore";
-import { useBackupProgressStore } from "../../stores/backupProgressStore";
 import { logEvent } from "../events";
 import { isIndexReady } from "../telegram/indexReadiness";
 import { filterDeletedMessages } from "../storage/tombstones";
+import { canReplaceLocalState } from "./localState";
 
 export const DEFAULT_POLL_INTERVAL_MS = 30_000;
 export const MIN_POLL_INTERVAL_MS = 10_000;
@@ -65,27 +65,6 @@ function isCurrent(channelId: string, generation: number): boolean {
     state.currentChannelId === channelId &&
     state.generation === generation
   );
-}
-
-function canReplaceLocalState(): boolean {
-  const store = useFileStore.getState();
-  // Never replace a snapshot while local writes are pending or stuck: those
-  // files are intentionally optimistic and would otherwise vanish until the
-  // next successful save. Uploads set the file list before their debounced
-  // index save starts, so the queue state alone is not enough.
-  if (store.isSyncing) return false;
-  // The backup runner writes its file list before the debounced index save
-  // starts, so also honor the run-level flag rather than only queue state.
-  if (useBackupProgressStore.getState().active) return false;
-  if (
-    store.uploadQueue.some(
-      (item) => item.status === "pending" || item.status === "uploading",
-    )
-  ) {
-    return false;
-  }
-  const queueState = store.indexQueueState;
-  return queueState === "idle" || queueState === "syncing-remote";
 }
 
 async function reloadAuthoritativeSnapshot(

@@ -1,0 +1,328 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { useFileStore } from "../../../stores/fileStore";
+import type { TeleFile } from "../../types";
+import {
+  packChunks,
+  parseIndexMessage,
+  serializeChunk,
+  type ParsedIndexChunk,
+} from "../indexFormat";
+import {
+  enqueueSave,
+  getIndexQueue,
+  IndexConflictError,
+  resetQueuesForTests,
+} from "../indexQueue";
+import { discoverIndex } from "../metadataStore";
+
+const h = vi.hoisted(() => ({
+  client: null as any,
+  discovery: null as any,
+}));
+
+vi.mock("../../telegram/client", () => ({
+  getClient: () => h.client,
+}));
+
+vi.mock("@tauri-apps/api/core", () => ({
+  invoke: vi.fn(async () => undefined),
+}));
+
+vi.mock("../metadataStore", () => ({
+  withTimeout: <T,>(promise: Promise<T>, ms: number, label: string) =>
+    new Promise<T>((resolve, reject) => {
+      const timer = setTimeout(
+        () => reject(new Error(`Timeout of ${ms}ms exceeded for ${label}`)),
+        ms,
+      );
+      promise.then(
+        (value) => {
+          clearTimeout(timer);
+          resolve(value);
+        },
+        (err) => {
+          clearTimeout(timer);
+          reject(err);
+        },
+      );
+    }),
+  discoverIndex: vi.fn(
+    async () => h.discovery ?? { status: "incomplete", reason: "not_found" },
+  ),
+}));
+
+const CHANNEL = "chan_conflict_test";
+
+class FakeClient {
+  messages = new Map<number, string>();
+  calls: Array<{ op: "edit" | "send"; id?: number; text?: string }> = [];
+  nextId = 20_000;
+  afterEdit: ((id: number) => void) | null = null;
+  getMessagesImpl: ((ids: number[]) => Array<{ id: number; text: string }>) | null =
+    null;
+
+  async getInputEntity() {
+    return { channelId: 1 };
+  }
+
+  async getMessages(_peer: any, { ids }: { ids: number[] }) {
+    if (this.getMessagesImpl) return this.getMessagesImpl(ids);
+    return ids
+      .filter((id) => this.messages.has(id))
+      .map((id) => ({ id, text: this.messages.get(id) }));
+  }
+
+  async editMessage(_peer: any, { message, text }: { message: number; text: string }) {
+    this.calls.push({ op: "edit", id: message, text });
+    this.messages.set(message, text);
+    this.afterEdit?.(message);
+    return {};
+  }
+
+  async sendMessage(_peer: any, { message }: { message: string }) {
+    const id = this.nextId++;
+    this.calls.push({ op: "send", id, text: message });
+    this.messages.set(id, message);
+    this.afterEdit?.(id);
+    return { id };
+  }
+
+  async deleteMessages(_peer: any, _ids: number[]) {
+    return [];
+  }
+
+  invoke() {
+    return Promise.resolve();
+  }
+}
+
+let fake: FakeClient;
+let fileCounter = 0;
+
+function makeFile(label: string): TeleFile {
+  return {
+    id: `file_${label}_${++fileCounter}`,
+    name: `${label}.txt`,
+    size: 10,
+    mime: "text/plain",
+    folderPath: "/",
+    messageId: fileCounter,
+    channelId: CHANNEL,
+    uploadedAt: 1,
+    starred: false,
+    trashed: false,
+  };
+}
+
+function chunkText(
+  files: TeleFile[],
+  chunkIndex: number,
+  totalChunks: number,
+  savedAt: number,
+  ids?: number[],
+): string {
+  return serializeChunk({
+    teledrive_index: true,
+    version: 3,
+    chunkIndex,
+    totalChunks,
+    savedAt,
+    ...(chunkIndex === 0 && ids ? { chunkMsgIds: ids.slice(1) } : {}),
+    files,
+  });
+}
+
+function seed(files: TeleFile[], savedAt = 1000) {
+  const { chunks } = packChunks(files);
+  const ids = chunks.map((_, index) => 500 + index);
+  const texts = chunks.map((chunk, index) =>
+    chunkText(chunk, index, chunks.length, savedAt, index === 0 ? ids : undefined),
+  );
+  const parsed = texts.map(
+    (text, index) => parseIndexMessage({ id: ids[index], text })!,
+  );
+  getIndexQueue(CHANNEL).setKnownIndex(ids, texts, parsed);
+  ids.forEach((id, index) => fake.messages.set(id, texts[index]));
+  return { ids, texts, parsed, chunks };
+}
+
+function ready(
+  files: TeleFile[],
+  ids: number[],
+  texts: string[],
+  savedAt = 2000,
+): {
+  status: "ready";
+  files: TeleFile[];
+  ids: number[];
+  texts: string[];
+  savedAt: number;
+  format: 2;
+  chunks: ParsedIndexChunk[];
+} {
+  const chunks = texts.map(
+    (text, index) => parseIndexMessage({ id: ids[index], text })!,
+  );
+  return {
+    status: "ready",
+    files,
+    ids,
+    texts,
+    savedAt,
+    format: 2,
+    chunks,
+  };
+}
+
+function idSet(text: string | undefined): Set<string> {
+  const parsed = text
+    ? parseIndexMessage({ id: 1, text })
+    : null;
+  return new Set((parsed?.files ?? []).map((file) => file.id));
+}
+
+beforeEach(() => {
+  resetQueuesForTests();
+  fake = new FakeClient();
+  h.client = fake;
+  h.discovery = null;
+  useFileStore.setState({
+    files: [],
+    indexLoadState: "ready",
+    indexLoadError: null,
+    indexQueueState: "idle",
+    indexQueueError: null,
+    indexQueueRetryInSec: 0,
+    bootstrapComplete: true,
+    isSyncing: false,
+    uploadQueue: [],
+  });
+  vi.mocked(discoverIndex).mockClear();
+});
+
+afterEach(() => {
+  vi.clearAllTimers();
+  resetQueuesForTests();
+});
+
+describe("commit-time index revision guard", () => {
+  it("re-applies B's mutation after A committed, keeping both entries", async () => {
+    const shared = [makeFile("shared")];
+    const { ids } = seed(shared);
+    useFileStore.setState({ files: shared });
+
+    const deviceA = [...shared, makeFile("from-a")];
+    const aText = chunkText(deviceA, 0, 1, 2000);
+    fake.messages.set(ids[0], aText);
+    h.discovery = ready(deviceA, ids, [aText]);
+
+    const deviceB = [...shared, makeFile("from-b")];
+    await enqueueSave(CHANNEL, deviceB);
+
+    const committed = idSet(fake.messages.get(ids[0]));
+    expect(committed).toContain(deviceA[deviceA.length - 1].id);
+    expect(committed).toContain(deviceB[deviceB.length - 1].id);
+    expect(vi.mocked(discoverIndex)).toHaveBeenCalledTimes(1);
+
+    const storeIds = new Set(useFileStore.getState().files.map((file) => file.id));
+    expect(storeIds).toContain(deviceA[deviceA.length - 1].id);
+    expect(storeIds).toContain(deviceB[deviceB.length - 1].id);
+  });
+
+  it("bounds retries and surfaces IndexConflictError when a race keeps landing", async () => {
+    const shared = [makeFile("base")];
+    const { ids } = seed(shared);
+    useFileStore.setState({ files: shared });
+
+    const deviceA = [...shared, makeFile("race-a")];
+    const aText = chunkText(deviceA, 0, 1, 2000);
+    // The first guard sees the base epoch; the remote write lands exactly
+    // between that check and our edit, which the post-write check detects.
+    h.discovery = ready(deviceA, ids, [aText]);
+    // Every write is immediately replaced by the other device.
+    fake.afterEdit = (id) => {
+      if (id === ids[0]) fake.messages.set(id, aText);
+    };
+
+    const deviceB = [...shared, makeFile("race-b")];
+    let caught: unknown = null;
+    try {
+      await enqueueSave(CHANNEL, deviceB);
+    } catch (err) {
+      caught = err;
+    }
+
+    expect(caught).toBeInstanceOf(IndexConflictError);
+    expect((caught as IndexConflictError).code).toBe("INDEX_CONFLICT");
+    expect(fake.calls.filter((call) => call.op === "edit")).toHaveLength(2);
+    // The remote epoch remains intact; our stale snapshot never wins silently.
+    expect(fake.messages.get(ids[0])).toBe(aText);
+    expect(useFileStore.getState().indexQueueState).toBe("failed");
+    expect(useFileStore.getState().indexQueueError).toContain("Another device");
+  });
+
+  it("fails closed when the revision check cannot read the channel", async () => {
+    const shared = [makeFile("base")];
+    const { ids } = seed(shared);
+    useFileStore.setState({ files: shared });
+    h.discovery = ready(shared, ids, [fake.messages.get(ids[0])!]);
+    fake.getMessagesImpl = () => {
+      throw new Error("Timeout of 5000ms exceeded for index revision");
+    };
+
+    const deviceB = [...shared, makeFile("unreadable")];
+    let caught: unknown = null;
+    try {
+      await enqueueSave(CHANNEL, deviceB);
+    } catch (err) {
+      caught = err;
+    }
+
+    expect(caught).toBeInstanceOf(IndexConflictError);
+    expect((caught as IndexConflictError).transient).toBe(true);
+    expect(fake.calls).toHaveLength(0);
+  });
+
+  it("fails closed when discovery cannot verify the channel", async () => {
+    resetQueuesForTests();
+    h.discovery = { status: "incomplete", reason: "timeout" };
+    const files = [makeFile("first")];
+    useFileStore.setState({ files: [] });
+
+    let caught: unknown = null;
+    try {
+      await enqueueSave(CHANNEL, files);
+    } catch (err) {
+      caught = err;
+    }
+
+    expect(caught).toBeInstanceOf(IndexConflictError);
+    expect((caught as IndexConflictError).transient).toBe(true);
+    expect(fake.calls).toHaveLength(0);
+  });
+
+  it("does not resurrect a target deleted by the other device", async () => {
+    const target = makeFile("target");
+    const shared = [target];
+    const { ids } = seed(shared);
+    useFileStore.setState({ files: shared });
+
+    // Device A deleted the target; B only renamed it.
+    const aText = chunkText([], 0, 1, 2000);
+    fake.messages.set(ids[0], aText);
+    h.discovery = ready([], ids, [aText]);
+
+    const renamed = [{ ...target, name: "renamed.txt" }];
+    let caught: unknown = null;
+    try {
+      await enqueueSave(CHANNEL, renamed);
+    } catch (err) {
+      caught = err;
+    }
+
+    expect(caught).toBeInstanceOf(IndexConflictError);
+    expect(fake.messages.get(ids[0])).toBe(aText);
+    // The stale local entry is gone, so the next action cannot resurrect it.
+    expect(useFileStore.getState().files).toHaveLength(0);
+  });
+});

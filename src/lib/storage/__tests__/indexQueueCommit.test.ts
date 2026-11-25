@@ -76,6 +76,12 @@ class FakeClient {
     return { channelId: 1 };
   }
 
+  async getMessages(_peer: any, { ids }: { ids: number[] }) {
+    return ids
+      .filter((id) => this.messages.has(id))
+      .map((id) => ({ id, text: this.messages.get(id) }));
+  }
+
   async sendMessage(_peer: any, { message }: { message: string }) {
     this.sendCount++;
     this.calls.push({ op: "send", text: message });

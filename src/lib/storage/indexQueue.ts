@@ -49,6 +49,9 @@ import i18n from "@/i18n";
 import { IndexNotReadyError, isIndexReady } from "../telegram/indexReadiness";
 import { logVaultState } from "../runtime/bridge";
 import { compactBackupCatalog } from "../backup/catalog";
+import { filterDeletedMessages } from "./tombstones";
+import { canReplaceLocalState } from "../sync/localState";
+import { normalizeFolderPath } from "../files/pathUtils";
 
 export { IndexNotReadyError } from "../telegram/indexReadiness";
 
@@ -60,6 +63,35 @@ export class IndexRetryExhaustedError extends Error {
     this.name = "IndexRetryExhaustedError";
   }
 }
+
+/**
+ * The live index on Telegram changed since this writer last read it. The queue
+ * reloads the authoritative snapshot and re-applies the pending mutation at
+ * most once; if that still conflicts the caller must retry the user action
+ * against the refreshed drive. `transient` means the guard could not read the
+ * revision (timeout/network), so a mount client may retry shortly.
+ */
+export class IndexConflictError extends Error {
+  readonly code = "INDEX_CONFLICT";
+  readonly transient: boolean;
+  readonly originalError?: unknown;
+
+  constructor(message: string, transient = false, originalError?: unknown) {
+    super(message);
+    this.name = "IndexConflictError";
+    this.transient = transient;
+    this.originalError = originalError;
+  }
+}
+
+export const INDEX_CONFLICT_MESSAGE =
+  "Another device changed the drive; refreshed - retry.";
+export const INDEX_REVISION_UNAVAILABLE_MESSAGE =
+  "Could not verify the latest drive revision; retry shortly.";
+
+/** Total commit attempts after a conflict: one normal pass plus one recovery. */
+const MAX_CONFLICT_ATTEMPTS = 2;
+const REVISION_CHECK_TIMEOUT_MS = 5_000;
 
 import type { RemoteVaultMetadata, TeleFile } from "../types";
 import {
@@ -161,6 +193,12 @@ const MAX_TRANSIENT_RETRIES = 5;
 
 interface QueueEntry {
   state: TeleFile[];
+  /**
+   * Canonical catalog this mutation was built on. Used to re-apply the same
+   * change after a conflicting writer is discovered. `null` means the base is
+   * unknown and a conflict must fail closed instead of guessing.
+   */
+  base: TeleFile[] | null;
   /** Resolve handler for the caller of `enqueue`. */
   resolve: () => void;
   reject: (err: any) => void;
@@ -218,6 +256,20 @@ class ChannelQueue {
   private recoveryOld: KnownIndex | null = null;
   /** Synced per-account vault metadata persisted on chunk 0 when present. */
   private vaultMetadata: RemoteVaultMetadata | undefined = undefined;
+  /**
+   * Last catalog state believed to be canonical on Telegram (or loaded from
+   * the live chunks). Captured as the base of queued mutations so a conflict
+   * can replay only the local change on top of the refreshed snapshot.
+   */
+  private committedState: TeleFile[] | null = null;
+  /** State currently being written, used as the base for newer enqueues. */
+  private inflightState: TeleFile[] | null = null;
+  /**
+   * When conflict recovery succeeds, the store still holds the stale
+   * optimistic list. Remember what to replace and only do so if no newer local
+   * action landed meanwhile.
+   */
+  private recoveryStoreUpdate: { expected: TeleFile[]; files: TeleFile[] } | null = null;
 
   constructor(channelId: string) {
     this.channelId = channelId;
@@ -276,6 +328,15 @@ class ChannelQueue {
           : Math.max(0, ...savedAt),
       hasManifest: zero ? isValidManifest(zero) : false,
     };
+    const byId = new Map<string, TeleFile>();
+    for (const id of msgIds) {
+      for (const file of parsedById.get(id)?.files ?? []) {
+        byId.set(file.id, file);
+      }
+    }
+    if (byId.size > 0 || msgIds.length > 0) {
+      this.committedState = Array.from(byId.values());
+    }
   }
 
   isRateLimited(): boolean {
@@ -308,8 +369,10 @@ class ChannelQueue {
     this.commitOverride = impl;
   }
 
-  private commit(state: TeleFile[]): Promise<void> {
-    return this.commitOverride ? this.commitOverride(state) : this.commitOnce(state);
+  private commit(state: TeleFile[], base: TeleFile[] | null): Promise<void> {
+    return this.commitOverride
+      ? this.commitOverride(state)
+      : this.commitOnce(state, base);
   }
 
   enqueue(state: TeleFile[], options: EnqueueOptions = {}): Promise<void> {
@@ -330,6 +393,10 @@ class ChannelQueue {
     // currently inflight (or waiting out a FLOOD_WAIT), this becomes the next
     // state to write.
     return new Promise<void>((resolve, reject) => {
+      // The oldest uncommitted snapshot is the correct diff base: newer
+      // enqueues already contain the previous pending mutation.
+      const base =
+        this.pending?.base ?? this.inflightState ?? this.committedState;
       // Resolve superseded pending and retrying entries: their callers were
       // waiting on a snapshot that has been replaced, and leaving them
       // unresolved leaks every action that overlaps a retry.
@@ -352,6 +419,7 @@ class ChannelQueue {
 
       this.pending = {
         state,
+        base,
         resolve,
         reject,
         recordPending,
@@ -402,7 +470,14 @@ class ChannelQueue {
     }
 
     try {
-      await withTimeout(this.commit(entry.state), 15_000, "indexQueue.flush");
+      this.inflightState = entry.state;
+      await withTimeout(
+        this.commit(entry.state, entry.base),
+        15_000,
+        "indexQueue.flush",
+      );
+      this.committedState = entry.state;
+      this.finishRecoveryStoreUpdate(entry.state);
       entry.resolve();
       this.successCount++;
       this.retryAttempt = 0;
@@ -412,10 +487,19 @@ class ChannelQueue {
       return { status: "committed" };
     } catch (err) {
       this.lastError = err;
-      this.stuckEntry = entry;
-      entry.reject(err);
+      if (err instanceof IndexConflictError) {
+        // Never keep retrying a stale snapshot: the next user action must be
+        // built on the refreshed drive instead.
+        this.recoveryStoreUpdate = null;
+        entry.reject(err);
+      } else {
+        this.stuckEntry = entry;
+        entry.reject(err);
+      }
       this.updateStoreState();
       return { status: "failed", error: err };
+    } finally {
+      this.inflightState = null;
     }
   }
 
@@ -501,13 +585,25 @@ class ChannelQueue {
           this.updateStoreState();
 
           try {
-            await this.commit(entry.state);
+            this.inflightState = entry.state;
+            await this.commit(entry.state, entry.base);
+            this.committedState = entry.state;
+            this.finishRecoveryStoreUpdate(entry.state);
             entry.resolve();
             this.successCount++;
             this.retryAttempt = 0;
             this.clearMarkerIfSettled(entry);
           } catch (err: any) {
             this.lastError = err;
+            if (err instanceof IndexConflictError) {
+              // Bounded recovery already happened inside commitOnce. Do not
+              // schedule the stale snapshot for another automatic attempt.
+              this.recoveryStoreUpdate = null;
+              entry.reject(err);
+              this.retryAttempt = 0;
+              this.updateStoreState();
+              continue;
+            }
             if (isHardError(err)) {
               // Reject only this caller; a newer pending snapshot (if any)
               // still gets its turn.
@@ -519,6 +615,8 @@ class ChannelQueue {
             this.retryingEntry = entry;
             this.scheduleRetry(err);
             return;
+          } finally {
+            this.inflightState = null;
           }
         }
       } finally {
@@ -676,33 +774,456 @@ class ChannelQueue {
    * missing chunk 0 falls back to a full copy-on-write + repin. Timeouts retry
    * the same RPC instead of deleting/resending the whole index.
    */
-  private async commitOnce(state: TeleFile[]): Promise<void> {
+  private async commitOnce(
+    state: TeleFile[],
+    base: TeleFile[] | null,
+  ): Promise<void> {
     // Startup replay can contain an old optimistic snapshot. Compact at
     // the writer, so both replay and ordinary saves respect the same rule.
-    state = compactBackupCatalog(state);
-    try {
-      await this.commitAttempt(state);
-    } catch (err: any) {
-      await this.log(
-        `INDEX_COMMIT_FAIL hard=${isHardError(err) ? 1 : 0} reason=${errMsg(err)}`
-      );
-      if (!isHardError(err) || !isMissingMessageError(err)) throw err;
-      await this.log(
-        `INDEX_COMMIT_HARD_ERR rediscover=1 reason=${errMsg(err)}`
-      );
-      this.recoveryOld = this.known;
-      this.known = null;
-      const result = await discoverIndex(this.channelId).catch(() => null);
-      if (result && result.status === "ready" && result.ids.length > 0) {
-        this.recoveryOld = null;
-        this.setKnownIndex(result.ids, result.texts, result.chunks);
-        await this.commitAttempt(state, false);
+    let current = compactBackupCatalog(state);
+    let currentBase = base ?? this.committedState;
+    let conflictAttempts = 0;
+
+    const recoverOrThrow = async (cause: IndexConflictError) => {
+      if (conflictAttempts >= MAX_CONFLICT_ATTEMPTS - 1) throw cause;
+      conflictAttempts++;
+      return this.recoverFromConflict(current, currentBase, cause);
+    };
+
+    for (;;) {
+      try {
+        await this.commitAttempt(current);
+        this.committedState = current;
+        this.finishRecoveryStoreUpdate(current);
         return;
+      } catch (err: any) {
+        if (err instanceof IndexConflictError) {
+          const recovered = await recoverOrThrow(err);
+          current = recovered.state;
+          currentBase = recovered.base;
+          continue;
+        }
+        await this.log(
+          `INDEX_COMMIT_FAIL hard=${isHardError(err) ? 1 : 0} reason=${errMsg(err)}`
+        );
+        if (!isHardError(err) || !isMissingMessageError(err)) throw err;
+        await this.log(
+          `INDEX_COMMIT_HARD_ERR rediscover=1 reason=${errMsg(err)}`
+        );
+        this.recoveryOld = this.known;
+        this.known = null;
+        const result = await discoverIndex(this.channelId).catch(() => null);
+        if (result && result.status === "ready" && result.ids.length > 0) {
+          this.recoveryOld = null;
+          this.setKnownIndex(result.ids, result.texts, result.chunks);
+          // The re-discovered epoch may belong to another device. Replay the
+          // local mutation instead of overwriting it wholesale.
+          if (!currentBase) {
+            throw new IndexConflictError(INDEX_CONFLICT_MESSAGE, false);
+          }
+          const recovered = await this.recoverWithSnapshot(
+            current,
+            currentBase,
+            result,
+            new IndexConflictError(INDEX_CONFLICT_MESSAGE, false),
+          );
+          current = recovered.state;
+          currentBase = recovered.base;
+          continue;
+        }
+        // With no live chunk 0 (or discovery unavailable) the retry sends a
+        // complete new set and moves the pin.
+        try {
+          await this.commitAttempt(current, false);
+          this.committedState = current;
+          this.finishRecoveryStoreUpdate(current);
+          return;
+        } catch (retryErr: any) {
+          if (!(retryErr instanceof IndexConflictError)) throw retryErr;
+          const recovered = await recoverOrThrow(retryErr);
+          current = recovered.state;
+          currentBase = recovered.base;
+          continue;
+        }
       }
-      // No live chunk 0 (or discovery unavailable): send a complete new set
-      // and move the pin. Skip a second discovery attempt.
-      await this.commitAttempt(state, false);
     }
+  }
+
+  /**
+   * Re-loads the authoritative snapshot after a conflict and re-applies the
+   * local mutation (base -> intended state) on top of it. Throws when the
+   * mutation no longer has a valid target/name/parent.
+   */
+  private async recoverFromConflict(
+    state: TeleFile[],
+    base: TeleFile[] | null,
+    cause: IndexConflictError,
+  ): Promise<{ state: TeleFile[]; base: TeleFile[] }> {
+    if (!base) {
+      // No base snapshot means the local mutation cannot be replayed, but a
+      // transient read failure still deserves a retryable status.
+      throw new IndexConflictError(cause.message, cause.transient, cause);
+    }
+    if (!canReplaceLocalState({ allowQueueSaving: true })) {
+      throw new IndexConflictError(INDEX_CONFLICT_MESSAGE, false, cause);
+    }
+
+    let result;
+    try {
+      result = await discoverIndex(this.channelId);
+    } catch (err) {
+      throw new IndexConflictError(INDEX_CONFLICT_MESSAGE, true, err);
+    }
+    return this.recoverWithSnapshot(state, base, result, cause);
+  }
+
+  private async recoverWithSnapshot(
+    state: TeleFile[],
+    base: TeleFile[],
+    result: Awaited<ReturnType<typeof discoverIndex>>,
+    cause: IndexConflictError,
+  ): Promise<{ state: TeleFile[]; base: TeleFile[] }> {
+    if (result.status !== "ready") {
+      const transient =
+        result.reason === "timeout" || result.reason === "network";
+      throw new IndexConflictError(
+        transient ? INDEX_REVISION_UNAVAILABLE_MESSAGE : INDEX_CONFLICT_MESSAGE,
+        transient,
+        cause,
+      );
+    }
+
+    if (result.ids.length > 0) {
+      this.setKnownIndex(result.ids, result.texts, result.chunks);
+      const maxId = result.ids.reduce((max, id) => Math.max(max, id), 0);
+      if (maxId > 0) useFileStore.getState().setLastIndexMsgId(maxId);
+    } else {
+      this.known = null;
+      this.committedState = [];
+    }
+    const zero = result.chunks.find((chunk) => chunk.chunkIndex === 0);
+    if (zero?.e2ee) this.vaultMetadata = zero.e2ee;
+
+    const authoritative = filterDeletedMessages(
+      this.channelId,
+      result.files,
+    );
+    const mutation = this.buildMutation(base, state);
+    const storeBeforeApply = useFileStore.getState().files;
+    let merged: TeleFile[];
+    try {
+      merged = this.applyMutation(authoritative, mutation);
+    } catch (err) {
+      // The mutation is no longer applicable. Refresh the UI anyway so the
+      // next action is built on the authoritative catalog instead of stale
+      // local entries.
+      const store = useFileStore.getState();
+      if (
+        store.files === storeBeforeApply &&
+        canReplaceLocalState({ allowQueueSaving: true })
+      ) {
+        store.setFiles(authoritative);
+      }
+      throw err;
+    }
+
+    // A local action may have started while discovery was in flight.
+    if (!canReplaceLocalState({ allowQueueSaving: true })) {
+      throw new IndexConflictError(INDEX_CONFLICT_MESSAGE, false, cause);
+    }
+    this.recoveryStoreUpdate = {
+      expected: useFileStore.getState().files,
+      files: merged,
+    };
+    await this.log(
+      `INDEX_CONFLICT_RECOVERED added=${mutation.added.length} removed=${mutation.removed.size} modified=${mutation.modified.length}`,
+    );
+    return { state: merged, base: authoritative };
+  }
+
+  /** Replaces the stale optimistic store list only if nothing newer landed. */
+  private finishRecoveryStoreUpdate(committed: TeleFile[]): void {
+    const update = this.recoveryStoreUpdate;
+    this.recoveryStoreUpdate = null;
+    if (!update) return;
+    const store = useFileStore.getState();
+    if (store.files === update.expected) {
+      store.setFiles(committed);
+    }
+    const maxId = (this.known?.ids ?? []).reduce(
+      (max, id) => Math.max(max, id),
+      0,
+    );
+    if (maxId > 0) store.setLastIndexMsgId(maxId);
+  }
+
+  private buildMutation(
+    base: TeleFile[],
+    next: TeleFile[],
+  ): {
+    base: Map<string, TeleFile>;
+    removed: Set<string>;
+    added: TeleFile[];
+    modified: Array<{ before: TeleFile; after: TeleFile }>;
+  } {
+    const baseById = new Map(base.map((file) => [file.id, file]));
+    const nextById = new Map(next.map((file) => [file.id, file]));
+    const removed = new Set<string>();
+    for (const id of baseById.keys()) {
+      if (!nextById.has(id)) removed.add(id);
+    }
+    const added: TeleFile[] = [];
+    for (const [id, file] of nextById) {
+      if (!baseById.has(id)) added.push(file);
+    }
+    const modified: Array<{ before: TeleFile; after: TeleFile }> = [];
+    for (const [id, after] of nextById) {
+      const before = baseById.get(id);
+      if (!before) continue;
+      if (canonicalJson(before) !== canonicalJson(after)) {
+        modified.push({ before, after });
+      }
+    }
+    return { base: baseById, removed, added, modified };
+  }
+
+  private applyMutation(
+    authoritative: TeleFile[],
+    mutation: ReturnType<ChannelQueue["buildMutation"]>,
+  ): TeleFile[] {
+    const byId = new Map<string, TeleFile>();
+    for (const file of authoritative) {
+      if (mutation.removed.has(file.id)) continue;
+      byId.set(file.id, file);
+    }
+
+    for (const { before, after } of mutation.modified) {
+      const existing = byId.get(after.id);
+      if (!existing) {
+        throw new IndexConflictError(INDEX_CONFLICT_MESSAGE, false);
+      }
+      const merged: TeleFile = { ...existing };
+      // Field-level patch keeps unrelated remote updates (e.g. a star from
+      // the other device) instead of replacing the whole entry.
+      const target = merged as unknown as Record<string, unknown>;
+      for (const key of Object.keys(after) as Array<keyof TeleFile>) {
+        if (canonicalJson(before[key]) !== canonicalJson(after[key])) {
+          target[key as string] = after[key];
+        }
+      }
+      for (const key of Object.keys(before) as Array<keyof TeleFile>) {
+        if (!(key in after)) delete target[key as string];
+      }
+      byId.set(after.id, merged);
+    }
+
+    for (const file of mutation.added) {
+      const existing = byId.get(file.id);
+      if (!existing) {
+        byId.set(file.id, file);
+        continue;
+      }
+      if (canonicalJson(existing) === canonicalJson(file)) continue;
+      // Deterministic folder ids collide when both devices create the same
+      // folder path; that is the same collection, not a lost update.
+      if (
+        isIndexFolder(existing) &&
+        isIndexFolder(file) &&
+        indexPathOf(existing) === indexPathOf(file)
+      ) {
+        continue;
+      }
+      throw new IndexConflictError(INDEX_CONFLICT_MESSAGE, false);
+    }
+
+    const merged = Array.from(byId.values());
+    this.validateMutationPaths(merged, mutation);
+    return merged;
+  }
+
+  private validateMutationPaths(
+    merged: TeleFile[],
+    mutation: ReturnType<ChannelQueue["buildMutation"]>,
+  ): void {
+    const byId = new Map(merged.map((file) => [file.id, file]));
+    const touched: Array<{ id: string; pathChanged: boolean }> = [];
+    for (const file of mutation.added) {
+      touched.push({ id: file.id, pathChanged: true });
+    }
+    for (const { before, after } of mutation.modified) {
+      touched.push({
+        id: after.id,
+        pathChanged:
+          normalizeFolderPath(before.folderPath) !==
+            normalizeFolderPath(after.folderPath) ||
+          before.name !== after.name,
+      });
+    }
+
+    for (const { id, pathChanged } of touched) {
+      const entry = byId.get(id);
+      if (!entry) continue;
+      const path = indexPathOf(entry);
+      const parent = indexPathParent(path);
+      if (parent !== "/" && !indexFolderExists(merged, parent)) {
+        throw new IndexConflictError(INDEX_CONFLICT_MESSAGE, false);
+      }
+      if (!pathChanged) continue;
+      for (const other of merged) {
+        if (other.id === id) continue;
+        if (indexPathOf(other) !== path) continue;
+        const baseOther = mutation.base.get(other.id);
+        // A duplicate that already existed locally is allowed; a path that
+        // appeared or moved on the remote side is a real conflict.
+        if (!baseOther || indexPathOf(baseOther) !== path) {
+          throw new IndexConflictError(INDEX_CONFLICT_MESSAGE, false);
+        }
+      }
+    }
+  }
+
+  /** Live chunk texts for `ids`; throws so callers decide fail-closed semantics. */
+  private async fetchLiveTexts(
+    client: any,
+    peer: any,
+    ids: number[],
+  ): Promise<Map<number, string>> {
+    const messages = await withTimeout(
+      client.getMessages(peer, { ids }),
+      REVISION_CHECK_TIMEOUT_MS,
+      "client.getMessages(index revision guard)",
+    );
+    if (!Array.isArray(messages)) {
+      throw new Error("Index revision check returned no message list");
+    }
+    const live = new Map<number, string>();
+    for (const message of messages) {
+      const id = Number(message?.id);
+      if (!Number.isFinite(id) || id <= 0) continue;
+      const text = message?.text ?? message?.message;
+      live.set(id, typeof text === "string" ? text : "");
+    }
+    return live;
+  }
+
+  private revisionMatches(
+    known: KnownIndex,
+    live: Map<number, string>,
+  ): boolean {
+    for (let i = 0; i < known.ids.length; i++) {
+      const text = live.get(known.ids[i]);
+      if (text === undefined) return false;
+      const knownText = known.texts[i];
+      if (typeof knownText === "string" && knownText.length > 0) {
+        if (text !== knownText) return false;
+        continue;
+      }
+      const parsed = parseIndexMessage({ id: known.ids[i], text });
+      if (!parsed || parsed.savedAt !== known.savedAt[i]) return false;
+    }
+    return true;
+  }
+
+  private async probeLiveRevision(
+    client: any,
+    peer: any,
+  ): Promise<"current" | "stale" | "unavailable"> {
+    const known = this.known;
+    if (!known || known.ids.length === 0) return "current";
+    try {
+      const live = await this.fetchLiveTexts(client, peer, known.ids);
+      return this.revisionMatches(known, live) ? "current" : "stale";
+    } catch {
+      return "unavailable";
+    }
+  }
+
+  /**
+   * Commit-time guard. Fails closed: a revision that cannot be read is treated
+   * as a conflict, never as "unchanged".
+   */
+  private async assertLiveRevision(client: any, peer: any): Promise<void> {
+    const verdict = await this.probeLiveRevision(client, peer);
+    if (verdict === "current") return;
+    throw new IndexConflictError(
+      INDEX_CONFLICT_MESSAGE,
+      verdict === "unavailable",
+    );
+  }
+
+  /** Detects a remote write that landed after our pre-check but before/at ours. */
+  private async assertWriteLanded(
+    client: any,
+    peer: any,
+    id: number,
+    text: string,
+  ): Promise<void> {
+    let live: Map<number, string>;
+    try {
+      live = await this.fetchLiveTexts(client, peer, [id]);
+    } catch (err) {
+      throw new IndexConflictError(INDEX_REVISION_UNAVAILABLE_MESSAGE, true, err);
+    }
+    if (live.get(id) !== text) {
+      throw new IndexConflictError(INDEX_CONFLICT_MESSAGE, false);
+    }
+  }
+
+  /**
+   * WebDAV pre-write check: probe the live revision and, if another device
+   * committed, refresh the authoritative snapshot before any bytes move.
+   */
+  async ensureFreshForWrite(): Promise<"current" | "refreshed"> {
+    const client = getClient();
+    const peer = await resolvePeerWithTimeout(client, this.channelId);
+    const verdict = await this.probeLiveRevision(client, peer);
+    if (verdict === "current") return "current";
+    if (verdict === "unavailable") {
+      throw new IndexConflictError(INDEX_REVISION_UNAVAILABLE_MESSAGE, true);
+    }
+    if (!canReplaceLocalState()) {
+      throw new IndexConflictError(INDEX_CONFLICT_MESSAGE, false);
+    }
+
+    let result;
+    try {
+      result = await discoverIndex(this.channelId);
+    } catch (err) {
+      throw new IndexConflictError(INDEX_REVISION_UNAVAILABLE_MESSAGE, true, err);
+    }
+    if (result.status !== "ready") {
+      const transient =
+        result.reason === "timeout" || result.reason === "network";
+      throw new IndexConflictError(
+        transient ? INDEX_REVISION_UNAVAILABLE_MESSAGE : INDEX_CONFLICT_MESSAGE,
+        transient,
+      );
+    }
+    if (result.ids.length > 0) {
+      this.setKnownIndex(result.ids, result.texts, result.chunks);
+      const maxId = result.ids.reduce((max, id) => Math.max(max, id), 0);
+      if (maxId > 0) useFileStore.getState().setLastIndexMsgId(maxId);
+    } else {
+      this.known = null;
+      this.committedState = [];
+    }
+    const authoritative = filterDeletedMessages(
+      this.channelId,
+      result.files,
+    );
+    const store = useFileStore.getState();
+    const before = store.files;
+    await store.setRemoteSnapshot(authoritative, before);
+    if (
+      useFileStore.getState().files === before &&
+      !catalogsEqual(authoritative, before)
+    ) {
+      // Another optimistic action won the race; never let the WebDAV caller
+      // build its mutation on the pre-refresh list.
+      throw new IndexConflictError(INDEX_CONFLICT_MESSAGE, false);
+    }
+    await this.log("INDEX_CONFLICT_PRECHECK_REFRESHED");
+    return "refreshed";
   }
 
   private async commitAttempt(
@@ -714,10 +1235,29 @@ class ChannelQueue {
 
     if (!this.known && allowDiscover) {
       const result = await discoverIndex(this.channelId).catch(() => null);
-      if (result && result.status === "ready" && result.ids.length > 0) {
+      if (!result) {
+        throw new IndexConflictError(INDEX_REVISION_UNAVAILABLE_MESSAGE, true);
+      }
+      if (result.status === "ready" && result.ids.length > 0) {
         this.setKnownIndex(result.ids, result.texts, result.chunks);
+        // A live epoch existed before this writer's snapshot was built. Never
+        // write the stale state over it; the recovery path replays the local
+        // mutation on the discovered snapshot.
+        throw new IndexConflictError(INDEX_CONFLICT_MESSAGE, false);
+      }
+      if (
+        result.status === "incomplete" &&
+        (result.reason === "timeout" ||
+          result.reason === "network" ||
+          result.reason === "partial_manifest")
+      ) {
+        // The channel could not be read or its manifest was truncated. Do
+        // not create a competing epoch from an unverified snapshot.
+        throw new IndexConflictError(INDEX_REVISION_UNAVAILABLE_MESSAGE, true);
       }
     }
+
+    await this.assertLiveRevision(client, peer);
 
     const prevChunks = this.known?.texts.map((text, idx) =>
       text
@@ -1160,6 +1700,7 @@ class ChannelQueue {
     text: string,
     label: string
   ): Promise<void> {
+    await this.assertLiveRevision(client, peer);
     try {
       await this.rpc(
         () =>
@@ -1171,9 +1712,9 @@ class ChannelQueue {
         label
       );
     } catch (err: any) {
-      if (/MESSAGE_NOT_MODIFIED/i.test(errMsg(err))) return;
-      throw err;
+      if (!/MESSAGE_NOT_MODIFIED/i.test(errMsg(err))) throw err;
     }
+    await this.assertWriteLanded(client, peer, id, text);
   }
 
   private async sendChunk(
@@ -1182,6 +1723,7 @@ class ChannelQueue {
     text: string,
     label: string
   ): Promise<number> {
+    await this.assertLiveRevision(client, peer);
     const result = await this.rpc(
       () =>
         withTimeout(
@@ -1191,7 +1733,9 @@ class ChannelQueue {
         ),
       label
     );
-    return Number((result as any).id);
+    const id = Number((result as any).id);
+    await this.assertWriteLanded(client, peer, id, text);
+    return id;
   }
 
   private async log(state: string): Promise<void> {
@@ -1211,6 +1755,44 @@ function isMissingMessageError(err: any): boolean {
   return /MSG_ID_INVALID|MESSAGE_ID_INVALID|MESSAGE_NOT_FOUND|MESSAGE_EMPTY|MESSAGE_DELETE/i.test(
     errMsg(err)
   );
+}
+
+function catalogsEqual(a: TeleFile[], b: TeleFile[]): boolean {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  const bById = new Map(b.map((file) => [file.id, file]));
+  for (const file of a) {
+    const other = bById.get(file.id);
+    if (!other || canonicalJson(file) !== canonicalJson(other)) return false;
+  }
+  return true;
+}
+
+function isIndexFolder(file: Pick<TeleFile, "mime">): boolean {
+  return file.mime === "inode/directory" || file.mime === "application/x-directory";
+}
+
+function indexPathOf(file: Pick<TeleFile, "folderPath" | "name">): string {
+  const parent = normalizeFolderPath(file.folderPath);
+  return parent === "/" ? `/${file.name}` : `${parent}/${file.name}`;
+}
+
+function indexPathParent(path: string): string {
+  const trimmed = path.replace(/\/+$/, "");
+  const index = trimmed.lastIndexOf("/");
+  return index <= 0 ? "/" : trimmed.slice(0, index);
+}
+
+/** Treats implicit folders (a path that only exists via descendants) as present. */
+function indexFolderExists(files: TeleFile[], path: string): boolean {
+  const normalized = normalizeFolderPath(path);
+  if (normalized === "/") return true;
+  for (const file of files) {
+    const fullPath = indexPathOf(file);
+    if (fullPath === normalized && isIndexFolder(file)) return true;
+    if (fullPath.startsWith(`${normalized}/`)) return true;
+  }
+  return false;
 }
 
 function canonicalJson(value: any): string {
@@ -1314,6 +1896,18 @@ export async function flushAllQueues(): Promise<
     if (result.status !== "failed") queues.delete(result.channelId);
   }
   return results;
+}
+
+/**
+ * WebDAV pre-write hook: verifies the live revision and refreshes the local
+ * snapshot when another device committed first. Throws IndexConflictError
+ * when that is impossible or unsafe; callers map it to 409/503.
+ */
+export async function ensureFreshIndexForWrite(
+  channelId: string,
+): Promise<"current" | "refreshed"> {
+  if (!isIndexReady()) throw new IndexNotReadyError();
+  return getIndexQueue(channelId).ensureFreshForWrite();
 }
 
 /** Force an immediate retry on a currently-failed/stuck queue. */
