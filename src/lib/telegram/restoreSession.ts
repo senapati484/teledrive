@@ -104,7 +104,12 @@ export async function restoreSession(): Promise<boolean> {
       errorMsg.includes("etimedout") ||
       errorMsg.includes("enotfound") ||
       errorMsg.includes("econnrefused") ||
-      errorMsg.includes("handshake");
+      errorMsg.includes("econnreset") ||
+      errorMsg.includes("handshake") ||
+      errorMsg.includes("proxy") ||
+      errorMsg.includes("unreachable") ||
+      errorMsg.includes("socks") ||
+      errorMsg.includes("tls");
 
     if (!isNetworkError) {
       logger.warn("restoreSession: Authentication failure or invalid credentials, clearing session...", error);

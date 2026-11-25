@@ -40,7 +40,10 @@ tauri-plugin-shell = "2.5.0"
 tauri-plugin-process = "2.4.0"
 argon2 = "0.5.3"
 sha2 = "0.10"
-tokio = { version = "1", features = ["sync", "time"] }
+aes = "0.8"
+ctr = "0.9"
+getrandom = "0.2"
+tokio = { version = "1", features = ["sync", "time", "net", "io-util"] }
 
 # Tray icons, autostart, and single-instance locking are desktop-only; keep them
 # off mobile builds so the underlying platform crates are never pulled into Android/iOS.
