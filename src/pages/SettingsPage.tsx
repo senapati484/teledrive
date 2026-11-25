@@ -58,7 +58,6 @@ export default function SettingsPage() {
           },
         ]
       : []),
-
     {
       id: "appearance" as const,
       label: t("nav.appearance"),

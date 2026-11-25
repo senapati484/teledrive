@@ -453,7 +453,7 @@ function BackButton({
 }
 
 export default function AuthPage() {
-  const { t, i18n } = useTranslation(["auth", "common", "settings"]);
+  const { t, i18n } = useTranslation(["auth", "common"]);
   const navigate = useNavigate();
   const setSession = useAuthStore((state) => state.setSession);
 
@@ -1526,7 +1526,7 @@ export default function AuthPage() {
 
   return (
     <div className="fixed inset-0 h-[100dvh] w-full overflow-hidden bg-background select-none flex flex-col justify-between items-center py-3 sm:py-6 px-4 relative">
-      <div className="absolute top-[max(calc(var(--safe-area-top,0px)+0.75rem),1.5rem)] sm:top-4 right-4 sm:right-4 z-30 flex items-center gap-2">
+      <div className="absolute top-[max(calc(var(--safe-area-top,0px)+0.75rem),1.5rem)] sm:top-4 right-4 sm:right-4 z-30">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -2400,7 +2400,6 @@ export default function AuthPage() {
           {t("footer", { version: APP_VERSION })}
         </p>
       </footer>
-
     </div>
   );
 }
